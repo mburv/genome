@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { LevelDefinition, Track } from '../engine/types.ts';
 import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
-import { Barcode, SeqLetters, tierClass } from './TokenFace.tsx';
+import { Barcode, SeqLetters, tierClass, tokenStyle } from './TokenFace.tsx';
 
 interface Props {
   def: LevelDefinition;
@@ -21,7 +21,7 @@ function Strip({ track, ok, testId }: { track: Track; ok: boolean[]; testId?: st
         {track.expected.split('').map((sym, i) => {
           const seq = symbolSequence(tok.def, tok.custom, sym);
           return (
-            <span key={i} className={`tok-chip ${tierClass(seq.length)} ${ok[i] ? 'ok' : ''}`} data-seq={seq} title={seq}>
+            <span key={i} className={`tok-chip ${tierClass(seq.length)} ${ok[i] ? 'ok' : ''}`} data-seq={seq} title={seq} style={tokenStyle(tok.def, sym)}>
               <span className="chip-label">{seq.length <= 6 ? <SeqLetters seq={seq} /> : symbolLabel(tok.def, tok.custom, sym)}</span>
               {seq.length > 3 && <Barcode seq={seq} />}
             </span>
@@ -47,7 +47,7 @@ function FullSequence({ def, custom, matches }: { def: LevelDefinition; custom: 
         <span key={t.group} className="full-part">
           {ti > 0 && <span className="muted"> + </span>}
           {t.expected.split('').map((sym, i) => (
-            <span key={i} className={`full-piece ${matches[ti]?.[i] ? 'ok' : ''}`}><SeqLetters seq={symbolSequence(def, custom, sym)} /></span>
+            <span key={i} className={`full-piece ${matches[ti]?.[i] ? 'ok' : ''}`} style={tokenStyle(def, sym)}><SeqLetters seq={symbolSequence(def, custom, sym)} /></span>
           ))}
         </span>
       ))}
@@ -106,7 +106,7 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
         <div className="repair-row">
           <b className="badge">{a.group}</b><Strip track={a} ok={matches[0]!} testId="target-strip" />
           {toks
-            ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot">{solved ? symbolLabel(def, custom, def.repair.expected) : `?×${def.repair.length ?? symbolSequence(def, custom, def.repair.expected).length}`}</span>
+            ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" style={solved ? tokenStyle(def, def.repair.expected) : {}}>{solved ? symbolLabel(def, custom, def.repair.expected) : `?×${def.repair.length ?? symbolSequence(def, custom, def.repair.expected).length}`}</span>
             : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot">{solved ? def.repair.expected : '?'}</span>}
           <Strip track={b} ok={matches[1]!} /><b className="badge">{b.group}</b>
         </div>

@@ -273,9 +273,16 @@ footer { text-align: center; padding-top: 4px; }
 /* ---- M4 multi-base tiles ---- */
 .bl-A { color: #0d7a4f; } .bl-C { color: #1d5fb8; } .bl-G { color: #8a5b00; } .bl-T { color: #b32c3c; }
 .bc-A { background: var(--A); } .bc-C { background: var(--C); } .bc-G { background: var(--G); } .bc-T { background: var(--T); }
-.tile.tok { background: linear-gradient(180deg, #f4f1e8, #ddd8c9); color: #13202c; }
-.tile.tok.tok-custom { background: linear-gradient(180deg, #fbe9ff, #e3cdea); outline: 2px dashed #8f5aa8; outline-offset: -3px; }
-.tile.tok.restored { background: linear-gradient(180deg, #e9fff7, #c6efe0); }
+.tile.tok { --tok-bg: #e8eaee; --tok-fg: #0b1420; --tok-soft: #3a4553; --tok-border: #5a6573; background: var(--tok-bg); color: var(--tok-fg); box-shadow: inset 0 0 0 1.5px var(--tok-border), inset 0 -3px 0 rgba(0, 0, 0, 0.22), inset 0 2px 0 rgba(255, 255, 255, 0.28), 0 2px 4px rgba(0, 0, 0, 0.35); }
+/* CRISPR-created (non-reference) sequences: neutral hatching so they never pose as a palette colour. */
+.tile.tok.tok-custom { background: repeating-linear-gradient(135deg, #eef0f4 0 5px, #d9dde4 5px 10px); outline: 2px dashed #8f5aa8; outline-offset: -3px; }
+.tile.tok .tok-row i { color: inherit; }
+.tile.tok .tok-face .ell, .tile.tok .tok-len { color: var(--tok-soft); }
+.tile.tok .barcode { box-shadow: 0 0 0 1px var(--tok-fg); }
+.tile.tok.goal.ok { box-shadow: inset 0 0 0 1.5px var(--tok-border), 0 0 0 2px #e9fff7, 0 0 10px rgba(134, 239, 207, 0.8); }
+.tile.tok.locked { box-shadow: inset 0 0 0 3px #f6d17b, 0 0 0 2px #0b1420, 0 0 10px rgba(246, 209, 123, 0.8); }
+.tile.tok.scaffolded { box-shadow: inset 0 0 0 3px #87bcff, 0 0 0 2px #0b1420, 0 0 8px rgba(135, 188, 255, 0.7); }
+.tile.tok.tick, .tile.tok .tick { background: #0b3d2f; box-shadow: 0 0 0 1.5px #e9fff7; }
 .tok-face { pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 100%; height: 100%; line-height: 1; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -0.02em; }
 .tok-row { display: flex; }
 .tok-row i { font-style: normal; font-weight: 900; }
@@ -288,14 +295,18 @@ footer { text-align: center; padding-top: 4px; }
 .barcode i { flex: 1; }
 .tok-ghost { inset: auto 4% 4% auto; padding: 1px 3px; font-size: calc(var(--board) / 40); border-radius: 5px; }
 .tok-strip { flex-wrap: wrap; gap: 3px; }
-.tok-chip { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 30px; height: 26px; padding: 0 4px; border-radius: 6px; background: #e9e5da; color: #13202c; font: 800 10.5px/1 ui-monospace, Menlo, Consolas, monospace; border: 1.5px solid #0b1420; }
-.tok-chip i { font-style: normal; }
-.tok-chip.ok { box-shadow: 0 0 0 2px var(--mint); }
+.tok-chip { --tok-bg: #e8eaee; --tok-fg: #0b1420; --tok-border: #5a6573; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 30px; height: 26px; padding: 0 4px; border-radius: 6px; background: var(--tok-bg); color: var(--tok-fg); font: 800 10.5px/1 ui-monospace, Menlo, Consolas, monospace; border: 1.5px solid var(--tok-border); }
+.tok-chip i { font-style: normal; color: inherit; }
+.tok-chip .barcode { box-shadow: 0 0 0 1px var(--tok-fg); }
+.tok-chip.ok { outline: 2px solid var(--mint); outline-offset: 1px; }
+.tok-chip.edited { background: repeating-linear-gradient(135deg, #eef0f4 0 5px, #d9dde4 5px 10px); border: 1.5px dashed #8f5aa8; }
+.insp-head { display: flex; align-items: center; gap: 8px; }
+.insp-chip { flex: none; min-width: 54px; height: 24px; font-size: 11px; }
 .tok-chip .barcode { width: 100%; }
 .tok-chip.gap { background: #26384a; color: #c9d6e3; border-style: dashed; }
-.tok-chip.gap.restored { background: #c6efe0; color: #0f1d29; border-style: solid; }
+.tok-chip.gap.restored { background: var(--tok-bg, #c6efe0); color: var(--tok-fg, #0f1d29); border-style: solid; }
 .full-seq { margin-top: 6px; line-height: 1.5; word-break: break-all; background: #0f1b27; border-radius: 8px; padding: 4px 6px; color: #9fb0c2; }
-.full-seq .full-piece { padding: 0 1px; border-radius: 3px; margin-right: 2px; }
+.full-seq .full-piece { padding: 0 1px 1px; border-radius: 3px; margin-right: 2px; border-bottom: 3px solid var(--tok-bg, #5a6573); }
 .full-seq .full-piece i { font-style: normal; color: #9fb0c2; }
 .full-seq .full-piece.ok { background: #143a30; }
 .full-seq .full-piece.ok i { color: var(--mint); }

@@ -22,6 +22,16 @@ export function Barcode({ seq }: { seq: string }) {
   );
 }
 
+import type { CSSProperties } from 'react';
+import type { LevelDefinition } from '../engine/types.ts';
+import { tokenColour } from '../engine/tokenColours.ts';
+
+/** CSS custom properties carrying a symbol's combo colour (empty for single-base / CRISPR-edited tiles). */
+export function tokenStyle(def: LevelDefinition, symbol: string): CSSProperties {
+  const c = tokenColour(def, symbol);
+  return c ? ({ '--tok-bg': c.bg, '--tok-fg': c.fg, '--tok-soft': c.fgSoft, '--tok-border': c.border } as CSSProperties) : {};
+}
+
 export const tierClass = (len: number): string => (len <= 3 ? 'tier-3' : len <= 6 ? 'tier-6' : 'tier-l');
 
 export function TokenFace({ seq, label }: { seq: string; label: string }) {

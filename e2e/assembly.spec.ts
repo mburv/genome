@@ -111,3 +111,27 @@ test('an M3 (v3) save upgrades to v4 with every completion kept, a notice and an
   expect(saved.completed).toHaveLength(ids.length);
   await expect(page.getByTestId('progress-INS')).toHaveText('33 / 51 sample bases');
 });
+
+test('each multi-base combo has its own colour, identical on the board, in the target strip and in the inspector', async ({ page }) => {
+  const def = CHAPTERS.find((l) => l.tier === 6 && l.mode === 'sequence')!;
+  await fresh(page);
+  await page.getByTestId('open-map').click();
+  await page.getByTestId(`cnode-${def.id}`).click();
+  await page.getByTestId('board').waitFor();
+  const tiles = await page.locator('.tile.tok').evaluateAll((els) => els.map((e) => ({ seq: e.getAttribute('data-seq')!, bg: getComputedStyle(e).backgroundColor })));
+  const bySeq = new Map<string, string>();
+  for (const t of tiles) {
+    expect(t.bg).not.toBe('rgb(232, 234, 238)');
+    if (bySeq.has(t.seq)) expect(t.bg).toBe(bySeq.get(t.seq));
+    bySeq.set(t.seq, t.bg);
+  }
+  expect(new Set(bySeq.values()).size).toBe(bySeq.size);
+  const chips = await page.locator('[data-testid="target-panel"] .tok-chip').evaluateAll((els) => els.map((e) => ({ seq: e.getAttribute('data-seq')!, bg: getComputedStyle(e).backgroundColor })));
+  for (const c of chips) if (bySeq.has(c.seq)) expect(c.bg).toBe(bySeq.get(c.seq));
+  const tile = page.locator('.tile.tok').first();
+  const seq = (await tile.getAttribute('data-seq'))!;
+  await tile.click();
+  const chip = page.getByTestId('inspector-chip');
+  await expect(chip).toHaveAttribute('data-seq', seq);
+  expect(await chip.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(bySeq.get(seq));
+});

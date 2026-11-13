@@ -8,7 +8,7 @@ import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/t
 import { LAB_LEVELS, LEVELS, chapterOf, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
-import { SeqLetters } from './TokenFace.tsx';
+import { SeqLetters, tokenStyle } from './TokenFace.tsx';
 import { GENES } from '../genomics/genes.ts';
 import { recordAssembly, recordCompletion, type SaveData } from '../persistence/save.ts';
 import { Board, type MoveAnimation, type PowerPreview, type SlidePreview } from './Board.tsx';
@@ -523,7 +523,10 @@ function TokenInspector({ def, puzzle, cell }: { def: LevelDefinition; puzzle: P
       : 'edited by CRISPR (not reference sequence)';
   return (
     <div className="inspector small" data-testid="token-inspector" aria-live="polite">
-      <span className="mono seq"><SeqLetters seq={seq} group={3} /></span>
+      <span className="insp-head">
+        <span className={`tok-chip insp-chip ${t ? '' : 'edited'}`} style={tokenStyle(def, sym)} data-testid="inspector-chip" data-seq={seq}>{symbolLabel(def, puzzle.custom, sym)}</span>
+        <span className="mono seq"><SeqLetters seq={seq} group={3} /></span>
+      </span>
       <span className="muted">{seq.length} bases · {where}{want ? ` · target here: ${want === seq ? '✓ match' : want}` : ''}</span>
     </div>
   );
