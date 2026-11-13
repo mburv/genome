@@ -1,0 +1,390 @@
+{
+  "generatorVersion": "m2-gen-1",
+  "date": "2026-11-13",
+  "perSpec": 100,
+  "solverBudget": 60000,
+  "candidates": 1200,
+  "accepted": 158,
+  "acceptanceRate": 0.13166666666666665,
+  "crossDuplicates": 0,
+  "failures": 0,
+  "reasons": {
+    "mask-active": 334,
+    "pre-solved": 43,
+    "near-duplicate": 7,
+    "too-few-wrong": 350,
+    "certificate-short": 70,
+    "mask-dead-ends": 54,
+    "shallow-solvable": 8,
+    "mask-connectivity": 57,
+    "mask-sparse-line": 119
+  },
+  "ms": 20999,
+  "specs": [
+    {
+      "id": "ins-01",
+      "mode": "sequence",
+      "candidates": 100,
+      "accepted": 41,
+      "reasons": {
+        "mask-active": 40,
+        "pre-solved": 18,
+        "near-duplicate": 1
+      },
+      "ms": 78,
+      "optimal": {
+        "1": 41
+      },
+      "unknownLB": {},
+      "certDrags": {
+        "1": 41
+      },
+      "ratings": {
+        "tutorial": 41
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "ins-02",
+      "mode": "splice",
+      "candidates": 100,
+      "accepted": 23,
+      "reasons": {
+        "mask-active": 12,
+        "too-few-wrong": 39,
+        "pre-solved": 11,
+        "certificate-short": 7,
+        "mask-dead-ends": 5,
+        "shallow-solvable": 1,
+        "near-duplicate": 1,
+        "mask-connectivity": 1
+      },
+      "ms": 286,
+      "optimal": {
+        "2": 23
+      },
+      "unknownLB": {},
+      "certDrags": {
+        "2": 23
+      },
+      "ratings": {
+        "gentle": 8,
+        "moderate": 15
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "ins-03",
+      "mode": "replicate",
+      "candidates": 100,
+      "accepted": 36,
+      "reasons": {
+        "too-few-wrong": 16,
+        "mask-active": 22,
+        "mask-sparse-line": 4,
+        "pre-solved": 3,
+        "mask-dead-ends": 9,
+        "certificate-short": 5,
+        "near-duplicate": 4,
+        "shallow-solvable": 1
+      },
+      "ms": 3418,
+      "optimal": {
+        "2": 25,
+        "3": 11
+      },
+      "unknownLB": {},
+      "certDrags": {
+        "2": 23,
+        "3": 13
+      },
+      "ratings": {
+        "gentle": 22,
+        "moderate": 14
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "ins-04",
+      "mode": "repair",
+      "candidates": 100,
+      "accepted": 1,
+      "reasons": {
+        "certificate-short": 7,
+        "mask-active": 19,
+        "pre-solved": 7,
+        "too-few-wrong": 42,
+        "mask-dead-ends": 15,
+        "mask-sparse-line": 6,
+        "mask-connectivity": 3
+      },
+      "ms": 326,
+      "optimal": {
+        "3": 1
+      },
+      "unknownLB": {},
+      "certDrags": {
+        "3": 1
+      },
+      "ratings": {
+        "tricky": 1
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "ins-05",
+      "mode": "sequence",
+      "candidates": 100,
+      "accepted": 8,
+      "reasons": {
+        "too-few-wrong": 28,
+        "mask-active": 36,
+        "certificate-short": 7,
+        "shallow-solvable": 3,
+        "mask-dead-ends": 3,
+        "mask-sparse-line": 15
+      },
+      "ms": 2241,
+      "optimal": {
+        "3": 6
+      },
+      "unknownLB": {
+        "≥3": 2
+      },
+      "certDrags": {
+        "3": 6,
+        "4": 2
+      },
+      "ratings": {
+        "moderate": 5,
+        "tricky": 3
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "ins-06",
+      "mode": "splice",
+      "candidates": 100,
+      "accepted": 9,
+      "reasons": {
+        "too-few-wrong": 44,
+        "mask-active": 28,
+        "mask-sparse-line": 11,
+        "mask-connectivity": 4,
+        "certificate-short": 2,
+        "mask-dead-ends": 1,
+        "pre-solved": 1
+      },
+      "ms": 2380,
+      "optimal": {
+        "3": 7
+      },
+      "unknownLB": {
+        "≥3": 2
+      },
+      "certDrags": {
+        "3": 7,
+        "4": 2
+      },
+      "ratings": {
+        "tricky": 9
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "hbb-01",
+      "mode": "sequence",
+      "candidates": 100,
+      "accepted": 18,
+      "reasons": {
+        "mask-sparse-line": 16,
+        "mask-active": 10,
+        "too-few-wrong": 41,
+        "certificate-short": 9,
+        "mask-dead-ends": 2,
+        "shallow-solvable": 2,
+        "pre-solved": 1,
+        "near-duplicate": 1
+      },
+      "ms": 5466,
+      "optimal": {
+        "3": 10
+      },
+      "unknownLB": {
+        "≥3": 8
+      },
+      "certDrags": {
+        "3": 10,
+        "4": 8
+      },
+      "ratings": {
+        "moderate": 6,
+        "tricky": 12
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "hbb-02",
+      "mode": "splice",
+      "candidates": 100,
+      "accepted": 5,
+      "reasons": {
+        "mask-active": 13,
+        "certificate-short": 6,
+        "mask-connectivity": 14,
+        "mask-dead-ends": 5,
+        "too-few-wrong": 50,
+        "mask-sparse-line": 6,
+        "pre-solved": 1
+      },
+      "ms": 1617,
+      "optimal": {},
+      "unknownLB": {
+        "≥3": 5
+      },
+      "certDrags": {
+        "4": 2,
+        "5": 3
+      },
+      "ratings": {
+        "hard": 5
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "hbb-03",
+      "mode": "replicate",
+      "candidates": 100,
+      "accepted": 8,
+      "reasons": {
+        "too-few-wrong": 19,
+        "mask-active": 53,
+        "mask-sparse-line": 11,
+        "certificate-short": 4,
+        "mask-dead-ends": 3,
+        "shallow-solvable": 1,
+        "pre-solved": 1
+      },
+      "ms": 2430,
+      "optimal": {},
+      "unknownLB": {
+        "≥3": 8
+      },
+      "certDrags": {
+        "4": 4,
+        "5": 4
+      },
+      "ratings": {
+        "hard": 7,
+        "tricky": 1
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "hbb-04",
+      "mode": "repair",
+      "candidates": 100,
+      "accepted": 4,
+      "reasons": {
+        "mask-connectivity": 18,
+        "mask-dead-ends": 7,
+        "too-few-wrong": 23,
+        "mask-active": 31,
+        "mask-sparse-line": 10,
+        "certificate-short": 7
+      },
+      "ms": 1097,
+      "optimal": {
+        "3": 1
+      },
+      "unknownLB": {
+        "≥3": 3
+      },
+      "certDrags": {
+        "4": 3,
+        "5": 1
+      },
+      "ratings": {
+        "tricky": 3,
+        "hard": 1
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "hbb-05",
+      "mode": "sequence",
+      "candidates": 100,
+      "accepted": 4,
+      "reasons": {
+        "mask-active": 35,
+        "mask-sparse-line": 29,
+        "too-few-wrong": 19,
+        "certificate-short": 12,
+        "mask-dead-ends": 1
+      },
+      "ms": 1329,
+      "optimal": {},
+      "unknownLB": {
+        "≥3": 4
+      },
+      "certDrags": {
+        "5": 3,
+        "6": 1
+      },
+      "ratings": {
+        "hard": 4
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    },
+    {
+      "id": "hbb-06",
+      "mode": "splice",
+      "candidates": 100,
+      "accepted": 1,
+      "reasons": {
+        "certificate-short": 4,
+        "mask-active": 35,
+        "mask-connectivity": 17,
+        "too-few-wrong": 29,
+        "mask-sparse-line": 11,
+        "mask-dead-ends": 3
+      },
+      "ms": 327,
+      "optimal": {},
+      "unknownLB": {
+        "≥3": 1
+      },
+      "certDrags": {
+        "5": 1
+      },
+      "ratings": {
+        "hard": 1
+      },
+      "certificateFailures": 0,
+      "hintFailures": 0,
+      "validationFailures": 0
+    }
+  ]
+}

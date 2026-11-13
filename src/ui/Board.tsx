@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { SIZE, cellAt, colOf, normaliseSteps, rowOf, segmentCells } from '../engine/grid.ts';
 import { easeOutCubic, lockAxis, nearestStep, releaseVelocity, resolveSteps, SNAP_MS, wrapOffset } from './dragMath.ts';
-import type { Axis, Board as BoardString, Cell, Direction, LevelDefinition, Move } from '../engine/types.ts';
+import type { Axis, Board as BoardString, Cell, Direction, LevelDefinition, Move, Slide } from '../engine/types.ts';
+import { slideArrow, slideDir } from './hintCell.ts';
 
 export interface MoveAnimation {
   nonce: number;
@@ -15,8 +16,10 @@ interface Props {
   board: BoardString;
   matches: boolean[][];
   selected: Cell;
-  hint: Move | null;
+  hint: Slide | null;
   hintCell: Cell | null;
+  /** Show the restored repair base (only after a win). */
+  repaired: boolean;
   showGestureCue: boolean;
   locked: boolean;
   reducedMotion: boolean;
@@ -44,6 +47,8 @@ interface DragState {
   originals: HTMLElement[];
   raf: number;
   previewStep: number;
+  /** True for a programmatic step animation (arrows/keyboard): no preview, no commit. */
+  anim?: boolean;
   phase: 'pending' | 'dead' | 'dragging' | 'settling' | 'committing';
 }
 
@@ -54,10 +59,8 @@ export interface SlidePreview {
 }
 export const SLIDE_MS = 150;
 
-const dirName = (m: Move): string => (m.axis === 'row' ? (m.direction === 1 ? 'right' : 'left') : m.direction === 1 ? 'down' : 'up');
-const arrow = (m: Move): string => ({ right: '→', left: '←', down: '↓', up: '↑' })[dirName(m)]!;
 
-export function Board({ def, board, matches, selected, hint, hintCell, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect }: Props) {
+export function Board({ def, board, matches, selected, hint, hintCell, repaired, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect }: Props) {
   const boardRef = useRef<HTMLDivElement>(null);
   const busyUntil = useRef(0);
 
@@ -73,34 +76,6 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
     },
     [locked, onMove],
   );
-
-  useLayoutEffect(() => {
-    const el = boardRef.current;
-    if (!el || !animation || reducedMotion) return;
-    const tiles = el.querySelectorAll<HTMLElement>('[data-cell]');
-    const byCell = new Map<number, HTMLElement>();
-    tiles.forEach((t) => byCell.set(Number(t.dataset.cell), t));
-    const first = el.querySelector<HTMLElement>('.cell:nth-child(1)')?.getBoundingClientRect();
-    const second = el.querySelector<HTMLElement>('.cell:nth-child(2)')?.getBoundingClientRect();
-    const pitch = first && second ? second.left - first.left : el.clientWidth / 9;
-    const { segment, axis, direction } = animation;
-    const n = segment.length;
-    busyUntil.current = performance.now() + SLIDE_MS;
-    segment.forEach((cell, i) => {
-      const tile = byCell.get(cell);
-      if (!tile) return;
-      const dx = axis === 'row' ? -direction * pitch : 0;
-      const dy = axis === 'col' ? -direction * pitch : 0;
-      const wrapped = direction === 1 ? i === 0 : i === n - 1;
-      tile.animate(
-        [
-          { transform: `translate(${dx}px, ${dy}px)`, opacity: wrapped ? 0.1 : 1 },
-          { transform: 'translate(0, 0)', opacity: 1 },
-        ],
-        { duration: SLIDE_MS, easing: 'cubic-bezier(.2,.8,.3,1)' },
-      );
-    });
-  }, [animation, reducedMotion]);
 
   useEffect(() => {
     // Keep keyboard focus on the selected tile when the board has focus.
@@ -144,7 +119,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
       });
     });
     const step = normaliseSteps(nearestStep(d.delta, d.pitch), n);
-    if (step !== d.previewStep) {
+    if (!d.anim && step !== d.previewStep) {
       d.previewStep = step;
       onPreview(step === 0 ? null : { origin: d.cell, axis: d.axis!, steps: step });
     }
@@ -216,6 +191,24 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
     if (d.raf) cancelAnimationFrame(d.raf);
     d.raf = requestAnimationFrame(tick);
   };
+
+  // Arrow/keyboard steps reuse the drag strip: the new tiles slide in from one cell back, and the
+  // wrapped tile enters from the opposite end of its segment (clipped, never crossing holes).
+  const lastAnim = useRef(0);
+  useLayoutEffect(() => {
+    if (!animation || animation.nonce === lastAnim.current) return;
+    lastAnim.current = animation.nonce;
+    if (reducedMotion || drag.current) return;
+    const d: DragState = {
+      id: -1, startX: 0, startY: 0, cell: animation.segment[0]!, axis: animation.axis, segment: animation.segment,
+      pitch: 0, delta: 0, samples: [], clip: null, clones: [], originals: [], raf: 0, previewStep: 0, anim: true, phase: 'pending',
+    };
+    drag.current = d;
+    if (!beginDrag(d)) { drag.current = null; return; }
+    d.delta = -animation.direction * d.pitch;
+    renderDrag();
+    settle(0, teardown);
+  });
 
   const finishDrag = (cancelled: boolean) => {
     const d = drag.current;
@@ -307,7 +300,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
   return (
     <div
       ref={boardRef}
-      className="board"
+      className={`board ${locked ? 'solved' : ''}`}
       role="group"
       aria-label="Nine by nine DNA board. Drag a tile to slide its whole row or column segment, or use arrow keys to slide the selected tile's segment; Shift plus arrows moves the selection."
       data-testid="board"
@@ -323,7 +316,20 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
         const r = rowOf(cell);
         const c = colOf(cell);
         const style = { gridRow: r + 1, gridColumn: c + 1 };
-        if (ch === '.') return <div key={cell} className="cell hole" style={style} aria-hidden="true" />;
+        if (ch === '.') {
+          if (def.repair?.cell === cell) {
+            return repaired ? (
+              <div key={cell} className={`cell tile restored b-${def.repair.expected}`} style={style} data-testid="repair-cell" aria-label={`Restored ${def.repair.expected}`}>
+                <span className="letter">{def.repair.expected}</span>
+              </div>
+            ) : (
+              <div key={cell} className="cell hole repair-gap" style={style} data-testid="repair-cell" aria-label="Missing base, restored on win">
+                <span>?</span>
+              </div>
+            );
+          }
+          return <div key={cell} className="cell hole" style={style} aria-hidden="true" />;
+        }
         const t = trackInfo.get(cell);
         const classes = ['cell', 'tile', `b-${ch}`];
         if (t) classes.push('goal', t.ok ? 'ok' : 'off');
@@ -343,19 +349,18 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
         const r1 = rowOf(t.cells[t.cells.length - 1]!);
         const c1 = colOf(t.cells[t.cells.length - 1]!);
         return (
-          <div key={t.group} className={`track-outline ${t.orientation} ${matches[t.group - 1]?.every(Boolean) ? 'all-ok' : ''}`} style={{ gridRow: `${r0 + 1} / ${r1 + 2}`, gridColumn: `${c0 + 1} / ${c1 + 2}` }} aria-hidden="true">
+          <div key={t.group} className={`track-outline ${t.orientation} strand-${t.strand} ${matches[t.group - 1]?.every(Boolean) ? 'all-ok' : ''}`} data-testid={`track-${t.group}`} style={{ gridRow: `${r0 + 1} / ${r1 + 2}`, gridColumn: `${c0 + 1} / ${c1 + 2}` }} aria-hidden="true">
             <span className="track-badge">{t.group}</span>
           </div>
         );
       })}
       <div ref={layerRef} className="drag-layer" aria-hidden="true" />
       {hint && hintCell !== null && (
-        <div className={`hint-cue ${showGestureCue ? 'gesture' : ''} dir-${dirName(hint)}`} style={{ gridRow: rowOf(hintCell) + 1, gridColumn: colOf(hintCell) + 1 }} aria-hidden="true" data-testid="hint-cue">
-          <span>{arrow(hint)}</span>
+        <div className={`hint-cue ${showGestureCue ? 'gesture' : ''} dir-${slideDir(hint)}`} style={{ gridRow: rowOf(hintCell) + 1, gridColumn: colOf(hintCell) + 1 }} aria-hidden="true" data-testid="hint-cue">
+          <span>{slideArrow(hint)}{Math.abs(hint.steps) > 1 ? <sup>{Math.abs(hint.steps)}</sup> : null}</span>
         </div>
       )}
     </div>
   );
 }
 
-export { dirName, arrow };

@@ -2,22 +2,29 @@ import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import { segmentCells } from '../src/engine/grid.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { cellPitch, lettersAt, rotated, touchDrag } from './helpers';
+import { cellPitch, lettersAt, openLevel as open, rotated, touchDrag } from './helpers';
 
 const LEVELS = pack.levels as LevelDefinition[];
 
+/** First segment on `axis` with at least `min` cells whose letters are not all identical. */
+function segmentWith(def: LevelDefinition, axis: 'row' | 'col', min: number): number[] {
+  for (let c = 0; c < 81; c++) {
+    if (def.mask[c] !== '#') continue;
+    const seg = segmentCells(def.mask, c, axis);
+    if (seg[0] === c && seg.length >= min && new Set(seg.map((x) => def.initial[x])).size > 2) return seg;
+  }
+  throw new Error('no such segment');
+}
+
 async function openLevel(page: Page, n: number) {
-  await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-  if (n > 1) await page.getByRole('button', { name: new RegExp(`Level ${n}`) }).click();
-  await expect(page.getByTestId('level-label')).toHaveText(`Level ${n} / 3`);
+  await open(page, n);
+  await expect(page.getByTestId('level-label')).toHaveText(`Level ${n} / 12`);
 }
 
 test('horizontal touch drag across three cells commits one 3-step rotation (one move)', async ({ page }) => {
   await openLevel(page, 2);
   const def = LEVELS[1]!;
-  const seg = segmentCells(def.mask, def.tracks[0]!.cells[1]!, 'row');
+  const seg = segmentWith(def, 'row', 9);
   expect(seg.length).toBe(9);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
@@ -61,7 +68,7 @@ test('segment follows the finger live, wraps, and is clipped to its own cells mi
 test('dragging out and back to the origin in one gesture is a no-op (no move counted)', async ({ page }) => {
   await openLevel(page, 2);
   const def = LEVELS[1]!;
-  const seg = segmentCells(def.mask, def.tracks[0]!.cells[0]!, 'row');
+  const seg = segmentWith(def, 'row', 9);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
   await touchDrag(page, seg[4]!, [{ dx: 2.2 * p, dy: 0 }, { dx: 0, dy: 0 }], { holdMs: 120 });
@@ -73,7 +80,7 @@ test('dragging out and back to the origin in one gesture is a no-op (no move cou
 test('releasing between cells snaps to the nearest cell', async ({ page }) => {
   await openLevel(page, 2);
   const def = LEVELS[1]!;
-  const seg = segmentCells(def.mask, def.tracks[0]!.cells[0]!, 'row');
+  const seg = segmentWith(def, 'row', 9);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
   await touchDrag(page, seg[6]!, [{ dx: -1.62 * p, dy: 0 }], { holdMs: 150 });
@@ -83,7 +90,7 @@ test('releasing between cells snaps to the nearest cell', async ({ page }) => {
 test('vertical touch drag rotates the column segment by two', async ({ page }) => {
   await openLevel(page, 3);
   const def = LEVELS[2]!;
-  const seg = segmentCells(def.mask, def.tracks[0]!.cells[0]!, 'col');
+  const seg = segmentWith(def, 'col', 6);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
   await touchDrag(page, seg[5]!, [{ dx: 1, dy: -2 * p - 4 }], { holdMs: 120 });

@@ -4,25 +4,37 @@ import type { LevelDefinition, Move } from '../engine/types.ts';
 import type { LevelPack } from '../campaign/campaign.ts';
 
 export const SAVE_KEY = 'genome-save';
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export interface SaveData {
   schemaVersion: typeof SCHEMA_VERSION;
   campaignId: string;
   generatorVersion: string;
-  datasetId: string;
+  /** Dataset id per gene symbol the boards were generated from. */
+  datasets: Record<string, string>;
   currentLevelId: string;
   /** Completed level ids, each at most once (no duplicate credit on replay). */
   completed: string[];
+  /** Gene symbols whose discovery card has been revealed to the player. */
+  discovered: string[];
   attempts: Record<string, PuzzleState>;
+  /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
+  legacy: { m1Completed: string[] };
   settings: { reducedMotion: boolean };
 }
+
+/**
+ * M1 → M2 level equivalence. Only M1 level 1 is the same challenge in M2 (INS CDS [0,9), sequencing).
+ * M1 levels 2–3 used intervals/modes that M2 redesigned, so they are kept as legacy history.
+ */
+export const M1_TO_M2: Readonly<Record<string, string>> = { 'm1-ins-01': 'ins-01' };
 
 /** Injected persistence. The browser uses localStorage for the demo only. */
 export interface StorageAdapter {
   load(): string | null;
   save(raw: string): boolean;
-  backup(raw: string): boolean;
+  /** Keep a raw copy before anything is changed. `label` gives it its own slot (e.g. the M1 save). */
+  backup(raw: string, label?: string): boolean;
 }
 
 export function createLocalStorageAdapter(key = SAVE_KEY): StorageAdapter {
@@ -36,17 +48,18 @@ export function createLocalStorageAdapter(key = SAVE_KEY): StorageAdapter {
   return {
     load: () => safe(() => localStorage.getItem(key), null),
     save: (raw) => safe(() => (localStorage.setItem(key, raw), true), false),
-    backup: (raw) => safe(() => (localStorage.setItem(`${key}-backup`, raw), true), false),
+    backup: (raw, label) => safe(() => (localStorage.setItem(label ? `${key}-backup-${label}` : `${key}-backup`, raw), true), false),
   };
 }
 
-export function createMemoryAdapter(initial: string | null = null): StorageAdapter & { raw: string | null; backups: string[] } {
+export function createMemoryAdapter(initial: string | null = null): StorageAdapter & { raw: string | null; backups: string[]; labels: (string | undefined)[] } {
   const a = {
     raw: initial,
     backups: [] as string[],
+    labels: [] as (string | undefined)[],
     load: () => a.raw,
     save: (raw: string) => ((a.raw = raw), true),
-    backup: (raw: string) => (a.backups.push(raw), true),
+    backup: (raw: string, label?: string) => (a.backups.push(raw), a.labels.push(label), true),
   };
   return a;
 }
@@ -56,10 +69,12 @@ export function newSave(pack: LevelPack): SaveData {
     schemaVersion: SCHEMA_VERSION,
     campaignId: pack.campaignId,
     generatorVersion: pack.generatorVersion,
-    datasetId: pack.datasetId,
+    datasets: { ...pack.datasets },
     currentLevelId: pack.levels[0]!.id,
     completed: [],
+    discovered: [],
     attempts: {},
+    legacy: { m1Completed: [] },
     settings: { reducedMotion: false },
   };
 }
@@ -103,9 +118,29 @@ export interface LoadResult {
   recovered: boolean;
 }
 
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+const readSettings = (v: unknown): SaveData['settings'] => ({ reducedMotion: typeof v === 'object' && v !== null && (v as Record<string, unknown>).reducedMotion === true });
+
+/** Pure v1 (M1) → v2 (M2) migration. Never drops credit silently: unmapped completions become legacy history. */
+export function migrateV1(data: Record<string, unknown>, pack: LevelPack): { save: SaveData; notices: string[] } {
+  const fresh = newSave(pack);
+  const ids = new Set(pack.levels.map((l) => l.id));
+  const m1Completed = [...new Set(strings(data.completed).filter((id) => id.startsWith('m1-')))];
+  const carried = m1Completed.map((id) => M1_TO_M2[id]).filter((id): id is string => !!id && ids.has(id));
+  const legacy = m1Completed.filter((id) => !M1_TO_M2[id]);
+  const notices = ['GENOME updated to the 12-level INS + HBB sample campaign.'];
+  if (carried.length) notices.push('Your completed M1 level 1 carries over (same INS fragment, bases 1–9).');
+  if (legacy.length) notices.push(`M1 levels ${legacy.map((id) => Number(id.slice(-2))).join(' and ')} were redesigned as new challenges, so they need replaying for credit. They are kept as M1 history on the map.`);
+  if (Object.keys((data.attempts as object | undefined) ?? {}).length) notices.push('Boards in progress from M1 were restarted because the levels changed.');
+  return {
+    save: { ...fresh, completed: carried, legacy: { m1Completed }, settings: readSettings(data.settings) },
+    notices,
+  };
+}
+
 /**
- * Parse and validate a save. Invalid parts are never silently discarded: the raw save is backed up
- * and a notice is returned for the UI. Completion credit is kept whenever its level still exists.
+ * Parse, migrate and validate a save. Invalid parts are never silently discarded: the raw save is backed
+ * up and a notice is returned for the UI. Completion credit is kept whenever its level still exists.
  */
 export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const raw = adapter.load();
@@ -114,19 +149,26 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   let data: Record<string, unknown>;
   try {
     data = JSON.parse(raw) as Record<string, unknown>;
-    if (typeof data !== 'object' || data === null) throw new Error('not an object');
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) throw new Error('not an object');
   } catch {
     adapter.backup(raw);
     return { save: fresh, notices: ['Your saved progress could not be read. A backup copy was kept and a new game started.'], recovered: true };
   }
-  const notices: string[] = [];
+  if (data.schemaVersion === 1) {
+    adapter.backup(raw, 'm1');
+    const m = migrateV1(data, pack);
+    return { save: m.save, notices: m.notices, recovered: true };
+  }
   if (data.schemaVersion !== SCHEMA_VERSION) {
     adapter.backup(raw);
     return { save: fresh, notices: [`Save format ${String(data.schemaVersion)} is not supported by this build. A backup copy was kept.`], recovered: true };
   }
+  const notices: string[] = [];
   const ids = new Set(pack.levels.map((l) => l.id));
-  const completed = Array.isArray(data.completed) ? [...new Set(data.completed.filter((id): id is string => typeof id === 'string' && ids.has(id)))] : [];
-  const sameContent = data.generatorVersion === pack.generatorVersion && data.datasetId === pack.datasetId;
+  const completed = [...new Set(strings(data.completed).filter((id) => ids.has(id)))];
+  const discovered = [...new Set(strings(data.discovered).filter((g) => g in pack.datasets))];
+  const datasets = typeof data.datasets === 'object' && data.datasets !== null ? (data.datasets as Record<string, unknown>) : {};
+  const sameContent = data.generatorVersion === pack.generatorVersion && Object.entries(pack.datasets).every(([g, id]) => datasets[g] === id);
   const attempts: Record<string, PuzzleState> = {};
   let dropped = 0;
   const rawAttempts = typeof data.attempts === 'object' && data.attempts !== null ? (data.attempts as Record<string, unknown>) : {};
@@ -139,9 +181,9 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   else if (dropped) notices.push(`${dropped} saved board(s) were invalid and were restarted. Completed levels are kept.`);
   if (notices.length) adapter.backup(raw);
   const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : fresh.currentLevelId;
-  const settings = typeof data.settings === 'object' && data.settings !== null ? (data.settings as Record<string, unknown>) : {};
+  const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   return {
-    save: { ...fresh, currentLevelId: current, completed, attempts, settings: { reducedMotion: settings.reducedMotion === true } },
+    save: { ...fresh, currentLevelId: current, completed, discovered, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings) },
     notices,
     recovered: notices.length > 0,
   };

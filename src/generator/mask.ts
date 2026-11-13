@@ -101,12 +101,16 @@ export function maskMetrics(mask: Mask): MaskMetrics {
 
 export interface MaskOptions {
   protect: readonly Cell[];
+  /** Cells that must be holes (e.g. a repair gap). */
+  forceHoles?: readonly Cell[];
+  /** Reject masks that equal any non-identity rotation/reflection of themselves. */
+  requireAsymmetric?: boolean;
   minActive: number;
   maxActive: number;
   maxDeadEnds: number;
   operations: number;
   /** Relative weights of layout primitives. */
-  weights: { edgeBite: number; cornerCut: number; cavity: number; channel: number; island: number };
+  weights: { edgeBite: number; cornerCut: number; cavity: number; channel: number; island: number; diagonal?: number; branch?: number };
 }
 
 /** One proposal from generative primitives. Callers validate and retry. */
@@ -119,7 +123,7 @@ export function proposeMask(rng: Rng, opts: MaskOptions): Mask {
   const rect = (r0: number, c0: number, h: number, w: number): void => {
     for (let r = r0; r < r0 + h; r++) for (let c = c0; c < c0 + w; c++) carve(r, c);
   };
-  const kinds = Object.entries(opts.weights).flatMap(([k, w]) => new Array<string>(w).fill(k));
+  const kinds = Object.entries(opts.weights).flatMap(([k, w]) => new Array<string>(w ?? 0).fill(k));
   for (let i = 0; i < opts.operations; i++) {
     const kind = rng.pick(kinds);
     if (kind === 'edgeBite') {
@@ -146,6 +150,22 @@ export function proposeMask(rng: Rng, opts: MaskOptions): Mask {
       const len = rng.range(2, 4);
       if (rng.int(2) === 0) rect(rng.range(1, L - 1), rng.range(0, SIZE - len), 1, len);
       else rect(rng.range(0, SIZE - len), rng.range(1, L - 1), len, 1);
+    } else if (kind === 'diagonal') {
+      // diagonal band: a staircase of single holes
+      const len = rng.range(3, 5);
+      const r0 = rng.range(0, SIZE - len);
+      const c0 = rng.range(0, SIZE - len);
+      const anti = rng.int(2) === 0;
+      for (let k = 0; k < len; k++) carve(r0 + k, anti ? c0 + len - 1 - k : c0 + k);
+    } else if (kind === 'branch') {
+      // branching corridor walls: an L or T shaped hole wall
+      const r0 = rng.range(1, 6);
+      const c0 = rng.range(1, 6);
+      const a = rng.range(2, 3);
+      const b = rng.range(2, 3);
+      rect(r0, c0, 1, a);
+      if (rng.int(2) === 0) rect(r0, c0, b, 1);
+      else rect(r0 - Math.floor(b / 2), c0 + Math.floor(a / 2), b, 1);
     } else {
       // island: a hole ring fragment that leaves an offset block connected by a neck
       const r0 = rng.range(1, 5);
@@ -154,7 +174,12 @@ export function proposeMask(rng: Rng, opts: MaskOptions): Mask {
       rect(r0, c0, 3, 1);
     }
   }
+  for (const cell of opts.forceHoles ?? []) cells[cell] = '.';
   return cells.join('');
+}
+
+export function isSelfSymmetric(mask: Mask): boolean {
+  return TRANSFORMS.slice(1).some((t) => transformMask(mask, t) === mask);
 }
 
 export function maskErrors(mask: Mask, opts: MaskOptions): string[] {
@@ -167,5 +192,43 @@ export function maskErrors(mask: Mask, opts: MaskOptions): string[] {
   if (m.immobile > 0) errors.push(`immobile cells ${m.immobile}`);
   if (m.sparsestLine < MIN_LINE_ACTIVE) errors.push(`a row/column has only ${m.sparsestLine} playable cells`);
   for (const cell of opts.protect) if (!isActive(mask, cell)) errors.push(`protected cell ${cell} carved`);
+  for (const cell of opts.forceHoles ?? []) if (isActive(mask, cell)) errors.push(`forced hole ${cell} active`);
+  if (opts.requireAsymmetric && isSelfSymmetric(mask)) errors.push('symmetric');
   return errors;
+}
+
+/**
+ * Deterministic clean-up of a proposal: (1) re-open one crossing neighbour for any protected cell that
+ * would otherwise be stuck on its crossing axis, (2) drop playable fragments cut off from the protected
+ * cells. Never touches forced holes. Returns null if protected cells end up in different regions.
+ */
+export function tidyMask(mask: Mask, protect: readonly Cell[], crossAxis: (cell: Cell) => 'row' | 'col', forceHoles: readonly Cell[] = []): Mask | null {
+  const cells = mask.split('');
+  const forced = new Set(forceHoles);
+  for (const cell of protect) {
+    const axis = crossAxis(cell);
+    if (segmentCells(cells.join(''), cell, axis).length >= 2) continue;
+    const r = rowOf(cell);
+    const c = colOf(cell);
+    const options = axis === 'col' ? [[r - 1, c], [r + 1, c]] : [[r, c - 1], [r, c + 1]];
+    for (const [rr, cc] of options) {
+      if (rr === undefined || cc === undefined || !inBounds(rr, cc)) continue;
+      const n = cellAt(rr, cc);
+      if (forced.has(n)) continue;
+      cells[n] = '#';
+      break;
+    }
+  }
+  const m = cells.join('');
+  // keep only the region containing the protected cells
+  const start = protect[0];
+  if (start === undefined) return m;
+  const seen = new Set<Cell>([start]);
+  const queue = [start];
+  while (queue.length) {
+    const cell = queue.pop()!;
+    for (const n of neighbours(cell)) if (isActive(m, n) && !seen.has(n)) { seen.add(n); queue.push(n); }
+  }
+  if (protect.some((p) => !seen.has(p))) return null;
+  return m.split('').map((ch, i) => (ch === '#' && !seen.has(i) ? '.' : ch)).join('');
 }

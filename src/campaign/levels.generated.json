@@ -1,12 +1,15 @@
 {
-  "campaignId": "genome-m1-ins",
-  "generatorVersion": "m1-gen-1",
-  "datasetId": "refseq-NM_000207.3-2026-11-13",
+  "campaignId": "genome-m2-sample",
+  "generatorVersion": "m2-gen-1",
+  "datasets": {
+    "INS": "refseq-NM_000207.3-2026-11-13",
+    "HBB": "refseq-NM_000518.5-2026-11-13"
+  },
   "levels": [
     {
-      "id": "m1-ins-01",
+      "id": "ins-01",
       "index": 0,
-      "title": "First swipe",
+      "title": "First drag",
       "mode": "sequence",
       "tutorial": true,
       "geneId": "NCBIGene:3630",
@@ -15,9 +18,9 @@
       "datasetId": "refseq-NM_000207.3-2026-11-13",
       "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
       "seed": 1101,
-      "generatorVersion": "m1-gen-1",
-      "mask": "..######..######################################################..#######..######",
-      "maskCanonical": "########.#############################################..#######..######.#######..",
+      "generatorVersion": "m2-gen-1",
+      "mask": "..#####...#######.###############################################################",
+      "maskCanonical": "###############################################################.#######...#####..",
       "tracks": [
         {
           "group": 1,
@@ -35,6 +38,7 @@
           "expected": "ATGGCCCTG",
           "orientation": "horizontal",
           "strand": "coding",
+          "readDirection": "5to3",
           "source": {
             "start": 0,
             "end": 9
@@ -47,39 +51,56 @@
           "end": 9
         }
       ],
-      "solved": "..CCGGGC..CCAGACTAATCAGTGAATCGAACTTAATGGCCCTGGAAGAACCAGGCGCGCCAC..CCTCCTA..CCCATA",
-      "initial": "..CCGGGC..CCAGACTATTCAGTGAAACGAACTTAGTGGCCCTGGAAGAACCACGCGCGCCAA..CCTCCTA..CCCATA",
+      "solved": "..AGCCG...GATATTA.GTCTGAGGAGAGTTTCCCATGGCCCTGAGGACATATATCCTGTCACGCTATGTCCGATGGGCA",
+      "initial": "..AGCCG...GATATTA.GGCTGAGGAGTGTTTCCCAAGGCCCTGATGACATATAGCCTGTCACTCTATGTCCGATGGGCA",
       "scramble": [
         {
-          "origin": 18,
-          "axis": "col",
-          "direction": -1
-        }
-      ],
-      "certificate": [
-        {
-          "origin": 18,
+          "origin": 10,
           "axis": "col",
           "direction": 1
         }
       ],
+      "certificate": [
+        {
+          "origin": 10,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 10,
+          "axis": "col",
+          "steps": -1
+        }
+      ],
       "metrics": {
-        "active": 73,
-        "holes": 8,
-        "deadEnds": 1,
+        "active": 75,
+        "holes": 6,
+        "deadEnds": 0,
         "wrongTargetCells": 1,
         "certificateLength": 1,
+        "certificateDrags": 1,
         "axesUsed": [
           "col"
         ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 1,
+          "optimal": 1,
+          "nodes": 52,
+          "budget": 400000
+        },
+        "rating": "tutorial",
+        "score": 1,
         "difficulty": "estimated"
       }
     },
     {
-      "id": "m1-ins-02",
+      "id": "ins-02",
       "index": 1,
-      "title": "Around the gaps",
-      "mode": "sequence",
+      "title": "Three pieces",
+      "mode": "splice",
       "tutorial": false,
       "geneId": "NCBIGene:3630",
       "symbol": "INS",
@@ -87,28 +108,55 @@
       "datasetId": "refseq-NM_000207.3-2026-11-13",
       "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
       "seed": 2202,
-      "generatorVersion": "m1-gen-1",
-      "mask": "######################...###.#..#######.....###########..#.#.###########.########",
-      "maskCanonical": "######################...###.#..#######.....###########..#.#.###########.########",
+      "generatorVersion": "m2-gen-1",
+      "mask": "..#######.####################.######.########.###...#####..##.#########..#######",
+      "maskCanonical": "#######..#########.##..#####...###.########.######.####################.#######..",
       "tracks": [
         {
           "group": 1,
           "cells": [
-            63,
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71
+            47,
+            48,
+            49
           ],
-          "expected": "TGGATGCGC",
+          "expected": "TGG",
           "orientation": "horizontal",
           "strand": "coding",
+          "readDirection": "5to3",
           "source": {
             "start": 9,
+            "end": 12
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            31,
+            32,
+            33
+          ],
+          "expected": "ATG",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 12,
+            "end": 15
+          }
+        },
+        {
+          "group": 3,
+          "cells": [
+            78,
+            79,
+            80
+          ],
+          "expected": "CGC",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 15,
             "end": 18
           }
         }
@@ -119,60 +167,91 @@
           "end": 18
         }
       ],
-      "solved": "AAGTTCTCCGGCAACTTGCATT...GCA.C..TTTCCTC.....ACTGTAGATTT..G.A.ATTGGATGCGC.ACCATATG",
-      "initial": "GAGTTCTCCCGCAACTTGAATT...GCC.C..TTTCCTC.....ATTGTAGATTG..G.A.ATAAATGCGCT.GCCATATG",
+      "solved": "..GGTCAGC.TACAAGAAGAAAATCCCCCG.ATGCCT.GTTGACTC.TGG...ACGGC..GG.CTCTAGCGT..TGAACGC",
+      "initial": "..GGTCAGC.TACAAGAAGAAAATCCCCCG.GCCATT.GTTGACTC.TGG...ACGGC..GG.CTCTAGCGT..AACGCTG",
       "scramble": [
         {
-          "origin": 63,
+          "origin": 31,
           "axis": "row",
           "direction": -1
         },
         {
-          "origin": 0,
-          "axis": "col",
+          "origin": 31,
+          "axis": "row",
           "direction": -1
         },
         {
-          "origin": 64,
-          "axis": "col",
-          "direction": 1
+          "origin": 74,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 74,
+          "axis": "row",
+          "direction": -1
         }
       ],
       "certificate": [
         {
-          "origin": 64,
-          "axis": "col",
-          "direction": -1
-        },
-        {
-          "origin": 0,
-          "axis": "col",
+          "origin": 74,
+          "axis": "row",
           "direction": 1
         },
         {
-          "origin": 63,
+          "origin": 74,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 31,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 31,
           "axis": "row",
           "direction": 1
         }
       ],
+      "certificateSlides": [
+        {
+          "origin": 74,
+          "axis": "row",
+          "steps": 2
+        },
+        {
+          "origin": 31,
+          "axis": "row",
+          "steps": 2
+        }
+      ],
       "metrics": {
-        "active": 65,
-        "holes": 16,
+        "active": 67,
+        "holes": 14,
         "deadEnds": 1,
-        "wrongTargetCells": 9,
-        "certificateLength": 3,
+        "wrongTargetCells": 5,
+        "certificateLength": 4,
+        "certificateDrags": 2,
         "axesUsed": [
-          "col",
           "row"
         ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 2,
+          "optimal": 2,
+          "nodes": 5275,
+          "budget": 400000
+        },
+        "rating": "moderate",
+        "score": 10.9,
         "difficulty": "estimated"
       }
     },
     {
-      "id": "m1-ins-03",
+      "id": "ins-03",
       "index": 2,
-      "title": "Vertical strand",
-      "mode": "sequence",
+      "title": "Copy the strand",
+      "mode": "replicate",
       "tutorial": false,
       "geneId": "NCBIGene:3630",
       "symbol": "INS",
@@ -180,9 +259,947 @@
       "datasetId": "refseq-NM_000207.3-2026-11-13",
       "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
       "seed": 3303,
-      "generatorVersion": "m1-gen-1",
-      "mask": "############.....##.###..#####.#..#.###.##.#.###.#..#######.###.###..###..#######",
-      "maskCanonical": "############.....##.###..#####.#..#.###.##.#.###.#..#######.###.###..###..#######",
+      "generatorVersion": "m2-gen-1",
+      "mask": "..#######.######################..#######....######..###################.#######.",
+      "maskCanonical": "#######..########.###########..#####....######..########################.#######.",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            57,
+            58,
+            59,
+            60,
+            61,
+            62
+          ],
+          "expected": "CTCCTG",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 18,
+            "end": 24
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            66,
+            67,
+            68,
+            69,
+            70,
+            71
+          ],
+          "expected": "GAGGAC",
+          "orientation": "horizontal",
+          "strand": "complement",
+          "readDirection": "3to5",
+          "source": {
+            "start": 18,
+            "end": 24
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 18,
+          "end": 24
+        }
+      ],
+      "solved": "..CTAAACG.GGGGTGTGAATGGGAGCCCGGT..GGCGAGA....CGTTCC..AACTCTCCTGTAAGAGGAC.GGACATG.",
+      "initial": "..TTAAACG.GGGGTGTGAAAGGGAGCCCTGT..GGCGTGA....CGGTCC..AACGCTCCTGAGCACTAAG.GGACATG.",
+      "scramble": [
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 2,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 2,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 2,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 2,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "direction": 1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 2,
+          "axis": "col",
+          "steps": 2
+        },
+        {
+          "origin": 63,
+          "axis": "row",
+          "steps": 4
+        }
+      ],
+      "metrics": {
+        "active": 68,
+        "holes": 13,
+        "deadEnds": 1,
+        "wrongTargetCells": 5,
+        "certificateLength": 6,
+        "certificateDrags": 2,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 2,
+          "optimal": 2,
+          "nodes": 938,
+          "budget": 400000
+        },
+        "rating": "gentle",
+        "score": 10,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "ins-04",
+      "index": 3,
+      "title": "Mind the gap",
+      "mode": "repair",
+      "tutorial": false,
+      "geneId": "NCBIGene:3630",
+      "symbol": "INS",
+      "transcript": "NM_000207.3",
+      "datasetId": "refseq-NM_000207.3-2026-11-13",
+      "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
+      "seed": 4404,
+      "generatorVersion": "m2-gen-1",
+      "mask": "##...###.##..#######..#########.##########..###################.########..#######",
+      "maskCanonical": "########.####.########.##################.##.######...######....########..#######",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            27,
+            28,
+            29,
+            30
+          ],
+          "expected": "CCCC",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 24,
+            "end": 28
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            32,
+            33,
+            34,
+            35
+          ],
+          "expected": "GCTG",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 29,
+            "end": 33
+          }
+        }
+      ],
+      "repair": {
+        "cell": 31,
+        "expected": "T",
+        "sourceOffset": 28
+      },
+      "sourceIntervals": [
+        {
+          "start": 24,
+          "end": 33
+        }
+      ],
+      "solved": "GT...GAC.GA..GTTGTGG..AATCACCCC.GCTGTTTACC..GAAGGAGTCTTTGGTGATT.AGCTGTCA..AGACTAG",
+      "initial": "GT...CAC.GA..GGTCTGG..ATTCACCCC.AGGTTTTACG..GAAGGACTCTTTGGTGATT.AGCTGTCA..AGAGTAG",
+      "scramble": [
+        {
+          "origin": 32,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 32,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 7,
+          "axis": "col",
+          "steps": 2
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "steps": -1
+        },
+        {
+          "origin": 32,
+          "axis": "row",
+          "steps": -1
+        }
+      ],
+      "metrics": {
+        "active": 67,
+        "holes": 14,
+        "deadEnds": 0,
+        "wrongTargetCells": 4,
+        "certificateLength": 4,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 104526,
+          "budget": 400000
+        },
+        "rating": "tricky",
+        "score": 12.7,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "ins-05",
+      "index": 4,
+      "title": "Narrow passage",
+      "mode": "sequence",
+      "tutorial": false,
+      "geneId": "NCBIGene:3630",
+      "symbol": "INS",
+      "transcript": "NM_000207.3",
+      "datasetId": "refseq-NM_000207.3-2026-11-13",
+      "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
+      "seed": 5505,
+      "generatorVersion": "m2-gen-1",
+      "mask": "#######..#######..#.#######....##.###...##..##...##.#####.##.########.###########",
+      "maskCanonical": "###############.#####.##.###...##.###...##..#....##.###.##############..#######..",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            5,
+            14,
+            23,
+            32,
+            41,
+            50,
+            59,
+            68,
+            77
+          ],
+          "expected": "GCGCTGCTG",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 33,
+            "end": 42
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 33,
+          "end": 42
+        }
+      ],
+      "solved": "TCAAGGT..TGGCGCG..C.GTAGGAA....AC.ACA...AT..CT...TG.ATTGA.GC.CTCGCGTT.CGCTATAGATG",
+      "initial": "TCAAGGT..TGGCGCG..C.GTATGAA....GA.ACA...AC..CT...TT.ATTGA.GA.CTCGCGTG.CGATGCTCTAG",
+      "scramble": [
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 31,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 31,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 31,
+          "axis": "row",
+          "steps": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "steps": 2
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "steps": -3
+        }
+      ],
+      "metrics": {
+        "active": 59,
+        "holes": 22,
+        "deadEnds": 2,
+        "wrongTargetCells": 7,
+        "certificateLength": 6,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 141968,
+          "budget": 400000
+        },
+        "rating": "moderate",
+        "score": 12.2,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "ins-06",
+      "index": 5,
+      "title": "Crossing exons",
+      "mode": "splice",
+      "tutorial": false,
+      "geneId": "NCBIGene:3630",
+      "symbol": "INS",
+      "transcript": "NM_000207.3",
+      "datasetId": "refseq-NM_000207.3-2026-11-13",
+      "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
+      "seed": 6606,
+      "generatorVersion": "m2-gen-1",
+      "mask": ".######..#######..###.###..###.##...####...#####....######...########.###########",
+      "maskCanonical": "###############.######...#####....######...#####.##...###.###..#######...######..",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            72,
+            73,
+            74,
+            75,
+            76
+          ],
+          "expected": "GCCCT",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 42,
+            "end": 47
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            29,
+            38,
+            47,
+            56
+          ],
+          "expected": "CTGG",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 47,
+            "end": 51
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 42,
+          "end": 51
+        }
+      ],
+      "solved": ".AGTTTA..GCAAGTC..AAT.CTC..GGC.AC...CATA...AAAGG....GTTAGC...GTGGGGCC.AAGCCCTAGCG",
+      "initial": ".AGTTTA..GCAAGTC..AAT.CTC..GCG.AC...CATA...AAAGG....GTCTAG...GTGGGCCC.AAGGCGCTAGC",
+      "scramble": [
+        {
+          "origin": 54,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 27,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 57,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 57,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 27,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 54,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 57,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "steps": -1
+        },
+        {
+          "origin": 27,
+          "axis": "row",
+          "steps": 1
+        },
+        {
+          "origin": 54,
+          "axis": "row",
+          "steps": -1
+        }
+      ],
+      "metrics": {
+        "active": 58,
+        "holes": 23,
+        "deadEnds": 1,
+        "wrongTargetCells": 5,
+        "certificateLength": 4,
+        "certificateDrags": 4,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 4,
+          "optimal": 4,
+          "nodes": 400000,
+          "budget": 400000
+        },
+        "rating": "hard",
+        "score": 15.7,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "hbb-01",
+      "index": 6,
+      "title": "Lopsided",
+      "mode": "sequence",
+      "tutorial": false,
+      "geneId": "NCBIGene:3043",
+      "symbol": "HBB",
+      "transcript": "NM_000518.5",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "seed": 7707,
+      "generatorVersion": "m2-gen-1",
+      "mask": "....#####..#######################..#####.#..#####....#####..####################",
+      "maskCanonical": "#######################..#######....#####.#..#######..#########..#######....#####",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "expected": "ATGGTGCAT",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 0,
+            "end": 9
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 0,
+          "end": 9
+        }
+      ],
+      "solved": "....GTTTT..AGCTTGTATGGTGCATCCAACCT..AGGGT.T..GTGGC....GAACG..CTACGCCTTCCACGCGGTCG",
+      "initial": "....GGTTT..AGCCTGTGGTTTATATCCAACTT..AGGGT.C..GTGGC....GAACG..CTACGCCTTCCACGCGGTCG",
+      "scramble": [
+        {
+          "origin": 6,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 6,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 18,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 18,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 18,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 18,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 6,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 6,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 18,
+          "axis": "row",
+          "steps": 2
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "steps": 2
+        },
+        {
+          "origin": 6,
+          "axis": "col",
+          "steps": -2
+        }
+      ],
+      "metrics": {
+        "active": 64,
+        "holes": 17,
+        "deadEnds": 1,
+        "wrongTargetCells": 6,
+        "certificateLength": 6,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 38363,
+          "budget": 400000
+        },
+        "rating": "moderate",
+        "score": 12.1,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "hbb-02",
+      "index": 7,
+      "title": "Offset cavities",
+      "mode": "splice",
+      "tutorial": false,
+      "geneId": "NCBIGene:3043",
+      "symbol": "HBB",
+      "transcript": "NM_000518.5",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "seed": 8808,
+      "generatorVersion": "m2-gen-1",
+      "mask": "#####################.#########...#######.####..##.####.########.####...########.",
+      "maskCanonical": "#######################.#####...#######.########.##..########.#...####.#.########",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            26,
+            35,
+            44
+          ],
+          "expected": "CTG",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 9,
+            "end": 12
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            1,
+            2,
+            3
+          ],
+          "expected": "ACT",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 12,
+            "end": 15
+          }
+        },
+        {
+          "group": 3,
+          "cells": [
+            40,
+            49,
+            58
+          ],
+          "expected": "CCT",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 15,
+            "end": 18
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 9,
+          "end": 18
+        }
+      ],
+      "solved": "GACTGAGTCGCGCTGCTAAAT.TGTTCACAC...GTACATC.AAGG..GC.AGAA.CCTCTAAA.CAGT...GCTCAGTC.",
+      "initial": "GACTGAGTTGCGCTGCTGAAT.TGTTAACAC...GAACATG.AACG..GA.AGAA.CCCCTACA.TCAC...GCTCTGTC.",
+      "scramble": [
+        {
+          "origin": 40,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 40,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 65,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 65,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 40,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 40,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 8,
+          "axis": "col",
+          "steps": 3
+        },
+        {
+          "origin": 65,
+          "axis": "row",
+          "steps": -1
+        },
+        {
+          "origin": 40,
+          "axis": "col",
+          "steps": -2
+        }
+      ],
+      "metrics": {
+        "active": 67,
+        "holes": 14,
+        "deadEnds": 1,
+        "wrongTargetCells": 6,
+        "certificateLength": 6,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 184931,
+          "budget": 400000
+        },
+        "rating": "tricky",
+        "score": 14.2,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "hbb-03",
+      "index": 8,
+      "title": "Paired columns",
+      "mode": "replicate",
+      "tutorial": false,
+      "geneId": "NCBIGene:3043",
+      "symbol": "HBB",
+      "transcript": "NM_000518.5",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "seed": 9909,
+      "generatorVersion": "m2-gen-1",
+      "mask": "..##.##...#######..########..#######.#######################...#######..######...",
+      "maskCanonical": "######...#######..######...#########.########..#######.########.#######...##.##..",
       "tracks": [
         {
           "group": 1,
@@ -192,47 +1209,64 @@
             20,
             29,
             38,
-            47,
-            56,
-            65,
-            74
+            47
           ],
-          "expected": "CTCCTGCCC",
+          "expected": "GAGGAG",
           "orientation": "vertical",
           "strand": "coding",
+          "readDirection": "5to3",
           "source": {
             "start": 18,
-            "end": 27
+            "end": 24
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            3,
+            12,
+            21,
+            30,
+            39,
+            48
+          ],
+          "expected": "CTCCTC",
+          "orientation": "vertical",
+          "strand": "complement",
+          "readDirection": "3to5",
+          "source": {
+            "start": 18,
+            "end": 24
           }
         }
       ],
       "sourceIntervals": [
         {
           "start": 18,
-          "end": 27
+          "end": 24
         }
       ],
-      "solved": "CTCGCGGCAGAT.....CA.CCA..GTCGC.G..G.GGT.CT.T.CCG.C..TCCCCGG.GTT.ACC..GCA..CGCATAA",
-      "initial": "GCGCGCGGCAAT.....CC.TCA..GTTGC.G..G.CGC.CT.T.CCG.C..TCACGGG.GTT.CCC..GCA..ACATAAC",
+      "solved": "..GC.GA...AATTTTT..GGCCTTCT..GCCTGAG.CATGCGTATCGCGGGTAAAGACT...GCGAAAC..TGGTCG...",
+      "initial": "..GA.GA...AGTTTTT..GGCCTTCT..ACTGAGG.CGCGCGTAGGTATCTCGAAATCT...GCGCAAC..TGGACG...",
       "scramble": [
         {
-          "origin": 0,
-          "axis": "row",
+          "origin": 3,
+          "axis": "col",
           "direction": 1
         },
         {
-          "origin": 74,
+          "origin": 3,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 29,
           "axis": "row",
           "direction": -1
         },
         {
-          "origin": 36,
-          "axis": "row",
-          "direction": 1
-        },
-        {
-          "origin": 64,
-          "axis": "row",
+          "origin": 2,
+          "axis": "col",
           "direction": 1
         },
         {
@@ -241,24 +1275,325 @@
           "direction": 1
         },
         {
-          "origin": 0,
+          "origin": 45,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 45,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 45,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 45,
+          "axis": "row",
+          "direction": 1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 45,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 45,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 45,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 45,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 2,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 2,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 29,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 3,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 3,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 45,
+          "axis": "row",
+          "steps": -4
+        },
+        {
+          "origin": 2,
+          "axis": "col",
+          "steps": -2
+        },
+        {
+          "origin": 29,
+          "axis": "row",
+          "steps": 1
+        },
+        {
+          "origin": 3,
+          "axis": "col",
+          "steps": -2
+        }
+      ],
+      "metrics": {
+        "active": 62,
+        "holes": 19,
+        "deadEnds": 1,
+        "wrongTargetCells": 7,
+        "certificateLength": 9,
+        "certificateDrags": 4,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "unknown",
+          "lowerBound": 3,
+          "nodes": 400000,
+          "budget": 400000
+        },
+        "rating": "tricky",
+        "score": 14.8,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "hbb-04",
+      "index": 9,
+      "title": "Column repair",
+      "mode": "repair",
+      "tutorial": false,
+      "geneId": "NCBIGene:3043",
+      "symbol": "HBB",
+      "transcript": "NM_000518.5",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "seed": 10110,
+      "generatorVersion": "m2-gen-1",
+      "mask": "############.##..####.##..######....######.#.####...#.#####..#.##################",
+      "maskCanonical": "#################################..####.#######..#.#####......######...###....###",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            4,
+            13,
+            22,
+            31,
+            40
+          ],
+          "expected": "AAGTC",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 24,
+            "end": 29
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            58,
+            67,
+            76
+          ],
+          "expected": "GCC",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 30,
+            "end": 33
+          }
+        }
+      ],
+      "repair": {
+        "cell": 49,
+        "expected": "T",
+        "sourceOffset": 29
+      },
+      "sourceIntervals": [
+        {
+          "start": 24,
+          "end": 33
+        }
+      ],
+      "solved": "TACGAGCTACAC.AG..AAAG.GG..ATGAAT....GGTTCG.G.AAAC...T.AGTAG..A.TCCGCGTGTGCGTCTTGG",
+      "initial": "TACGAGCTACAC.GG..AAAG.AG..AATTGC....GGTTAG.G.AAAC...T.AGTAG..A.TCCGCGTGTGGGCGTCTT",
+      "scramble": [
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 27,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 27,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 4,
           "axis": "col",
           "direction": -1
         }
       ],
       "certificate": [
         {
-          "origin": 0,
+          "origin": 4,
           "axis": "col",
           "direction": 1
         },
         {
-          "origin": 2,
-          "axis": "col",
+          "origin": 27,
+          "axis": "row",
           "direction": -1
         },
         {
-          "origin": 64,
+          "origin": 27,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 4,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 27,
+          "axis": "row",
+          "steps": -2
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "steps": -2
+        }
+      ],
+      "metrics": {
+        "active": 62,
+        "holes": 19,
+        "deadEnds": 3,
+        "wrongTargetCells": 5,
+        "certificateLength": 5,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 131752,
+          "budget": 400000
+        },
+        "rating": "tricky",
+        "score": 12.8,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "hbb-05",
+      "index": 10,
+      "title": "Branching corridor",
+      "mode": "sequence",
+      "tutorial": false,
+      "geneId": "NCBIGene:3043",
+      "symbol": "HBB",
+      "transcript": "NM_000518.5",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "seed": 11211,
+      "generatorVersion": "m2-gen-1",
+      "mask": "###########.###...#...#########.#..###########...#.####...#...###.###.###########",
+      "maskCanonical": "###########.###.###...#...####.#...###########..#.#########...#...###.###########",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44
+          ],
+          "expected": "GTTACTGCC",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 33,
+            "end": 42
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 33,
+          "end": 42
+        }
+      ],
+      "solved": "CAGGCACCGAT.TTA...A...TAAAAACCT.G..AGTTACTGCCG...T.TCCG...A...AAG.CCA.TGCCTGGCCCG",
+      "initial": "CAGGCCCCGAT.TTA...A...TAAAAAACT.A..ACCTGGCCTTG...T.TGCG...A...AAG.CCA.TGCCTGGCCCG",
+      "scramble": [
+        {
+          "origin": 36,
           "axis": "row",
           "direction": -1
         },
@@ -268,26 +1603,310 @@
           "direction": -1
         },
         {
-          "origin": 74,
-          "axis": "row",
+          "origin": 5,
+          "axis": "col",
           "direction": 1
         },
         {
-          "origin": 0,
+          "origin": 43,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 28,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 36,
           "axis": "row",
           "direction": -1
         }
       ],
+      "certificate": [
+        {
+          "origin": 36,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 28,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 43,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 36,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 36,
+          "axis": "row",
+          "direction": 1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 36,
+          "axis": "row",
+          "steps": 1
+        },
+        {
+          "origin": 28,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 43,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "steps": -1
+        },
+        {
+          "origin": 36,
+          "axis": "row",
+          "steps": 2
+        }
+      ],
       "metrics": {
-        "active": 57,
-        "holes": 24,
+        "active": 59,
+        "holes": 22,
         "deadEnds": 1,
-        "wrongTargetCells": 5,
+        "wrongTargetCells": 8,
         "certificateLength": 6,
+        "certificateDrags": 5,
         "axesUsed": [
           "col",
           "row"
         ],
+        "solver": {
+          "status": "unknown",
+          "lowerBound": 4,
+          "nodes": 400000,
+          "budget": 1500000
+        },
+        "rating": "hard",
+        "score": 17,
+        "difficulty": "estimated"
+      }
+    },
+    {
+      "id": "hbb-06",
+      "index": 11,
+      "title": "Grand splice",
+      "mode": "splice",
+      "tutorial": false,
+      "geneId": "NCBIGene:3043",
+      "symbol": "HBB",
+      "transcript": "NM_000518.5",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "seed": 12312,
+      "generatorVersion": "m2-gen-1",
+      "mask": "#...######...##..##..###..##...##.####....######.#######.###.#########..#######..",
+      "maskCanonical": "##############....##.#.....###...#..####.########.######.##...#..####..#..#######",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            57,
+            58,
+            59
+          ],
+          "expected": "CTG",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 42,
+            "end": 45
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            14,
+            23,
+            32
+          ],
+          "expected": "TGG",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 45,
+            "end": 48
+          }
+        },
+        {
+          "group": 3,
+          "cells": [
+            76,
+            77,
+            78
+          ],
+          "expected": "GGC",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 48,
+            "end": 51
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 42,
+          "end": 51
+        }
+      ],
+      "solved": "T...GCGCTT...AT..GG..TCG..AC...AG.TTCT....CGGGGC.GGATTGT.CTG.AGCGTCCAT..TGAGGGC..",
+      "initial": "T...GTGCTT...AG..GG..TCA..AC...GC.TTCT....CGGGGC.TGATTGT.CCG.AGCGTCGAT..AGGGCTG..",
+      "scramble": [
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 31,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 49,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": 1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 49,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 31,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 72,
+          "axis": "row",
+          "steps": -2
+        },
+        {
+          "origin": 49,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 5,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 31,
+          "axis": "row",
+          "steps": 1
+        },
+        {
+          "origin": 72,
+          "axis": "row",
+          "steps": -3
+        }
+      ],
+      "metrics": {
+        "active": 54,
+        "holes": 27,
+        "deadEnds": 3,
+        "wrongTargetCells": 7,
+        "certificateLength": 8,
+        "certificateDrags": 5,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "unknown",
+          "lowerBound": 4,
+          "nodes": 400000,
+          "budget": 1500000
+        },
+        "rating": "hard",
+        "score": 18.6,
         "difficulty": "estimated"
       }
     }

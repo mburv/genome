@@ -70,3 +70,49 @@ export function rotated(s: string, k: number): string {
   for (let i = 0; i < n; i++) out[(((i + k) % n) + n) % n] = s[i]!;
   return out.join('');
 }
+
+/** Fresh device: clear storage; first-time players land straight in level 1. */
+export async function fresh(page: Page): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.getByTestId('board').waitFor();
+}
+
+/** Open level n (1-based) through the level map. */
+export async function openLevel(page: Page, n: number): Promise<void> {
+  await fresh(page);
+  if (n === 1) return;
+  await page.getByTestId('open-map').click();
+  await page.getByRole('button', { name: new RegExp(`^Level ${n}: `) }).click();
+  await page.getByTestId('board').waitFor();
+}
+
+/** Ask for a hint; returns the cued tile and the drag (direction + cells) from the status text. */
+export async function readHint(page: Page): Promise<{ cell: number; dir: Dir; k: number }> {
+  await page.getByRole('button', { name: 'Hint' }).click();
+  const text = await page.getByTestId('status').innerText();
+  const m = /Hint: drag (row|column) \d+ (left|right|up|down) (\d+) cells?/.exec(text);
+  if (!m) throw new Error(`no hint in: ${text}`);
+  const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
+  return { cell, dir: m[2] as Dir, k: Number(m[3]) };
+}
+
+/** Perform one hinted drag with a real touch gesture of k cells. */
+export async function dragBy(page: Page, cell: number, dir: Dir, k: number): Promise<void> {
+  const p = await cellPitch(page);
+  const d = { right: [k * p, 1], left: [-k * p, 1], down: [1, k * p], up: [1, -k * p] }[dir];
+  await touchDrag(page, cell, [{ dx: d[0]!, dy: d[1]! }], { holdMs: 140 });
+}
+
+export async function solveWithHints(page: Page): Promise<number> {
+  let drags = 0;
+  for (let i = 0; i < 30; i++) {
+    if (await page.getByTestId('win').isVisible()) return drags;
+    const { cell, dir, k } = await readHint(page);
+    await dragBy(page, cell, dir, k);
+    drags++;
+  }
+  await page.getByTestId('win').waitFor();
+  return drags;
+}

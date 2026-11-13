@@ -32,7 +32,7 @@ The initial deliverable is a 12-level mechanics demo. It must not claim that a g
 
 ---
 
-## M1 vertical slice — how to run (added 13 Nov 2026)
+## How to run (M1 accepted; M2 sample campaign, 13 Nov 2026)
 
 Requires Node 22.6+ (tested on Node 24.22). All play-time assets are local; the game makes no network requests.
 
@@ -46,28 +46,33 @@ npm run dev                        # http://localhost:5173 — open on a phone-s
 |---|---|
 | `npm run typecheck` | Strict TypeScript for app, tests and tooling |
 | `npm run lint` | ESLint (engine/generator forbid DOM, `Date`, `fetch`, `Math.random`) |
-| `npm test` | Vitest unit tests (engine, generator, genomics, save) |
-| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568): continuous multi-cell drags, snapping, holes, tap/arrows, keyboard, progression, save, and the single-file HTML via `file://` |
+| `npm test` | Vitest unit tests (engine, generator, solver, genomics, save + M1→M2 migration) |
+| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568): continuous multi-cell drags, snapping, holes, tap/arrows, keyboard, the level map, all 12 levels solved by touch, discovery cards, save/reload, v1→v2 migration, and the single-file HTML via `file://` |
 | `npm run build` | Typecheck + production build to `dist/` |
-| `npm run build:single` | Self-contained one-file build: `dist-single/GENOME-M1.html` (main build unaffected) |
-| `npm run validate:data` | Re-verifies the INS CDS asset against the stored raw GenBank record |
+| `npm run build:single` | Self-contained one-file build: `dist-single/GENOME-M2.html` (main build unaffected) |
+| `npm run validate:data` | Re-verifies the INS and HBB CDS assets against the stored raw GenBank records |
 | `npm run validate:levels` | Regenerates the level pack from seeds and checks it is byte-identical and valid |
-| `npm run fetch:data` / `npm run import:data` | Build-time only: re-download NM_000207.3 from NCBI and re-import |
+| `npm run audit:levels` | Generator audit: 1,200 candidates (100 per level spec) → `docs/AUDIT_M2.md` + `docs/audit-m2.json` |
+| `npm run fetch:data` / `npm run import:data` | Build-time only: re-download NM_000207.3 / NM_000518.5 from NCBI and re-import |
 
 ### Layout
 
 ```
-src/engine/      pure rules: segment rotation, commands, undo/restart, completion, recovery hint
-src/generator/   seeded RNG, mask primitives + dihedral canonicalisation, scramble, certificates
-src/genomics/    verified INS CDS asset (ins.generated.json) + typed loader
+src/engine/      pure rules: segment rotation, drag/step commands, undo/restart, completion, recovery hints
+src/generator/   seeded RNG, mask primitives + dihedral canonicalisation, scramble, certificates, bounded solver
+src/genomics/    verified INS + HBB CDS assets (*.generated.json), gene loader, complement helpers
 src/campaign/    level specs (seeds, CDS intervals) and the pinned level pack (levels.generated.json)
 src/persistence/ versioned save envelope, validation, localStorage adapter (injected)
-src/ui/          React screens, board, gestures, styles
-scripts/         fetch/import INS, generate/validate levels, single-file copy
-data/raw/        NM_000207.3 GenBank record + provenance (URL, retrieval time, SHA-256)
+src/ui/          React screens (map, play, gene card), board, drag gestures, target panels, styles
+scripts/         fetch/import genes, generate/validate levels, audit, single-file copy
+data/raw/        NM_000207.3 + NM_000518.5 GenBank records + provenance (URL, retrieval time, SHA-256)
 tests/  e2e/     Vitest and Playwright suites
 ```
 
 ### Genomic data
 
-`data/raw/NM_000207.3.gb` was fetched from NCBI E-utilities (efetch, `rettype=gb`) on 13 Nov 2026. The importer extracts the annotated CDS (`60..392`), checks length 333, ACGT alphabet, `codon_start=1`, a single terminal stop, and that its standard-code translation equals the record's `/translation` (NP_000198.1). CDS SHA-256 `fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42`. Level targets are slices of that CDS: [0,9), [9,18), [18,27). See `docs/DECISIONS.md` for M1-specific choices.
+`data/raw/NM_000207.3.gb` was fetched from NCBI E-utilities (efetch, `rettype=gb`) on 13 Nov 2026. The importer extracts the annotated CDS (`60..392`), checks length 333, ACGT alphabet, `codon_start=1`, a single terminal stop, and that its standard-code translation equals the record's `/translation` (NP_000198.1). CDS SHA-256 `fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42`. `data/raw/NM_000518.5.gb` (HBB, MANE Select) was fetched the same way: CDS `51..494`, 444 bases, translation equals NP_000509.1 (147 aa), CDS SHA-256 `838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e`.
+
+### M2 campaign
+
+12 levels (GDD table): per gene, CDS bases 1–9 sequencing, 10–18 splicing, 19–24 replication, 25–33 repair, 34–42 sequencing, 43–51 splicing — exactly 51 sample bases per gene. Completing all six of a gene's levels **discovers** it (a source-cited card); it is never called assembled. Difficulty is in drags (proven optimum where the bounded solver could prove it, otherwise "≥ k"); ratings are estimates. See `docs/AUDIT_M2.md` for the generator audit and `docs/DECISIONS.md` (D-M2-*) for choices and limits.

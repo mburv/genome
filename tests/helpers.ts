@@ -15,8 +15,9 @@ export function syntheticLevel(rows: string[], solvedRows: string[], trackCells:
     id: 'synthetic', index: 0, title: 'synthetic', mode: 'sequence', tutorial: false,
     geneId: 'SYNTHETIC', symbol: 'SYN', transcript: 'synthetic', datasetId: 'synthetic-fixture', sequenceSha256: '',
     seed: 0, generatorVersion: 'test', mask: maskOf(initial), maskCanonical: '',
-    tracks: [{ group: 1, cells: trackCells, expected, orientation: 'horizontal', strand: 'coding', source: { start: 0, end: expected.length } }],
-    sourceIntervals: [{ start: 0, end: expected.length }], solved, initial, scramble: [], certificate: [],
-    metrics: { active: 0, holes: 0, deadEnds: 0, wrongTargetCells: 0, certificateLength: 0, axesUsed: [], difficulty: 'estimated' },
+    tracks: [{ group: 1, cells: trackCells, expected, orientation: 'horizontal', strand: 'coding', readDirection: '5to3', source: { start: 0, end: expected.length } }],
+    sourceIntervals: [{ start: 0, end: expected.length }], solved, initial, scramble: [], certificate: [], certificateSlides: [],
+    metrics: { active: 0, holes: 0, deadEnds: 0, wrongTargetCells: 0, certificateLength: 0, axesUsed: [], difficulty: 'estimated',
+      certificateDrags: 0, solver: { status: 'unknown', lowerBound: 0, nodes: 0, budget: 0 }, rating: 'gentle', score: 0 },
   };
 }

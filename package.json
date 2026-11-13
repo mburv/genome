@@ -12,11 +12,12 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "fetch:data": "node scripts/fetch-ins.mjs",
-    "validate:data": "node scripts/import-ins.mjs --check",
-    "import:data": "node scripts/import-ins.mjs",
+    "fetch:data": "node scripts/fetch-genes.mjs",
+    "validate:data": "node scripts/import-genes.mjs --check",
+    "import:data": "node scripts/import-genes.mjs",
     "validate:levels": "node scripts/generate-levels.ts --check",
-    "generate:levels": "node scripts/generate-levels.ts"
+    "generate:levels": "node scripts/generate-levels.ts",
+    "audit:levels": "node scripts/audit-levels.ts"
   },
   "dependencies": {
     "react": "^19.3.1",

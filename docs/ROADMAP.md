@@ -1,16 +1,18 @@
 # Development roadmap
 
-Each milestone ends with a runnable build or verified engine and an owner review. No future milestone should be implemented merely because it appears in this document. Mark actual progress only after evidence. All milestones currently **not started**.
+Each milestone ends with a runnable build or verified engine and an owner review. No future milestone should be implemented merely because it appears in this document. Mark actual progress only after evidence. Status as of 13 Nov 2026: M1 accepted by the owner; M2 implemented (awaiting owner playtest); M3–M6 not started.
 
 ## M1 — Core vertical slice (first Codex task)
 
-Status (13 Nov 2026): implemented and automatically tested; awaiting owner playtest/review. Not yet checked on a physical iPhone.
+Status: **accepted** (13 Nov 2026). The owner playtested it, asked for a continuous whole-segment drag (D-M1-10..12), approved the drag build ("It feels great") and asked to move on to M2. Not yet checked on a physical iPhone by the developer.
 
 Build TypeScript/React/Vite skeleton, pure segment rotation engine, deterministic mask generator, solved-state scramble, three sequencing puzzles using verified INS fragments, and a playable portrait UI. Three masks unique under rotation/reflection; holes interrupt motion; horizontal and vertical targets. One one-move tutorial. Basic progress, undo, restart, certified recovery hint and browser save. Touch, tap+arrows and keyboard. Tests before polish. No powers, full campaign, native packaging or large datasets.
 
 Acceptance: three distinct levels, each unsolved initially and certified solvable without powers, target exact source match, no-op handling, inverse/undo tests, saved state survives reload, no duplicate credit, successful local build, Playwright viewport/touch checks, documented actual test results and limitations. Owner plays it before proceeding.
 
 ## M2 — GENOME v2 mechanics and variety
+
+Status (13 Nov 2026): implemented and automatically tested (see `docs/AUDIT_M2.md`, D-M2-*). Awaiting owner playtest; generator parameters and difficulty labels are not final until then.
 
 Expand to the 12-level INS/HBB sample campaign (GDD table), splicing, replication, repair, varied tracks and more interesting generated shapes. Level map, discovery cards, exact 51-base sample tracking, source metadata, progress across reload, improved slide animation and completion feedback. Add generator audit CLI with at least 1,000 candidates, duplicate and certificate checks, metrics for rejection rates and estimated difficulty. Implement bounded solver for shallow puzzle analysis; do not block UI. Playtest before finalising parameters.
 

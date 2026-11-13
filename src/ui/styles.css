@@ -124,3 +124,81 @@ footer { text-align: center; padding-top: 4px; }
 .drag-clip > .tile { will-change: transform; transition: none; }
 .board.is-dragging .hint-cue { display: none; }
 .track-outline.all-ok { border-color: var(--mint); box-shadow: 0 0 0 2px rgba(11, 20, 32, 0.9), 0 0 22px rgba(134, 239, 207, 0.95); }
+
+/* ---------- M2 ---------- */
+.tiny { font-size: 11px; margin: 4px 0 0; }
+.map-button { padding: 8px 12px; font-weight: 700; }
+.mode-splice { color: #f6d17b; border-color: #7a6630; }
+.mode-replicate { color: #87bcff; border-color: #34557a; }
+.mode-repair { color: #ff9a9d; border-color: #7a3b3d; }
+.notice button { margin-top: 4px; padding: 5px 14px; }
+
+/* Target panel strips */
+.mini-strip { display: inline-flex; gap: 2px; }
+.mini-strip .strip-cell, .strip-cell.gap { width: clamp(17px, 5.2vw, 24px); height: 24px; font-size: 12px; border-radius: 6px; border-width: 1.5px; }
+.strip-cell.gap { display: inline-grid; place-items: center; background: #08111b; color: #ff9a9d; border: 1.5px dashed #ff9a9d; font-weight: 800; }
+.strip-cell.gap.restored { color: #0f1d29; border-style: solid; border-color: #fff; animation: restore 0.6s ease both; }
+.seq-row, .repair-row, .splice-row, .pair-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.repair-row { gap: 3px; justify-content: center; }
+.splice-row { gap: 4px 2px; }
+.splice-part { display: inline-flex; align-items: center; gap: 3px; }
+.plus { color: var(--muted); font-weight: 800; padding: 0 3px; }
+.pair { margin-top: 4px; }
+.pair-row { margin-top: 2px; flex-wrap: nowrap; }
+.pair-row .end, .win-line .end { font-size: 11px; color: var(--muted); width: 14px; text-align: center; }
+.pair-bonds { display: flex; gap: 2px; padding-left: calc(18px + 4px + 14px + 4px); height: 6px; }
+.pair-bonds i { width: clamp(17px, 5.2vw, 24px); display: flex; justify-content: center; }
+.pair-bonds i::before { content: ''; width: 2px; height: 6px; background: #4f6a80; }
+.badge.alt { background: #87bcff; }
+
+/* Board extras */
+.track-outline.strand-complement { border-style: dashed; border-color: #b9d7ff; }
+.track-outline.strand-complement .track-badge { background: #87bcff; }
+.repair-gap { display: grid; place-items: center; border: 2px dashed #ff9a9d; color: #ff9a9d; font-weight: 900; font-size: calc(var(--board) / 20); z-index: 3; position: relative; animation: gappulse 1.6s ease-in-out infinite; }
+@keyframes gappulse { 50% { box-shadow: 0 0 12px rgba(255, 154, 157, 0.55), inset 0 2px 5px rgba(0,0,0,.7); } }
+.tile.restored { animation: restore 0.6s ease both; box-shadow: 0 0 0 2px #fff, 0 0 18px rgba(255, 255, 255, 0.7); z-index: 3; }
+@keyframes restore { 0% { transform: scale(0.2); opacity: 0; } 70% { transform: scale(1.12); opacity: 1; } 100% { transform: none; } }
+.board.solved .tile.goal.ok { animation: solvedpulse 0.7s ease both; animation-delay: calc(var(--i, 0) * 30ms); }
+@keyframes solvedpulse { 40% { transform: scale(1.1); filter: brightness(1.25); } }
+.hint-cue sup { font-size: 0.7em; margin-left: 1px; }
+
+/* Win card */
+.win-strand { display: block; cursor: pointer; margin: 6px 0; }
+.win-line, .win-splice { display: flex; gap: 3px; flex-wrap: wrap; align-items: center; justify-content: center; }
+.win-pair { display: flex; flex-direction: column; gap: 3px; }
+.win-strand .strip-cell { width: 28px; height: 30px; font-size: 13px; }
+.win-strand .strip-cell.comp { opacity: 0.92; }
+.win-part { display: inline-flex; gap: 3px; animation: join 0.45s ease both; }
+@keyframes join { from { transform: translateX(-6px); margin-right: 10px; } to { transform: none; margin-right: 0; } }
+.restored-win { animation: restore 0.6s ease both !important; box-shadow: 0 0 0 2px #fff, 0 0 14px rgba(255,255,255,.7); }
+.win-strand.skip .strip-cell, .win-strand.skip .win-part { animation-duration: 1ms !important; }
+.discovered { background: #123d33; border: 1px solid #2f8c72; border-radius: 12px; padding: 8px 10px; font-size: 13px; margin: 8px 0; }
+.card .link { display: block; margin: 8px auto 0; color: var(--muted); }
+
+/* Map */
+.map { display: flex; flex-direction: column; gap: 8px; }
+.big { padding: 14px; font-size: 16px; border-radius: 14px; }
+.gene-path h2 { margin: 0; }
+.nodes { list-style: none; margin: 8px 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.node { width: 100%; display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto; column-gap: 8px; text-align: left; padding: 7px 9px; border-radius: 12px; }
+.node-num { grid-row: span 2; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #2a3c4f; font-weight: 800; font-size: 13px; align-self: center; }
+.node-glyph { display: none; }
+.node-title { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node-mode { font-size: 10.5px; color: var(--muted); text-transform: capitalize; }
+.node.done .node-num { background: #164a3c; color: var(--mint); }
+.node.current { border-color: var(--mint); }
+.node.started .node-num { box-shadow: 0 0 0 2px #f6d17b; }
+.card-button { width: 100%; background: #1a2a3a; color: var(--muted); }
+.card-button.unlocked { background: #164a3c; color: var(--mint); border-color: #2f8c72; font-weight: 700; }
+.legacy { margin: 0 4px; }
+
+/* Gene card */
+.gene-card .card-symbol { margin: 6px 0 0; font-size: 44px; letter-spacing: 0.08em; color: var(--mint); text-shadow: 0 0 18px rgba(134, 239, 207, 0.35); }
+.card-name { margin: 0 0 8px; color: #c6d6e2; }
+.card-summary { font-size: 14px; line-height: 1.5; margin: 8px 0 2px; }
+.card-strand { display: flex; flex-wrap: wrap; gap: 2px; margin: 10px 0 6px; }
+.card-strand .dot { width: 8px; height: 12px; border-radius: 2px; }
+.card-strand .dot.unknown { background: #2a3c4f; }
+.card-meta { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 12.5px; margin: 10px 0; }
+.card-meta dt { color: var(--muted); }
+.card-meta dd { margin: 0; overflow-wrap: anywhere; }

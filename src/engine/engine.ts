@@ -1,5 +1,5 @@
-import { applyMove, applySlide, inverseMove, moveKey, baseCounts, slideToMoves } from './grid.ts';
-import type { Axis, Board, Cell, LevelDefinition, Move } from './types.ts';
+import { applyMove, applySlide, inverseMove, moveKey, baseCounts, slideToMoves, normaliseSteps, segmentCells } from './grid.ts';
+import type { Axis, Board, Cell, LevelDefinition, Move, Slide } from './types.ts';
 
 export const HISTORY_CAP = 100;
 
@@ -164,6 +164,24 @@ export function recoveryHint(def: LevelDefinition, state: PuzzleState): Move | n
   const hint = inverseMove(state.recovery[state.recovery.length - 1]!);
   const outcome = applyMove(def.mask, state.board, hint);
   return outcome.changed && outcome.board === states[states.length - 2] ? hint : null;
+}
+
+/**
+ * Certified recovery hint as a single drag: the trailing run of identical steps on the certified
+ * path, undone together. Verified against the current board. Not necessarily the shortest solution.
+ */
+export function recoverySlideHint(def: LevelDefinition, state: PuzzleState): Slide | null {
+  if (!recoveryHint(def, state)) return null;
+  const states = recoveryStates(def, state.recovery);
+  const last = state.recovery[state.recovery.length - 1]!;
+  const key = moveKey(def.mask, last);
+  let k = 0;
+  for (let i = state.recovery.length - 1; i >= 0 && moveKey(def.mask, state.recovery[i]!) === key; i--) k++;
+  const n = segmentCells(def.mask, last.origin, last.axis).length;
+  const steps = normaliseSteps(-last.direction * k, n);
+  if (steps === 0) return null;
+  const out = applySlide(def.mask, state.board, last.origin, last.axis, steps);
+  return out.changed && out.board === states[states.length - 1 - k] ? { origin: last.origin, axis: last.axis, steps } : null;
 }
 
 /** Replay a certificate from the initial board without powers. */

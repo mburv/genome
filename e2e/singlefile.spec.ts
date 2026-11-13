@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { touchSwipe, type Dir } from './helpers';
 
-const file = resolve('dist-single/GENOME-M1.html');
+const file = resolve('dist-single/GENOME-M2.html');
 
 test('self-contained single HTML loads and plays from file://', async ({ page }) => {
   test.skip(!existsSync(file), 'run npm run build:single first');
@@ -20,7 +20,7 @@ test('self-contained single HTML loads and plays from file://', async ({ page })
   await touchSwipe(page, cell, dir);
   await expect(page.getByTestId('win')).toBeVisible();
   await page.getByRole('button', { name: 'Next level →' }).click();
-  await expect(page.getByTestId('level-label')).toHaveText('Level 2 / 3');
+  await expect(page.getByTestId('level-label')).toHaveText('Level 2 / 12');
   expect(requests).toEqual([]);
   expect(errors).toEqual([]);
 });

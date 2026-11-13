@@ -152,3 +152,44 @@ describe('certificates', () => {
     expect(cellAt(0, 0)).toBe(0);
   });
 });
+
+describe('recoverySlideHint (M2)', () => {
+  it('following slide hints from the start solves every pinned level in exactly its drag certificate length', async () => {
+    const { LEVELS } = await import('../../src/campaign/campaign.ts');
+    const { recoverySlideHint, applyCommand: apply, createInitialState: init } = await import('../../src/engine/engine.ts');
+    for (const def of LEVELS) {
+      let s = init(def);
+      let drags = 0;
+      while (s.status === 'playing' && drags < 20) {
+        const h = recoverySlideHint(def, s)!;
+        expect(h).not.toBeNull();
+        s = apply(def, s, { type: 'slide', ...h }).state;
+        drags++;
+      }
+      expect(s.status).toBe('solved');
+      expect(drags).toBe(def.certificateSlides.length);
+    }
+  });
+  it('after a wrong drag the hint undoes it, then resumes the certificate', async () => {
+    const { LEVELS } = await import('../../src/campaign/campaign.ts');
+    const { recoverySlideHint, applyCommand: apply, createInitialState: init } = await import('../../src/engine/engine.ts');
+    const def = LEVELS[4]!;
+    const first = recoverySlideHint(def, init(def))!;
+    const wrongAxis = first.axis === 'row' ? 'col' : 'row';
+    let origin = -1;
+    for (let c = 0; c < 81 && origin < 0; c++) if (def.mask[c] === '#' && apply(def, init(def), { type: 'slide', origin: c, axis: wrongAxis, steps: 1 }).accepted) origin = c;
+    const s = apply(def, init(def), { type: 'slide', origin, axis: wrongAxis, steps: 1 }).state;
+    const h = recoverySlideHint(def, s)!;
+    expect(h.axis).toBe(wrongAxis);
+    expect(h.steps).toBe(-1);
+    const back = apply(def, s, { type: 'slide', ...h }).state;
+    expect(back.board).toBe(def.initial);
+    expect(recoverySlideHint(def, back)).toEqual(first);
+  });
+  it('returns null once solved', async () => {
+    const { LEVELS } = await import('../../src/campaign/campaign.ts');
+    const { recoverySlideHint, createInitialState: init } = await import('../../src/engine/engine.ts');
+    const def = LEVELS[0]!;
+    expect(recoverySlideHint(def, { ...init(def), board: def.solved, status: 'solved', recovery: [] })).toBeNull();
+  });
+});
