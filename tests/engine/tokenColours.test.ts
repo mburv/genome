@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_LEVELS, CHAPTER_LEVELS, LEVELS } from '../../src/campaign/campaign.ts';
-import { contrastRatio, deltaE, hexToOklab, levelTokenColours, MIN_CONTRAST, MIN_SURFACE_DELTA, SURFACE_COLOURS, tokenColour, tokenPalette, INK, PAPER } from '../../src/engine/tokenColours.ts';
+import { contrastRatio, CORE_SIZE, deltaE, hexToOklab, levelTokenColours, MIN_CONTRAST, MIN_INK_CONTRAST, MIN_SURFACE_DELTA, PASTEL, SURFACE_COLOURS, tokenColour, tokenPalette, INK } from '../../src/engine/tokenColours.ts';
 import { TOKEN_SYMBOL_BASE } from '../../src/engine/tokens.ts';
 
-/** Minimum perceptual distance (ΔE_OK × 100) between any two different combos in one puzzle. */
-const MIN_DELTA_E = 7;
+/**
+ * Minimum perceptual distance (ΔE_OK × 100, ≈ 2 is just noticeable) between any two different combos in one
+ * puzzle. The pastel register (D-UI-05) is a much smaller colour volume than the earlier vivid palette (7.27),
+ * so the honest floor is 5; the worst puzzle (65 distinct combos) currently reaches 5.01.
+ */
+const MIN_DELTA_E = 5;
 const HEX = /^#[0-9a-f]{6}$/;
 
 describe('WCAG helpers', () => {
@@ -12,6 +16,7 @@ describe('WCAG helpers', () => {
     expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 5);
     expect(contrastRatio('#777777', '#ffffff')).toBeCloseTo(4.48, 2);
     expect(contrastRatio(INK, INK)).toBe(1);
+    expect(INK).toBe('#111111');
   });
   it('OKLab of white/black', () => {
     expect(hexToOklab('#ffffff')[0]).toBeCloseTo(1, 3);
@@ -21,18 +26,33 @@ describe('WCAG helpers', () => {
 
 describe('combo palette', () => {
   const pal = tokenPalette();
-  it('is large enough for every puzzle and every entry is legible (WCAG ≥ 4.5:1 for text and badges)', () => {
+  it('is large enough for every puzzle and every entry is legible (ink ≥ 7:1, badges ≥ 4.5:1)', () => {
     const maxDistinct = Math.max(...CHAPTER_LEVELS.map((l) => Object.keys(l.tokens!).length));
+    expect(CORE_SIZE).toBeGreaterThanOrEqual(maxDistinct);
     expect(pal.length).toBeGreaterThan(maxDistinct * 4);
     for (const c of pal) {
       expect(c.bg).toMatch(HEX);
       expect(c.border).toMatch(HEX);
-      expect([INK, PAPER]).toContain(c.fg);
-      expect(contrastRatio(c.bg, c.fg)).toBeGreaterThanOrEqual(MIN_CONTRAST);
+      expect(c.fg).toBe(INK);
+      expect(contrastRatio(c.bg, c.fg)).toBeGreaterThanOrEqual(MIN_INK_CONTRAST);
       expect(contrastRatio(c.bg, c.fgSoft)).toBeGreaterThanOrEqual(MIN_CONTRAST);
     }
   });
-  it('stays clear of the clinical light surfaces (canvas, panels, holes, hairlines, ink)', () => {
+  it('sits in the clinical pastel register (high lightness, soft chroma) with a deeper same-hue 1px edge', () => {
+    for (const c of pal) {
+      const [L, a, b] = c.lab;
+      const C = Math.hypot(a, b);
+      expect(L).toBeGreaterThanOrEqual(PASTEL.minL - 0.01);
+      expect(L).toBeLessThanOrEqual(PASTEL.maxL + 0.01);
+      expect(C).toBeGreaterThanOrEqual(PASTEL.minC - 0.006);
+      expect(C).toBeLessThanOrEqual(PASTEL.maxC + 0.006);
+      const [eL, ea, eb] = hexToOklab(c.border);
+      expect(eL).toBeLessThan(L - 0.15);
+      const dh = Math.abs(((Math.atan2(eb, ea) - Math.atan2(b, a)) * 180) / Math.PI + 540) % 360 - 180;
+      expect(Math.abs(dh)).toBeLessThan(12);
+    }
+  });
+  it('stays clear of the clinical light surfaces (canvas, panels, holes, hairlines)', () => {
     for (const c of pal) for (const sf of SURFACE_COLOURS) expect(deltaE(c.lab, hexToOklab(sf))).toBeGreaterThanOrEqual(MIN_SURFACE_DELTA);
   });
   it('is deterministic (pure, recomputed identically)', () => {
@@ -44,7 +64,7 @@ describe('combo palette', () => {
 });
 
 describe('per-puzzle colour assignment', () => {
-  it('every distinct multi-base sequence in every puzzle gets its own colour, all well separated (ΔE_OK ≥ 7)', () => {
+  it('every distinct multi-base sequence in every puzzle gets its own colour, all well separated (ΔE_OK ≥ 5)', () => {
     let worst = Infinity;
     for (const def of CHAPTER_LEVELS) {
       const cols = levelTokenColours(def);

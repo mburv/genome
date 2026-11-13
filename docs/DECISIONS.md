@@ -131,3 +131,27 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - Tile type scales with the board: base letters are board/15 (26px at 390); codon/hexamer/long-tile text is board/27, /34 and /37.
   - The board is no longer capped by viewport height, so on short screens the controls scroll below it.
 - D-UI-04 Combo colours (D-M4-15) were retuned for the light canvas. The OKLCH grid now uses lightness levels 0.34–0.58 and 0.72–0.90 and chroma levels 0.07–0.23, and every candidate must be at least ΔE_OK 12 from each clinical surface (canvas, white, stone, hole, rule, ink), so a tile never reads as an empty cell or a rule. That leaves 866 candidates. Across all 107 puzzles the smallest distance between two combos is 7.27 (test threshold 7), and all text and badge contrast is at least 4.5:1. Edited (CRISPR) sequences use a neutral white/stone hatch with a dashed carbon rule.
+
+## Clinical pastel palette (13 Nov 2026, from owner feedback — "more pastel style colours for a more approachable clinical feel")
+
+- D-UI-05 Clinical pastel Swiss palette. This supersedes the solid pigments in D-UI-02 and the vivid combo grid in D-UI-04; the D-UI-01 structure (paper, white panels, 1px rules, carbon type, square corners) and the D-UI-03 full-bleed board are unchanged.
+  - **Single-base tiles.** Pastel fields, each with carbon `#111111` letters and a 1px edge in a deeper tone of the same hue:
+    - A = mint `#cdebd8` / `#7db394`;
+    - C = powder blue `#cfe1f3` / `#7fa6cf`;
+    - G = butter `#f6e2b3` / `#c9a45a`;
+    - T = blush `#f5cfcf` / `#cf8a8a`.
+    - Ink contrast is 13.2–14.8:1. Target-strip chips and the CRISPR base picker use the same tiles. Barcodes and the 5px strand dots use the edge tones, because a pastel is too faint at 3–5px.
+  - **Accents.**
+    - Fills: primary actions (Start, View card, ▶ Play) and the hint arrow are coral `#f6c5b8` with carbon text and a carbon 1px rule. The GENOME mark is coral with a coral edge. Completed nodes and chips are mint with carbon text, Ligase pips butter, and the Scaffold bridge badge powder blue.
+    - Lines: mode stripes, card bars and "current" markers use the pastel edge tones.
+    - Deep inks: red `#b23a35`, blue `#2b5f9e`, green `#2a6e4f` and amber `#8c5a10` (5.5–6.5:1 on paper) are now only used for text, links, dashed gap rules, the lock/scaffold insets and the complement/all-matched track frames, which need solid edges to read on any tile.
+- D-UI-06 Combo palette in the pastel register (`src/engine/tokenColours.ts`).
+  - **Grid and filters.** Candidates come from an OKLCH grid with L 0.72–0.95 and C 0.035–0.12, sampled at steps of 0.02 L, 0.01 C and 4° hue. Each kept colour must:
+    - stay at or below 80% of the sRGB gamut boundary at its hue and lightness, which removes neon such as `#27fdf7`;
+    - keep carbon ink `#111111` at WCAG ≥ 7.2:1;
+    - sit at least ΔE_OK 6 from the paper, white, stone, hole and rule surfaces.
+  - **Selection and ordering.** The first 66 entries (CORE_SIZE, at least the largest puzzle's 65 distinct combos) are chosen by farthest-point sampling, then refined by deterministic max-min swaps, then re-ordered farthest-point so any prefix is well spread. Assignment per puzzle (sorted by sequence) is unchanged, so one sequence has one colour on the board, the strip and the inspector.
+  - **Text and edges.** Every combo uses carbon ink with a 1px edge in a deeper tone of the same hue. Secondary text (`…`, `12`) is ink blended towards the fill, and stays at least 4.8:1.
+  - **Measured across all 107 puzzles.** There are zero colour collisions. The minimum distance within a puzzle is ΔE_OK 5.01 (rho-c06, 65 combos), against 7.27 with the old vivid grid. Main-label contrast is at least 7.20:1 and badge contrast at least 4.80:1.
+  - **Lower test threshold.** The threshold drops honestly from 7 to 5: a soft pastel volume holds fewer well-separated colours, and ΔE 5 is still about 2.5× a just-noticeable difference. Tests also pin the pastel L/C bounds, the deeper same-hue edge and the 7:1 ink contrast.
+  - **Caveat.** At the low-lightness end some combos read as muted mid-tones (dusty teal, olive, cornflower) rather than pure pastel. A lighter floor (L ≥ 0.76) would drop separation to ΔE 4.3, so separation won.

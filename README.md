@@ -92,7 +92,7 @@ Energy: start ⚡2 per level, +1 the first time each reference codon is complete
 
 ### Look and layout
 
-Clinical Swiss / International Typographic Style on a light lab-paper canvas: flat pigment tiles, 1px rules, square corners, and a full-bleed 9×9 board that spans the whole phone width with 1px gutters (42.4px tiles at 390px wide). See D-UI-01…04 in `docs/DECISIONS.md`.
+Clinical Swiss / International Typographic Style on a light lab-paper canvas: soft clinical pastel tiles with carbon ink and 1px same-hue edges, 1px rules, square corners, and a full-bleed 9×9 board that spans the whole phone width with 1px gutters (42.4px tiles at 390px wide). See D-UI-01…06 in `docs/DECISIONS.md`.
 
 ### M4 gene assembly
 

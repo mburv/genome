@@ -1,14 +1,16 @@
 /**
- * M4.1 colour system for multi-base tiles. Pure and deterministic (no DOM, Date, fetch or Math.random).
+ * M4.1 colour system for multi-base tiles, in the clinical pastel register (D-UI-05). Pure and deterministic
+ * (no DOM, Date, fetch or Math.random).
  *
- * 1. A fixed candidate set is generated in OKLab/OKLCH (perceptual): every in-gamut sRGB colour on a
- *    lightness × chroma × hue grid whose best text colour (near-black ink or white) reaches WCAG ≥ 4.5:1.
- * 2. The candidates are ordered once by deterministic farthest-point sampling (ΔE_OK), so any prefix of
- *    the order is a well-spread palette.
+ * 1. A fixed candidate set is generated in OKLab/OKLCH (perceptual): every sRGB colour on a lightness ×
+ *    chroma × hue grid inside the PASTEL bounds that sits well inside the gamut (soft, never neon), keeps
+ *    carbon ink (#111111) at WCAG ≥ 7:1, and stays clear of the light board surfaces.
+ * 2. The candidates are ordered by deterministic farthest-point sampling (ΔE_OK); the first CORE_SIZE
+ *    entries are then refined for max-min separation and re-ordered so any prefix is a well-spread palette.
  * 3. A puzzle's distinct sequences (target pieces and decoys — symbols are already one-per-sequence) are
  *    sorted by sequence and given palette entries 0…n−1. The same sequence therefore has the same colour
  *    everywhere in that puzzle (board, target strip, inspector), and no two sequences share a colour.
- * Single-base levels are untouched.
+ * Every combo uses carbon ink text and a 1px edge in a deeper tone of its own hue. Single-base levels are untouched.
  */
 import type { LevelDefinition } from './types.ts';
 
@@ -17,7 +19,7 @@ export interface TokenColour {
   bg: string;
   /** Border / edge shade of the same hue. */
   border: string;
-  /** High-contrast text colour on `bg` (WCAG ≥ 4.5:1). */
+  /** Carbon ink text on `bg` (WCAG ≥ 7:1). */
   fg: string;
   /** Secondary text (badges, ellipsis) — still ≥ 4.5:1 on `bg`. */
   fgSoft: string;
@@ -27,7 +29,7 @@ export interface TokenColour {
   lab: readonly [number, number, number];
 }
 
-export const INK = '#0b1420';
+export const INK = '#111111';
 export const PAPER = '#ffffff';
 export const MIN_CONTRAST = 4.5;
 
@@ -74,51 +76,55 @@ function oklch(L: number, C: number, hDeg: number): string | null {
   return rgbToHex(lin.map((c) => fromLinear(clamp01(c))));
 }
 
+/** Pastel register (OKLCH): every combo colour lies inside these bounds. */
+export const PASTEL = { minL: 0.72, maxL: 0.95, minC: 0.035, maxC: 0.12, gamutShare: 0.8 } as const;
+/** Size of the optimised core palette (≥ the largest number of distinct combos in any puzzle). */
+export const CORE_SIZE = 66;
+/** Main labels must reach this contrast with carbon ink (WCAG AAA body-text level). */
+export const MIN_INK_CONTRAST = 7;
+
 function makeColour(bg: string): TokenColour | null {
-  const cInk = contrastRatio(bg, INK);
-  const cPaper = contrastRatio(bg, PAPER);
-  const dark = cInk >= cPaper;
-  const fg = dark ? INK : PAPER;
-  const contrast = Math.max(cInk, cPaper);
-  if (contrast < MIN_CONTRAST + 0.3) return null; // margin so rounding never dips below 4.5
+  const contrast = contrastRatio(bg, INK);
+  if (contrast < MIN_INK_CONTRAST + 0.2) return null; // margin so rounding never dips below the target
   const [L, a, b] = hexToOklab(bg);
   const C = Math.hypot(a, b);
   const h = (Math.atan2(b, a) * 180) / Math.PI;
-  // Edge: same hue, darker (light tiles) or lighter (dark tiles) for a crisp outline.
-  const border = oklch(dark ? Math.max(0.2, L - 0.28) : Math.min(0.95, L + 0.3), Math.min(C, 0.12), h) ?? (dark ? '#1b2735' : '#e6edf5');
-  // Secondary text: blend fg towards bg but keep ≥ 4.5:1.
-  let fgSoft = fg;
-  for (const t of [0.35, 0.25, 0.15]) {
-    const mix = rgbToHex(hexToRgb(fg).map((c, i) => c * (1 - t) + hexToRgb(bg)[i]! * t));
-    if (contrastRatio(bg, mix) >= MIN_CONTRAST) { fgSoft = mix; break; }
+  // 1px edge: a slightly deeper, slightly richer tone of the same hue.
+  let border: string | null = null;
+  for (let k = 0; k < 6 && !border; k++) border = oklch(L - 0.2 - k * 0.02, Math.min(C * 1.35, 0.16) * (1 - k * 0.12), h);
+  // Secondary text (ellipsis, length badge): ink softened towards the hue but still ≥ 4.5:1.
+  let fgSoft = INK;
+  for (const t of [0.4, 0.32, 0.24, 0.16]) {
+    const mix = rgbToHex(hexToRgb(INK).map((c, i) => c * (1 - t) + hexToRgb(bg)[i]! * t));
+    if (contrastRatio(bg, mix) >= MIN_CONTRAST + 0.3) { fgSoft = mix; break; }
   }
-  return { bg, border, fg, fgSoft, contrast, lab: [L, a, b] };
+  return { bg, border: border ?? '#8a8a84', fg: INK, fgSoft, contrast, lab: [L, a, b] };
 }
 
 /**
- * Clinical light surfaces (canvas, panel, hole, hairline rule, ink) a combo colour must stay clear of, so a
- * tile never reads as an empty cell, the board background or a rule.
+ * Clinical light surfaces (canvas, panel, stone, hole, hairline rule) and the four single-base pastels a
+ * combo colour must stay clear of, so a tile never reads as an empty cell, the board background or a rule.
  */
-export const SURFACE_COLOURS = ['#f7f7f5', '#ffffff', '#efefea', '#e8e8e2', '#d4d4ce', '#111111'] as const;
-export const MIN_SURFACE_DELTA = 12;
+export const SURFACE_COLOURS = ['#f7f7f5', '#ffffff', '#efefea', '#e8e8e2', '#d4d4ce'] as const;
+export const MIN_SURFACE_DELTA = 6;
 const SURFACES = SURFACE_COLOURS.map(hexToOklab);
 
 let palette: TokenColour[] | null = null;
-/** The ordered palette (farthest-point order over the contrast-safe OKLCH grid). Computed once. */
+/** The ordered palette (farthest-point order over the pastel, ink-legible OKLCH grid). Computed once. */
 export function tokenPalette(): readonly TokenColour[] {
   if (palette) return palette;
   const cands: TokenColour[] = [];
-  const Ls = [0.34, 0.4, 0.46, 0.52, 0.58, 0.72, 0.78, 0.84, 0.9];
-  const Cs = [0.07, 0.11, 0.15, 0.19, 0.23];
-  for (const L of Ls) for (const C of Cs) for (let h = 0; h < 360; h += 6) {
+  for (let L = PASTEL.minL; L <= PASTEL.maxL + 1e-9; L += 0.02) for (let C = PASTEL.minC; C <= PASTEL.maxC + 1e-9; C += 0.01) for (let h = 0; h < 360; h += 4) {
+    // Soft, not neon: the colour must sit well inside the sRGB gamut at its hue and lightness.
+    if (!oklch(L, C / PASTEL.gamutShare, h)) continue;
     const hex = oklch(L, C, h);
     const col = hex && makeColour(hex);
     if (col && !cands.some((x) => x.bg === col.bg) && SURFACES.every((sf) => deltaE(col.lab, sf) >= MIN_SURFACE_DELTA)) cands.push(col);
   }
-  // Farthest-point order. Seed: the most chromatic mid-light candidate nearest hue 30° (warm coral) — fixed.
+  // Farthest-point order. Seed: the most chromatic candidate (fixed, deterministic).
   const order: TokenColour[] = [];
   const minD = cands.map(() => Infinity);
-  let next = cands.reduce((bi, c, i) => (Math.hypot(c.lab[1], c.lab[2]) > Math.hypot(cands[bi]!.lab[1], cands[bi]!.lab[2]) && c.lab[0] > 0.7 ? i : bi), 0);
+  let next = cands.reduce((bi, c, i) => (Math.hypot(c.lab[1], c.lab[2]) > Math.hypot(cands[bi]!.lab[1], cands[bi]!.lab[2]) ? i : bi), 0);
   const used = new Set<number>();
   while (order.length < cands.length) {
     used.add(next);
@@ -134,7 +140,35 @@ export function tokenPalette(): readonly TokenColour[] {
     if (best < 0) break;
     next = best;
   }
-  palette = order;
+  // Refine the first CORE_SIZE entries (max-min ΔE): repeatedly move each core colour to the candidate that
+  // is farthest from all other core colours, until no move improves. Deterministic (fixed scan order).
+  const core = order.slice(0, CORE_SIZE);
+  const nearest = (c: TokenColour, skip: number): number => core.reduce((m, o, j) => (j === skip ? m : Math.min(m, deltaE(c.lab, o.lab))), Infinity);
+  for (let pass = 0; pass < 12; pass++) {
+    let moved = false;
+    for (let k = 0; k < core.length; k++) {
+      let best = core[k]!;
+      let bestD = nearest(best, k);
+      for (const c of cands) {
+        if (core.includes(c)) continue;
+        const d = nearest(c, k);
+        if (d > bestD + 1e-9) { bestD = d; best = c; }
+      }
+      if (best !== core[k]) { core[k] = best; moved = true; }
+    }
+    if (!moved) break;
+  }
+  // Re-order the core by farthest-point sampling (any prefix stays well spread), then append the rest.
+  const coreOrder: TokenColour[] = [];
+  const left = [...core];
+  let seed = left.reduce((bi, c, i) => (Math.hypot(c.lab[1], c.lab[2]) > Math.hypot(left[bi]!.lab[1], left[bi]!.lab[2]) ? i : bi), 0);
+  while (left.length) {
+    coreOrder.push(left.splice(seed, 1)[0]!);
+    let bd = -1;
+    seed = 0;
+    left.forEach((c, i) => { const d = Math.min(...coreOrder.map((o) => deltaE(c.lab, o.lab))); if (d > bd) { bd = d; seed = i; } });
+  }
+  palette = [...coreOrder, ...order.filter((c) => !core.includes(c))];
   return palette;
 }
 

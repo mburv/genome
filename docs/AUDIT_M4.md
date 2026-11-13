@@ -14,7 +14,7 @@ shipped pieces alone and its SHA-256 compared with the manifest.
 | Duplicate masks (rotation/reflection) | 0 |
 | Minimum symmetric mask distance to any other shipped level | 8 |
 | Solver (shipped budget) | optimal: 83, unresolved: 24 |
-| Slowest single solver run | 547 ms |
+| Slowest single solver run | 578 ms |
 | Estimated ratings | gentle: 24, tricky: 63, hard: 12, moderate: 8 |
 | Tiers (bases per tile) | 3: 34, 6: 47, 12: 23, 24: 3 |
 | Modes | sequence: 39, splice: 32, replicate: 24, repair: 12 |
