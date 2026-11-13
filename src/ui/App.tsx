@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { applyCommand, createInitialState, recoveryHint, trackMatches, trackSequence, type Command, type PuzzleState } from '../engine/engine.ts';
-import type { Cell, LevelDefinition, Move } from '../engine/types.ts';
+import type { Axis, Cell, LevelDefinition, Move } from '../engine/types.ts';
 import { LEVEL_PACK, LEVELS, coveredBases, sampleBases } from '../campaign/campaign.ts';
 import { INS } from '../genomics/ins.ts';
 import { createLocalStorageAdapter, loadSave, newSave, recordCompletion, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
-import { Board, dirName, type MoveAnimation } from './Board.tsx';
+import { Board, dirName, type MoveAnimation, type SlidePreview } from './Board.tsx';
+import { applySlide } from '../engine/grid.ts';
 import { hintDisplayCell } from './hintCell.ts';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -24,6 +25,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const [animation, setAnimation] = useState<MoveAnimation | null>(null);
   const [celebrate, setCelebrate] = useState<{ levelId: string; newBases: number } | null>(null);
   const [status, setStatus] = useState('');
+  const [preview, setPreview] = useState<SlidePreview | null>(null);
   const nonce = useRef(0);
 
   const def = LEVELS.find((l) => l.id === save.currentLevelId) ?? LEVELS[0]!;
@@ -39,20 +41,23 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     [storage],
   );
 
-  const matches = trackMatches(def, puzzle.board);
+  // While dragging, target feedback reflects the whole-cell position under the finger (not committed).
+  const shownBoard = preview && puzzle.status === 'playing' ? applySlide(def.mask, puzzle.board, preview.origin, preview.axis, preview.steps).board : puzzle.board;
+  const matches = trackMatches(def, shownBoard);
   const hint = puzzle.status === 'playing' ? recoveryHint(def, puzzle) : null;
   const showGestureCue = def.tutorial && puzzle.moves === 0 && puzzle.status === 'playing';
   const shownHint = hintVisible || showGestureCue ? hint : null;
   const hintCell = shownHint ? hintDisplayCell(def, puzzle.board, shownHint) : null;
 
   const dispatch = useCallback(
-    (command: Command) => {
+    (command: Command): boolean => {
+      setPreview(null);
       const result = applyCommand(def, puzzle, command);
       if (!result.accepted) {
         if (result.reason === 'immobile') setStatus('That tile is boxed in by gaps on this axis — try the other direction.');
         else if (result.reason === 'no-op') setStatus('Nothing changed: every tile in that segment is the same letter.');
         else if (result.reason === 'no-history') setStatus('Nothing to undo yet.');
-        return;
+        return false;
       }
       let next: SaveData = { ...save, attempts: { ...save.attempts, [def.id]: result.state } };
       for (const ev of result.events) {
@@ -61,6 +66,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           setAnimation({ nonce: nonce.current, segment: ev.segment, axis: ev.move.axis, direction: ev.move.direction });
           setStatus('');
         }
+        if (ev.type === 'slid') setStatus('');
         if (ev.type === 'undone') setStatus('Move undone.');
         if (ev.type === 'restarted') {
           setStatus('Board restarted.');
@@ -75,11 +81,15 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       }
       setHintVisible(false);
       persist(next);
+      return true;
     },
     [def, puzzle, save, persist],
   );
 
-  const onMove = useCallback((move: Move) => dispatch({ type: 'rotate', move }), [dispatch]);
+  const onMove = useCallback((move: Move) => {
+    dispatch({ type: 'rotate', move });
+  }, [dispatch]);
+  const onSlide = useCallback((origin: Cell, axis: Axis, steps: number) => dispatch({ type: 'slide', origin, axis, steps }), [dispatch]);
 
   const goTo = (levelId: string) => {
     const target = LEVELS.find((l) => l.id === levelId)!;
@@ -96,13 +106,13 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     if (!hint) return;
     setHintVisible(true);
     setSelected(hintDisplayCell(def, puzzle.board, hint));
-    setStatus(`Hint: swipe ${hint.axis === 'row' ? 'row' : 'column'} ${hint.axis === 'row' ? Math.floor(hint.origin / 9) + 1 : (hint.origin % 9) + 1} ${dirName(hint)}. Recovery hint — it leads back to a certified solution, not necessarily the shortest.`);
+    setStatus(`Hint: slide ${hint.axis === 'row' ? 'row' : 'column'} ${hint.axis === 'row' ? Math.floor(hint.origin / 9) + 1 : (hint.origin % 9) + 1} ${dirName(hint)} one cell. Recovery hint — it leads back to a certified solution, not necessarily the shortest.`);
   };
 
   const directional = (axis: 'row' | 'col', direction: 1 | -1) => onMove({ origin: selected, axis, direction });
 
   const track = def.tracks[0]!;
-  const current = trackSequence(puzzle.board, track.cells);
+  const current = trackSequence(shownBoard, track.cells);
   const done = save.completed.length;
   const covered = coveredBases(save.completed);
   const sampleTotal = sampleBases();
@@ -194,6 +204,8 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         reducedMotion={reducedMotion}
         animation={animation}
         onMove={onMove}
+        onSlide={onSlide}
+        onPreview={setPreview}
         onSelect={setSelected}
       />
 
@@ -217,10 +229,10 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       <p className="status" role="status" aria-live="polite" data-testid="status">
         {status ||
           (showGestureCue
-            ? 'Swipe the glowing tile in the arrow’s direction to complete the outlined strand. Or tap it and use the arrow buttons.'
+            ? 'Drag the glowing tile in the arrow’s direction — the whole line slides with your finger. Or tap it and use the arrow buttons.'
             : solvedView
               ? 'Solved. Replay or move on when ready.'
-              : 'Match the outlined strand. Swipe any tile to slide its segment — gaps block movement.')}
+              : 'Match the outlined strand. Drag any tile to slide its whole row or column segment — gaps block movement.')}
       </p>
 
       {solvedView && !celebrate && (
@@ -232,7 +244,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
       <details className="panel help">
         <summary>How to play</summary>
-        <p>Swipe a tile left/right to slide its row segment, or up/down to slide its column segment, one step. Tiles wrap around inside the segment. Dark gaps are holes: they split rows and columns into separate segments and nothing crosses them.</p>
+        <p>Drag a tile left/right to slide its whole row segment with your finger, or up/down for its column segment — as far as you like. Let go and it snaps to the nearest cell; a quick flick moves one step. Tiles wrap around inside the segment. Dark gaps are holes: they split rows and columns into separate segments and nothing crosses them.</p>
         <p>Make the outlined strand read the target sequence. You can also tap a tile and use the arrow buttons; on a keyboard, arrow keys slide the selected tile and Shift + arrows move the selection.</p>
         <p>Hint gives a recovery move that leads back to a certified solution (not necessarily the shortest). Undo and Restart are always free. No timers, no move limits.</p>
       </details>

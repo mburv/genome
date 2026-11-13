@@ -93,3 +93,29 @@ export function baseCounts(board: Board): Record<string, number> {
   for (const ch of board) if (ch !== HOLE) counts[ch] = (counts[ch] ?? 0) + 1;
   return counts;
 }
+
+/**
+ * Normalise a multi-step slide to the shortest equivalent signed step count in (-n/2, n/2].
+ * Returns 0 for full turns (k ≡ 0 mod n) and for immobile segments (n < 2).
+ */
+export function normaliseSteps(steps: number, segmentLength: number): number {
+  if (segmentLength < 2 || !Number.isInteger(steps)) return 0;
+  let k = ((steps % segmentLength) + segmentLength) % segmentLength;
+  if (k > segmentLength / 2) k -= segmentLength;
+  return k;
+}
+
+/** Expand a k-step slide of the segment at `origin` into its equivalent sequence of single-step moves. */
+export function slideToMoves(mask: Mask, origin: Cell, axis: Axis, steps: number): Move[] {
+  const k = normaliseSteps(steps, segmentCells(mask, origin, axis).length);
+  const direction: Direction = k > 0 ? 1 : -1;
+  return Array.from({ length: Math.abs(k) }, () => ({ origin, axis, direction }));
+}
+
+/** Rotate the segment at `origin` by `steps` cells (any integer, wraps mod segment length). */
+export function applySlide(mask: Mask, board: Board, origin: Cell, axis: Axis, steps: number): MoveOutcome {
+  const segment = segmentCells(mask, origin, axis);
+  let next = board;
+  for (const m of slideToMoves(mask, origin, axis, steps)) next = rotateCells(next, segment, m.direction);
+  return { board: next, segment, changed: next !== board };
+}

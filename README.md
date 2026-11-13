@@ -47,7 +47,7 @@ npm run dev                        # http://localhost:5173 — open on a phone-s
 | `npm run typecheck` | Strict TypeScript for app, tests and tooling |
 | `npm run lint` | ESLint (engine/generator forbid DOM, `Date`, `fetch`, `Math.random`) |
 | `npm test` | Vitest unit tests (engine, generator, genomics, save) |
-| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568), incl. the single-file HTML via `file://` |
+| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568): continuous multi-cell drags, snapping, holes, tap/arrows, keyboard, progression, save, and the single-file HTML via `file://` |
 | `npm run build` | Typecheck + production build to `dist/` |
 | `npm run build:single` | Self-contained one-file build: `dist-single/GENOME-M1.html` (main build unaffected) |
 | `npm run validate:data` | Re-verifies the INS CDS asset against the stored raw GenBank record |

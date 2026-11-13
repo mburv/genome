@@ -1,5 +1,5 @@
-import { applyMove, inverseMove, moveKey, baseCounts } from './grid.ts';
-import type { Board, Cell, LevelDefinition, Move } from './types.ts';
+import { applyMove, applySlide, inverseMove, moveKey, baseCounts, slideToMoves } from './grid.ts';
+import type { Axis, Board, Cell, LevelDefinition, Move } from './types.ts';
 
 export const HISTORY_CAP = 100;
 
@@ -23,10 +23,19 @@ export interface PuzzleState {
   history: Snapshot[];
 }
 
-export type Command = { type: 'rotate'; move: Move } | { type: 'undo' } | { type: 'restart' };
+/**
+ * `rotate` = one step (arrows, keyboard, hints). `slide` = one continuous drag of `steps` cells
+ * (any integer; wraps mod segment length). A slide is ONE undoable action and counts as ONE move.
+ */
+export type Command =
+  | { type: 'rotate'; move: Move }
+  | { type: 'slide'; origin: Cell; axis: Axis; steps: number }
+  | { type: 'undo' }
+  | { type: 'restart' };
 
 export type GameEvent =
   | { type: 'moved'; move: Move; segment: Cell[] }
+  | { type: 'slid'; origin: Cell; axis: Axis; steps: number; segment: Cell[] }
   | { type: 'undone' }
   | { type: 'restarted' }
   | { type: 'solved'; levelId: string };
@@ -98,6 +107,33 @@ export function applyCommand(def: LevelDefinition, state: PuzzleState, command: 
         history,
       };
       const events: GameEvent[] = [{ type: 'moved', move: command.move, segment: outcome.segment }];
+      if (solved) events.push({ type: 'solved', levelId: def.id });
+      return { state: next, events, accepted: true };
+    }
+    case 'slide': {
+      if (state.status === 'solved') return reject(state, 'solved');
+      const outcome = applySlide(def.mask, state.board, command.origin, command.axis, command.steps);
+      if (outcome.segment.length < 2) return reject(state, 'immobile');
+      if (!outcome.changed) return reject(state, 'no-op');
+      const steps = slideToMoves(def.mask, command.origin, command.axis, command.steps);
+      // Keep the recovery path certified by extending it one single-step move at a time.
+      let recovery = state.recovery;
+      let b = state.board;
+      for (const m of steps) {
+        b = applyMove(def.mask, b, m).board;
+        recovery = extendRecovery(def, recovery, b, m);
+      }
+      const solved = isSolved(def, outcome.board);
+      const next: PuzzleState = {
+        levelId: state.levelId,
+        board: outcome.board,
+        moves: state.moves + 1,
+        status: solved ? 'solved' : 'playing',
+        recovery,
+        history: [...state.history, { board: state.board, moves: state.moves, recovery: state.recovery }].slice(-HISTORY_CAP),
+      };
+      const net = steps.length * (steps[0]?.direction ?? 1);
+      const events: GameEvent[] = [{ type: 'slid', origin: command.origin, axis: command.axis, steps: net, segment: outcome.segment }];
       if (solved) events.push({ type: 'solved', levelId: def.id });
       return { state: next, events, accepted: true };
     }

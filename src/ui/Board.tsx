@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { SIZE, cellAt, colOf, rowOf, segmentCells } from '../engine/grid.ts';
+import { SIZE, cellAt, colOf, normaliseSteps, rowOf, segmentCells } from '../engine/grid.ts';
+import { easeOutCubic, lockAxis, nearestStep, releaseVelocity, resolveSteps, SNAP_MS, wrapOffset } from './dragMath.ts';
 import type { Axis, Board as BoardString, Cell, Direction, LevelDefinition, Move } from '../engine/types.ts';
 
 export interface MoveAnimation {
@@ -21,18 +22,43 @@ interface Props {
   reducedMotion: boolean;
   animation: MoveAnimation | null;
   onMove: (move: Move) => void;
+  /** Commit a continuous drag of `steps` cells. Returns false if the engine rejected it. */
+  onSlide: (origin: Cell, axis: Axis, steps: number) => boolean;
+  /** Live whole-cell preview while dragging (null = none). */
+  onPreview: (preview: SlidePreview | null) => void;
   onSelect: (cell: Cell) => void;
 }
 
-const SWIPE_THRESHOLD = 16;
+interface DragState {
+  id: number;
+  startX: number;
+  startY: number;
+  cell: Cell;
+  axis: Axis | null;
+  segment: Cell[];
+  pitch: number;
+  delta: number;
+  samples: { t: number; d: number }[];
+  clip: HTMLDivElement | null;
+  clones: HTMLElement[][];
+  originals: HTMLElement[];
+  raf: number;
+  previewStep: number;
+  phase: 'pending' | 'dead' | 'dragging' | 'settling' | 'committing';
+}
+
+export interface SlidePreview {
+  origin: Cell;
+  axis: Axis;
+  steps: number;
+}
 export const SLIDE_MS = 150;
 
 const dirName = (m: Move): string => (m.axis === 'row' ? (m.direction === 1 ? 'right' : 'left') : m.direction === 1 ? 'down' : 'up');
 const arrow = (m: Move): string => ({ right: '→', left: '←', down: '↓', up: '↑' })[dirName(m)]!;
 
-export function Board({ def, board, matches, selected, hint, hintCell, showGestureCue, locked, reducedMotion, animation, onMove, onSelect }: Props) {
+export function Board({ def, board, matches, selected, hint, hintCell, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect }: Props) {
   const boardRef = useRef<HTMLDivElement>(null);
-  const start = useRef<{ x: number; y: number; cell: Cell; id: number; done: boolean } | null>(null);
   const busyUntil = useRef(0);
 
   const trackInfo = new Map<Cell, { group: number; pos: number; ok: boolean }>();
@@ -82,32 +108,181 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
     if (el && el.contains(document.activeElement)) el.querySelector<HTMLElement>(`[data-cell="${selected}"]`)?.focus();
   }, [selected, board]);
 
-  const onPointerDown = (e: React.PointerEvent) => {
-    const tile = (e.target as HTMLElement).closest<HTMLElement>('[data-cell]');
-    if (!tile) return;
-    start.current = { x: e.clientX, y: e.clientY, cell: Number(tile.dataset.cell), id: e.pointerId, done: false };
-    boardRef.current?.setPointerCapture?.(e.pointerId);
+  // ---- Continuous drag -------------------------------------------------------------------
+  // Imperative, transform-only rendering via rAF; React state is touched only on whole-cell
+  // preview changes and on commit, so the drag stays at display frame rate.
+  const drag = useRef<DragState | null>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
+
+  const teardown = useCallback(() => {
+    const d = drag.current;
+    if (!d) return;
+    if (d.raf) cancelAnimationFrame(d.raf);
+    d.clip?.remove();
+    d.originals.forEach((o) => (o.style.visibility = ''));
+    boardRef.current?.classList.remove('is-dragging');
+    drag.current = null;
+  }, []);
+
+  // Once the engine commits (board changes) swap the clones back for the real, updated tiles before paint.
+  useLayoutEffect(() => {
+    if (drag.current?.phase === 'committing') teardown();
+  }, [board, teardown]);
+  useEffect(() => () => teardown(), [teardown]);
+
+  const renderDrag = () => {
+    const d = drag.current;
+    if (!d || !d.clip) return;
+    d.raf = 0;
+    const n = d.segment.length;
+    const length = n * d.pitch;
+    d.clones.forEach((pair, i) => {
+      const base = wrapOffset(i * d.pitch + d.delta, length);
+      pair.forEach((clone, copy) => {
+        const p = base - copy * length;
+        clone.style.transform = d.axis === 'row' ? `translate3d(${p}px,0,0)` : `translate3d(0,${p}px,0)`;
+      });
+    });
+    const step = normaliseSteps(nearestStep(d.delta, d.pitch), n);
+    if (step !== d.previewStep) {
+      d.previewStep = step;
+      onPreview(step === 0 ? null : { origin: d.cell, axis: d.axis!, steps: step });
+    }
   };
-  const commit = (e: React.PointerEvent): boolean => {
-    const s = start.current;
-    if (!s || s.id !== e.pointerId || s.done) return false;
-    const dx = e.clientX - s.x;
-    const dy = e.clientY - s.y;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD) return false;
-    s.done = true;
-    const horizontal = Math.abs(dx) > Math.abs(dy);
-    onSelect(s.cell);
-    tryMove({ origin: s.cell, axis: horizontal ? 'row' : 'col', direction: (horizontal ? dx : dy) > 0 ? 1 : -1 });
+  const schedule = () => {
+    const d = drag.current;
+    if (d && !d.raf) d.raf = requestAnimationFrame(renderDrag);
+  };
+
+  const beginDrag = (d: DragState): boolean => {
+    const el = boardRef.current;
+    const layer = layerRef.current;
+    if (!el || !layer || !d.axis) return false;
+    const originals = d.segment.map((c) => el.querySelector<HTMLElement>(`[data-cell="${c}"]`)!);
+    if (originals.some((o) => !o)) return false;
+    const [a, b] = originals as [HTMLElement, HTMLElement];
+    const pitch = d.axis === 'row' ? b.offsetLeft - a.offsetLeft : b.offsetTop - a.offsetTop;
+    const w = a.offsetWidth;
+    const h = a.offsetHeight;
+    const n = d.segment.length;
+    const clip = document.createElement('div');
+    clip.className = `drag-clip ${d.axis}`;
+    Object.assign(clip.style, {
+      left: `${a.offsetLeft}px`,
+      top: `${a.offsetTop}px`,
+      width: `${d.axis === 'row' ? n * pitch - (pitch - w) : w}px`,
+      height: `${d.axis === 'col' ? n * pitch - (pitch - h) : h}px`,
+    });
+    const clones = originals.map((o) =>
+      [0, 1].map(() => {
+        const c = o.cloneNode(true) as HTMLElement;
+        c.removeAttribute('data-cell');
+        c.removeAttribute('tabindex');
+        c.setAttribute('aria-hidden', 'true');
+        c.dataset.clone = 'true';
+        c.classList.remove('selected', 'hinted', 'ok', 'off');
+        c.querySelector('.tick')?.remove();
+        Object.assign(c.style, { position: 'absolute', left: '0', top: '0', width: `${w}px`, height: `${h}px`, gridRow: '', gridColumn: '', visibility: '' });
+        clip.appendChild(c);
+        return c;
+      }),
+    );
+    layer.appendChild(clip);
+    originals.forEach((o) => (o.style.visibility = 'hidden'));
+    el.classList.add('is-dragging');
+    Object.assign(d, { pitch, clip, clones, originals, phase: 'dragging' as const });
+    renderDrag();
     return true;
   };
+
+  const settle = (target: number, then: () => void) => {
+    const d = drag.current;
+    if (!d) return;
+    d.phase = 'settling';
+    const from = d.delta;
+    const to = target * d.pitch;
+    const duration = reducedMotion ? 0 : SNAP_MS;
+    busyUntil.current = performance.now() + duration + 30;
+    const t0 = performance.now();
+    const tick = () => {
+      const cur = drag.current;
+      if (!cur) return;
+      const t = duration === 0 ? 1 : Math.min(1, (performance.now() - t0) / duration);
+      cur.delta = from + (to - from) * easeOutCubic(t);
+      renderDrag();
+      if (t < 1) cur.raf = requestAnimationFrame(tick);
+      else then();
+    };
+    if (d.raf) cancelAnimationFrame(d.raf);
+    d.raf = requestAnimationFrame(tick);
+  };
+
+  const finishDrag = (cancelled: boolean) => {
+    const d = drag.current;
+    if (!d || d.phase !== 'dragging') return;
+    const n = d.segment.length;
+    const k = cancelled ? 0 : resolveSteps(d.delta, d.pitch, releaseVelocity(d.samples));
+    settle(k, () => {
+      const cur = drag.current;
+      if (!cur) return;
+      onPreview(null);
+      if (normaliseSteps(k, n) === 0) return teardown();
+      cur.phase = 'committing';
+      // A rejected slide (e.g. identical letters) leaves the board unchanged, so tear down here.
+      if (!onSlide(cur.cell, cur.axis!, k)) teardown();
+    });
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    const tile = (e.target as HTMLElement).closest<HTMLElement>('[data-cell]');
+    if (!tile || drag.current || performance.now() < busyUntil.current) return;
+    drag.current = {
+      id: e.pointerId, startX: e.clientX, startY: e.clientY, cell: Number(tile.dataset.cell), axis: null, segment: [],
+      pitch: 0, delta: 0, samples: [], clip: null, clones: [], originals: [], raf: 0, previewStep: 0, phase: 'pending',
+    };
+    boardRef.current?.setPointerCapture?.(e.pointerId);
+  };
   const onPointerMove = (e: React.PointerEvent) => {
-    commit(e);
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (d.phase === 'pending') {
+      const axis = lockAxis(dx, dy);
+      if (!axis) return;
+      onSelect(d.cell);
+      d.axis = axis;
+      d.segment = segmentCells(def.mask, d.cell, axis);
+      if (locked || d.segment.length < 2 || !beginDrag(d)) {
+        d.phase = 'dead'; // single-cell segment (or solved board): nothing can move on this axis
+        return;
+      }
+    }
+    if (d.phase !== 'dragging') return;
+    d.delta = d.axis === 'row' ? dx : dy;
+    d.samples.push({ t: e.timeStamp, d: d.delta });
+    if (d.samples.length > 12) d.samples.shift();
+    schedule();
   };
   const onPointerUp = (e: React.PointerEvent) => {
-    const s = start.current;
-    if (!s || s.id !== e.pointerId) return;
-    if (!s.done && !commit(e)) onSelect(s.cell);
-    start.current = null;
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    if (d.phase === 'pending') {
+      drag.current = null;
+      onSelect(d.cell);
+    } else if (d.phase === 'dead') {
+      drag.current = null;
+    } else {
+      onPointerMove(e);
+      finishDrag(false);
+    }
+  };
+  const onPointerCancel = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    if (d.phase === 'dragging') finishDrag(true);
+    else if (d.phase === 'pending' || d.phase === 'dead') drag.current = null;
+    // 'settling'/'committing' finish on their own (lostpointercapture also fires after a normal pointerup).
   };
 
   const moveSelection = (dr: number, dc: number) => {
@@ -134,12 +309,13 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
       ref={boardRef}
       className="board"
       role="group"
-      aria-label="Nine by nine DNA board. Swipe a tile, or use arrow keys to slide the selected tile's segment; Shift plus arrows moves the selection."
+      aria-label="Nine by nine DNA board. Drag a tile to slide its whole row or column segment, or use arrow keys to slide the selected tile's segment; Shift plus arrows moves the selection."
       data-testid="board"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={() => (start.current = null)}
+      onPointerCancel={onPointerCancel}
+      onLostPointerCapture={onPointerCancel}
       onKeyDown={onKeyDown}
     >
       {Array.from({ length: SIZE * SIZE }, (_, cell) => {
@@ -167,11 +343,12 @@ export function Board({ def, board, matches, selected, hint, hintCell, showGestu
         const r1 = rowOf(t.cells[t.cells.length - 1]!);
         const c1 = colOf(t.cells[t.cells.length - 1]!);
         return (
-          <div key={t.group} className={`track-outline ${t.orientation}`} style={{ gridRow: `${r0 + 1} / ${r1 + 2}`, gridColumn: `${c0 + 1} / ${c1 + 2}` }} aria-hidden="true">
+          <div key={t.group} className={`track-outline ${t.orientation} ${matches[t.group - 1]?.every(Boolean) ? 'all-ok' : ''}`} style={{ gridRow: `${r0 + 1} / ${r1 + 2}`, gridColumn: `${c0 + 1} / ${c1 + 2}` }} aria-hidden="true">
             <span className="track-badge">{t.group}</span>
           </div>
         );
       })}
+      <div ref={layerRef} className="drag-layer" aria-hidden="true" />
       {hint && hintCell !== null && (
         <div className={`hint-cue ${showGestureCue ? 'gesture' : ''} dir-${dirName(hint)}`} style={{ gridRow: rowOf(hintCell) + 1, gridColumn: colOf(hintCell) + 1 }} aria-hidden="true" data-testid="hint-cue">
           <span>{arrow(hint)}</span>

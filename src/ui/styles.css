@@ -117,3 +117,10 @@ footer { text-align: center; padding-top: 4px; }
   .mode { font-size: 9.5px; padding: 2px 7px; }
   .panel { padding: 8px 10px; }
 }
+
+/* Continuous drag: clones live in a clipped strip over the segment; transform-only updates. */
+.drag-layer { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.drag-clip { position: absolute; overflow: hidden; border-radius: 9px; box-shadow: 0 0 0 2px rgba(134, 239, 207, 0.55), 0 6px 18px rgba(0, 0, 0, 0.45); background: rgba(8, 17, 27, 0.6); contain: layout paint; }
+.drag-clip > .tile { will-change: transform; transition: none; }
+.board.is-dragging .hint-cue { display: none; }
+.track-outline.all-ok { border-color: var(--mint); box-shadow: 0 0 0 2px rgba(11, 20, 32, 0.9), 0 0 22px rgba(134, 239, 207, 0.95); }

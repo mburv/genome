@@ -12,7 +12,7 @@ async function fresh(page: Page) {
 async function readHint(page: Page): Promise<{ cell: number; dir: Dir }> {
   await page.getByRole('button', { name: 'Hint' }).click();
   const text = await page.getByTestId('status').innerText();
-  const m = /Hint: swipe (row|column) \d+ (left|right|up|down)/.exec(text);
+  const m = /Hint: slide (row|column) \d+ (left|right|up|down)/.exec(text);
   if (!m) throw new Error(`no hint in: ${text}`);
   const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
   return { cell, dir: m[2] as Dir };
@@ -51,7 +51,7 @@ test('tutorial: one touch swipe on the cued tile completes level 1', async ({ pa
   await fresh(page);
   await expect(page.getByTestId('hint-cue')).toBeVisible();
   const status = await page.getByTestId('status').innerText();
-  expect(status).toMatch(/Swipe the glowing tile/);
+  expect(status).toMatch(/Drag the glowing tile/);
   const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
   const cls = (await page.getByTestId('hint-cue').getAttribute('class'))!;
   const dir = /dir-(\w+)/.exec(cls)![1] as Dir;
