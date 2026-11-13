@@ -1,0 +1,21 @@
+{
+  "datasetId": "refseq-NM_000207.3-2026-11-13",
+  "geneId": "NCBIGene:3630",
+  "symbol": "INS",
+  "name": "Insulin",
+  "chromosome": "11",
+  "transcript": "NM_000207.3",
+  "protein": "NP_000198.1",
+  "biotype": "protein_coding",
+  "keywords": "RefSeq; MANE Select.",
+  "cdsLocation": "60..392",
+  "cdsLength": 333,
+  "stopCodonIncluded": true,
+  "sequence": "ATGGCCCTGTGGATGCGCCTCCTGCCCCTGCTGGCGCTGCTGGCCCTCTGGGGACCTGACCCAGCCGCAGCCTTTGTGAACCAACACCTGTGCGGCTCACACCTGGTGGAAGCTCTCTACCTAGTGTGCGGGGAACGAGGCTTCTTCTACACACCCAAGACCCGCCGGGAGGCAGAGGACCTGCAGGTGGGGCAGGTGGAGCTGGGCGGGGGCCCTGGTGCAGGCAGCCTGCAGCCCTTGGCCCTGGAGGGGTCCCTGCAGAAGCGTGGCATTGTGGAACAATGCTGTACCAGCATCTGCTCCCTCTACCAGCTGGAGAACTACTGCAACTAG",
+  "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
+  "translationVerified": true,
+  "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000207.3",
+  "retrievalUrl": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NM_000207.3&rettype=gb&retmode=text&tool=genome-game",
+  "retrievedAt": "2026-11-13T17:46:37.453Z",
+  "rawRecordSha256": "61b87a9ade5f1e8be2e7caac3a1b67bf53edb9bd991758c399c5f40c1046504b"
+}
