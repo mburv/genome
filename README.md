@@ -90,6 +90,10 @@ Three optional power-ups, available from level 4 and in the Enzyme lab (three tu
 Energy: start ⚡2 per level, +1 the first time each reference codon is completed by a normal move, cap ⚡9, level-local. Undo reverses any power and refunds it; the reward ledger survives undo, so nothing can be farmed; restart (free) starts a new attempt. Hints are never stale: certified drag → "release the bond" → bounded search (≤ 3 drags, 40 k nodes) → "Undo ×N to a certified position" → free restart. Every level remains solvable without powers. Settings (⚙): reduce motion, sound (synthesised locally, off by default), haptics (`navigator.vibrate`, where supported). Save schema v3 upgrades M2 saves with a backup and keeps all progress. See D-M3-* in `docs/DECISIONS.md`.
 
 
+### Look and layout
+
+Clinical Swiss / International Typographic Style on a light lab-paper canvas: flat pigment tiles, 1px rules, square corners, and a full-bleed 9×9 board that spans the whole phone width with 1px gutters (42.4px tiles at 390px wide). See D-UI-01…04 in `docs/DECISIONS.md`.
+
 ### M4 gene assembly
 
 A **gene catalogue** of 12 verified MANE Select RefSeq genes (the count comes from `src/genomics/manifest.generated.json`): INS, HBB, HBA1, HBD, MB, GCG, LEP, PTH, NPY, TTR, B2M and RHO. GPX1 and LIG1 were excluded, with reasons. Each gene has an **assembly chapter** of 8–10 puzzles that together cover every coding base. Tiles carry 3, 6, 12 or 24 real bases, the board and drag rules are unchanged, and tiles match by sequence. A gene is **assembled** only when every base was placed by a solved puzzle and the reconstruction's SHA-256 matches the reference. The first puzzle **discovers** the gene. Every distinct multi-base combo in a puzzle has its own colour (the same on the board, the target chips and the inspector; WCAG ≥ 4.5:1 text; D-M4-15). Tap a tile to read its full sequence. CRISPR on a long tile edits one chosen base. Save schema v4 upgrades M3 saves and keeps everything. See D-M4-* in `docs/DECISIONS.md` and `docs/AUDIT_M4.md`.

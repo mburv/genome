@@ -121,7 +121,7 @@ test('each multi-base combo has its own colour, identical on the board, in the t
   const tiles = await page.locator('.tile.tok').evaluateAll((els) => els.map((e) => ({ seq: e.getAttribute('data-seq')!, bg: getComputedStyle(e).backgroundColor })));
   const bySeq = new Map<string, string>();
   for (const t of tiles) {
-    expect(t.bg).not.toBe('rgb(232, 234, 238)');
+    expect(t.bg).not.toBe('rgb(232, 232, 226)');
     if (bySeq.has(t.seq)) expect(t.bg).toBe(bySeq.get(t.seq));
     bySeq.set(t.seq, t.bg);
   }

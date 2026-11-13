@@ -111,3 +111,23 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - **Overlays.** Selection and hints keep the white outlines. Matched, bonded and scaffolded tiles get an outer ring separated by a dark gap so the ring reads on any colour.
   - **Unchanged / special cases.** Single-base tiles (A/C/G/T) are unchanged. CRISPR-created sequences that match no reference piece use neutral hatching with the dashed ✎ outline, so they never pose as a palette colour. An edit that spells a real piece takes that piece's colour.
   - **Limits.** Colours are consistent within a puzzle, not across puzzles. With 50–65 combos some neighbouring hues are only moderately different, so the strip, the label and the inspector stay the authoritative identity.
+
+## Visual redesign (13 Nov 2026, from owner direction — "very clean clinical Swiss international style look and colour palette … the game board must always be edge to edge … tiles as big as possible")
+
+- D-UI-01 Clinical Swiss / International Typographic Style.
+  - **Palette and surfaces.** A light lab-paper canvas (`#f7f7f5`), pure white panels, stone `#efefea`, hairline rules `#d4d4ce` and carbon `#111111` structural rules.
+  - **Type.** Carbon ink with graphite `#52524e` for metadata, in a Helvetica/Arial sans with monospace DNA. Numerals are tabular, micro-labels are uppercase and tracked, and the hierarchy is strictly left-aligned.
+  - **Shapes and fills.** Corners are 0–2px; there are no gradients, glows or drop shadows. Grouped controls (d-pad, actions, powers, chapter nodes) are joined with shared 1px rules.
+  - **Accents.** Signal red `#d92b2b` (primary action, hints, the GENOME mark), cobalt `#0057b8`, emerald `#007a4d` and amber `#c86a00`, all as flat fields.
+  - **Browser chrome.** `theme-color` and the page background are `#f7f7f5`, and the favicon is redrawn flat.
+- D-UI-02 Single-base tiles are flat pigment blocks:
+  - A = emerald with white text (5.4:1);
+  - C = cobalt with white text (6.9:1);
+  - G = amber with carbon text (5.0:1);
+  - T = signal red with white text (4.9:1).
+  - Holes are recessed `#e8e8e2` squares with a fine diagonal hatch. Target rows/columns get a 3px carbon frame with a 2px white inner rule (readable on any tile colour); complementary strands use a dashed cobalt frame, and fully matched targets a green one. A matched tile gets a carbon ✓ square, selection a carbon + white inset double rule, hints a dashed carbon rule plus a red arrow block, Ligase an amber inset, and Scaffold a cobalt inset with dashed cobalt bridges. Power targeting dims non-candidates to 28% opacity.
+- D-UI-03 Full-bleed board. Up to 640px (and on wider screens up to the 560px app column) the board is a direct, unpadded child of the app, `width: 100%`, square (`aspect-ratio: 1`), with 1px hairline gutters (the board background shows through as the grid) and 0px outer padding. Every other block keeps a 14px inner margin (10px at ≤ 360px). There is no horizontal overflow: `overflow-x: clip`, and the track frames and badges sit inside the board.
+  - Measured tile size before → after: 37.5px → 42.4px at 390×844 (board 366 → 390px wide, left inset 12 → 0); 27.5px → 34.7px at 320×568 (board 272 → 320px); 41.7px → 46.9px at 430×932.
+  - Tile type scales with the board: base letters are board/15 (26px at 390); codon/hexamer/long-tile text is board/27, /34 and /37.
+  - The board is no longer capped by viewport height, so on short screens the controls scroll below it.
+- D-UI-04 Combo colours (D-M4-15) were retuned for the light canvas. The OKLCH grid now uses lightness levels 0.34–0.58 and 0.72–0.90 and chroma levels 0.07–0.23, and every candidate must be at least ΔE_OK 12 from each clinical surface (canvas, white, stone, hole, rule, ink), so a tile never reads as an empty cell or a rule. That leaves 866 candidates. Across all 107 puzzles the smallest distance between two combos is 7.27 (test threshold 7), and all text and badge contrast is at least 4.5:1. Edited (CRISPR) sequences use a neutral white/stone hatch with a dashed carbon rule.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_LEVELS, CHAPTER_LEVELS, LEVELS } from '../../src/campaign/campaign.ts';
-import { contrastRatio, deltaE, hexToOklab, levelTokenColours, MIN_CONTRAST, tokenColour, tokenPalette, INK, PAPER } from '../../src/engine/tokenColours.ts';
+import { contrastRatio, deltaE, hexToOklab, levelTokenColours, MIN_CONTRAST, MIN_SURFACE_DELTA, SURFACE_COLOURS, tokenColour, tokenPalette, INK, PAPER } from '../../src/engine/tokenColours.ts';
 import { TOKEN_SYMBOL_BASE } from '../../src/engine/tokens.ts';
 
 /** Minimum perceptual distance (ΔE_OK × 100) between any two different combos in one puzzle. */
@@ -31,6 +31,9 @@ describe('combo palette', () => {
       expect(contrastRatio(c.bg, c.fg)).toBeGreaterThanOrEqual(MIN_CONTRAST);
       expect(contrastRatio(c.bg, c.fgSoft)).toBeGreaterThanOrEqual(MIN_CONTRAST);
     }
+  });
+  it('stays clear of the clinical light surfaces (canvas, panels, holes, hairlines, ink)', () => {
+    for (const c of pal) for (const sf of SURFACE_COLOURS) expect(deltaE(c.lab, hexToOklab(sf))).toBeGreaterThanOrEqual(MIN_SURFACE_DELTA);
   });
   it('is deterministic (pure, recomputed identically)', () => {
     expect(tokenPalette()).toBe(pal);

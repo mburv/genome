@@ -95,17 +95,25 @@ function makeColour(bg: string): TokenColour | null {
   return { bg, border, fg, fgSoft, contrast, lab: [L, a, b] };
 }
 
+/**
+ * Clinical light surfaces (canvas, panel, hole, hairline rule, ink) a combo colour must stay clear of, so a
+ * tile never reads as an empty cell, the board background or a rule.
+ */
+export const SURFACE_COLOURS = ['#f7f7f5', '#ffffff', '#efefea', '#e8e8e2', '#d4d4ce', '#111111'] as const;
+export const MIN_SURFACE_DELTA = 12;
+const SURFACES = SURFACE_COLOURS.map(hexToOklab);
+
 let palette: TokenColour[] | null = null;
 /** The ordered palette (farthest-point order over the contrast-safe OKLCH grid). Computed once. */
 export function tokenPalette(): readonly TokenColour[] {
   if (palette) return palette;
   const cands: TokenColour[] = [];
-  const Ls = [0.38, 0.43, 0.48, 0.72, 0.78, 0.84, 0.9];
+  const Ls = [0.34, 0.4, 0.46, 0.52, 0.58, 0.72, 0.78, 0.84, 0.9];
   const Cs = [0.07, 0.11, 0.15, 0.19, 0.23];
   for (const L of Ls) for (const C of Cs) for (let h = 0; h < 360; h += 6) {
     const hex = oklch(L, C, h);
     const col = hex && makeColour(hex);
-    if (col && !cands.some((x) => x.bg === col.bg)) cands.push(col);
+    if (col && !cands.some((x) => x.bg === col.bg) && SURFACES.every((sf) => deltaE(col.lab, sf) >= MIN_SURFACE_DELTA)) cands.push(col);
   }
   // Farthest-point order. Seed: the most chromatic mid-light candidate nearest hue 30° (warm coral) — fixed.
   const order: TokenColour[] = [];
