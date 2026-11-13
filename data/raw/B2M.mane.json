@@ -1,0 +1,16 @@
+{
+  "symbol": "B2M",
+  "geneId": "567",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/B2M/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:46.060Z",
+  "responseSha256": "6a0126436329c6ce1d091da223ea4275b6152b89cac882c2a24a7acb36391a57",
+  "description": "beta-2-microglobulin",
+  "maneSelect": [
+    {
+      "accession": "NM_004048.4",
+      "ensembl": "ENST00000648006.3",
+      "protein": "NP_004039.1",
+      "chromosome": "15"
+    }
+  ]
+}

@@ -1,12 +1,35 @@
+import { createContext, useContext } from 'react';
 import type { LevelDefinition, Track } from '../engine/types.ts';
+import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
+import { Barcode, SeqLetters, tierClass } from './TokenFace.tsx';
 
 interface Props {
   def: LevelDefinition;
   matches: boolean[][];
   solved: boolean;
+  custom?: CustomTokens;
 }
 
+const TokCtx = createContext<{ def: LevelDefinition; custom: CustomTokens } | null>(null);
+
 function Strip({ track, ok, testId }: { track: Track; ok: boolean[]; testId?: string | undefined }) {
+  const tok = useContext(TokCtx);
+  if (tok?.def.tokens) {
+    // Multi-base pieces: a chip per tile (readable label + barcode) in reading order.
+    return (
+      <span className="mini-strip tok-strip" data-testid={testId}>
+        {track.expected.split('').map((sym, i) => {
+          const seq = symbolSequence(tok.def, tok.custom, sym);
+          return (
+            <span key={i} className={`tok-chip ${tierClass(seq.length)} ${ok[i] ? 'ok' : ''}`} data-seq={seq} title={seq}>
+              <span className="chip-label">{seq.length <= 6 ? <SeqLetters seq={seq} /> : symbolLabel(tok.def, tok.custom, sym)}</span>
+              {seq.length > 3 && <Barcode seq={seq} />}
+            </span>
+          );
+        })}
+      </span>
+    );
+  }
   return (
     <span className="mini-strip" data-testid={testId}>
       {track.expected.split('').map((b, i) => (
@@ -16,16 +39,42 @@ function Strip({ track, ok, testId }: { track: Track; ok: boolean[]; testId?: st
   );
 }
 
+/** The full coding sequence a token level spells, piece by piece (matched pieces highlighted). */
+function FullSequence({ def, custom, matches }: { def: LevelDefinition; custom: CustomTokens; matches: boolean[][] }) {
+  return (
+    <div className="full-seq mono tiny" data-testid="target-sequence" aria-label="Full target sequence">
+      {def.tracks.map((t, ti) => (
+        <span key={t.group} className="full-part">
+          {ti > 0 && <span className="muted"> + </span>}
+          {t.expected.split('').map((sym, i) => (
+            <span key={i} className={`full-piece ${matches[ti]?.[i] ? 'ok' : ''}`}><SeqLetters seq={symbolSequence(def, custom, sym)} /></span>
+          ))}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 const readLabel = (t: Track): string => (t.orientation === 'horizontal' ? 'left → right' : 'top → bottom');
 
 /** Mode-specific target read-out with live per-cell matches. */
-export function TargetPanel({ def, matches, solved }: Props) {
+export function TargetPanel({ custom = {}, ...p }: Props) {
+  return (
+    <TokCtx.Provider value={{ def: p.def, custom }}>
+      <TargetPanelInner {...p} custom={custom} />
+    </TokCtx.Provider>
+  );
+}
+
+function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: CustomTokens }) {
   const t0 = def.tracks[0]!;
+  const toks = !!def.tokens;
+  const full = toks ? <FullSequence def={def} custom={custom} matches={matches} /> : null;
   const range = `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}`;
   const label = (
     <div className="row-between small">
       <span className="target-title">{def.title}</span>
-      <span className="muted">{range}</span>
+      <span className="muted">{range}{toks ? ` · ${def.tier}-base tiles` : ''}</span>
     </div>
   );
   if (def.mode === 'replicate') {
@@ -44,6 +93,7 @@ export function TargetPanel({ def, matches, solved }: Props) {
             <span className="muted tiny">complement</span>
           </div>
         </div>
+        {full}
         <p className="muted tiny">Aligned complement (A–T, C–G), read {readLabel(a)} on the board. Only strand 1 counts toward coverage.</p>
       </section>
     );
@@ -55,10 +105,13 @@ export function TargetPanel({ def, matches, solved }: Props) {
         {label}
         <div className="repair-row">
           <b className="badge">{a.group}</b><Strip track={a} ok={matches[0]!} testId="target-strip" />
-          <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot">{solved ? def.repair.expected : '?'}</span>
+          {toks
+            ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot">{solved ? symbolLabel(def, custom, def.repair.expected) : `?×${def.repair.length ?? symbolSequence(def, custom, def.repair.expected).length}`}</span>
+            : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot">{solved ? def.repair.expected : '?'}</span>}
           <Strip track={b} ok={matches[1]!} /><b className="badge">{b.group}</b>
         </div>
-        <p className="muted tiny">Read {readLabel(t0)}. The missing base is a reference assembly gap (not a mutation); it is restored when both sides match.</p>
+        {full}
+        <p className="muted tiny">Read {readLabel(t0)}. The missing {toks ? 'piece' : 'base'} is a reference assembly gap (not a mutation); it is restored when both sides match.</p>
       </section>
     );
   }
@@ -76,6 +129,7 @@ export function TargetPanel({ def, matches, solved }: Props) {
             </span>
           ))}
         </div>
+        {full}
         <p className="muted tiny">Pieces join in order when all match. The split is illustrative, not real exon boundaries.</p>
       </section>
     );
@@ -86,7 +140,8 @@ export function TargetPanel({ def, matches, solved }: Props) {
       <div className="seq-row">
         <b className="badge">{t0.group}</b><Strip track={t0} ok={matches[0]!} testId="target-strip" />
       </div>
-      <p className="muted tiny">Read {readLabel(t0)}.</p>
+      {full}
+      <p className="muted tiny">Read {readLabel(t0)}.{toks ? ' Tiles match by sequence, not by label.' : ''}</p>
     </section>
   );
 }

@@ -161,7 +161,7 @@ test('settings: sound, haptics and reduced motion toggles persist across reloads
   expect(s).toEqual({ reducedMotion: true, sound: true, haptics: false });
 });
 
-test('an M2 save upgrades to v3 with every completion kept, a notice and a backup', async ({ page }) => {
+test('an M2 save upgrades to v4 with every completion kept, a notice and a backup', async ({ page }) => {
   await page.goto('/');
   const ids = ['ins-01', 'ins-02', 'ins-03', 'ins-04', 'ins-05', 'ins-06', 'hbb-01'];
   const m2 = { schemaVersion: 2, campaignId: 'genome-m2-ins-hbb', generatorVersion: 'm2-gen-1', datasets: { INS: 'refseq-NM_000207.3-2026-11-13', HBB: 'refseq-NM_000518.5-2026-11-13' }, currentLevelId: 'hbb-02', completed: ids, discovered: ['INS'], attempts: {}, legacy: { m1Completed: [] }, settings: { reducedMotion: false } };
@@ -173,6 +173,6 @@ test('an M2 save upgrades to v3 with every completion kept, a notice and a backu
   await expect(page.getByTestId('progress-HBB')).toHaveText('9 / 51 sample bases');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m2'))).toContain('"schemaVersion":2');
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!);
-  expect(saved.schemaVersion).toBe(3);
+  expect(saved.schemaVersion).toBe(4);
   expect(saved.completed).toEqual(ids);
 });

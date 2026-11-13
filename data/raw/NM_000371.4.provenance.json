@@ -1,0 +1,7 @@
+{
+  "accession": "NM_000371.4",
+  "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NM_000371.4&rettype=gb&retmode=text&tool=genome-game",
+  "retrievedAt": "2026-11-13T19:35:45.568Z",
+  "rawSha256": "20ac4e31ccfc1c4cf13fd3d6136a8b08c11920a5fc94797cb61b8d5d199de134",
+  "bytes": 12438
+}

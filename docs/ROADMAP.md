@@ -1,6 +1,6 @@
 # Development roadmap
 
-Each milestone ends with a runnable build or verified engine and an owner review. No future milestone should be implemented merely because it appears in this document. Mark actual progress only after evidence. Status as of 13 Nov 2026: M1 and M2 accepted by the owner; M3 implemented (awaiting owner playtest); M4–M6 not started.
+Each milestone ends with a runnable build or verified engine and an owner review. No future milestone should be implemented merely because it appears in this document. Mark actual progress only after evidence. Status as of 13 Nov 2026: M1, M2 and M3 accepted by the owner; M4 implemented (awaiting owner playtest); M5–M6 not started.
 
 ## M1 — Core vertical slice (first Codex task)
 
@@ -20,13 +20,15 @@ Acceptance: all 12 unique masks and legal certificates, all four modes work, no 
 
 ## M3 — Enzyme laboratory
 
-Status (13 Nov 2026): implemented and automatically tested (D-M3-*, `tests/engine/powers.test.ts`, `e2e/powers.spec.ts`, `docs/AUDIT_M3.md`). Awaiting the owner's with/without-powers playtest; costs (CRISPR ⚡4, Ligase ⚡2, Scaffold ⚡3, start ⚡2, cap 9) are the GDD §6 values and are not tuned yet.
+Status: **accepted** (13 Nov 2026). Implemented and automatically tested (D-M3-*, `tests/engine/powers.test.ts`, `e2e/powers.spec.ts`, `docs/AUDIT_M3.md`); the owner playtested the live build and accepted it ("Yeah seems to work great. Let's move onto M4"). Costs (CRISPR ⚡4, Ligase ⚡2, Scaffold ⚡3, start ⚡2, cap 9) remain the untuned GDD §6 values, approved by the owner as-is; retune only from later playtest evidence.
 
 Implement CRISPR, Ligase and Scaffold one at a time. Energy ledger, tutorials and action previews; powers can be undone and release/restart remains free. Explicit recovery hints after power use. No permanent unlock economy yet; tutorial access. Add reduced-motion, sound/haptic toggles as appropriate. Build dedicated test cases for locks and bridge expiration.
 
 Acceptance: invalid actions free, correct costs, no credit farming, same-base edit no-op, exactly three successful scaffold rotations then expiry, lock correctly blocks both axes, release/undo restores movement, hints never invalid, all levels solvable without powers, recovery from a bad CRISPR edit. Owner compares play with/without powers; tune costs only after observed evidence.
 
 ## M4 — Full CDS assembly and scalable content
+
+Status (13 Nov 2026): implemented and automatically tested (D-M4-*, `tests/campaign/assembly.test.ts`, `tests/engine/tokens.test.ts`, `tests/save/save-v4.test.ts`, `e2e/assembly.spec.ts`, `docs/AUDIT_M4.md`). 12 verified MANE Select genes (INS, HBB + 10), one assembly chapter each (107 puzzles, 3/6/12/24-base tiles), exact reconstruction + SHA-256. Chapter durations are model estimates (≈19–32 min); the owner playtest of chapter length, difficulty and long-token readability is pending. Gene-to-ability milestones deliberately deferred (D-M4-13).
 
 Prototype multi-base token tiers; prove full INS and HBB coverage with an enjoyable short chapter, track discovery separately from assembly. Test token labels/preview and correct fragment order. Build importer, pinned manifest and coverage validation; expand to a curated set of 10–30 genes after data audit. Introduce gene-to-ability milestones only once verified data and long-token power semantics are ready. Assess bounded solver/difficulty and uniqueness at larger scale. No promise of a full catalogue yet.
 

@@ -1,0 +1,16 @@
+{
+  "symbol": "RHO",
+  "geneId": "6010",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/RHO/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:47.136Z",
+  "responseSha256": "4cb303c0b9b2231d414758dab5ca1c2f7724bd1d105f3a4e03500ff6704054e2",
+  "description": "rhodopsin",
+  "maneSelect": [
+    {
+      "accession": "NM_000539.3",
+      "ensembl": "ENST00000296271.4",
+      "protein": "NP_000530.1",
+      "chromosome": "3"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
-// Generator audit CLI (M2, extended in M3). Runs ≥1,000 independent generation candidates across all level specs (12 campaign + 3 Enzyme lab),
-// records rejection reasons, duplicate/near-duplicate checks, certificate replay, hint walk, bounded
+// Generator audit CLI (M2, extended in M3; M4 runs it with --no-write as a check, and the chapter audit lives in scripts/audit-chapters.ts).
+// Runs ≥1,000 independent generation candidates across the 15 M2/lab level specs and records rejection reasons, duplicate/near-duplicate checks, certificate replay, hint walk, bounded
 // solver results and estimated difficulty, then writes docs/AUDIT_M3.md and docs/audit-m3.json (docs/AUDIT_M2.md is the frozen M2 record).
 //   node scripts/audit-levels.ts [--per-spec 100] [--budget 60000] [--no-write]
 import { readFileSync, writeFileSync } from 'node:fs';

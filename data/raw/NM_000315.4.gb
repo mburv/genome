@@ -1,0 +1,221 @@
+LOCUS       NM_000315                791 bp    mRNA    linear   PRI 22-JUN-2025
+DEFINITION  Homo sapiens parathyroid hormone (PTH), transcript variant 1, mRNA.
+ACCESSION   NM_000315
+VERSION     NM_000315.4
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 791)
+  AUTHORS   di Filippo,L., Bilezikian,J.P., Canalis,E., Terenzi,U. and
+            Giustina,A.
+  TITLE     New insights into the vitamin D/PTH axis in endocrine-driven
+            metabolic bone diseases
+  JOURNAL   Endocrine 85 (3), 1007-1019 (2024)
+   PUBMED   38632163
+  REMARK    GeneRIF: New insights into the vitamin D/PTH axis in
+            endocrine-driven metabolic bone diseases.
+            Review article
+REFERENCE   2  (bases 1 to 791)
+  AUTHORS   Murat,K., Oguzhan,Y., Hakan,G., Ufuk,O. and Birhan,Y.M.
+  TITLE     The Relationship Between Atrial Fibrillation and Parathyroid
+            Hormone in Heart Failure Outpatients
+  JOURNAL   Kardiologiia 63 (9), 51-55 (2023)
+   PUBMED   37815140
+  REMARK    GeneRIF: The Relationship Between Atrial Fibrillation and
+            Parathyroid Hormone in Heart Failure Outpatients.
+REFERENCE   3  (bases 1 to 791)
+  AUTHORS   Liu,L., Qian,L., Li,P., Li,J., Huang,S., Yi,W., Liu,S. and Wu,W.
+  TITLE     [MiR-301a-5p modulates parathyroid hormone secretion in secondary
+            hyperparathyroidism possibly by regulating calcium-sensing
+            receptor]
+  JOURNAL   Nan Fang Yi Ke Da Xue Xue Bao 43 (8), 1363-1370 (2023)
+   PUBMED   37712273
+  REMARK    GeneRIF: [MiR-301a-5p modulates parathyroid hormone secretion in
+            secondary hyperparathyroidism possibly by regulating
+            calcium-sensing receptor].
+REFERENCE   4  (bases 1 to 791)
+  AUTHORS   Srisuwarn,P. and Disthabanchong,S.
+  TITLE     Role of Parathyroid Hormone and Parathyroid Hormone-Related Protein
+            in Protein-Energy Malnutrition
+  JOURNAL   Front Biosci (Landmark Ed) 28 (8), 167 (2023)
+   PUBMED   37664938
+  REMARK    GeneRIF: Role of Parathyroid Hormone and Parathyroid
+            Hormone-Related Protein in Protein-Energy Malnutrition.
+            Review article
+REFERENCE   5  (bases 1 to 791)
+  AUTHORS   Cheloha,R.W., Gellman,S.H., Vilardaga,J.P. and Gardella,T.J.
+  TITLE     PTH receptor-1 signalling-mechanistic insights and therapeutic
+            prospects
+  JOURNAL   Nat Rev Endocrinol 11 (12), 712-724 (2015)
+   PUBMED   26303600
+  REMARK    Review article
+REFERENCE   6  (bases 1 to 791)
+  AUTHORS   Handt,O., Reis,A. and Schmidtke,J.
+  TITLE     Ectopic transcription of the parathyroid hormone gene in
+            lymphocytes, lymphoblastoid cells and tumour tissue
+  JOURNAL   J Endocrinol 135 (2), 249-256 (1992)
+   PUBMED   1474331
+REFERENCE   7  (bases 1 to 791)
+  AUTHORS   Parkinson,D.B. and Thakker,R.V.
+  TITLE     A donor splice site mutation in the parathyroid hormone gene is
+            associated with autosomal recessive hypoparathyroidism
+  JOURNAL   Nat Genet 1 (2), 149-152 (1992)
+   PUBMED   1302009
+REFERENCE   8  (bases 1 to 791)
+  AUTHORS   Vasicek,T.J., McDevitt,B.E., Freeman,M.W., Fennick,B.J.,
+            Hendy,G.N., Potts,J.T. Jr., Rich,A. and Kronenberg,H.M.
+  TITLE     Nucleotide sequence of the human parathyroid hormone gene
+  JOURNAL   Proc Natl Acad Sci U S A 80 (8), 2127-2131 (1983)
+   PUBMED   6220408
+REFERENCE   9  (bases 1 to 791)
+  AUTHORS   Keutmann,H.T., Sauer,M.M., Hendy,G.N., O'Riordan,L.H. and
+            Potts,J.T. Jr.
+  TITLE     Complete amino acid sequence of human parathyroid hormone
+  JOURNAL   Biochemistry 17 (26), 5723-5729 (1978)
+   PUBMED   728431
+REFERENCE   10 (bases 1 to 791)
+  AUTHORS   Keutmann,H.T., Niall,H.D., O'Riordan,J.L. and Potts,J.T. Jr.
+  TITLE     A reinvestigation of the amino-terminal sequence of human
+            parathyroid hormone
+  JOURNAL   Biochemistry 14 (9), 1842-1847 (1975)
+   PUBMED   1125201
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from BX106232.1 and AA889450.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 23, 2018 this sequence version replaced NM_000315.3.
+            
+            Summary: This gene encodes a member of the parathyroid family of
+            proteins. The encoded preproprotein is proteolytically processed to
+            generate a protein that binds to the parathyroid
+            hormone/parathyroid hormone-related peptide receptor and regulates
+            blood calcium and phosphate levels. Excess production of the
+            encoded protein, known as hyperparathyroidism, can result in
+            hypercalcemia and kidney stones. On the other hand, defective
+            processing of the encoded protein may lead to hypoparathyroidism,
+            which can result in hypocalcemia and numbness. Alternative splicing
+            results in multiple transcript variants. [provided by RefSeq, Oct
+            2015].
+            
+            Transcript Variant: This variant (1) represents the shorter
+            transcript and encodes the shorter isoform (1).
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: BX103059.1, ERR279834.9165.1
+                                           [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA2153347, SAMEA2153733
+                                           [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000282091.6/ ENSP00000282091.1
+            RefSeq Select criteria :: based on conservation, expression
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-631               BX106232.1         24-654
+            632-791             AA889450.1         6-165               c
+FEATURES             Location/Qualifiers
+     source          1..791
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="11"
+                     /map="11p15.3"
+     gene            1..791
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /note="parathyroid hormone"
+                     /db_xref="GeneID:5741"
+                     /db_xref="HGNC:HGNC:9606"
+                     /db_xref="MIM:168450"
+     exon            1..87
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /inference="alignment:Splign:2.1.0"
+     exon            88..178
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             93..440
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /note="isoform 1 preproprotein is encoded by transcript
+                     variant 1; parathyroid hormone 1; parathyrin;
+                     parathormone; prepro-PTH; preproparathyroid hormone"
+                     /codon_start=1
+                     /product="parathyroid hormone isoform 1 preproprotein"
+                     /protein_id="NP_000306.1"
+                     /db_xref="CCDS:CCDS7812.1"
+                     /db_xref="GeneID:5741"
+                     /db_xref="HGNC:HGNC:9606"
+                     /db_xref="MIM:168450"
+                     /translation="MIPAKDMAKVMIVMLAICFLTKSDGKSVKKRSVSEIQLMHNLGK
+                     HLNSMERVEWLRKKLQDVHNFVALGAPLAPRDAGSQRPRKKEDNVLVESHEKSLGEAD
+                     KADVNVLTKAKSQ"
+     sig_peptide     93..167
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /inference="COORDINATES: ab initio prediction:SignalP:6.0"
+     mat_peptide     186..437
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /product="Parathyroid hormone. /id=PRO_0000023250"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01270.1)"
+     misc_feature    243..299
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01270.1);
+                     Region: Important for receptor binding.
+                     /evidence=ECO:0000269|PubMed:18375760"
+     misc_feature    309..437
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01270.1);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     exon            179..791
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      768..773
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /note="hexamer: AATAAA"
+     regulatory      772..777
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /note="hexamer: AATGAA"
+     polyA_site      787
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+     polyA_site      791
+                     /gene="PTH"
+                     /gene_synonym="FIH1; PTH1"
+                     /note="major polyA site"
+ORIGIN      
+        1 gcagtccaat tcatcagttg tctttagttt actcagcatc agctactaac atacctgaac
+       61 gaagatcttg ttctaagaca ttgtatgtga agatgatacc tgcaaaagac atggctaaag
+      121 ttatgattgt catgttggca atttgttttc ttacaaaatc ggatgggaaa tctgttaaga
+      181 agagatctgt gagtgaaata cagcttatgc ataacctggg aaaacatctg aactcgatgg
+      241 agagagtaga atggctgcgt aagaagctgc aggatgtgca caattttgtt gcccttggag
+      301 ctcctctagc tcccagagat gctggttccc agaggccccg aaaaaaggaa gacaatgtct
+      361 tggttgagag ccatgaaaaa agtcttggag aggcagacaa agctgatgtg aatgtattaa
+      421 ctaaagctaa atcccagtga aaatgaaaac agatattgtc agagttctgc tctagacagt
+      481 gtagggcaac aatacatgct gctaattcaa agctctatta agatttccaa gtgccaatat
+      541 ttctgatata acaaactaca tgtaatccat cactagccat gataactgca attttaattg
+      601 attattctga ttccactttt attcatttga gttattttaa ttatcttttc tattgtttat
+      661 tctttttaaa gtatgttatt gcataattta taaaagaata aaattgcact tttaaacctc
+      721 tcttctacct taaaatgtaa aacaaaaatg taatgatcat aagtctaaat aaatgaagta
+      781 tttctcactc a
+//
+

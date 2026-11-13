@@ -1,0 +1,16 @@
+{
+  "symbol": "TTR",
+  "geneId": "7276",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/TTR/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:44.996Z",
+  "responseSha256": "32e05c209053f532768bdd2ed2c776d2d32edcfd6d87325d4c4495a9b00fd874",
+  "description": "transthyretin",
+  "maneSelect": [
+    {
+      "accession": "NM_000371.4",
+      "ensembl": "ENST00000237014.8",
+      "protein": "NP_000362.1",
+      "chromosome": "18"
+    }
+  ]
+}

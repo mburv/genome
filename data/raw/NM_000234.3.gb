@@ -1,0 +1,520 @@
+LOCUS       NM_000234               3125 bp    mRNA    linear   PRI 27-APR-2025
+DEFINITION  Homo sapiens DNA ligase 1 (LIG1), transcript variant 1, mRNA.
+ACCESSION   NM_000234 XM_005258933
+VERSION     NM_000234.3
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 3125)
+  AUTHORS   Balu,K.E., Gulkis,M., Almohdar,D. and Caglayan,M.
+  TITLE     Structures of LIG1 provide a mechanistic basis for understanding a
+            lack of sugar discrimination against a ribonucleotide at the 3'-end
+            of nick DNA
+  JOURNAL   J Biol Chem 300 (5), 107216 (2024)
+   PUBMED   38522520
+  REMARK    GeneRIF: Structures of LIG1 provide a mechanistic basis for
+            understanding a lack of sugar discrimination against a
+            ribonucleotide at the 3'-end of nick DNA.
+REFERENCE   2  (bases 1 to 3125)
+  AUTHORS   Yu,M., Li,L. and Xu,P.
+  TITLE     miR-325 Supresses Cell Proliferation and Migration in Non-Small
+            Cell Lung Cancer via Targeting DNA Ligase 1 (LIG1)
+  JOURNAL   Folia Biol (Praha) 70 (2), 95-103 (2024)
+   PUBMED   39231317
+  REMARK    GeneRIF: miR-325 Supresses Cell Proliferation and Migration in
+            Non-Small Cell Lung Cancer via Targeting DNA Ligase 1 (LIG1).
+REFERENCE   3  (bases 1 to 3125)
+  AUTHORS   Chang,S.M., Yang,Y.C., Chen,G.L., Chen,L.H., Shen,T.C., Liu,Y.F.,
+            Wang,Y.C., Tsai,C.W., Hsia,T.C., Bau,D.T. and Chang,W.S.
+  TITLE     The Association of DNA Ligase 1 Rs20579 Polymorphism With Lung
+            Cancer Risk Among Taiwanese
+  JOURNAL   In Vivo 37 (4), 1504-1510 (2023)
+   PUBMED   37369482
+  REMARK    GeneRIF: The Association of DNA Ligase 1 Rs20579 Polymorphism With
+            Lung Cancer Risk Among Taiwanese.
+REFERENCE   4  (bases 1 to 3125)
+  AUTHORS   Bhandari,S.K., Wiest,N., Sallmyr,A., Du,R., Ferry,L., Defossez,P.A.
+            and Tomkinson,A.E.
+  TITLE     Unchanged PCNA and DNMT1 dynamics during replication in DNA ligase
+            I-deficient cells but abnormal chromatin levels of non-replicative
+            histone H1
+  JOURNAL   Sci Rep 13 (1), 4363 (2023)
+   PUBMED   36928068
+  REMARK    GeneRIF: Unchanged PCNA and DNMT1 dynamics during replication in
+            DNA ligase I-deficient cells but abnormal chromatin levels of
+            non-replicative histone H1.
+REFERENCE   5  (bases 1 to 3125)
+  AUTHORS   McNally,J.R., Ames,A.M., Admiraal,S.J. and O'Brien,P.J.
+  TITLE     Human DNA ligases I and III have stand-alone end-joining
+            capability, but differ in ligation efficiency and specificity
+  JOURNAL   Nucleic Acids Res 51 (2), 796-805 (2023)
+   PUBMED   36625284
+  REMARK    GeneRIF: Human DNA ligases I and III have stand-alone end-joining
+            capability, but differ in ligation efficiency and specificity.
+REFERENCE   6  (bases 1 to 3125)
+  AUTHORS   Webster,A.D., Barnes,D.E., Arlett,C.F., Lehmann,A.R. and Lindahl,T.
+  TITLE     Growth retardation and immunodeficiency in a patient with mutations
+            in the DNA ligase I gene
+  JOURNAL   Lancet 339 (8808), 1508-1509 (1992)
+   PUBMED   1351188
+REFERENCE   7  (bases 1 to 3125)
+  AUTHORS   Barnes,D.E., Tomkinson,A.E., Lehmann,A.R., Webster,A.D. and
+            Lindahl,T.
+  TITLE     Mutations in the DNA ligase I gene of an individual with
+            immunodeficiencies and cellular hypersensitivity to DNA-damaging
+            agents
+  JOURNAL   Cell 69 (3), 495-503 (1992)
+   PUBMED   1581963
+REFERENCE   8  (bases 1 to 3125)
+  AUTHORS   Barnes,D.E., Kodama,K., Tynan,K., Trask,B.J., Christensen,M., De
+            Jong,P.J., Spurr,N.K., Lindahl,T. and Mohrenweiser,H.W.
+  TITLE     Assignment of the gene encoding DNA ligase I to human chromosome
+            19q13.2-13.3
+  JOURNAL   Genomics 12 (1), 164-166 (1992)
+   PUBMED   1733856
+REFERENCE   9  (bases 1 to 3125)
+  AUTHORS   Petrini,J.H., Huwiler,K.G. and Weaver,D.T.
+  TITLE     A wild-type DNA ligase I gene is expressed in Bloom's syndrome
+            cells
+  JOURNAL   Proc Natl Acad Sci U S A 88 (17), 7615-7619 (1991)
+   PUBMED   1881902
+REFERENCE   10 (bases 1 to 3125)
+  AUTHORS   Lasko,D.D., Tomkinson,A.E. and Lindahl,T.
+  TITLE     Mammalian DNA ligases. Biosynthesis and intracellular localization
+            of DNA ligase I
+  JOURNAL   J Biol Chem 265 (21), 12618-12622 (1990)
+   PUBMED   2197279
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from BC108318.1.
+            
+            On Nov 23, 2018 this sequence version replaced NM_000234.2.
+            
+            Summary: This gene encodes a member of the ATP-dependent DNA ligase
+            protein family. The encoded protein functions in DNA replication,
+            recombination, and the base excision repair process. Mutations in
+            this gene that lead to DNA ligase I deficiency result in
+            immunodeficiency and increased sensitivity to DNA-damaging agents.
+            Disruption of this gene may also be associated with a variety of
+            cancers. Alternative splicing results in multiple transcript
+            variants. [provided by RefSeq, Jan 2014].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: BC108318.1, M36067.1 [ECO:0000332]
+            RNAseq introns              :: mixed sample support SAMEA1965299,
+                                           SAMEA1966682 [ECO:0006172]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000263274.12/ ENSP00000263274.6
+            RefSeq Select criteria :: based on conservation, expression,
+                                      longest protein
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-3125              BC108318.1         260-3384
+FEATURES             Location/Qualifiers
+     source          1..3125
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="19"
+                     /map="19q13.33"
+     gene            1..3125
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="DNA ligase 1"
+                     /db_xref="GeneID:3978"
+                     /db_xref="HGNC:HGNC:6598"
+                     /db_xref="MIM:126391"
+     exon            1..104
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     misc_feature    63..65
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="upstream in-frame stop codon"
+     exon            105..178
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             162..2921
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /EC_number="6.5.1.1"
+                     /note="isoform 1 is encoded by transcript variant 1;
+                     polydeoxyribonucleotide synthase [ATP] 1; ligase I, DNA,
+                     ATP-dependent"
+                     /codon_start=1
+                     /product="DNA ligase 1 isoform 1"
+                     /protein_id="NP_000225.1"
+                     /db_xref="CCDS:CCDS12711.1"
+                     /db_xref="GeneID:3978"
+                     /db_xref="HGNC:HGNC:6598"
+                     /db_xref="MIM:126391"
+                     /translation="MQRSIMSFFHPKKEGKAKKPEKEASNSSRETEPPPKAALKEWNG
+                     VVSESDSPVKRPGRKAARVLGSEGEEEDEALSPAKGQKPALDCSQVSPPRPATSPENN
+                     ASLSDTSPMDSSPSGIPKRRTARKQLPKRTIQEVLEEQSEDEDREAKRKKEEEEEETP
+                     KESLTEAEVATEKEGEDGDQPTTPPKPLKTSKAETPTESVSEPEVATKQELQEEEEQT
+                     KPPRRAPKTLSSFFTPRKPAVKKEVKEEEPGAPGKEGAAEGPLDPSGYNPAKNNYHPV
+                     EDACWKPGQKVPYLAVARTFEKIEEVSARLRMVETLSNLLRSVVALSPPDLLPVLYLS
+                     LNHLGPPQQGLELGVGDGVLLKAVAQATGRQLESVRAEAAEKGDVGLVAENSRSTQRL
+                     MLPPPPLTASGVFSKFRDIARLTGSASTAKKIDIIKGLFVACRHSEARFIARSLSGRL
+                     RLGLAEQSVLAALSQAVSLTPPGQEFPPAMVDAGKGKTAEARKTWLEEQGMILKQTFC
+                     EVPDLDRIIPVLLEHGLERLPEHCKLSPGIPLKPMLAHPTRGISEVLKRFEEAAFTCE
+                     YKYDGQRAQIHALEGGEVKIFSRNQEDNTGKYPDIISRIPKIKLPSVTSFILDTEAVA
+                     WDREKKQIQPFQVLTTRKRKEVDASEIQVQVCLYAFDLIYLNGESLVREPLSRRRQLL
+                     RENFVETEGEFVFATSLDTKDIEQIAEFLEQSVKDSCEGLMVKTLDVDATYEIAKRSH
+                     NWLKLKKDYLDGVGDTLDLVVIGAYLGRGKRAGRYGGFLLASYDEDSEELQAICKLGT
+                     GFSDEELEEHHQSLKALVLPSPRPYVRIDGAVIPDHWLDPSAVWEVKCADLSLSPIYP
+                     AARGLVDSDKGISLRFPRFIRVREDKQPEQATTSAQVACLYRKQSQIQNQQGEDSGSD
+                     PEDTY"
+     misc_feature    162..971
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="propagated from UniProtKB/Swiss-Prot (P18858.1);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    300..302
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:20068231,
+                     ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    306..308
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:19690332,
+                     ECO:0007744|PubMed:20068231; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    312..314
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:16964243,
+                     ECO:0007744|PubMed:18669648, ECO:0007744|PubMed:19690332,
+                     ECO:0007744|PubMed:20068231, ECO:0007744|PubMed:21406692,
+                     ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    357..359
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:16964243,
+                     ECO:0007744|PubMed:17081983, ECO:0007744|PubMed:17693683,
+                     ECO:0007744|PubMed:19690332, ECO:0007744|PubMed:20068231,
+                     ECO:0007744|PubMed:21406692, ECO:0007744|PubMed:23186163;
+                     propagated from UniProtKB/Swiss-Prot (P18858.1);
+                     phosphorylation site"
+     misc_feature    387..389
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:16964243,
+                     ECO:0007744|PubMed:17081983, ECO:0007744|PubMed:17693683,
+                     ECO:0007744|PubMed:20068231, ECO:0007744|PubMed:21406692,
+                     ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    582..584
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:17081983,
+                     ECO:0007744|PubMed:18669648, ECO:0007744|PubMed:19690332,
+                     ECO:0007744|PubMed:20068231, ECO:0007744|PubMed:21406692,
+                     ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    744..746
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0007744|PubMed:16964243,
+                     ECO:0007744|PubMed:18669648, ECO:0007744|PubMed:19690332,
+                     ECO:0007744|PubMed:20068231, ECO:0007744|PubMed:21406692,
+                     ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    756..758
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    762..764
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:18669648,
+                     ECO:0007744|PubMed:19690332, ECO:0007744|PubMed:20068231,
+                     ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    780..782
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    837..839
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="N6-acetyllysine.
+                     /evidence=ECO:0000250|UniProtKB:P37913; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); acetylation site"
+     misc_feature    846..848
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    849..851
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    858..860
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0007744|PubMed:16964243,
+                     ECO:0007744|PubMed:18669648; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    1074..1076
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Interaction with target DNA; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); other site"
+     misc_feature    1506..1535
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="propagated from UniProtKB/Swiss-Prot (P18858.1);
+                     Region: Interaction with target DNA"
+     misc_feature    1929..1931
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Interaction with target DNA; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); other site"
+     misc_feature    2085..2093
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="propagated from UniProtKB/Swiss-Prot (P18858.1);
+                     Region: Interaction with target DNA"
+     misc_feature    2469..2471
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Interaction with target DNA; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); other site"
+     misc_feature    2544..2546
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Interaction with target DNA; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); other site"
+     misc_feature    2553..2555
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    2562..2564
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    2616..2618
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:23186163; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     misc_feature    2892..2894
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:18669648,
+                     ECO:0007744|PubMed:19690332, ECO:0007744|PubMed:20068231;
+                     propagated from UniProtKB/Swiss-Prot (P18858.1);
+                     phosphorylation site"
+     misc_feature    2898..2900
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0007744|PubMed:18669648,
+                     ECO:0007744|PubMed:19690332; propagated from
+                     UniProtKB/Swiss-Prot (P18858.1); phosphorylation site"
+     exon            179..268
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            269..404
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            405..531
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            532..627
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            628..735
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            736..858
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            859..937
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            938..1018
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1019..1075
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1076..1248
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1249..1415
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1416..1492
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1493..1584
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1585..1684
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1685..1770
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1771..1886
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1887..1982
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1983..2093
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2094..2165
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2166..2310
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2311..2393
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2394..2546
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2547..2600
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2601..2744
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2745..2837
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2838..3125
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      3103..3108
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="hexamer: AATAAA"
+     polyA_site      3125
+                     /gene="LIG1"
+                     /gene_synonym="hLig1; IMD96; LIGI"
+                     /note="major polyA site"
+ORIGIN      
+        1 agacgtctgc gcgcgaatgc cgtggcgcga acttgggact gcagaggcgc gcctggcgga
+       61 tctgagtgtg ttgcccgggc agcggcgcgc gggaccaacg caaggagcag ctgacagacg
+      121 aagaaaagtg ctggacagga agggagaatt ctgacgccaa catgcagcga agtatcatgt
+      181 catttttcca ccccaagaaa gagggtaaag caaagaagcc tgagaaggag gcatccaata
+      241 gcagcagaga gacggagccc cctccaaagg cggcactgaa ggagtggaat ggagtggtgt
+      301 ccgagagtga ctctccggtg aagaggccag ggaggaaggc ggcccgggtc ctgggcagcg
+      361 aaggggaaga ggaggatgaa gcccttagcc ctgctaaagg ccagaagcct gccctggact
+      421 gctcacaggt ctccccgccc cgtcctgcca catctcctga gaacaatgct tccctctctg
+      481 acacctctcc catggacagt tccccatcag ggattccgaa gcgtcgcaca gctcggaagc
+      541 agctcccgaa acggaccatt caggaagtcc tggaagagca gagtgaggac gaggacagag
+      601 aagccaagag gaagaaggag gaggaagaag aggagacccc gaaagaaagc ctcacagagg
+      661 ctgaagtggc cacagagaag gaaggagaag acggggacca gcccaccacg cctcccaagc
+      721 ccctaaagac ctccaaagca gagaccccga cggaaagcgt ttcagagcct gaggtggcca
+      781 cgaagcagga actgcaggag gaggaagagc agaccaagcc tccccgcaga gctcccaaga
+      841 cgctcagcag cttcttcacc ccccggaagc cagcagtcaa aaaagaagtg aaggaagagg
+      901 agccaggggc tccaggaaag gagggagctg ctgagggacc cctggatcca tctggttaca
+      961 atcctgccaa gaacaactat catcccgtgg aagatgcctg ctggaaaccg ggccagaagg
+     1021 ttccttacct ggctgtggcc cggacgtttg agaagatcga ggaggtgtct gctcggctcc
+     1081 ggatggtgga gacgctgagc aacttgctgc gctccgtggt ggccctgtcg cctccagacc
+     1141 tcctccctgt cctctacctc agcctcaacc accttgggcc accccagcag ggcctggagc
+     1201 ttggcgtggg tgatggtgtc cttctcaagg cagtggccca ggccacaggt cggcagctgg
+     1261 agtccgtccg ggctgaggca gccgagaaag gcgacgtggg gctggtggcc gagaacagcc
+     1321 gcagcaccca gaggctcatg ctgccaccac ctccgctcac tgcctccggg gtcttcagca
+     1381 agttccgcga catcgccagg ctcactggca gtgcttccac agccaagaag atagacatca
+     1441 tcaaaggcct ctttgtggcc tgccgccact cagaagcccg gttcatcgct aggtccctga
+     1501 gcggacggct gcgccttggg ctggcagagc agtcggtgct ggctgccctc tcccaggcag
+     1561 tgagcctcac gcccccgggc caagaattcc caccagccat ggtggatgct gggaagggca
+     1621 agacagcaga ggccagaaag acgtggctgg aggagcaagg catgatcctg aagcagacgt
+     1681 tctgcgaggt tcccgacctg gaccgaatta tccccgtgct gctggagcac ggcctggaac
+     1741 gtctcccgga gcactgcaag ctgagcccag ggattcccct gaaaccaatg ttggcccatc
+     1801 ccacccgggg catcagcgag gtcctgaaac gctttgagga ggcagctttc acctgcgaat
+     1861 acaaatatga cgggcagagg gcacagatcc acgccctgga aggcggggag gtgaagatct
+     1921 tcagcaggaa tcaggaagac aacactggga agtacccgga catcatcagc cgcatcccca
+     1981 agattaaact cccatcggtc acatccttca tcctggacac cgaagccgtg gcttgggacc
+     2041 gggaaaagaa gcagatccag ccattccaag tgctcaccac ccgcaaacgc aaggaggtgg
+     2101 atgcgtctga gatccaggtg caggtgtgtt tgtacgcctt cgacctcatc tacctcaatg
+     2161 gagagtccct ggtacgtgag cccctttccc ggcgccggca gctgctccgg gagaactttg
+     2221 tggagacaga gggcgagttt gtcttcgcca cctccctgga caccaaggac atcgagcaga
+     2281 tcgccgagtt cctggagcag tcagtgaaag actcctgcga ggggctgatg gtgaagaccc
+     2341 tggatgttga tgccacctac gagatcgcca agagatcgca caactggctc aagctgaaga
+     2401 aggactacct tgatggcgtg ggtgacaccc tggacctggt ggtgatcggc gcctacctgg
+     2461 gccgggggaa gcgggccggc cggtacgggg gcttcctgct ggcctcctac gacgaggaca
+     2521 gtgaggagct gcaggccata tgcaagcttg gaactggctt cagtgatgag gagctggagg
+     2581 agcatcacca gagcctcaag gcgctggtgc tgcccagccc acgcccttac gtgcggatag
+     2641 atggcgctgt gattcccgac cactggctgg accccagcgc tgtgtgggag gtgaagtgcg
+     2701 ctgacctctc cctctctccc atctaccctg ctgcgcgggg cctggtggat agtgacaagg
+     2761 gcatctccct tcgcttccct cggtttattc gagtccgtga agacaagcag ccggagcagg
+     2821 ccaccaccag tgctcaggtg gcctgtttgt accggaagca aagtcagatt cagaaccaac
+     2881 aaggcgagga ctcaggctct gaccctgaag atacctacta agccctcgcc ctcctagggc
+     2941 ctgggtacag ggcatgagtt ggacggaccc cagggttatt attgcctttg ctttttagca
+     3001 aatctgctgt ggcaggctgt ggattttgag agtcagggga ggggtgtgtg tgtgaggggg
+     3061 tggcttactc cggagtctgg gattcatccc gtcatttctt tcaataaata attattggat
+     3121 agcta
+//
+

@@ -1,0 +1,361 @@
+LOCUS       NM_000539               2768 bp    mRNA    linear   PRI 04-SEP-2026
+DEFINITION  Homo sapiens rhodopsin (RHO), mRNA.
+ACCESSION   NM_000539
+VERSION     NM_000539.3
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 2768)
+  AUTHORS   Hu,Y., Li,G., Zhao,S., Dai,J., Peng,X. and Zhao,Q.
+  TITLE     Charge transfer characteristics in rhodopsin mimics during
+            photoexcitation
+  JOURNAL   Phys Chem Chem Phys 26 (40), 26004-26011 (2024)
+   PUBMED   39370953
+  REMARK    GeneRIF: Charge transfer characteristics in rhodopsin mimics during
+            photoexcitation.
+REFERENCE   2  (bases 1 to 2768)
+  AUTHORS   Chai,Z., Ye,Y., Silverman,D., Rose,K., Madura,A., Reed,R.R.,
+            Chen,J. and Yau,K.W.
+  TITLE     Dark continuous noise from mutant G90D-rhodopsin predominantly
+            underlies congenital stationary night blindness
+  JOURNAL   Proc Natl Acad Sci U S A 121 (21), e2404763121 (2024)
+   PUBMED   38743626
+  REMARK    GeneRIF: Dark continuous noise from mutant G90D-rhodopsin
+            predominantly underlies congenital stationary night blindness.
+REFERENCE   3  (bases 1 to 2768)
+  AUTHORS   Zhuang,J., Zhang,R., Zhou,B., Cao,Z., Zhou,J., Chen,X., Zhang,N.,
+            Zhu,Y. and Yang,J.
+  TITLE     Mutation analysis of RHO in patients with non-syndromic retinitis
+            pigmentosa
+  JOURNAL   Ophthalmic Genet 45 (2), 147-152 (2024)
+   PUBMED   38284172
+  REMARK    GeneRIF: Mutation analysis of RHO in patients with non-syndromic
+            retinitis pigmentosa.
+REFERENCE   4  (bases 1 to 2768)
+  AUTHORS   Tsutsui,S., Murakami,Y., Fujiwara,K., Koyanagi,Y., Akiyama,M.,
+            Takeda,A., Ikeda,Y. and Sonoda,K.H.
+  TITLE     Genotypes and clinical features of RHO-associated retinitis
+            pigmentosa in a Japanese population
+  JOURNAL   Jpn J Ophthalmol 68 (1), 1-11 (2024)
+   PUBMED   38070066
+  REMARK    GeneRIF: Genotypes and clinical features of RHO-associated
+            retinitis pigmentosa in a Japanese population.
+REFERENCE   5  (bases 1 to 2768)
+  AUTHORS   Struts,A.V., Barmasov,A.V., Fried,S.D.E., Hewage,K.S.K.,
+            Perera,S.M.D.C. and Brown,M.F.
+  TITLE     Osmotic stress studies of G-protein-coupled receptor rhodopsin
+            activation
+  JOURNAL   Biophys Chem 304, 107112 (2024)
+   PUBMED   37952496
+  REMARK    GeneRIF: Osmotic stress studies of G-protein-coupled receptor
+            rhodopsin activation.
+REFERENCE   6  (bases 1 to 2768)
+  AUTHORS   Fahim,A.T., Daiger,S.P. and Weleber,R.G.
+  TITLE     Nonsyndromic Retinitis Pigmentosa Overview
+  JOURNAL   (in) Adam MP, Bick S, Mirzaa GM, Wallace SE and Amemiya A (Eds.);
+            GENEREVIEWS(R);
+            (1993)
+   PUBMED   20301590
+REFERENCE   7  (bases 1 to 2768)
+  AUTHORS   Farrar,G.J., Findlay,J.B., Kumar-Singh,R., Kenna,P.,
+            Humphries,M.M., Sharpe,E. and Humphries,P.
+  TITLE     Autosomal dominant retinitis pigmentosa: a novel mutation in the
+            rhodopsin gene in the original 3q linked family
+  JOURNAL   Hum Mol Genet 1 (9), 769-771 (1992)
+   PUBMED   1302614
+REFERENCE   8  (bases 1 to 2768)
+  AUTHORS   Robinson,P.R., Cohen,G.B., Zhukovsky,E.A. and Oprian,D.D.
+  TITLE     Constitutively active mutants of rhodopsin
+  JOURNAL   Neuron 9 (4), 719-725 (1992)
+   PUBMED   1356370
+REFERENCE   9  (bases 1 to 2768)
+  AUTHORS   Fujiki,K., Hotta,Y., Hayakawa,M., Sakuma,H., Shiono,T., Noro,M.,
+            Sakuma,T., Tamai,M., Hikiji,K., Kawaguchi,R. et al.
+  TITLE     Point mutations of rhodopsin gene found in Japanese families with
+            autosomal dominant retinitis pigmentosa (ADRP)
+  JOURNAL   Jpn J Hum Genet 37 (2), 125-132 (1992)
+   PUBMED   1391967
+REFERENCE   10 (bases 1 to 2768)
+  AUTHORS   Inglehearn,C.F., Keen,T.J., Bashir,R., Jay,M., Fitzke,F.,
+            Bird,A.C., Crombie,A. and Bhattacharya,S.
+  TITLE     A completed screen for mutations of the rhodopsin gene in a panel
+            of patients with autosomal dominant retinitis pigmentosa
+  JOURNAL   Hum Mol Genet 1 (1), 41-45 (1992)
+   PUBMED   1301135
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from AC080007.26.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Mar 13, 2008 this sequence version replaced NM_000539.2.
+            
+            Summary: The protein encoded by this gene is found in rod cells in
+            the back of the eye and is essential for vision in low-light
+            conditions. The encoded protein binds to 11-cis retinal and is
+            activated when light hits the retinal molecule. Defects in this
+            gene are a cause of congenital stationary night blindness.
+            [provided by RefSeq, Aug 2017].
+            
+            Sequence Note: The RefSeq transcript and protein were derived from
+            genomic sequence to make the sequence consistent with the reference
+            genome assembly. The genomic coordinates used for the transcript
+            record were based on alignments.
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: BX537381.1, BC112104.1 [ECO:0000332]
+            RNAseq introns              :: mixed sample support SAMEA2142680,
+                                           SAMEA2144333 [ECO:0006172]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000296271.4/ ENSP00000296271.3
+            RefSeq Select criteria :: based on single protein-coding transcript
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-456               AC080007.26        37704-38159         c
+            457-625             AC080007.26        35754-35922         c
+            626-791             AC080007.26        34382-34547         c
+            792-1031            AC080007.26        34026-34265         c
+            1032-2768           AC080007.26        31454-33190         c
+FEATURES             Location/Qualifiers
+     source          1..2768
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="3"
+                     /map="3q22.1"
+     gene            1..2768
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="rhodopsin"
+                     /db_xref="GeneID:6010"
+                     /db_xref="HGNC:HGNC:10012"
+                     /db_xref="MIM:180380"
+     exon            1..456
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /inference="alignment:Splign:2.1.0"
+     misc_feature    30..32
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="upstream in-frame stop codon"
+     CDS             96..1142
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="opsin 2, rod pigment; opsin-2"
+                     /codon_start=1
+                     /product="rhodopsin"
+                     /protein_id="NP_000530.1"
+                     /db_xref="CCDS:CCDS3063.1"
+                     /db_xref="GeneID:6010"
+                     /db_xref="HGNC:HGNC:10012"
+                     /db_xref="MIM:180380"
+                     /translation="MNGTEGPNFYVPFSNATGVVRSPFEYPQYYLAEPWQFSMLAAYM
+                     FLLIVLGFPINFLTLYVTVQHKKLRTPLNYILLNLAVADLFMVLGGFTSTLYTSLHGY
+                     FVFGPTGCNLEGFFATLGGEIALWSLVVLAIERYVVVCKPMSNFRFGENHAIMGVAFT
+                     WVMALACAAPPLAGWSRYIPEGLQCSCGIDYYTLKPEVNNESFVIYMFVVHFTIPMII
+                     IFFCYGQLVFTVKEAAAQQQESATTQKAEKEVTRMVIIMVIAFLICWVPYASVAFYIF
+                     THQGSNFGPIFMTIPAFFAKSAAIYNPVIYIMMNKQFRNCMLTTICCGKNPLGDDEAS
+                     ATVSKTETSQVAPA"
+     misc_feature    96..98
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="N-acetylmethionine.
+                     /evidence=ECO:0000250|UniProtKB:P02699; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); acetylation site"
+     misc_feature    99..101
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000250|UniProtKB:P02699; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); glycosylation site"
+     misc_feature    138..140
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000269|PubMed:28753425; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); glycosylation site"
+     misc_feature    204..278
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     transmembrane region"
+     misc_feature    315..383
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     transmembrane region"
+     misc_feature    426..494
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     transmembrane region"
+     misc_feature    432..434
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="Plays an important role in the conformation switch
+                     to the active conformation.
+                     /evidence=ECO:0000269|PubMed:26200343; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); other site"
+     misc_feature    495..503
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     Region: 'Ionic lock' involved in activated form
+                     stabilization. /evidence=ECO:0000305|PubMed:26200343"
+     misc_feature    552..614
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     transmembrane region"
+     misc_feature    702..767
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     transmembrane region"
+     misc_feature    852..917
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     transmembrane region"
+     misc_feature    948..1022
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     transmembrane region"
+     misc_feature    1083..1139
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="propagated from UniProtKB/Swiss-Prot (P08100.1);
+                     Region: Interaction with SAG.
+                     /evidence=ECO:0000269|PubMed:26200343,
+                     ECO:0000269|PubMed:28753425"
+     misc_feature    1095..1097
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000269|PubMed:28753425; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); phosphorylation site"
+     misc_feature    1101..1103
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0000269|PubMed:28753425; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); phosphorylation site"
+     misc_feature    1107..1109
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000269|PubMed:28753425; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); phosphorylation site"
+     misc_feature    1113..1115
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0000250|UniProtKB:P02699; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); phosphorylation site"
+     misc_feature    1119..1121
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0000250|UniProtKB:P02699; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); phosphorylation site"
+     misc_feature    1122..1124
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:P02699; propagated from
+                     UniProtKB/Swiss-Prot (P08100.1); phosphorylation site"
+     exon            457..625
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /inference="alignment:Splign:2.1.0"
+     exon            626..791
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /inference="alignment:Splign:2.1.0"
+     exon            792..1031
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1032..2768
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      1506..1511
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+     polyA_site      1530
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+     polyA_site      1786
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+     polyA_site      1835
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+     regulatory      2563..2568
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+     polyA_site      2593
+                     /gene="RHO"
+                     /gene_synonym="CSNBAD1; OPN2; RP4"
+ORIGIN      
+        1 agagtcatcc agctggagcc ctgagtggct gagctcaggc cttcgcagca ttcttgggtg
+       61 ggagcagcca cgggtcagcc acaagggcca cagccatgaa tggcacagaa ggccctaact
+      121 tctacgtgcc cttctccaat gcgacgggtg tggtacgcag ccccttcgag tacccacagt
+      181 actacctggc tgagccatgg cagttctcca tgctggccgc ctacatgttt ctgctgatcg
+      241 tgctgggctt ccccatcaac ttcctcacgc tctacgtcac cgtccagcac aagaagctgc
+      301 gcacgcctct caactacatc ctgctcaacc tagccgtggc tgacctcttc atggtcctag
+      361 gtggcttcac cagcaccctc tacacctctc tgcatggata cttcgtcttc gggcccacag
+      421 gatgcaattt ggagggcttc tttgccaccc tgggcggtga aattgccctg tggtccttgg
+      481 tggtcctggc catcgagcgg tacgtggtgg tgtgtaagcc catgagcaac ttccgcttcg
+      541 gggagaacca tgccatcatg ggcgttgcct tcacctgggt catggcgctg gcctgcgccg
+      601 cacccccact cgccggctgg tccaggtaca tccccgaggg cctgcagtgc tcgtgtggaa
+      661 tcgactacta cacgctcaag ccggaggtca acaacgagtc ttttgtcatc tacatgttcg
+      721 tggtccactt caccatcccc atgattatca tctttttctg ctatgggcag ctcgtcttca
+      781 ccgtcaagga ggccgctgcc cagcagcagg agtcagccac cacacagaag gcagagaagg
+      841 aggtcacccg catggtcatc atcatggtca tcgctttcct gatctgctgg gtgccctacg
+      901 ccagcgtggc attctacatc ttcacccacc agggctccaa cttcggtccc atcttcatga
+      961 ccatcccagc gttctttgcc aagagcgccg ccatctacaa ccctgtcatc tatatcatga
+     1021 tgaacaagca gttccggaac tgcatgctca ccaccatctg ctgcggcaag aacccactgg
+     1081 gtgacgatga ggcctctgct accgtgtcca agacggagac gagccaggtg gccccggcct
+     1141 aagacctgcc taggactctg tggccgacta taggcgtctc ccatccccta caccttcccc
+     1201 cagccacagc catcccacca ggagcagcgc ctgtgcagaa tgaacgaagt cacataggct
+     1261 ccttaatttt tttttttttt ttaagaaata attaatgagg ctcctcactc acctgggaca
+     1321 gcctgagaag ggacatccac caagacctac tgatctggag tcccacgttc cccaaggcca
+     1381 gcgggatgtg tgcccctcct cctcccaact catctttcag gaacacgagg attcttgctt
+     1441 tctggaaaag tgtcccagct tagggataag tgtctagcac agaatggggc acacagtagg
+     1501 tgcttaataa atgctggatg gatgcaggaa ggaatggagg aatgaatggg aagggagaac
+     1561 atatctatcc tctcagaccc tcgcagcagc agcaactcat acttggctaa tgatatggag
+     1621 cagttgtttt tccctccctg ggcctcactt tcttctccta taaaatggaa atcccagatc
+     1681 cctggtcctg ccgacacgca gctactgaga agaccaaaag aggtgtgtgt gtgtctatgt
+     1741 gtgtgtttca gcactttgta aatagcaaga agctgtacag attctagtta atgttgtgaa
+     1801 taacatcaat taatgtaact agttaattac tatgattatc acctcctgat agtgaacatt
+     1861 ttgagattgg gcattcagat gatggggttt cacccaacct tggggcaggt ttttaaaaat
+     1921 tagctaggca tcaaggccag accagggctg ggggttgggc tgtaggcagg gacagtcaca
+     1981 ggaatgcaga atgcagtcat cagacctgaa aaaacaacac tgggggaggg ggacggtgaa
+     2041 ggccaagttc ccaatgaggg tgagattggg cctggggtct cacccctagt gtggggcccc
+     2101 aggtcccgtg cctccccttc ccaatgtggc ctatggagag acaggccttt ctctcagcct
+     2161 ctggaagcca cctgctcttt tgctctagca cctgggtccc agcatctaga gcatggagcc
+     2221 tctagaagcc atgctcaccc gcccacattt aattaacagc tgagtccctg atgtcatcct
+     2281 tatctcgaag agcttagaaa caaagagtgg gaaattccac tgggcctacc ttccttgggg
+     2341 atgttcatgg gccccagttt ccagtttccc ttgccagaca agcccatctt cagcagttgc
+     2401 tagtccattc tccattctgg agaatctgct ccaaaaagct ggccacatct ctgaggtgtc
+     2461 agaattaagc tgcctcagta actgctcccc cttctccata taagcaaagc cagaagctct
+     2521 agctttaccc agctctgcct ggagactaag gcaaattggg ccattaaaag ctcagctcct
+     2581 atgttggtat taacggtggt gggttttgtt gctttcacac tctatccaca ggatagattg
+     2641 aaactgccag cttccacctg atccctgacc ctgggatggc tggattgagc aatgagcaga
+     2701 gccaagcagc acagagtccc ctggggctag aggtggagga ggcagtcctg ggaatgggaa
+     2761 aaacccca
+//
+

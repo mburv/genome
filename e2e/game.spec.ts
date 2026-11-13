@@ -127,7 +127,7 @@ test('full campaign: all 12 levels solvable by touch drags + hints; genes discov
     if (def.mode === 'repair') await expect(page.getByTestId('win-restored')).toHaveText(def.repair!.expected);
     if (level === 6 || level === 12) {
       await expect(page.getByTestId('discovered')).toContainText(`${def.symbol} discovered`);
-      await expect(page.getByTestId('discovered')).toContainText('Not a fully assembled gene');
+      await expect(page.getByTestId('discovered')).toContainText('Not yet fully assembled');
       await page.getByRole('button', { name: 'View card' }).click();
       const card = page.getByTestId('gene-card');
       await expect(card).toContainText(def.symbol);
@@ -146,7 +146,7 @@ test('full campaign: all 12 levels solvable by touch drags + hints; genes discov
   await page.getByRole('button', { name: '← Map' }).click();
   await expect(page.getByTestId('progress-INS')).toHaveText('51 / 51 sample bases');
   await expect(page.getByTestId('progress-HBB')).toHaveText('51 / 51 sample bases');
-  await expect(page.getByTestId('card-HBB')).toContainText('discovery card');
+  await expect(page.getByTestId('card-HBB')).toContainText('gene card');
   // replay never adds duplicate credit
   await page.getByRole('button', { name: /^Level 1: / }).click();
   await page.getByRole('button', { name: 'Replay' }).click();
@@ -187,7 +187,7 @@ test('an M1 save migrates: level 1 credit carries over, M1 levels 2–3 kept as 
   await expect(page.getByTestId('progress-INS')).toHaveText('9 / 51 sample bases');
   await expect(page.getByTestId('legacy-m1')).toContainText('1, 2, 3');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m1'))).toContain('"schemaVersion":1');
-  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!).schemaVersion).toBe(3);
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!).schemaVersion).toBe(4);
   await page.getByRole('button', { name: 'OK' }).click();
   await page.reload();
   await expect(page.getByTestId('notice')).toHaveCount(0);

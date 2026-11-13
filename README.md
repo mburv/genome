@@ -32,7 +32,7 @@ The initial deliverable is a 12-level mechanics demo. It must not claim that a g
 
 ---
 
-## How to run (M1 + M2 accepted; M3 enzyme lab, 13 Nov 2026)
+## How to run (M1–M3 accepted; M4 gene assembly, 13 Nov 2026)
 
 Requires Node 22.6+ (tested on Node 24.22). All play-time assets are local; the game makes no network requests.
 
@@ -46,14 +46,14 @@ npm run dev                        # http://localhost:5173 — open on a phone-s
 |---|---|
 | `npm run typecheck` | Strict TypeScript for app, tests and tooling |
 | `npm run lint` | ESLint (engine/generator forbid DOM, `Date`, `fetch`, `Math.random`) |
-| `npm test` | Vitest unit tests (engine, generator, solver, genomics, powers, hints, save + v1→v2→v3 migrations) |
-| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568): continuous multi-cell drags, snapping, holes, tap/arrows, keyboard, the level map, all 12 levels solved by touch, discovery cards, save/reload, v1→v2 and v2→v3 migrations, CRISPR/Ligase/Scaffold (preview, undo refund, locks on both axes, bridge expiry, recovery after a bad edit), settings toggles, and the single-file HTML via `file://` |
+| `npm test` | Vitest unit tests (engine, generator, solver, genomics, powers, hints, save + v1→v2→v3→v4 migrations, tokens, chapter planner, full-CDS assembly + SHA-256, catalogue manifest) |
+| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568): continuous multi-cell drags, snapping, holes, tap/arrows, keyboard, the level map, all 12 levels solved by touch, discovery cards, save/reload, v1→v2 and v2→v3 migrations, CRISPR/Ligase/Scaffold (preview, undo refund, locks on both axes, bridge expiry, recovery after a bad edit), settings toggles, the gene catalogue, long-token levels (inspector, drag-solve, CRISPR on a 12-base tile), INS assembled end-to-end, v3→v4 migration, and the single-file HTML via `file://` |
 | `npm run build` | Typecheck + production build to `dist/` |
-| `npm run build:single` | Self-contained one-file build: `dist-single/GENOME-M3.html` (main build unaffected) |
-| `npm run validate:data` | Re-verifies the INS and HBB CDS assets against the stored raw GenBank records |
-| `npm run validate:levels` | Regenerates the level pack from seeds and checks it is byte-identical and valid |
-| `npm run audit:levels` | Generator audit: 1,500 candidates (100 per level spec, 15 specs) → `docs/AUDIT_M3.md` + `docs/audit-m3.json` (M2 record kept in `docs/AUDIT_M2.md`) |
-| `npm run fetch:data` / `npm run import:data` | Build-time only: re-download NM_000207.3 / NM_000518.5 from NCBI and re-import |
+| `npm run build:single` | Self-contained one-file build: `dist-single/GENOME-M4.html` (main build unaffected) |
+| `npm run validate:data` | Re-imports all 14 candidate records from `data/raw/` and checks the gene assets, catalogue and manifest are byte-identical |
+| `npm run validate:levels` | Regenerates the M2/lab pack and the 107 chapter puzzles from seeds (≈60 s) and checks both are byte-identical and valid |
+| `npm run audit:levels` | Generator audit (1,500 candidates over the 15 M2/lab specs, checked, M3 report frozen) + chapter scale audit → `docs/AUDIT_M4.md` + `docs/audit-m4.json` |
+| `npm run fetch:data` / `npm run fetch:catalogue` / `npm run import:data` | Build-time only: re-download INS/HBB and the catalogue candidates (MANE Select via NCBI Datasets + efetch), then re-import |
 
 ### Layout
 
@@ -89,3 +89,7 @@ Three optional power-ups, available from level 4 and in the Enzyme lab (three tu
 
 Energy: start ⚡2 per level, +1 the first time each reference codon is completed by a normal move, cap ⚡9, level-local. Undo reverses any power and refunds it; the reward ledger survives undo, so nothing can be farmed; restart (free) starts a new attempt. Hints are never stale: certified drag → "release the bond" → bounded search (≤ 3 drags, 40 k nodes) → "Undo ×N to a certified position" → free restart. Every level remains solvable without powers. Settings (⚙): reduce motion, sound (synthesised locally, off by default), haptics (`navigator.vibrate`, where supported). Save schema v3 upgrades M2 saves with a backup and keeps all progress. See D-M3-* in `docs/DECISIONS.md`.
 
+
+### M4 gene assembly
+
+A **gene catalogue** of 12 verified MANE Select RefSeq genes (the count comes from `src/genomics/manifest.generated.json`): INS, HBB, HBA1, HBD, MB, GCG, LEP, PTH, NPY, TTR, B2M and RHO. GPX1 and LIG1 were excluded, with reasons. Each gene has an **assembly chapter** of 8–10 puzzles that together cover every coding base. Tiles carry 3, 6, 12 or 24 real bases, the board and drag rules are unchanged, and tiles match by sequence. A gene is **assembled** only when every base was placed by a solved puzzle and the reconstruction's SHA-256 matches the reference. The first puzzle **discovers** the gene. Tap a tile to read its full sequence. CRISPR on a long tile edits one chosen base. Save schema v4 upgrades M3 saves and keeps everything. See D-M4-* in `docs/DECISIONS.md` and `docs/AUDIT_M4.md`.

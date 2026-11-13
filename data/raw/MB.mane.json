@@ -1,0 +1,16 @@
+{
+  "symbol": "MB",
+  "geneId": "4151",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/MB/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:39.481Z",
+  "responseSha256": "c95444c84578806bfa63f5a7dde11d3f03f9a4fe8d7bfaf45be1fb64cfc528b3",
+  "description": "myoglobin",
+  "maneSelect": [
+    {
+      "accession": "NM_005368.3",
+      "ensembl": "ENST00000397326.7",
+      "protein": "NP_005359.1",
+      "chromosome": "22"
+    }
+  ]
+}

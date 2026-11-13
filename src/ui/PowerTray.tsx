@@ -74,18 +74,29 @@ interface PanelProps {
   error: string | null;
   canConfirm: boolean;
   basePicker?: { current: Base; chosen: Base | null; onPick: (b: Base) => void } | undefined;
+  /** M4 token levels: which base of the piece to edit. */
+  posPicker?: { seq: string; chosen: number; onPick: (i: number) => void } | undefined;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 /** Targeting + preview panel. Nothing changes (and nothing is spent) until Confirm. */
-export function PowerPanel({ power, title, detail, costText, error, canConfirm, basePicker, onConfirm, onCancel }: PanelProps) {
+export function PowerPanel({ power, title, detail, costText, error, canConfirm, basePicker, posPicker, onConfirm, onCancel }: PanelProps) {
   return (
     <section className={`power-panel p-${power}`} aria-label={`${POWER_LABEL[power]} preview`} data-testid="power-panel">
       <div className="row-between">
         <b>{POWER_ICON[power]} {title}</b>
         <span className="muted small" data-testid="power-cost">{costText}</span>
       </div>
+      {posPicker && (
+        <div className="pos-picker" role="group" aria-label="Base of the piece to edit">
+          {posPicker.seq.split('').map((b, i) => (
+            <button key={i} type="button" className={`bl-${b} ${posPicker.chosen === i ? 'chosen' : ''}`} onClick={() => posPicker.onPick(i)} aria-pressed={posPicker.chosen === i} aria-label={`Base ${i + 1}: ${b}`} data-testid={`pos-${i}`}>
+              {b}
+            </button>
+          ))}
+        </div>
+      )}
       {basePicker && (
         <div className="base-picker" role="group" aria-label="Replace with base">
           {(['A', 'T', 'C', 'G'] as Base[]).map((b) => (

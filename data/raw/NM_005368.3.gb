@@ -1,0 +1,209 @@
+LOCUS       NM_005368               1070 bp    mRNA    linear   PRI 27-APR-2025
+DEFINITION  Homo sapiens myoglobin (MB), transcript variant 1, mRNA.
+ACCESSION   NM_005368
+VERSION     NM_005368.3
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 1070)
+  AUTHORS   Aboouf,M.A., Gorr,T.A., Hamdy,N.M., Gassmann,M. and Thiersch,M.
+  TITLE     Myoglobin in Brown Adipose Tissue: A Multifaceted Player in
+            Thermogenesis
+  JOURNAL   Cells 12 (18), 2240 (2023)
+   PUBMED   37759463
+  REMARK    GeneRIF: Myoglobin in Brown Adipose Tissue: A Multifaceted Player
+            in Thermogenesis.
+            Review article
+REFERENCE   2  (bases 1 to 1070)
+  AUTHORS   Sackerson,C., Garcia,V., Medina,N., Maldonado,J., Daly,J. and
+            Cartwright,R.
+  TITLE     Comparative analysis of the myoglobin gene in whales and humans
+            reveals evolutionary changes in regulatory elements and expression
+            levels
+  JOURNAL   PLoS One 18 (8), e0284834 (2023)
+   PUBMED   37643191
+  REMARK    GeneRIF: Comparative analysis of the myoglobin gene in whales and
+            humans reveals evolutionary changes in regulatory elements and
+            expression levels.
+REFERENCE   3  (bases 1 to 1070)
+  AUTHORS   Tupta,B., Stuehr,E., Sumi,M.P., Sweeny,E.A., Smith,B., Stuehr,D.J.
+            and Ghosh,A.
+  TITLE     GAPDH is involved in the heme-maturation of myoglobin and
+            hemoglobin
+  JOURNAL   FASEB J 36 (2), e22099 (2022)
+   PUBMED   34972240
+  REMARK    GeneRIF: GAPDH is involved in the heme-maturation of myoglobin and
+            hemoglobin.
+REFERENCE   4  (bases 1 to 1070)
+  AUTHORS   Hofbauer,S., Pignataro,M., Borsari,M., Bortolotti,C.A., Di
+            Rocco,G., Ravenscroft,G., Furtmuller,P.G., Obinger,C., Sola,M. and
+            Battistuzzi,G.
+  TITLE     Pseudoperoxidase activity, conformational stability, and
+            aggregation propensity of the His98Tyr myoglobin variant:
+            implications for the onset of myoglobinopathy
+  JOURNAL   FEBS J 289 (4), 1105-1117 (2022)
+   PUBMED   34679218
+  REMARK    GeneRIF: Pseudoperoxidase activity, conformational stability, and
+            aggregation propensity of the His98Tyr myoglobin variant:
+            implications for the onset of myoglobinopathy.
+REFERENCE   5  (bases 1 to 1070)
+  AUTHORS   Quinting,T., Heymann,A.K., Bicker,A., Nauth,T., Bernardini,A.,
+            Hankeln,T., Fandrey,J. and Schreiber,T.
+  TITLE     Myoglobin Protects Breast Cancer Cells Due to Its ROS and NO
+            Scavenging Properties
+  JOURNAL   Front Endocrinol (Lausanne) 12, 732190 (2021)
+   PUBMED   34671319
+  REMARK    GeneRIF: Myoglobin Protects Breast Cancer Cells Due to Its ROS and
+            NO Scavenging Properties.
+REFERENCE   6  (bases 1 to 1070)
+  AUTHORS   Hubbard,S.R., Hendrickson,W.A., Lambright,D.G. and Boxer,S.G.
+  TITLE     X-ray crystal structure of a recombinant human myoglobin mutant at
+            2.8 A resolution
+  JOURNAL   J Mol Biol 213 (2), 215-218 (1990)
+   PUBMED   2342104
+REFERENCE   7  (bases 1 to 1070)
+  AUTHORS   Akaboshi,E.
+  TITLE     Cloning of the human myoglobin gene
+  JOURNAL   Gene 33 (3), 241-249 (1985)
+   PUBMED   2989088
+REFERENCE   8  (bases 1 to 1070)
+  AUTHORS   Lundholm,K. and Schersten,T.
+  TITLE     Protein synthesis in isolated human skeletal muscle tissue:
+            evaluation of an experimental model
+  JOURNAL   Clin Sci (Lond) 57 (2), 221-223 (1979)
+   PUBMED   477257
+REFERENCE   9  (bases 1 to 1070)
+  AUTHORS   Romero Herrera,A.E. and Lehmann,H.
+  TITLE     The myoglobin of primates. II. Pan Troglodytes (chimpanzee)
+  JOURNAL   Biochim Biophys Acta 278 (1), 62-67 (1972)
+   PUBMED   4627044
+REFERENCE   10 (bases 1 to 1070)
+  AUTHORS   Herrera,A.E. and Lehmann,H.
+  TITLE     Primary structure of human myoglobin
+  JOURNAL   Nat New Biol 232 (31), 149-152 (1971)
+   PUBMED   5285572
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from BU585249.1, BQ956082.1 and
+            BC014547.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 22, 2018 this sequence version replaced NM_005368.2.
+            
+            Summary: This gene encodes a member of the globin superfamily and
+            is predominantly expressed in skeletal and cardiac muscles. The
+            encoded protein forms a monomeric globular haemoprotein that is
+            primarily responsible for the storage and facilitated transfer of
+            oxygen from the cell membrane to the mitochondria. This protein
+            also plays a role in regulating physiological levels of nitric
+            oxide. Multiple transcript variants encoding distinct isoforms
+            exist for this gene. [provided by RefSeq, May 2020].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: BC014547.1, SRR5189655.156241.1
+                                           [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA2151741, SAMEA2153307
+                                           [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            coronavirus related    :: relevant for COVID-19 prognosis
+            MANE Ensembl match     :: ENST00000397326.7/ ENSP00000380489.2
+            RefSeq Select criteria :: based on conservation, expression,
+                                      longest protein
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-13                BU585249.1         128-140
+            14-679              BQ956082.1         1-666
+            680-1070            BC014547.1         684-1074
+FEATURES             Location/Qualifiers
+     source          1..1070
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="22"
+                     /map="22q12.3"
+     gene            1..1070
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /note="myoglobin"
+                     /db_xref="GeneID:4151"
+                     /db_xref="HGNC:HGNC:6915"
+                     /db_xref="MIM:160000"
+     exon            1..167
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             73..537
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /note="isoform 1 is encoded by transcript variant 1;
+                     pseudoperoxidase MB; nitrite reductase MB"
+                     /codon_start=1
+                     /product="myoglobin isoform 1"
+                     /protein_id="NP_005359.1"
+                     /db_xref="CCDS:CCDS13917.1"
+                     /db_xref="GeneID:4151"
+                     /db_xref="HGNC:HGNC:6915"
+                     /db_xref="MIM:160000"
+                     /translation="MGLSDGEWQLVLNVWGKVEADIPGHGQEVLIRLFKGHPETLEKF
+                     DKFKHLKSEDEMKASEDLKKHGATVLTALGGILKKKGHHEAEIKPLAQSHATKHKIPV
+                     KYLEFISECIIQVLQSKHPGDFGADAQGAMNKALELFRKDMASNYKELGFQG"
+     misc_feature    82..84
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:Q9QZ76; propagated from
+                     UniProtKB/Swiss-Prot (P02144.2); phosphorylation site"
+     misc_feature    274..276
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /note="Phosphothreonine.
+                     /evidence=ECO:0000250|UniProtKB:P04247; propagated from
+                     UniProtKB/Swiss-Prot (P02144.2); phosphorylation site"
+     exon            168..390
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /inference="alignment:Splign:2.1.0"
+     exon            391..1070
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      1047..1052
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /note="hexamer: AATAAA"
+     polyA_site      1070
+                     /gene="MB"
+                     /gene_synonym="MYOSB; PVALB"
+                     /note="major polyA site"
+ORIGIN      
+        1 aaaccccagc tgttggggcc aggacaccca gtgagcccat acttgctctt tttgtcttct
+       61 tcagactgcg ccatggggct cagcgacggg gaatggcagt tggtgctgaa cgtctggggg
+      121 aaggtggagg ctgacatccc aggccatggg caggaagtcc tcatcaggct ctttaagggt
+      181 cacccagaga ctctggagaa gtttgacaag ttcaagcacc tgaagtcaga ggacgagatg
+      241 aaggcgtctg aggacttaaa gaagcatggt gccaccgtgc tcaccgccct gggtggcatc
+      301 cttaagaaga aggggcatca tgaggcagag attaagcccc tggcacagtc gcatgccacc
+      361 aagcacaaga tccccgtgaa gtacctggag ttcatctcgg aatgcatcat ccaggttctg
+      421 cagagcaagc atcccgggga ctttggtgct gatgcccagg gggccatgaa caaggccctg
+      481 gagctgttcc ggaaggacat ggcctccaac tacaaggagc tgggcttcca gggctaggcc
+      541 cctgccgctc ccacccccac ccatctgggc cccgggttca agagagagcg gggtctgatc
+      601 tcgtgtagcc atatagagtt tgcttctgag tgtctgcttt gtttagtaga ggtgggcagg
+      661 aggagctgag gggctggggc tggggtgttg aagttggctt tgcatgccca gcgatgcgcc
+      721 tccctgtggg atgtcatcac cctgggaacc gggagtggcc cttggctcac tgtgttctgc
+      781 atggtttgga tctgaattaa ttgtcctttc ttctaaatcc caaccgaact tcttccaacc
+      841 tccaaactgg ctgtaacccc aaatccaagc cattaactac acctgacagt agcaattgtc
+      901 tgattaatca ctggcccctt gaagacagca gaatgtccct ttgcaatgag gaggagatct
+      961 gggctgggcg ggccagctgg ggaagcattt gactatctgg aacttgtgtg tgcctcctca
+     1021 ggtatggcag tgactcacct ggttttaata aaacaacctg caacatctca
+//
+

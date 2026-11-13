@@ -1,0 +1,16 @@
+{
+  "symbol": "HBA1",
+  "geneId": "3039",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/HBA1/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:37.141Z",
+  "responseSha256": "50329d04f627a7a45d34898522dd5ee63807eb4bf30f8033e9df2ffba3f9c575",
+  "description": "hemoglobin subunit alpha 1",
+  "maneSelect": [
+    {
+      "accession": "NM_000558.5",
+      "ensembl": "ENST00000320868.9",
+      "protein": "NP_000549.1",
+      "chromosome": "16"
+    }
+  ]
+}

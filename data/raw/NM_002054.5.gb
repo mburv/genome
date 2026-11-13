@@ -1,0 +1,354 @@
+LOCUS       NM_002054               1124 bp    mRNA    linear   PRI 08-NOV-2026
+DEFINITION  Homo sapiens glucagon (GCG), mRNA.
+ACCESSION   NM_002054
+VERSION     NM_002054.5
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 1124)
+  AUTHORS   Mietlicki-Baase,E.G.
+  TITLE     Brain Amylin Signaling, Feeding, and Reward
+  JOURNAL   Compr Physiol 16 (2), e70120 (2026)
+   PUBMED   41793055
+  REMARK    Review article
+REFERENCE   2  (bases 1 to 1124)
+  AUTHORS   Ahmad,N., Alruwayyes,A., Alarjani,A., Tawhari,A., Aldosri,A.,
+            Alahmari,A. and Balaha,M.
+  TITLE     GLP-1 receptor agonists for weight loss: A systematic review and
+            meta-analysis of randomized controlled trials
+  JOURNAL   Medicine (Baltimore) 105 (11), e47994 (2026)
+   PUBMED   41824845
+REFERENCE   3  (bases 1 to 1124)
+  AUTHORS   Mirghani,H., Albishi,L. and Alblewi,S.M.
+  TITLE     Glucagon-like peptide-1 agonists in children with obesity and type
+            2 diabetes. an umbrella review
+  JOURNAL   Front Endocrinol (Lausanne) 17, 1777907 (2026)
+   PUBMED   41798193
+REFERENCE   4  (bases 1 to 1124)
+  AUTHORS   Runge,S., Wulff,B.S., Madsen,K., Brauner-Osborne,H. and
+            Knudsen,L.B.
+  TITLE     Different domains of the glucagon and glucagon-like peptide-1
+            receptors provide the critical determinants of ligand selectivity
+  JOURNAL   Br J Pharmacol 138 (5), 787-794 (2003)
+   PUBMED   12642379
+REFERENCE   5  (bases 1 to 1124)
+  AUTHORS   Drucker,D.J. and Asa,S.
+  TITLE     Glucagon gene expression in vertebrate brain
+  JOURNAL   J Biol Chem 263 (27), 13475-13478 (1988)
+   PUBMED   2901414
+REFERENCE   6  (bases 1 to 1124)
+  AUTHORS   Paolisso,G., Giugliano,D., Scheen,A.J., Franchimont,P.,
+            D'Onofrio,F. and Lefebvre,P.J.
+  TITLE     Primary role of glucagon release in the effect of beta-endorphin on
+            glucose homeostasis in normal man
+  JOURNAL   Acta Endocrinol (Copenh) 115 (2), 161-169 (1987)
+   PUBMED   2885994
+REFERENCE   7  (bases 1 to 1124)
+  AUTHORS   Novak,U., Wilks,A., Buell,G. and McEwen,S.
+  TITLE     Identical mRNA for preproglucagon in pancreas and gut
+  JOURNAL   Eur J Biochem 164 (3), 553-558 (1987)
+   PUBMED   3569278
+REFERENCE   8  (bases 1 to 1124)
+  AUTHORS   White,J.W. and Saunders,G.F.
+  TITLE     Structure of the human glucagon gene
+  JOURNAL   Nucleic Acids Res 14 (12), 4719-4730 (1986)
+   PUBMED   3725587
+REFERENCE   9  (bases 1 to 1124)
+  AUTHORS   Schroeder,W.T., Lopez,L.C., Harper,M.E. and Saunders,G.F.
+  TITLE     Localization of the human glucagon gene (GCG) to chromosome segment
+            2q36----37
+  JOURNAL   Cytogenet Cell Genet 38 (1), 76-79 (1984)
+   PUBMED   6546710
+REFERENCE   10 (bases 1 to 1124)
+  AUTHORS   Thomsen,J., Kristiansen,K., Brunfeldt,K. and Sundby,F.
+  TITLE     The amino acid sequence of human glucagon
+  JOURNAL   FEBS Lett 21 (3), 315-319 (1972)
+   PUBMED   11946536
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from BC005278.1 and CB069629.1.
+            
+            On Nov 24, 2018 this sequence version replaced NM_002054.4.
+            
+            Summary: The protein encoded by this gene is a proglucagon
+            precursor that is cleaved into four distinct mature peptides. One
+            of these, glucagon, is a pancreatic hormone that counteracts the
+            glucose-lowering action of insulin by stimulating glycogenolysis
+            and gluconeogenesis in the liver. In addition, glucagon promotes
+            lipolysis and ketone body formation during prolonged fasting or
+            stress. Glucagon secretion is stimulated by low blood glucose and
+            inhibited by high glucose or insulin. Glucagon is a ligand for a
+            specific G-protein linked receptor called glucagon receptor, which
+            activates the Gs protein-adenylate cyclase-cAMP-protein kinase A
+            signaling pathway to regulate carbohydrate and lipid metabolism.
+            Two of the other peptides, glucagon-like peptide-1 and
+            glucagon-like peptide-2, are produced by the intestinal L-cells and
+            secreted in response to nutrient ingestion, where they function as
+            important regulators of glucose metabolism and intestinal
+            physiology. Glucagon-like peptide-1 enhances glucose-dependent
+            insulin secretion, suppresses glucagon release, slows gastric
+            emptying, and promotes satiety, making it a key incretin hormone
+            for maintaining postprandial glucose levels. Glucagon-like
+            peptide-2 primarily acts on the gut, promoting intestinal growth,
+            enhancing nutrient absorption, and supporting mucosal integrity.
+            Both peptides exert their effects through specific
+            G-protein-coupled receptors, glucagon-like peptide-1 receptor and
+            glucagon-like peptide-2 receptor, respectively, and analogs of
+            glucagon-like peptide-1 are used clinically for the treatment of
+            type 2 diabetes and obesity. The fourth peptide is similar to
+            glicentin, an active enteroglucagon produced in the intestinal
+            L-cells. This peptide is thought to have multiple roles in
+            gastrointestinal physiology, including stimulating intestinal
+            growth, modulating gut motility, and influencing the secretion of
+            other gut hormones. Although its precise functions are less
+            well-characterized than those of glucagon, glucagon-like peptide-1,
+            or glucagon-like peptide-2, glicentin-like peptides may contribute
+            to postprandial digestive processes and the coordination of
+            nutrient absorption. [provided by RefSeq, Mar 2026].
+            
+            Sequence Note: A downstream translational start codon is selected
+            for this RefSeq based on transcript support and on the presence of
+            a predicted signal peptide in the protein N-terminus. Several
+            upstream in-frame start codons are also present with sparse
+            transcript support, and would result in proteins that are up to 83
+            aa longer at the N-terminus and lack predicted signal peptides.
+            Leaky scanning by ribosomes may allow translation initiation at the
+            downstream start codon.
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: BC005278.1, BM479329.1 [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA2156266 [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000418842.7/ ENSP00000387662.2
+            RefSeq Select criteria :: based on single protein-coding transcript
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-1122              BC005278.1         1-1122
+            1123-1124           CB069629.1         14-15               c
+FEATURES             Location/Qualifiers
+     source          1..1124
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="2"
+                     /map="2q24.2"
+     gene            1..1124
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="glucagon"
+                     /db_xref="GeneID:2641"
+                     /db_xref="HGNC:HGNC:4191"
+                     /db_xref="MIM:138030"
+     exon            1..90
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            91..191
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             100..642
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="glicentin-related polypeptide; glucagon-like
+                     peptide 1; glucagon-like peptide 2; preproglucagon;
+                     pro-glucagon; incretin"
+                     /codon_start=1
+                     /product="pro-glucagon preproprotein"
+                     /protein_id="NP_002045.1"
+                     /db_xref="CCDS:CCDS46439.1"
+                     /db_xref="GeneID:2641"
+                     /db_xref="HGNC:HGNC:4191"
+                     /db_xref="MIM:138030"
+                     /translation="MKSIYFVAGLFVMLVQGSWQRSLQDTEEKSRSFSASQADPLSDP
+                     DQMNEDKRHSQGTFTSDYSKYLDSRRAQDFVQWLMNTKRNRNNIAKRHDEFERHAEGT
+                     FTSDVSSYLEGQAAKEFIAWLVKGRGRRDFPEEVAIVEELGRRHADGSFSDEMNTILD
+                     NLAARDFINWLIQTKITDRK"
+     sig_peptide     100..159
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /inference="COORDINATES: ab initio prediction:SignalP:6.0"
+     proprotein      160..639
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="pro-glucagon proprotein"
+     mat_peptide     160..366
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Glicentin.
+                     /evidence=ECO:0000250|UniProtKB:P01274.
+                     /id=PRO_0000011253"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     mat_peptide     160..249
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Glicentin-related polypeptide.
+                     /evidence=ECO:0000250|UniProtKB:P09686.
+                     /id=PRO_0000011254"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     misc_feature    175..276
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    253..258
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Cleavage, by PCSK2; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); cleavage site"
+     mat_peptide     256..366
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Oxyntomodulin.
+                     /evidence=ECO:0000250|UniProtKB:P06883.
+                     /id=PRO_0000011255"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     mat_peptide     256..342
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Glucagon. /evidence=ECO:0000269|PubMed:11946536.
+                     /id=PRO_0000011256"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     misc_feature    259..261
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:P55095; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); phosphorylation site"
+     misc_feature    346..351
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Cleavage, by PCSK1 and PCSK2; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); cleavage site"
+     misc_feature    370..375
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Cleavage, by PCSK1; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); cleavage site"
+     mat_peptide     373..483
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Glucagon-like peptide 1.
+                     /evidence=ECO:0000269|PubMed:2753890. /id=PRO_0000011258"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     misc_feature    388..393
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Cleavage, by PCSK1; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); cleavage site"
+     mat_peptide     391..483
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Glucagon-like peptide 1(7-37).
+                     /evidence=ECO:0000269|PubMed:2753890. /id=PRO_0000011259"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     mat_peptide     391..480
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Glucagon-like peptide 1(7-36).
+                     /evidence=ECO:0000269|PubMed:2753890. /id=PRO_0000011260"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     misc_feature    412..414
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:P55095; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); phosphorylation site"
+     misc_feature    421..423
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:P55095; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); phosphorylation site"
+     misc_feature    478..480
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Arginine amide.
+                     /evidence=ECO:0000269|PubMed:2753890; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); amidation site"
+     misc_feature    487..492
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Cleavage, by PCSK1; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); cleavage site"
+     misc_feature    532..537
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Cleavage, by PCSK1; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); cleavage site"
+     mat_peptide     535..633
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /product="Glucagon-like peptide 2.
+                     /evidence=ECO:0000250|UniProtKB:P15438.
+                     /id=PRO_0000011262"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01275.3)"
+     misc_feature    547..549
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:P55095; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); phosphorylation site"
+     misc_feature    553..555
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:P55095; propagated from
+                     UniProtKB/Swiss-Prot (P01275.3); phosphorylation site"
+     exon            192..353
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            354..491
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            492..635
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            636..1124
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      1106..1111
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="hexamer: AATAAA"
+     polyA_site      1124
+                     /gene="GCG"
+                     /gene_synonym="GLP-1; GLP1; GLP2; GRPP"
+                     /note="major polyA site"
+ORIGIN      
+        1 acagagctta ggacacagag cacatcaaaa gttcccaaag agggcttgct ctctcttcac
+       61 ctgctctgtt ctacagcaca ctaccagaag acagcagaaa tgaaaagcat ttactttgtg
+      121 gctggattat ttgtaatgct ggtacaaggc agctggcaac gttcccttca agacacagag
+      181 gagaaatcca gatcattctc agcttcccag gcagacccac tcagtgatcc tgatcagatg
+      241 aacgaggaca agcgccattc acagggcaca ttcaccagtg actacagcaa gtatctggac
+      301 tccaggcgtg cccaagattt tgtgcagtgg ttgatgaata ccaagaggaa caggaataac
+      361 attgccaaac gtcacgatga atttgagaga catgctgaag ggacctttac cagtgatgta
+      421 agttcttatt tggaaggcca agctgccaag gaattcattg cttggctggt gaaaggccga
+      481 ggaaggcgag atttcccaga agaggtcgcc attgttgaag aacttggccg cagacatgct
+      541 gatggttctt tctctgatga gatgaacacc attcttgata atcttgccgc cagggacttt
+      601 ataaactggt tgattcagac caaaatcact gacaggaaat aactatatca ctattcaaga
+      661 tcatcttcac aacatcacct gctagccacg tgggatgttt gaaatgttaa gtcctgtaaa
+      721 tttaagaggt gtattctgag gccacattgc tttgcatgcc aataaataaa ttttctttta
+      781 gtgttgtgta gccaaaaatt acaaatggaa taaagtttta tcaaaatatt gctaaaatat
+      841 cagctttaaa atatgaaagt gctagattct gttattttct tcttattttg gatgaagtac
+      901 cccaacctgt ttacatttag cgataaaatt atttttctat gatataattt gtaaatgtaa
+      961 attattccga tctgacatat ctgcattata ataataggag aatagaagaa ctggtagcca
+     1021 cagtggtgaa attggaaaga gaactttctt cctgaaacct ttgtcttaaa aatactcagc
+     1081 tttcaatgta tcaaagatac aattaaataa aattttcaag cttc
+//
+

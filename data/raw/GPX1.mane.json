@@ -1,0 +1,16 @@
+{
+  "symbol": "GPX1",
+  "geneId": "2876",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/GPX1/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:48.228Z",
+  "responseSha256": "b72bce5c896d9503fe86270974d77dd6ecd80e20d850d448f20db3cd6a467444",
+  "description": "glutathione peroxidase 1",
+  "maneSelect": [
+    {
+      "accession": "NM_000581.4",
+      "ensembl": "ENST00000419783.3",
+      "protein": "NP_000572.2",
+      "chromosome": "3"
+    }
+  ]
+}

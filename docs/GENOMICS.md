@@ -26,6 +26,27 @@ MANE publication: Morales et al., *A joint NCBI and EMBL-EBI transcript set for 
 
 The first build must retrieve or use verified local copies of these exact versioned records, extract the annotated CDS (not full transcript FASTA, which includes untranslated regions), verify lengths and store checksums. The legacy HTML strings are an unvalidated reference until checked against records. Do not swap to a different isoform silently. If the source is unavailable, report the data blocker and use explicitly synthetic fixtures only for engine tests; do not ship them as authentic human DNA.
 
+## M4 catalogue (13 Nov 2026)
+
+Catalogue `genome-m4-catalogue-1` (`scripts/catalogue.config.mjs` → `scripts/fetch-catalogue.mjs` → `scripts/import-genes.mjs`). Each candidate is resolved to its MANE Select RefSeq transcript with the NCBI Datasets v2 product report. The GenBank record is fetched with efetch, and the raw record, its provenance and the SHA-256 are stored in `data/raw/`. The importer accepts a record only if all of the following hold: KEYWORDS contain "MANE Select"; GeneID/chromosome match; ATG start; single terminal stop (included); length divisible by 3; standard-code translation equals `/translation`; no `transl_except`; CDS ≤ 1100 bp (chapter policy). It emits `catalogue.generated.json` and `manifest.generated.json`, with included and excluded records, reasons and counts. `npm run validate:data` re-imports everything offline and checks byte-identity.
+
+| Symbol | Gene ID | Chr | Transcript | Protein | CDS bp | Theme | CDS SHA-256 |
+|---|---:|---|---|---|---:|---|---|
+| INS | 3630 | 11 | NM_000207.3 | NP_000198.1 | 333 | Hormones | fca80cdee67f… |
+| HBB | 3043 | 11 | NM_000518.5 | NP_000509.1 | 444 | Oxygen transport | 838ee6276e73… |
+| HBA1 | 3039 | 16 | NM_000558.5 | NP_000549.1 | 429 | Oxygen transport | c75c6ab5e20f… |
+| HBD | 3045 | 11 | NM_000519.4 | NP_000510.1 | 444 | Oxygen transport | 2390d5b82e10… |
+| MB | 4151 | 22 | NM_005368.3 | NP_005359.1 | 465 | Oxygen transport | 84cf043adca5… |
+| GCG | 2641 | 2 | NM_002054.5 | NP_002045.1 | 543 | Hormones | e2a9d915f8f3… |
+| LEP | 3952 | 7 | NM_000230.3 | NP_000221.1 | 504 | Hormones | 019dbfea56df… |
+| PTH | 5741 | 11 | NM_000315.4 | NP_000306.1 | 348 | Hormones | 7a8a31333857… |
+| NPY | 4852 | 7 | NM_000905.4 | NP_000896.1 | 294 | Hormones | 3f5646137487… |
+| TTR | 7276 | 18 | NM_000371.4 | NP_000362.1 | 444 | Transport & immunity | be10fcea023d… |
+| B2M | 567 | 15 | NM_004048.4 | NP_004039.1 | 360 | Transport & immunity | 618ed0f6f3cd… |
+| RHO | 6010 | 3 | NM_000539.3 | NP_000530.1 | 1047 | Vision | 1b6edbee0cff… |
+
+Excluded: **GPX1** (NM_000581.4): the selenocysteine `transl_except` needs an exception policy. **LIG1** (NM_000234.3): verified, but its 2760 bp CDS exceeds the chapter policy. Total 5,655 coding bases. Full SHA-256 values and source URLs are in the manifest and on every gene card. Function summaries are the first sentence of each RefSeq summary, credited on the card. There are no clinical claims.
+
 ## Import pipeline
 
 1. Pin source URLs, release identifier, assembly accession/version, retrieval date and raw SHA-256. Store raw input in a reproducible data cache (exclude huge files from git if necessary; provide fetch script and checksum). Follow provider terms and rate limits. Network access is build-time only.

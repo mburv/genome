@@ -1,0 +1,16 @@
+{
+  "symbol": "PTH",
+  "geneId": "5741",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/PTH/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:42.796Z",
+  "responseSha256": "e2bb6e7addbf90810228a39fcf10e9626b6154a638e041ace9829447e13e720b",
+  "description": "parathyroid hormone",
+  "maneSelect": [
+    {
+      "accession": "NM_000315.4",
+      "ensembl": "ENST00000282091.6",
+      "protein": "NP_000306.1",
+      "chromosome": "11"
+    }
+  ]
+}

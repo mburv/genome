@@ -1,0 +1,240 @@
+LOCUS       NM_000371                616 bp    mRNA    linear   PRI 10-SEP-2026
+DEFINITION  Homo sapiens transthyretin (TTR), mRNA.
+ACCESSION   NM_000371
+VERSION     NM_000371.4
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 616)
+  AUTHORS   Costa-Rodrigues,D., Leite,J.P., Saraiva,M.J., Almeida,M.R. and
+            Gales,L.
+  TITLE     Transthyretin monomers: a new plasma biomarker for pre-symptomatic
+            transthyretin-related amyloidosis
+  JOURNAL   Amyloid 31 (3), 202-208 (2024)
+   PUBMED   38946492
+  REMARK    GeneRIF: Transthyretin monomers: a new plasma biomarker for
+            pre-symptomatic transthyretin-related amyloidosis.
+REFERENCE   2  (bases 1 to 616)
+  AUTHORS   Jager,M., Kelly,J.W. and Gruebele,M.
+  TITLE     Conservation of kinetic stability, but not the unfolding mechanism,
+            between human transthyretin and a transthyretin-related enzyme
+  JOURNAL   Proc Natl Acad Sci U S A 121 (34), e2315007121 (2024)
+   PUBMED   39133861
+  REMARK    GeneRIF: Conservation of kinetic stability, but not the unfolding
+            mechanism, between human transthyretin and a transthyretin-related
+            enzyme.
+REFERENCE   3  (bases 1 to 616)
+  AUTHORS   Leach,B.I., Ferguson,J.A., Morgan,G., Sun,X., Kroon,G., Oyen,D.,
+            Dyson,H.J. and Wright,P.E.
+  TITLE     Conformational Dynamics of an Amyloidogenic Intermediate of
+            Transthyretin: Implications for Structural Remodeling and Amyloid
+            Formation
+  JOURNAL   J Mol Biol 436 (16), 168673 (2024)
+   PUBMED   38909653
+  REMARK    GeneRIF: Conformational Dynamics of an Amyloidogenic Intermediate
+            of Transthyretin: Implications for Structural Remodeling and
+            Amyloid Formation.
+REFERENCE   4  (bases 1 to 616)
+  AUTHORS   Martins,L.D.A., Ferreira,P.S., Leitao Dos Santos,O.A.,
+            Martins,L.O., Cabral Fernandes Barroso,L.G., Pereira,H.M.,
+            Waddington-Cruz,M., Palhano,F.L. and Foguel,D.
+  TITLE     Structural and thermodynamic characterization of a highly
+            amyloidogenic dimer of transthyretin involved in a severe
+            cardiomyopathy
+  JOURNAL   J Biol Chem 300 (8), 107495 (2024)
+   PUBMED   38925327
+  REMARK    GeneRIF: Structural and thermodynamic characterization of a highly
+            amyloidogenic dimer of transthyretin involved in a severe
+            cardiomyopathy.
+REFERENCE   5  (bases 1 to 616)
+  AUTHORS   Criddle,R.S., Hansen,L.D., Woodfield,B.F. and Tolley,H.D.
+  TITLE     Modeling transthyretin (TTR) amyloid diseases, from monomer to
+            amyloid fibrils
+  JOURNAL   PLoS One 19 (6), e0304891 (2024)
+   PUBMED   38843135
+  REMARK    GeneRIF: Modeling transthyretin (TTR) amyloid diseases, from
+            monomer to amyloid fibrils.
+REFERENCE   6  (bases 1 to 616)
+  AUTHORS   Sekijima,Y. and Nakamura,K.
+  TITLE     Hereditary Transthyretin Amyloidosis
+  JOURNAL   (in) Adam MP, Bick S, Mirzaa GM, Wallace SE and Amemiya A (Eds.);
+            GENEREVIEWS(R);
+            (1993)
+   PUBMED   20301373
+REFERENCE   7  (bases 1 to 616)
+  AUTHORS   Fex,G., Albertsson,P.A. and Hansson,B.
+  TITLE     Interaction between prealbumin and retinol-binding protein studied
+            by affinity chromatography, gel filtration and two-phase partition
+  JOURNAL   Eur J Biochem 99 (2), 353-360 (1979)
+   PUBMED   574085
+REFERENCE   8  (bases 1 to 616)
+  AUTHORS   Blake,C.C., Geisow,M.J., Oatley,S.J., Rerat,B. and Rerat,C.
+  TITLE     Structure of prealbumin: secondary, tertiary and quaternary
+            interactions determined by Fourier refinement at 1.8 A
+  JOURNAL   J Mol Biol 121 (3), 339-356 (1978)
+   PUBMED   671542
+REFERENCE   9  (bases 1 to 616)
+  AUTHORS   Blake,C.C. and Oatley,S.J.
+  TITLE     Protein-DNA and protein-hormone interactions in prealbumin: a model
+            of the thyroid hormone nuclear receptor?
+  JOURNAL   Nature 268 (5616), 115-120 (1977)
+   PUBMED   201845
+REFERENCE   10 (bases 1 to 616)
+  AUTHORS   Kopelman,M., Cogan,U., Mokady,S. and Shinitzky,M.
+  TITLE     The interaction between retinol-binding proteins and prealbumins
+            studied by fluorescence polarization
+  JOURNAL   Biochim Biophys Acta 439 (2), 449-460 (1976)
+   PUBMED   986177
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from BC020791.1.
+            
+            On Dec 4, 2019 this sequence version replaced NM_000371.3.
+            
+            Summary: This gene encodes one of the three prealbumins, which
+            include alpha-1-antitrypsin, transthyretin and orosomucoid. The
+            encoded protein, transthyretin, is a homo-tetrameric carrier
+            protein, which transports thyroid hormones in the plasma and
+            cerebrospinal fluid. It is also involved in the transport of
+            retinol (vitamin A) in the plasma by associating with
+            retinol-binding protein. The protein may also be involved in other
+            intracellular processes including proteolysis, nerve regeneration,
+            autophagy and glucose homeostasis. Mutations in this gene are
+            associated with amyloid deposition, predominantly affecting
+            peripheral nerves or the heart, while a small percentage of the
+            gene mutations are non-amyloidogenic. The mutations are implicated
+            in the etiology of several diseases, including amyloidotic
+            polyneuropathy, euthyroid hyperthyroxinaemia, amyloidotic vitreous
+            opacities, cardiomyopathy, oculoleptomeningeal amyloidosis,
+            meningocerebrovascular amyloidosis and carpal tunnel syndrome.
+            [provided by RefSeq, Aug 2017].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: BG699033.1, BG562535.1 [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA1968540, SAMEA1968968
+                                           [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000237014.8/ ENSP00000237014.4
+            RefSeq Select criteria :: based on single protein-coding transcript
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: complete on the 3' end.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-616               BC020791.1         1-616
+FEATURES             Location/Qualifiers
+     source          1..616
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="18"
+                     /map="18q12.1"
+     gene            1..616
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /note="transthyretin"
+                     /db_xref="GeneID:7276"
+                     /db_xref="HGNC:HGNC:12405"
+                     /db_xref="MIM:176300"
+     exon            1..95
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             27..470
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /note="prealbumin, amyloidosis type I; thyroxine-binding
+                     prealbumin; epididymis luminal protein 111"
+                     /codon_start=1
+                     /product="transthyretin precursor"
+                     /protein_id="NP_000362.1"
+                     /db_xref="CCDS:CCDS11899.1"
+                     /db_xref="GeneID:7276"
+                     /db_xref="HGNC:HGNC:12405"
+                     /db_xref="MIM:176300"
+                     /translation="MASHRLLLLCLAGLVFVSEAGPTGTGESKCPLMVKVLDAVRGSP
+                     AINVAVHVFRKAADDTWEPFASGKTSESGELHGLTTEEEFVEGIYKVEIDTKSYWKAL
+                     GISPFHEHAEVVFTANDSGPRRYTIAALLSPYSYSTTAVVTNPKE"
+     sig_peptide     27..86
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /inference="COORDINATES: ab initio prediction:SignalP:6.0"
+     mat_peptide     87..467
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /product="transthyretin"
+     misc_feature    210..212
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /note="4-carboxyglutamate, in a patient with Moyamoya
+                     disease. /evidence=ECO:0000269|PubMed:18221012; propagated
+                     from UniProtKB/Swiss-Prot (P02766.1);
+                     gamma-carboxyglutamic-acid site"
+     misc_feature    240..242
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000250|UniProtKB:P02767; propagated from
+                     UniProtKB/Swiss-Prot (P02766.1); phosphorylation site"
+     misc_feature    378..380
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000269|PubMed:16335952,
+                     ECO:0000269|PubMed:19167329; propagated from
+                     UniProtKB/Swiss-Prot (P02766.1); glycosylation site"
+     exon            96..226
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /inference="alignment:Splign:2.1.0"
+     exon            227..362
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /inference="alignment:Splign:2.1.0"
+     exon            363..616
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      593..598
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /note="hexamer: AATAAA"
+     polyA_site      616
+                     /gene="TTR"
+                     /gene_synonym="AMYLD1; ATTR; CTS; CTS1; HEL111; HsT2651;
+                     PALB; TBPA; TTN"
+                     /note="major polyA site"
+ORIGIN      
+        1 acagaagtcc actcattctt ggcaggatgg cttctcatcg tctgctcctc ctctgccttg
+       61 ctggactggt atttgtgtct gaggctggcc ctacgggcac cggtgaatcc aagtgtcctc
+      121 tgatggtcaa agttctagat gctgtccgag gcagtcctgc catcaatgtg gccgtgcatg
+      181 tgttcagaaa ggctgctgat gacacctggg agccatttgc ctctgggaaa accagtgagt
+      241 ctggagagct gcatgggctc acaactgagg aggaatttgt agaagggata tacaaagtgg
+      301 aaatagacac caaatcttac tggaaggcac ttggcatctc cccattccat gagcatgcag
+      361 aggtggtatt cacagccaac gactccggcc cccgccgcta caccattgcc gccctgctga
+      421 gcccctactc ctattccacc acggctgtcg tcaccaatcc caaggaatga gggacttctc
+      481 ctccagtgga cctgaaggac gagggatggg atttcatgta accaagagta ttccattttt
+      541 actaaagcag tgttttcacc tcatatgcta tgttagaagt ccaggcagag acaataaaac
+      601 attcctgtga aaggca
+//
+

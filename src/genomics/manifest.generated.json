@@ -1,0 +1,219 @@
+{
+  "catalogueId": "genome-m4-catalogue-1",
+  "release": "GENOME M4 curated catalogue 1 (RefSeq MANE Select records retrieved via NCBI, pinned in data/raw/)",
+  "policy": "Human nuclear protein-coding genes, one MANE Select RefSeq transcript each (GRCh38 annotation as in the record). Complete ordinary CDS only: ATG start, single terminal stop (included), length divisible by 3, standard-code translation equal to the record's /translation, no translation exceptions; CDS ≤ 1100 bp for this release. Curated candidate list, not a full catalogue.",
+  "attribution": "Sequences and summaries: NCBI RefSeq (O'Leary et al., Nucleic Acids Res 2016); MANE Select: Morales et al., Nature 2022 (doi:10.1038/s41586-022-04558-8). NCBI data are provided without restriction on use; see https://www.ncbi.nlm.nih.gov/home/about/policies/.",
+  "candidates": 14,
+  "included": [
+    {
+      "symbol": "INS",
+      "geneId": "NCBIGene:3630",
+      "name": "Insulin",
+      "chromosome": "11",
+      "theme": "Hormones",
+      "transcript": "NM_000207.3",
+      "protein": "NP_000198.1",
+      "biotype": "protein_coding",
+      "cdsLength": 333,
+      "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
+      "datasetId": "refseq-NM_000207.3-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000207.3"
+    },
+    {
+      "symbol": "HBB",
+      "geneId": "NCBIGene:3043",
+      "name": "Beta-globin",
+      "chromosome": "11",
+      "theme": "Oxygen transport",
+      "transcript": "NM_000518.5",
+      "protein": "NP_000509.1",
+      "biotype": "protein_coding",
+      "cdsLength": 444,
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000518.5"
+    },
+    {
+      "symbol": "HBA1",
+      "geneId": "NCBIGene:3039",
+      "name": "Hemoglobin subunit alpha 1",
+      "chromosome": "16",
+      "theme": "Oxygen transport",
+      "transcript": "NM_000558.5",
+      "protein": "NP_000549.1",
+      "biotype": "protein_coding",
+      "cdsLength": 429,
+      "sequenceSha256": "c75c6ab5e20fba4712dd91ce77b44aca74f2cfe9ca54660efeee9b8da9f1fd10",
+      "datasetId": "refseq-NM_000558.5-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000558.5"
+    },
+    {
+      "symbol": "HBD",
+      "geneId": "NCBIGene:3045",
+      "name": "Hemoglobin subunit delta",
+      "chromosome": "11",
+      "theme": "Oxygen transport",
+      "transcript": "NM_000519.4",
+      "protein": "NP_000510.1",
+      "biotype": "protein_coding",
+      "cdsLength": 444,
+      "sequenceSha256": "2390d5b82e107fd4caaa7dcd6fa2594c979a14a19ef8be78c7001c3e8ca5df85",
+      "datasetId": "refseq-NM_000519.4-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000519.4"
+    },
+    {
+      "symbol": "MB",
+      "geneId": "NCBIGene:4151",
+      "name": "Myoglobin",
+      "chromosome": "22",
+      "theme": "Oxygen transport",
+      "transcript": "NM_005368.3",
+      "protein": "NP_005359.1",
+      "biotype": "protein_coding",
+      "cdsLength": 465,
+      "sequenceSha256": "84cf043adca55a92b610ff3f9934ac617845eaba05a6aed0a453e71c6676b2d0",
+      "datasetId": "refseq-NM_005368.3-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_005368.3"
+    },
+    {
+      "symbol": "GCG",
+      "geneId": "NCBIGene:2641",
+      "name": "Glucagon",
+      "chromosome": "2",
+      "theme": "Hormones",
+      "transcript": "NM_002054.5",
+      "protein": "NP_002045.1",
+      "biotype": "protein_coding",
+      "cdsLength": 543,
+      "sequenceSha256": "e2a9d915f8f3b811163a41e05f437e359bdf73a1dd06601ba092fb5a1b8290c9",
+      "datasetId": "refseq-NM_002054.5-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_002054.5"
+    },
+    {
+      "symbol": "LEP",
+      "geneId": "NCBIGene:3952",
+      "name": "Leptin",
+      "chromosome": "7",
+      "theme": "Hormones",
+      "transcript": "NM_000230.3",
+      "protein": "NP_000221.1",
+      "biotype": "protein_coding",
+      "cdsLength": 504,
+      "sequenceSha256": "019dbfea56dff4500e6562341bc5949840885929aa74a25f32c941336db746cc",
+      "datasetId": "refseq-NM_000230.3-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000230.3"
+    },
+    {
+      "symbol": "PTH",
+      "geneId": "NCBIGene:5741",
+      "name": "Parathyroid hormone",
+      "chromosome": "11",
+      "theme": "Hormones",
+      "transcript": "NM_000315.4",
+      "protein": "NP_000306.1",
+      "biotype": "protein_coding",
+      "cdsLength": 348,
+      "sequenceSha256": "7a8a31333857adf1d92f1a5ff3723e88f0ca261e8388b5a90ff83afdff8bfa75",
+      "datasetId": "refseq-NM_000315.4-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000315.4"
+    },
+    {
+      "symbol": "NPY",
+      "geneId": "NCBIGene:4852",
+      "name": "Neuropeptide Y",
+      "chromosome": "7",
+      "theme": "Hormones",
+      "transcript": "NM_000905.4",
+      "protein": "NP_000896.1",
+      "biotype": "protein_coding",
+      "cdsLength": 294,
+      "sequenceSha256": "3f5646137487740fa4763a14b1e767d16f4a00fb7cee7e1a4f870a15ef4f999a",
+      "datasetId": "refseq-NM_000905.4-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000905.4"
+    },
+    {
+      "symbol": "TTR",
+      "geneId": "NCBIGene:7276",
+      "name": "Transthyretin",
+      "chromosome": "18",
+      "theme": "Transport & immunity",
+      "transcript": "NM_000371.4",
+      "protein": "NP_000362.1",
+      "biotype": "protein_coding",
+      "cdsLength": 444,
+      "sequenceSha256": "be10fcea023d498fbf9bf93b16e577857f97b6c334d52fbd953d9362b2f97c3e",
+      "datasetId": "refseq-NM_000371.4-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000371.4"
+    },
+    {
+      "symbol": "B2M",
+      "geneId": "NCBIGene:567",
+      "name": "Beta-2-microglobulin",
+      "chromosome": "15",
+      "theme": "Transport & immunity",
+      "transcript": "NM_004048.4",
+      "protein": "NP_004039.1",
+      "biotype": "protein_coding",
+      "cdsLength": 360,
+      "sequenceSha256": "618ed0f6f3cd840794c23bb2ed6c6950850d6868892c16f89f626a229d88505d",
+      "datasetId": "refseq-NM_004048.4-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_004048.4"
+    },
+    {
+      "symbol": "RHO",
+      "geneId": "NCBIGene:6010",
+      "name": "Rhodopsin",
+      "chromosome": "3",
+      "theme": "Vision",
+      "transcript": "NM_000539.3",
+      "protein": "NP_000530.1",
+      "biotype": "protein_coding",
+      "cdsLength": 1047,
+      "sequenceSha256": "1b6edbee0cff62683fc4ee2f3b0a2d2d077b3208a7b15b33d1ffe56dde4553fe",
+      "datasetId": "refseq-NM_000539.3-2026-11-13",
+      "sourceUrl": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000539.3"
+    }
+  ],
+  "excluded": [
+    {
+      "symbol": "GPX1",
+      "geneId": "NCBIGene:2876",
+      "verified": false,
+      "reason": "translation exception (pos:220..222,aa:Sec) (e.g. selenocysteine) — needs an exception policy"
+    },
+    {
+      "symbol": "LIG1",
+      "geneId": "NCBIGene:3978",
+      "verified": true,
+      "reason": "verified, but CDS 2760 bp exceeds the chapter policy (≤ 1100 bp with the current 3–24-base token tiers; needs longer tokens or a longer chapter)"
+    }
+  ],
+  "counts": {
+    "included": 12,
+    "excluded": 2,
+    "byBiotype": {
+      "protein_coding": 12
+    },
+    "byChromosome": {
+      "2": 1,
+      "3": 1,
+      "7": 2,
+      "11": 4,
+      "15": 1,
+      "16": 1,
+      "18": 1,
+      "22": 1
+    },
+    "byTheme": {
+      "Hormones": 5,
+      "Oxygen transport": 4,
+      "Transport & immunity": 2,
+      "Vision": 1
+    },
+    "excludedByReason": {
+      "translation exception (…) (e.g. selenocysteine) — needs an exception policy": 1,
+      "verified, but CDS N bp exceeds the chapter policy (≤ 1100 bp with the current 3–24-base token tiers; needs longer tokens or a longer chapter)": 1
+    },
+    "totalCdsBases": 5655
+  }
+}

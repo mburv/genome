@@ -36,9 +36,24 @@ export interface Codon {
 
 export const powersEnabled = (def: LevelDefinition): boolean => def.lab !== undefined || (!def.tutorial && def.index >= POWERS_FROM_INDEX);
 
-/** Reference codons that lie wholly inside one track (in-frame triples of contiguous track cells). */
+/**
+ * Reward units. Single-base levels: reference codons that lie wholly inside one track (in-frame
+ * triples of contiguous track cells). Token levels (M4): every target tile is one unit — each piece
+ * starts in frame and holds ≥ 1 whole codon — keyed by its CDS offset.
+ */
 export function levelCodons(def: LevelDefinition): Codon[] {
   const out: Codon[] = [];
+  if (def.tokens) {
+    for (const t of def.tracks) {
+      let offset = t.source.start;
+      t.cells.forEach((cell, i) => {
+        const sym = t.expected[i]!;
+        out.push({ key: `${t.strand === 'coding' ? 'c' : 'x'}${offset}`, cells: [cell], expected: sym, group: t.group, rewardable: t.strand === 'coding' });
+        offset += def.tokens![sym]!.seq.length;
+      });
+    }
+    return out;
+  }
   for (const t of def.tracks) {
     for (let i = 0; i + 2 < t.cells.length; i++) {
       const offset = t.source.start + i;

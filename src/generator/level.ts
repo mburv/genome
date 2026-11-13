@@ -1,7 +1,8 @@
 import { allMoves, applyMove, applySlide, cellAt, inBounds, colOf, inverseMove, moveKey, normaliseSteps, rowOf, segmentCells, slideToMoves } from '../engine/grid.ts';
 import { isSolved, replayCertificate } from '../engine/engine.ts';
-import type { Axis, Base, Board, Cell, Interval, LevelDefinition, LevelMetrics, LevelMode, Mask, Move, Power, RepairSpec, Slide, Track } from '../engine/types.ts';
+import type { Axis, Board, Cell, Interval, LevelDefinition, LevelMetrics, LevelMode, Mask, Move, Power, RepairSpec, Slide, Track } from '../engine/types.ts';
 import { scaffoldCandidates } from '../engine/powers.ts';
+import { defaultLabel, MAX_LEVEL_TOKENS, tokenSymbol, type TokenDef } from '../engine/tokens.ts';
 import { BASES } from '../engine/types.ts';
 import { alignedComplement } from '../genomics/dna.ts';
 import { canonicalMask, isConnected, maskErrors, maskMetrics, proposeMask, symmetricDistance, tidyMask, type MaskOptions } from './mask.ts';
@@ -56,6 +57,15 @@ export interface LevelSpec {
   lab?: Power;
   /** Require at least one legal scaffold placement whose bridged track contains a target cell. */
   requireScaffoldGap?: boolean;
+  /**
+   * M4 token level: nominal bases per tile (multiple of 3). The source interval is cut into pieces of
+   * this size in coding order (the last piece may be shorter); layout lengths then count tiles.
+   */
+  tokenSize?: number;
+  /** M4 assembly chapter position. */
+  chapter?: { part: number; of: number };
+  /** Bounded-solver budget for the published metrics (defaults to the campaign budget). */
+  solverBudget?: number;
 }
 
 export type RejectReason =
@@ -93,49 +103,102 @@ interface Placement {
   tracks: Track[];
   repair?: RepairSpec;
   forceHoles: Cell[];
+  /** Token levels: symbol table built so far (targets; decoys are added when filling). */
+  tokens?: TokenTable;
+}
+
+/** One target unit: a base (single-base levels) or a piece of `tokenSize` bases (token levels). */
+interface Unit {
+  seq: string;
+  start: number;
+  end: number;
+}
+
+/** Sequence → symbol table for a token level (one symbol per distinct sequence). */
+export class TokenTable {
+  readonly bySeq = new Map<string, string>();
+  readonly defs: Record<string, TokenDef> = {};
+  add(seq: string, kind: TokenDef['kind'], source: Interval, strand?: TokenDef['strand']): string {
+    const have = this.bySeq.get(seq);
+    if (have) return have;
+    const n = this.bySeq.size;
+    if (n >= MAX_LEVEL_TOKENS) throw new Error('too many distinct tokens');
+    const sym = tokenSymbol(n);
+    this.bySeq.set(seq, sym);
+    this.defs[sym] = { seq, kind, label: '', source: { ...source }, ...(strand ? { strand } : {}) };
+    return sym;
+  }
+  /** Final labels: equal sequences share one symbol; different sequences with equal labels get a suffix. */
+  finish(): Record<string, TokenDef> {
+    const seen = new Map<string, number>();
+    for (const sym of Object.keys(this.defs)) {
+      const d = this.defs[sym]!;
+      const base = defaultLabel(d.seq);
+      const k = seen.get(base) ?? 0;
+      seen.set(base, k + 1);
+      d.label = k === 0 ? base : `${base}·${k + 1}`;
+    }
+    return this.defs;
+  }
+}
+
+function unitsOf(spec: LevelSpec, cds: string): Unit[] {
+  const { start, end } = spec.source;
+  const k = spec.tokenSize ?? 1;
+  const out: Unit[] = [];
+  for (let s = start; s < end; s += k) out.push({ seq: cds.slice(s, Math.min(end, s + k)), start: s, end: Math.min(end, s + k) });
+  return out;
 }
 
 /** Place target tracks for the level's mode. Pure given the RNG. */
 export function placeTracks(rng: Rng, spec: LevelSpec, cds: string): Placement | null {
   const { start, end } = spec.source;
-  const slice = cds.slice(start, end);
+  const units = unitsOf(spec, cds);
+  const table = spec.tokenSize ? new TokenTable() : null;
+  // Single-base levels: the symbol is the base. Token levels: one symbol per distinct sequence.
+  const sym = (u: Unit, strand: 'coding' | 'complement' = 'coding'): string =>
+    table ? table.add(strand === 'coding' ? u.seq : alignedComplement(u.seq), 'target', { start: u.start, end: u.end }, strand) : strand === 'coding' ? u.seq : alignedComplement(u.seq);
   const L = spec.layout;
-  const coding = (group: number, cells: Cell[], orientation: Track['orientation'], s: number, e: number): Track => ({
-    group, cells, expected: cds.slice(s, e), orientation, strand: 'coding', readDirection: '5to3', source: { start: s, end: e },
+  const coding = (group: number, cells: Cell[], orientation: Track['orientation'], a: number, b: number): Track => ({
+    group, cells, expected: units.slice(a, b).map((u) => sym(u)).join(''), orientation, strand: 'coding', readDirection: '5to3', source: { start: units[a]!.start, end: units[b - 1]!.end },
   });
+  const done = (p: Placement): Placement => (table ? { ...p, tokens: table } : p);
   if (L.kind === 'sequence') {
     const line = L.line ?? rng.range(1, 7);
-    const len = slice.length;
+    const len = units.length;
+    if (len > 9) return null;
     const off = rng.range(0, 9 - len);
     const cells = L.orientation === 'horizontal' ? lineCells('horizontal', line, off, len) : lineCells('vertical', off, line, len);
-    return { tracks: [coding(1, cells, L.orientation, start, end)], forceHoles: [] };
+    return done({ tracks: [coding(1, cells, L.orientation, 0, len)], forceHoles: [] });
   }
   if (L.kind === 'replicate') {
-    const len = slice.length;
+    const len = units.length;
+    if (len > 9) return null;
     const a = rng.range(1, 6);
     const b = rng.range(0, 9 - len);
     const [c1, c2] = L.orientation === 'horizontal'
       ? [lineCells('horizontal', a, b, len), lineCells('horizontal', a + 1, b, len)]
       : [lineCells('vertical', b, a, len), lineCells('vertical', b, a + 1, len)];
-    const src = coding(1, c1, L.orientation, start, end);
-    const comp: Track = { group: 2, cells: c2, expected: alignedComplement(slice), orientation: L.orientation, strand: 'complement', readDirection: '3to5', source: { start, end } };
-    return { tracks: [src, comp], forceHoles: [] };
+    const src = coding(1, c1, L.orientation, 0, len);
+    const comp: Track = { group: 2, cells: c2, expected: units.map((u) => sym(u, 'complement')).join(''), orientation: L.orientation, strand: 'complement', readDirection: '3to5', source: { start, end } };
+    return done({ tracks: [src, comp], forceHoles: [] });
   }
   if (L.kind === 'repair') {
     const line = rng.range(1, 7);
     const all = L.orientation === 'horizontal' ? lineCells('horizontal', line, 0, 9) : lineCells('vertical', 0, line, 9);
     const g = L.gapIndex;
-    if (slice.length !== 9) return null;
-    return {
-      tracks: [coding(1, all.slice(0, g), L.orientation, start, start + g), coding(2, all.slice(g + 1), L.orientation, start + g + 1, end)],
-      repair: { cell: all[g]!, expected: cds[start + g] as Base, sourceOffset: start + g },
+    if (units.length !== 9) return null;
+    const gap = units[g]!;
+    return done({
+      tracks: [coding(1, all.slice(0, g), L.orientation, 0, g), coding(2, all.slice(g + 1), L.orientation, g + 1, 9)],
+      repair: { cell: all[g]!, expected: sym(gap), sourceOffset: gap.start, ...(table ? { length: gap.end - gap.start } : {}) },
       forceHoles: [all[g]!],
-    };
+    });
   }
   // splice: separate tracks, joined in group order; keep a one-cell margin between tracks
   const tracks: Track[] = [];
   const used = new Set<Cell>();
-  let offset = start;
+  let offset = 0;
   for (const [i, part] of L.parts.entries()) {
     let placed: Cell[] | null = null;
     for (let tries = 0; tries < 200 && !placed; tries++) {
@@ -146,11 +209,35 @@ export function placeTracks(rng: Rng, spec: LevelSpec, cds: string): Placement |
       placed = cells;
     }
     if (!placed) return null;
+    if (offset + part.length > units.length) return null;
     placed.forEach((x) => used.add(x));
     tracks.push(coding(i + 1, placed, part.orientation, offset, offset + part.length));
     offset += part.length;
   }
-  return offset === end ? { tracks, forceHoles: [] } : null;
+  return offset === units.length ? done({ tracks, forceHoles: [] }) : null;
+}
+
+/**
+ * Token levels: every non-target cell gets a decoy — a real slice of the same CDS from outside this
+ * level's interval, in frame, never equal to a target piece (so decoys are clearly separate and are
+ * never counted as reference coverage). No invented sequence.
+ */
+function fillTokens(rng: Rng, mask: Mask, tracks: readonly Track[], table: TokenTable, spec: LevelSpec, cds: string): Board | null {
+  const k = spec.tokenSize!;
+  const { start, end } = spec.source;
+  const targets = new Set(table.bySeq.keys());
+  const positions: number[] = [];
+  for (let p = 0; p + k <= cds.length; p += 3) if (p + k <= start || p >= end) positions.push(p);
+  const usable = positions.filter((p) => !targets.has(cds.slice(p, p + k)));
+  if (usable.length < 4) return null;
+  const out: string[] = mask.split('').map((ch) => (ch === '#' ? '' : '.'));
+  for (const t of tracks) t.cells.forEach((cell, i) => { out[cell] = t.expected[i]!; });
+  for (let c = 0; c < out.length; c++) {
+    if (out[c] !== '') continue;
+    const p = rng.pick(usable);
+    out[c] = table.add(cds.slice(p, p + k), 'decoy', { start: p, end: p + k });
+  }
+  return out.join('');
 }
 
 function fillSolved(rng: Rng, mask: Mask, tracks: readonly Track[]): Board {
@@ -261,7 +348,7 @@ export function rateLevel(m: Pick<LevelMetrics, 'certificateDrags' | 'wrongTarge
 export function tryCandidate(rng: Rng, spec: LevelSpec, gene: GeneSource, existing: readonly LevelDefinition[], solverBudget = 0): Candidate {
   const placement = placeTracks(rng, spec, gene.sequence);
   if (!placement) return { ok: false, reason: 'tracks' };
-  const { tracks, repair, forceHoles } = placement;
+  const { tracks, repair, forceHoles, tokens: table } = placement;
   const protect = tracks.flatMap((t) => t.cells);
   const maskOpts: MaskOptions = { ...spec.mask, protect, forceHoles };
   const crossOf = new Map<Cell, Axis>(tracks.flatMap((t) => t.cells.map((c) => [c, across(t.orientation)] as const)));
@@ -275,7 +362,8 @@ export function tryCandidate(rng: Rng, spec: LevelSpec, gene: GeneSource, existi
   const canonical = canonicalMask(mask);
   if (existing.some((d) => d.maskCanonical === canonical)) return { ok: false, reason: 'duplicate' };
   if (existing.some((d) => symmetricDistance(mask, d.mask) < MIN_MASK_DISTANCE)) return { ok: false, reason: 'near-duplicate' };
-  const filled = fillSolved(rng, mask, tracks);
+  const filled = table ? fillTokens(rng, mask, tracks, table, spec, gene.sequence) : fillSolved(rng, mask, tracks);
+  if (!filled) return { ok: false, reason: 'tracks' };
   const slides = scramble(rng, mask, filled, tracks, spec);
   if (!slides) return { ok: false, reason: 'scramble' };
   let initial = filled;
@@ -348,6 +436,8 @@ export function tryCandidate(rng: Rng, spec: LevelSpec, gene: GeneSource, existi
       difficulty: 'estimated',
     },
     ...(spec.lab ? { lab: spec.lab } : {}),
+    ...(table ? { tokens: table.finish(), tier: spec.tokenSize! } : {}),
+    ...(spec.chapter ? { chapter: { ...spec.chapter } } : {}),
   };
   const errs = validateLevel(def, gene, existing);
   return errs.length ? { ok: false, reason: 'invalid' } : { ok: true, def };
@@ -357,6 +447,8 @@ export function buildLevel(spec: LevelSpec, gene: GeneSource, existing: readonly
   if (spec.gene !== gene.symbol) throw new Error(`${spec.id}: gene mismatch`);
   const expected = gene.sequence.slice(spec.source.start, spec.source.end);
   if (expected.length !== spec.source.end - spec.source.start || !/^[ACGT]+$/.test(expected)) throw new Error(`${spec.id}: bad source interval`);
+  if (spec.tokenSize !== undefined && (spec.tokenSize % 3 !== 0 || spec.source.start % 3 !== 0)) throw new Error(`${spec.id}: token pieces must start in frame`);
+  solverBudget = spec.solverBudget ?? solverBudget;
   const rng = createRng(spec.seed);
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     // Cheap candidate first; the published bounded search runs only once, on the accepted level.
@@ -429,8 +521,10 @@ export function validateLevel(def: LevelDefinition, gene: GeneSource, others: re
     if (t.cells.length < 3 || t.cells.length > 9) e('track length must be 3-9');
     if (t.cells.length !== t.expected.length) e('track/expected length mismatch');
     const ref = cds.slice(t.source.start, t.source.end);
-    if (t.strand === 'coding' && (ref !== t.expected || t.readDirection !== '5to3')) e(`track ${t.group} does not match source CDS`);
-    if (t.strand === 'complement' && (alignedComplement(ref) !== t.expected || t.readDirection !== '3to5')) e(`track ${t.group} is not the aligned complement`);
+    // Sequence equality: concatenate the DNA carried by the expected symbols.
+    const spelled = def.tokens ? t.expected.split('').map((sym) => def.tokens![sym]?.seq ?? '?').join('') : t.expected;
+    if (t.strand === 'coding' && (ref !== spelled || t.readDirection !== '5to3')) e(`track ${t.group} does not match source CDS`);
+    if (t.strand === 'complement' && (alignedComplement(ref) !== spelled || t.readDirection !== '3to5')) e(`track ${t.group} is not the aligned complement`);
     const step = t.orientation === 'horizontal' ? 1 : 9;
     t.cells.forEach((c, i) => {
       if (def.mask[c] !== '#') e(`track cell ${c} is a hole`);
@@ -443,7 +537,7 @@ export function validateLevel(def: LevelDefinition, gene: GeneSource, others: re
   // Exact source coverage: coding tracks (+ repair base) tile the level interval once, in order.
   const coding = def.tracks.filter((t) => t.strand === 'coding');
   const offsets: number[] = coding.flatMap((t) => Array.from({ length: t.source.end - t.source.start }, (_, i) => t.source.start + i));
-  if (def.repair) offsets.push(def.repair.sourceOffset);
+  if (def.repair) for (let i = 0; i < (def.repair.length ?? 1); i++) offsets.push(def.repair.sourceOffset + i);
   offsets.sort((a, b) => a - b);
   const iv = def.sourceIntervals[0]!;
   if (def.sourceIntervals.length !== 1 || offsets.length !== iv.end - iv.start || offsets.some((o, i) => o !== iv.start + i)) e('coding tracks do not cover the source interval exactly once');
@@ -467,13 +561,17 @@ export function validateLevel(def: LevelDefinition, gene: GeneSource, others: re
     if (!r || def.tracks.length !== 2) e('repair needs a gap and two flanking tracks');
     else {
       if (def.mask[r.cell] !== '.') e('repair cell must be a hole until win');
-      if (cds[r.sourceOffset] !== r.expected) e('repair base does not match source');
+      const len = r.length ?? 1;
+      const restored = def.tokens ? def.tokens[r.expected]?.seq : r.expected;
+      if (cds.slice(r.sourceOffset, r.sourceOffset + len) !== restored) e('repair piece does not match source');
       const [a, b] = def.tracks as [Track, Track];
       const step = a.orientation === 'horizontal' ? 1 : 9;
       if (r.cell !== a.cells[a.cells.length - 1]! + step || b.cells[0] !== r.cell + step) e('repair gap is not between the flanking tracks');
-      if (a.source.end !== r.sourceOffset || b.source.start !== r.sourceOffset + 1) e('repair offset not between track intervals');
+      if (a.source.end !== r.sourceOffset || b.source.start !== r.sourceOffset + len) e('repair offset not between track intervals');
     }
   } else if (def.repair) e('only repair levels have a repair cell');
+  if (def.tokens) errors.push(...validateTokens(def, cds));
+  else if (def.tier !== undefined || /[^ACGT.]/.test(def.initial) || /[^ACGT.]/.test(def.solved)) e('single-base level has non-base symbols');
   const holesOk = def.initial.split('').every((ch, i) => (ch === '.') === (def.mask[i] === '.'));
   if (!holesOk || def.solved.split('').some((ch, i) => (ch === '.') !== (def.mask[i] === '.'))) e('boards do not respect mask');
   if (!isSolved(def, def.solved)) e('solved board does not match targets');
@@ -492,6 +590,43 @@ export function validateLevel(def: LevelDefinition, gene: GeneSource, others: re
   if (!isSolved(def, sb)) e('drag certificate does not solve the level');
   if (expand(def.mask, def.certificateSlides).map((m) => moveKey(def.mask, m)).join() !== def.certificate.map((m) => moveKey(def.mask, m)).join()) e('drag and step certificates differ');
   if (def.tutorial && def.certificate.length !== 1) e('tutorial must be exactly one move');
+  return errors;
+}
+
+/** Token-level checks: exact provenance, sequence-unique symbols, in-frame pieces, real decoys. */
+function validateTokens(def: LevelDefinition, cds: string): string[] {
+  const errors: string[] = [];
+  const e = (msg: string): void => { errors.push(`${def.id}: ${msg}`); };
+  const tokens = def.tokens!;
+  const k = def.tier;
+  if (!k || k % 3 !== 0) e('token tier must be a multiple of 3');
+  const seqs = new Set<string>();
+  const labels = new Set<string>();
+  const targetSyms = new Set(def.tracks.flatMap((t) => t.expected.split('')).concat(def.repair ? [def.repair.expected] : []));
+  for (const [sym, t] of Object.entries(tokens)) {
+    if (!/^[ACGT]+$/.test(t.seq)) e(`token ${t.label} is not DNA`);
+    if (seqs.has(t.seq)) e(`two symbols carry the same sequence ${t.label}`);
+    seqs.add(t.seq);
+    if (labels.has(t.label)) e(`duplicate label ${t.label}`);
+    labels.add(t.label);
+    if (t.kind === 'target' && !targetSyms.has(sym)) e(`target token ${t.label} is not used by any target`);
+    if (t.kind === 'decoy') {
+      if (targetSyms.has(sym)) e(`decoy ${t.label} is used as a target`);
+      const src = t.source;
+      if (!src || cds.slice(src.start, src.end) !== t.seq || src.start % 3 !== 0) e(`decoy ${t.label} is not an in-frame slice of the CDS`);
+      const iv = def.sourceIntervals[0]!;
+      if (src && src.start < iv.end && src.end > iv.start) e(`decoy ${t.label} overlaps the level interval`);
+    }
+    if (t.kind === 'target' && t.strand === 'coding' && (!t.source || cds.slice(t.source.start, t.source.end) !== t.seq)) e(`target ${t.label} provenance mismatch`);
+  }
+  for (const b of [def.initial, def.solved]) for (const ch of b) if (ch !== '.' && !tokens[ch]) e('board uses an unknown symbol');
+  for (const t of def.tracks) {
+    let off = t.source.start;
+    for (const sym of t.expected) {
+      if (off % 3 !== 0) e(`piece at CDS ${off} is out of frame`);
+      off += tokens[sym]?.seq.length ?? 0;
+    }
+  }
   return errors;
 }
 

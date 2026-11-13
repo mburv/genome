@@ -3,14 +3,21 @@ import { codonComplete, ENERGY_CAP, POWERS, START_ENERGY, scaffoldTrack, SCAFFOL
 import { applyMove } from '../engine/grid.ts';
 import type { LevelDefinition, Move } from '../engine/types.ts';
 import type { LevelPack } from '../campaign/campaign.ts';
+import { assemblyStatus } from '../campaign/assembly.ts';
+import { GENES } from '../genomics/genes.ts';
+import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
 
 export const SAVE_KEY = 'genome-save';
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export interface SaveData {
   schemaVersion: typeof SCHEMA_VERSION;
   campaignId: string;
   generatorVersion: string;
+  /** M4: generator version of the token chapter puzzles. */
+  tokenGeneratorVersion: string;
+  /** M4: pinned catalogue release. */
+  catalogueId: string;
   /** Dataset id per gene symbol the boards were generated from. */
   datasets: Record<string, string>;
   currentLevelId: string;
@@ -18,6 +25,8 @@ export interface SaveData {
   completed: string[];
   /** Gene symbols whose discovery card has been revealed to the player. */
   discovered: string[];
+  /** M4: gene symbols whose full CDS was assembled and verified (exact match + SHA-256). Separate from discovery. */
+  assembled: string[];
   attempts: Record<string, PuzzleState>;
   /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
   legacy: { m1Completed: string[] };
@@ -80,10 +89,13 @@ export function newSave(pack: LevelPack): SaveData {
     schemaVersion: SCHEMA_VERSION,
     campaignId: pack.campaignId,
     generatorVersion: pack.generatorVersion,
+    tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '',
+    catalogueId: pack.catalogueId ?? '',
     datasets: { ...pack.datasets },
     currentLevelId: pack.levels[0]!.id,
     completed: [],
     discovered: [],
+    assembled: [],
     attempts: {},
     legacy: { m1Completed: [] },
     settings: { ...DEFAULT_SETTINGS },
@@ -121,11 +133,23 @@ function validScaffold(def: LevelDefinition, locks: number[], v: unknown): boole
   return 'cells' in t && t.cells.join() === (o.cells as number[]).join();
 }
 
+/** CRISPR-created token sequences: only on token levels, at most one per edit, real DNA, never duplicating a level token. */
+function validCustom(def: LevelDefinition, v: unknown, edits: number): boolean {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return false;
+  const entries = Object.entries(v as Record<string, unknown>);
+  if (!def.tokens) return entries.length === 0;
+  if (entries.length > Math.min(edits, MAX_CUSTOM_TOKENS)) return false;
+  const known = new Set(Object.values(def.tokens).map((t) => t.seq));
+  const seen = new Set<string>();
+  return entries.every(([k, seq]) => isCustomSymbol(k) && typeof seq === 'string' && /^[ACGT]+$/.test(seq) && !known.has(seq) && !seen.has(seq) && (seen.add(seq), true));
+}
+
 function validSnapshot(def: LevelDefinition, s: unknown): s is Snapshot {
   if (typeof s !== 'object' || s === null) return false;
   const o = s as Record<string, unknown>;
   if (!Number.isInteger(o.edits) || (o.edits as number) < 0) return false;
-  if (!isCompatibleBoard(def, o.board, o.edits as number) || !Number.isInteger(o.moves)) return false;
+  if (!validCustom(def, o.custom, o.edits as number)) return false;
+  if (!isCompatibleBoard(def, o.board, o.edits as number, o.custom as Record<string, string>) || !Number.isInteger(o.moves)) return false;
   if (o.recovery !== null && !(Array.isArray(o.recovery) && o.recovery.every(isMove) && recoveryReplays(def, o.board as string, o.recovery))) return false;
   if (!isCellList(o.locks)) return false;
   const locks = o.locks;
@@ -161,6 +185,14 @@ export function upgradeAttemptV2(def: LevelDefinition, a: unknown): unknown {
     history: Array.isArray(o.history) ? o.history.map(snap) : o.history,
     ledger: { earned: Math.min(earnedKeys.length, ENERGY_CAP - START_ENERGY), credited: [...fresh.ledger.credited, ...earnedKeys] },
   };
+}
+
+/** Upgrade an M3 (v3) attempt to v4: snapshots gain an empty CRISPR custom-token table. Nothing else changes. */
+export function upgradeAttemptV3(a: unknown): unknown {
+  if (typeof a !== 'object' || a === null) return a;
+  const o = a as Record<string, unknown>;
+  const snap = (x: unknown): unknown => (typeof x === 'object' && x !== null ? { ...(x as object), custom: {} } : x);
+  return { ...(snap(o) as object), history: Array.isArray(o.history) ? o.history.map(snap) : o.history };
 }
 
 export interface LoadResult {
@@ -219,16 +251,27 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     return { save: m.save, notices: m.notices, recovered: true };
   }
   let upgradedV2 = false;
+  let upgradedV3 = false;
+  const rawAttemptsOf = (d: Record<string, unknown>): Record<string, unknown> => (typeof d.attempts === 'object' && d.attempts !== null ? (d.attempts as Record<string, unknown>) : {});
   if (data.schemaVersion === 2) {
     // M2 → M3: keep everything; add power state to boards in progress. Raw copy kept first.
     adapter.backup(raw, 'm2');
-    const rawAttempts = typeof data.attempts === 'object' && data.attempts !== null ? (data.attempts as Record<string, unknown>) : {};
-    const attempts = Object.fromEntries(Object.entries(rawAttempts).map(([id, a]) => {
+    const attempts = Object.fromEntries(Object.entries(rawAttemptsOf(data)).map(([id, a]) => {
       const def = pack.levels.find((l) => l.id === id);
       return [id, def ? upgradeAttemptV2(def, a) : a];
     }));
-    data = { ...data, schemaVersion: SCHEMA_VERSION, attempts };
+    data = { ...data, schemaVersion: 3, attempts };
     upgradedV2 = true;
+  }
+  if (data.schemaVersion === 3) {
+    // M3 → M4: keep everything; boards gain the (empty) CRISPR custom-token table. New catalogue genes
+    // join the dataset table (no board of theirs can exist yet), so nothing in progress is invalidated.
+    if (!upgradedV2) adapter.backup(raw, 'm3');
+    const attempts = Object.fromEntries(Object.entries(rawAttemptsOf(data)).map(([id, a]) => [id, upgradeAttemptV3(a)]));
+    const oldDatasets = typeof data.datasets === 'object' && data.datasets !== null ? (data.datasets as Record<string, unknown>) : {};
+    const added = Object.fromEntries(Object.entries(pack.datasets).filter(([g]) => !(g in oldDatasets)));
+    data = { ...data, schemaVersion: SCHEMA_VERSION, attempts, datasets: { ...oldDatasets, ...added }, tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '', assembled: [] };
+    upgradedV3 = true;
   }
   if (data.schemaVersion !== SCHEMA_VERSION) {
     adapter.backup(raw);
@@ -239,7 +282,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const completed = [...new Set(strings(data.completed).filter((id) => ids.has(id)))];
   const discovered = [...new Set(strings(data.discovered).filter((g) => g in pack.datasets))];
   const datasets = typeof data.datasets === 'object' && data.datasets !== null ? (data.datasets as Record<string, unknown>) : {};
-  const sameContent = data.generatorVersion === pack.generatorVersion && Object.entries(pack.datasets).every(([g, id]) => datasets[g] === id);
+  const sameContent = data.generatorVersion === pack.generatorVersion && (data.tokenGeneratorVersion ?? '') === (pack.tokenGeneratorVersion ?? '') && Object.entries(pack.datasets).every(([g, id]) => datasets[g] === id);
   const attempts: Record<string, PuzzleState> = {};
   let dropped = 0;
   const rawAttempts = typeof data.attempts === 'object' && data.attempts !== null ? (data.attempts as Record<string, unknown>) : {};
@@ -250,15 +293,27 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   }
   if (!sameContent && Object.keys(rawAttempts).length) notices.push('Levels were updated since your last visit. Completed levels are kept; boards in progress were restarted.');
   else if (dropped) notices.push(`${dropped} saved board(s) were invalid and were restarted. Completed levels are kept.`);
-  if (notices.length && !upgradedV2) adapter.backup(raw);
-  if (upgradedV2) notices.unshift(`GENOME updated: enzyme power-ups (CRISPR, Ligase, Scaffold) are available from level 4, with three Enzyme lab tutorials on the map. ${notices.length ? 'Completed levels were kept.' : 'All your progress was kept.'}`);
+  // Assembly claims are re-verified from completed puzzles (exact reconstruction + checksum).
+  const claimed = [...new Set(strings(data.assembled))];
+  const assembled = claimed.filter((g) => GENES[g] && g in pack.datasets && assemblyStatus(completed, GENES[g]!, pack.levels).verified);
+  if (assembled.length < claimed.length) notices.push('An assembled-gene record could not be re-verified against the pinned reference and was cleared; your completed puzzles are kept.');
+  if (notices.length && !upgradedV2 && !upgradedV3) adapter.backup(raw);
+  const kept = notices.length ? 'Completed levels were kept.' : 'All your progress was kept.';
+  if (upgradedV3) notices.unshift(`GENOME updated: full gene assembly — multi-base tiles (codons up to 24-base pieces) and an assembly chapter for each of ${Object.keys(pack.datasets).length} verified catalogue genes.${upgradedV2 ? ' Also new: enzyme power-ups (CRISPR, Ligase, Scaffold) from level 4, with three Enzyme lab tutorials on the map.' : ''} ${kept}`);
   const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : fresh.currentLevelId;
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   return {
-    save: { ...fresh, currentLevelId: current, completed, discovered, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings) },
+    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings) },
     notices,
     recovered: notices.length > 0,
   };
+}
+
+/** Record a verified assembly (idempotent; refuses anything that does not verify). */
+export function recordAssembly(save: SaveData, symbol: string, levels?: readonly LevelDefinition[]): SaveData {
+  const gene = GENES[symbol];
+  if (!gene || save.assembled.includes(symbol) || !assemblyStatus(save.completed, gene, levels).verified) return save;
+  return { ...save, assembled: [...save.assembled, symbol] };
 }
 
 /** Idempotent completion: a level is credited at most once. */

@@ -1,0 +1,16 @@
+{
+  "symbol": "HBD",
+  "geneId": "3045",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/HBD/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:38.256Z",
+  "responseSha256": "3219b0a399de15466774fc5df0dce9767d699a52594e348beeab33006268306e",
+  "description": "hemoglobin subunit delta",
+  "maneSelect": [
+    {
+      "accession": "NM_000519.4",
+      "ensembl": "ENST00000650601.1",
+      "protein": "NP_000510.1",
+      "chromosome": "11"
+    }
+  ]
+}

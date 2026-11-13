@@ -1,0 +1,16 @@
+{
+  "symbol": "GCG",
+  "geneId": "2641",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/GCG/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:40.561Z",
+  "responseSha256": "19e646ce7b0449faeb9638836bafa6f4300a1acef3edb7852270dfb51030bc77",
+  "description": "glucagon",
+  "maneSelect": [
+    {
+      "accession": "NM_002054.5",
+      "ensembl": "ENST00000418842.7",
+      "protein": "NP_002045.1",
+      "chromosome": "2"
+    }
+  ]
+}

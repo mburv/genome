@@ -1,0 +1,221 @@
+LOCUS       NM_000905                555 bp    mRNA    linear   PRI 05-FEB-2026
+DEFINITION  Homo sapiens neuropeptide Y (NPY), mRNA.
+ACCESSION   NM_000905
+VERSION     NM_000905.4
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 555)
+  AUTHORS   Tayran,H., Yilmaz,E., Bhattarai,P., Min,Y., Wang,X., Ma,Y.,
+            Wang,N., Jeong,I., Nelson,N., Kassara,N., Cosacak,M.I., Dogru,R.M.,
+            Reyes-Dumeyer,D., Stenersen,J.M., Reddy,J.S., Qiao,M., Flaherty,D.,
+            Gunasekaran,T.I., Yang,Z., Jurisch-Yaksi,N., Teich,A.F.,
+            Kanekiyo,T., Tosto,G., Vardarajan,B.N., Is,O., Ertekin-Taner,N.,
+            Mayeux,R. and Kizil,C.
+  TITLE     ABCA7-dependent induction of neuropeptide Y is required for
+            synaptic resilience in Alzheimer's disease through BDNF/NGFR
+            signaling
+  JOURNAL   Cell Genom 4 (9), 100642 (2024)
+   PUBMED   39216475
+  REMARK    GeneRIF: ABCA7-dependent induction of neuropeptide Y is required
+            for synaptic resilience in Alzheimer's disease through BDNF/NGFR
+            signaling.
+REFERENCE   2  (bases 1 to 555)
+  AUTHORS   Malva,J.O., Xapelli,S., Baptista,S., Valero,J., Agasse,F.,
+            Ferreira,R. and Silva,A.P.
+  TITLE     Multifaces of neuropeptide Y in the brain--neuroprotection,
+            neurogenesis and neuroinflammation
+  JOURNAL   Neuropeptides 46 (6), 299-308 (2012)
+   PUBMED   23116540
+  REMARK    GeneRIF: In this review, we highlight recent evidences concerning
+            paracrine/autocrine actions of NPY involved in neuroprotection,
+            neurogenesis and neuroinflammation--{REVIEW}
+REFERENCE   3  (bases 1 to 555)
+  AUTHORS   Benarroch,E.E.
+  TITLE     Neuropeptide Y: its multiple effects in the CNS and potential
+            clinical significance
+  JOURNAL   Neurology 72 (11), 1016-1020 (2009)
+   PUBMED   19289742
+  REMARK    GeneRIF: neuropeptide y is widely expressed in the nervous system
+            and has been shown to have a role in numerous physiologic
+            processes--{REVIEW}
+            Review article
+REFERENCE   4  (bases 1 to 555)
+  AUTHORS   El Karim,I.A., Linden,G.J., Orr,D.F. and Lundy,F.T.
+  TITLE     Antimicrobial activity of neuropeptides against a range of
+            micro-organisms from skin, oral, respiratory and gastrointestinal
+            tract sites
+  JOURNAL   J Neuroimmunol 200 (1-2), 11-16 (2008)
+   PUBMED   18603306
+REFERENCE   5  (bases 1 to 555)
+  AUTHORS   Gaszner,B., Korosi,A., Palkovits,M., Roubos,E.W. and Kozicz,T.
+  TITLE     Neuropeptide Y activates urocortin 1 neurons in the
+            nonpreganglionic Edinger-Westphal nucleus
+  JOURNAL   J Comp Neurol 500 (4), 708-719 (2007)
+   PUBMED   17154253
+  REMARK    GeneRIF: NPY, via NPY Y5 and to a lesser extent via the Y1
+            receptors, exerts a stimulatory action on Ucn1 cells in the
+            nonpreganglionic Edinger-Westphal nucleus.
+REFERENCE   6  (bases 1 to 555)
+  AUTHORS   Shimizu,M., Shigeri,Y., Tatsu,Y., Yoshikawa,S. and Yumoto,N.
+  TITLE     Enhancement of antimicrobial activity of neuropeptide Y by
+            N-terminal truncation
+  JOURNAL   Antimicrob Agents Chemother 42 (10), 2745-2746 (1998)
+   PUBMED   9756788
+  REMARK    GeneRIF: Neuropeptide Y has fungicidal, antimicrobial activity
+            against Candida albicans.
+REFERENCE   7  (bases 1 to 555)
+  AUTHORS   Monks,S.A., Karagianis,G., Howlett,G.J. and Norton,R.S.
+  TITLE     Solution structure of human neuropeptide Y
+  JOURNAL   J Biomol NMR 8 (4), 379-390 (1996)
+   PUBMED   9008359
+REFERENCE   8  (bases 1 to 555)
+  AUTHORS   Wan,C.P. and Lau,B.H.
+  TITLE     Neuropeptide Y receptor subtypes
+  JOURNAL   Life Sci 56 (13), 1055-1064 (1995)
+   PUBMED   9001438
+  REMARK    Review article
+REFERENCE   9  (bases 1 to 555)
+  AUTHORS   Herzog,H., Hort,Y.J., Ball,H.J., Hayes,G., Shine,J. and Selbie,L.A.
+  TITLE     Cloned human neuropeptide Y receptor couples to two different
+            second messenger systems
+  JOURNAL   Proc Natl Acad Sci U S A 89 (13), 5794-5798 (1992)
+   PUBMED   1321422
+REFERENCE   10 (bases 1 to 555)
+  AUTHORS   Minth,C.D., Andrews,P.C. and Dixon,J.E.
+  TITLE     Characterization, sequence, and expression of the cloned human
+            neuropeptide Y gene
+  JOURNAL   J Biol Chem 261 (26), 11974-11979 (1986)
+   PUBMED   2427515
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from K01911.1 and AI198311.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 22, 2018 this sequence version replaced NM_000905.3.
+            
+            Summary: This gene encodes a neuropeptide that is widely expressed
+            in the central nervous system and influences many physiological
+            processes, including cortical excitability, stress response, food
+            intake, circadian rhythms, and cardiovascular function. The
+            neuropeptide functions through G protein-coupled receptors to
+            inhibit adenylyl cyclase, activate mitogen-activated protein kinase
+            (MAPK), regulate intracellular calcium levels, and activate
+            potassium channels. A polymorphism in this gene resulting in a
+            change of leucine 7 to proline in the signal peptide is associated
+            with elevated cholesterol levels, higher alcohol consumption, and
+            may be a risk factor for various metabolic and cardiovascular
+            diseases. The protein also exhibits antimicrobial activity against
+            bacteria and fungi. [provided by RefSeq, Oct 2014].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: DA330523.1, BC029497.1 [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA1966682, SAMEA1968540
+                                           [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match                 :: ENST00000242152.7/
+                                                  ENSP00000242152.2
+            Protein has antimicrobial activity :: PMID: 9756788
+            RefSeq Select criteria             :: based on single
+                                                  protein-coding transcript
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-551               K01911.1           1-551
+            552-555             AI198311.1         20-23               c
+FEATURES             Location/Qualifiers
+     source          1..555
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="7"
+                     /map="7p15.3"
+     gene            1..555
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /note="neuropeptide Y"
+                     /db_xref="GeneID:4852"
+                     /db_xref="HGNC:HGNC:7955"
+                     /db_xref="MIM:162640"
+     exon            1..86
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /inference="alignment:Splign:2.1.0"
+     misc_feature    1
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /note="major transcription initiation site"
+     misc_feature    48..50
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /note="upstream in-frame stop codon"
+     CDS             87..380
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /note="pro-neuropeptide Y; prepro-neuropeptide Y"
+                     /codon_start=1
+                     /product="pro-neuropeptide Y preproprotein"
+                     /protein_id="NP_000896.1"
+                     /db_xref="CCDS:CCDS5387.1"
+                     /db_xref="GeneID:4852"
+                     /db_xref="HGNC:HGNC:7955"
+                     /db_xref="MIM:162640"
+                     /translation="MLGNKRLGLSGLTLALSLLVCLGALAEAYPSKPDNPGEDAPAED
+                     MARYYSALRHYINLITRQRYGKRSSPETLISDLLMRESTENVPRTRLEDPAMW"
+     sig_peptide     87..170
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /inference="COORDINATES: ab initio prediction:SignalP:6.0"
+     proprotein      171..377
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /product="pro-neuropeptide Y proprotein"
+     mat_peptide     171..278
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /product="pro-neuropeptide Y"
+                     /experiment="DESCRIPTION:antimicrobial peptide[PMID:
+                     9756788]"
+     exon            87..274
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /inference="alignment:Splign:2.1.0"
+     exon            275..355
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /inference="alignment:Splign:2.1.0"
+     exon            356..555
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      533..538
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /note="hexamer: AATAAA"
+     polyA_site      555
+                     /gene="NPY"
+                     /gene_synonym="PYY4"
+                     /note="major polyA site"
+ORIGIN      
+        1 accccatccg ctggctctca cccctcggag acgctcgccc gacagcatag tacttgccgc
+       61 ccagccacgc ccgcgcgcca gccaccatgc taggtaacaa gcgactgggg ctgtccggac
+      121 tgaccctcgc cctgtccctg ctcgtgtgcc tgggtgcgct ggccgaggcg tacccctcca
+      181 agccggacaa cccgggcgag gacgcaccag cggaggacat ggccagatac tactcggcgc
+      241 tgcgacacta catcaacctc atcaccaggc agagatatgg aaaacgatcc agcccagaga
+      301 cactgatttc agacctcttg atgagagaaa gcacagaaaa tgttcccaga actcggcttg
+      361 aagaccctgc aatgtggtga tgggaaatga gacttgctct ctggcctttt cctattttca
+      421 gcccatattt catcgtgtaa aacgagaatc cacccatcct accaatgcat gcagccactg
+      481 tgctgaattc tgcaatgttt tcctttgtca tcattgtata tatgtgtgtt taaataaagt
+      541 atcatgcatt caaaa
+//
+

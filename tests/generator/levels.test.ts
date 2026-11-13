@@ -5,7 +5,8 @@ import { createRng } from '../../src/generator/rng.ts';
 import { solveBounded } from '../../src/generator/solver.ts';
 import { M2_SPECS, ALL_SPECS, LAB_SPECS, CAMPAIGN_ID } from '../../src/campaign/specs.ts';
 import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, LEVELS, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../../src/campaign/campaign.ts';
-import { GENES, HBB, INS } from '../../src/genomics/genes.ts';
+import { CATALOGUE_ORDER, GENES, HBB, INS } from '../../src/genomics/genes.ts';
+import m2pack from '../../src/campaign/levels.generated.json';
 import { alignedComplement } from '../../src/genomics/dna.ts';
 import { applyMove, applySlide, segmentCells } from '../../src/engine/grid.ts';
 import { isSolved } from '../../src/engine/engine.ts';
@@ -25,11 +26,15 @@ describe('rng', () => {
 
 describe('deterministic generation', () => {
   it('regenerating from specs reproduces the pinned level pack exactly', { timeout: 120_000 }, () => {
-    expect(buildCampaign(ALL_SPECS, GENES)).toEqual(ALL_LEVELS);
+    // The M2 campaign + Enzyme labs stay byte-identical to M3 (chapters are a separate pinned pack).
+    expect(buildCampaign(ALL_SPECS, GENES)).toEqual(ALL_LEVELS.filter((l) => !l.chapter));
+    expect(ALL_LEVELS.slice(0, 15)).toEqual(ALL_LEVELS.filter((l) => !l.chapter));
     expect(buildCampaign(M2_SPECS, GENES)).toEqual(LEVELS);
     expect(LEVEL_PACK.generatorVersion).toBe(GENERATOR_VERSION);
-    expect(LEVEL_PACK.campaignId).toBe(CAMPAIGN_ID);
-    expect(LEVEL_PACK.datasets).toEqual({ INS: INS.datasetId, HBB: HBB.datasetId });
+    expect((m2pack as { campaignId: string }).campaignId).toBe(CAMPAIGN_ID);
+    expect(LEVEL_PACK.campaignId).toBe('genome-m4-assembly');
+    expect(LEVEL_PACK.datasets).toMatchObject({ INS: INS.datasetId, HBB: HBB.datasetId });
+    expect(Object.keys(LEVEL_PACK.datasets).sort()).toEqual([...CATALOGUE_ORDER].sort());
   });
   it('same seed twice gives identical levels; a different seed gives a different level', { timeout: 60_000 }, () => {
     const spec = M2_SPECS[1]!;
@@ -293,7 +298,7 @@ describe('coverage & discovery', () => {
 
 describe('Enzyme lab levels (M3)', () => {
   it('three labs, one per power, after the 12 campaign levels; the campaign is unchanged', () => {
-    expect(ALL_LEVELS).toHaveLength(15);
+    expect(ALL_LEVELS.filter((l) => !l.chapter)).toHaveLength(15);
     expect(ALL_LEVELS.slice(0, 12)).toEqual(LEVELS);
     expect(LAB_LEVELS.map((l) => l.lab)).toEqual(['crispr', 'ligase', 'scaffold']);
     expect(LAB_LEVELS.map((l) => l.index)).toEqual([12, 13, 14]);
@@ -312,7 +317,7 @@ describe('Enzyme lab levels (M3)', () => {
     }
   });
   it('ids are unique and the scaffold lab has at least one bridgeable gap', () => {
-    expect(new Set(ALL_LEVELS.map((l) => l.id)).size).toBe(15);
+    expect(new Set(ALL_LEVELS.map((l) => l.id)).size).toBe(ALL_LEVELS.length);
     expect(scaffoldCandidates(LAB_LEVELS.find((l) => l.lab === 'scaffold')!.mask, []).length).toBeGreaterThan(0);
   });
 });

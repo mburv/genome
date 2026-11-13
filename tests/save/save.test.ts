@@ -27,9 +27,9 @@ const m1Save = (completed: string[], withAttempt = false) => ({
 });
 
 describe('save / reload (v3)', () => {
-  it('schema is v3 and records the campaign and both datasets', () => {
+  it('schema is v4 and records the campaign and every catalogue dataset', () => {
     const s = newSave(LEVEL_PACK);
-    expect(SCHEMA_VERSION).toBe(3);
+    expect(SCHEMA_VERSION).toBe(4);
     expect(s.settings).toEqual(DEFAULT_SETTINGS);
     expect(s.datasets).toEqual(LEVEL_PACK.datasets);
     expect(s.discovered).toEqual([]);
@@ -161,7 +161,7 @@ describe('M2 (v2) → M3 (v3) migration', () => {
     const { s, raw } = m2Save();
     const adapter = createMemoryAdapter(raw);
     const r = loadSave(adapter, LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(3);
+    expect(r.save.schemaVersion).toBe(4);
     expect(r.save.completed).toEqual(LEVELS.slice(0, 4).map((l) => l.id));
     expect(r.save.currentLevelId).toBe(mid.id);
     expect(r.save.settings).toEqual({ ...DEFAULT_SETTINGS, reducedMotion: true });

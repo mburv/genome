@@ -17,7 +17,8 @@
     "import:data": "node scripts/import-genes.mjs",
     "validate:levels": "node scripts/generate-levels.ts --check",
     "generate:levels": "node scripts/generate-levels.ts",
-    "audit:levels": "node scripts/audit-levels.ts"
+    "audit:levels": "node scripts/audit-levels.ts --no-write && node scripts/audit-chapters.ts",
+    "fetch:catalogue": "node scripts/fetch-catalogue.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

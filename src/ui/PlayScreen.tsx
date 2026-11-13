@@ -5,9 +5,12 @@ import {
 } from '../engine/engine.ts';
 import { codonComplete, POWER_COST, powersEnabled, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
-import { LAB_LEVELS, LEVELS, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../campaign/campaign.ts';
+import { LAB_LEVELS, LEVELS, chapterOf, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../campaign/campaign.ts';
+import { assemblyStatus } from '../campaign/assembly.ts';
+import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
+import { SeqLetters } from './TokenFace.tsx';
 import { GENES } from '../genomics/genes.ts';
-import { recordCompletion, type SaveData } from '../persistence/save.ts';
+import { recordAssembly, recordCompletion, type SaveData } from '../persistence/save.ts';
 import { Board, type MoveAnimation, type PowerPreview, type SlidePreview } from './Board.tsx';
 import { TargetPanel } from './TargetPanel.tsx';
 import { WinCard } from './WinCard.tsx';
@@ -53,7 +56,7 @@ interface Props {
   onCard: (symbol: string) => void;
 }
 
-const stateKey = (s: PuzzleState): string => `${s.board}|${s.moves}|${s.history.length}|${s.locks.join()}|${s.scaffold?.remaining ?? 0}|${s.edits}`;
+const stateKey = (s: PuzzleState): string => `${s.board}|${s.moves}|${s.history.length}|${s.locks.join()}|${s.scaffold?.remaining ?? 0}|${s.edits}|${Object.keys(s.custom).length}`;
 
 export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, onCard }: Props) {
   const puzzle = save.attempts[def.id] ?? createInitialState(def);
@@ -62,7 +65,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const [selected, setSelected] = useState<Cell>(() => defaultSelection(def, puzzle));
   const [hintRes, setHintRes] = useState<{ key: string; hint: Hint } | null>(null);
   const [animation, setAnimation] = useState<MoveAnimation | null>(null);
-  const [celebrate, setCelebrate] = useState<{ newBases: number; discovered: boolean } | null>(null);
+  const [celebrate, setCelebrate] = useState<{ newBases: number; discovered: boolean; assembled: boolean } | null>(null);
   const [status, setStatus] = useState('');
   const [preview, setPreview] = useState<SlidePreview | null>(null);
   const [targeting, setTargeting] = useState<Power | null>(null);
@@ -73,7 +76,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
 
   // ---- power preview (pure: applyCommand on a copy) -------------------------------------
   const previewCmd: Command | null =
-    pending?.power === 'crispr' && pending.base ? { type: 'edit', cell: pending.cell, base: pending.base }
+    pending?.power === 'crispr' && pending.base ? { type: 'edit', cell: pending.cell, base: pending.base, pos: pending.pos }
       : pending?.power === 'ligase' ? { type: 'bond', cell: pending.cells[0]! }
         : pending?.power === 'scaffold' ? { type: 'scaffold', axis: pending.candidate.axis, gap: pending.candidate.gap }
           : null;
@@ -137,10 +140,12 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             sound = 'power';
             break;
           case 'edited':
-            notes.push(`CRISPR edit: ${ev.from} → ${ev.to}. Undo reverses it and refunds the energy.`);
+            notes.push(def.tokens
+              ? `CRISPR edit: base ${ev.pos + 1} of the piece ${ev.fromBase} → ${ev.toBase} (${symbolLabel(def, result.state.custom, ev.from)} → ${symbolLabel(def, result.state.custom, ev.to)}). Undo reverses it and refunds the energy.`
+              : `CRISPR edit: ${ev.from} → ${ev.to}. Undo reverses it and refunds the energy.`);
             break;
           case 'bonded':
-            notes.push('Codon bonded: its tiles now block rotation on both axes. Release is free.');
+            notes.push(def.tokens ? 'Piece bonded: it now blocks rotation on both axes. Release is free.' : 'Codon bonded: its tiles now block rotation on both axes. Release is free.');
             break;
           case 'released':
             notes.push('Bond released (free). Rows and columns move freely again.');
@@ -154,19 +159,25 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             sound = 'expire';
             break;
           case 'energy':
-            notes.push(ev.gained > 0 ? `+${ev.gained} energy: ${ev.codons} codon${ev.codons > 1 ? 's' : ''} completed.` : 'Codon completed (energy is full at 9).');
+            notes.push(def.tokens
+              ? (ev.gained > 0 ? `+${ev.gained} energy: ${ev.codons} target piece${ev.codons > 1 ? 's' : ''} placed.` : 'Piece placed (energy is full at 9).')
+              : ev.gained > 0 ? `+${ev.gained} energy: ${ev.codons} codon${ev.codons > 1 ? 's' : ''} completed.` : 'Codon completed (energy is full at 9).');
             if (ev.gained > 0) sound = 'energy';
             break;
           case 'solved': {
             if (def.lab) {
               next = recordCompletion(next, def.id);
-              setCelebrate({ newBases: 0, discovered: false });
+              setCelebrate({ newBases: 0, discovered: false, assembled: false });
             } else {
-              const before = coveredBases(next.completed, def.symbol);
+              // Bases are counted as a union over every completed puzzle of the gene (sample + chapter).
+              const before = assemblyStatus(next.completed, gene).covered;
               next = recordCompletion(next, def.id);
               const discoveredNow = isDiscovered(next.completed, def.symbol) && !next.discovered.includes(def.symbol);
               if (discoveredNow) next = { ...next, discovered: [...next.discovered, def.symbol] };
-              setCelebrate({ newBases: coveredBases(next.completed, def.symbol) - before, discovered: discoveredNow });
+              const wasAssembled = next.assembled.includes(def.symbol);
+              next = recordAssembly(next, def.symbol);
+              const assembledNow = !wasAssembled && next.assembled.includes(def.symbol);
+              setCelebrate({ newBases: assemblyStatus(next.completed, gene).covered - before, discovered: discoveredNow, assembled: assembledNow });
             }
             notes.push('Solved!');
             sound = 'win';
@@ -180,7 +191,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       persist(next);
       return true;
     },
-    [def, save, persist, cue],
+    [def, gene, save, persist, cue],
   );
 
   const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command)), [commit, def, puzzle]);
@@ -256,12 +267,12 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     setSelected(cell);
     if (targeting === 'crispr') {
       if (puzzle.locks.includes(cell)) return setStatus(REJECT_TEXT.locked!);
-      setPending({ power: 'crispr', cell, base: null });
-      setStatus('Pick the new base. The targets show the result before you confirm.');
+      setPending({ power: 'crispr', cell, base: null, pos: 0 });
+      setStatus(def.tokens ? 'Pick which base of the piece to change, then the new base. The targets show the result before you confirm.' : 'Pick the new base. The targets show the result before you confirm.');
     } else if (targeting === 'ligase') {
       const codon = levelCodons(def).find((c) => c.cells.includes(cell));
       if (!codon) return setStatus(REJECT_TEXT['not-a-codon']!);
-      if (!codonComplete(puzzle.board, codon)) return setStatus('That codon isn’t complete yet — finish its three bases first.');
+      if (!codonComplete(puzzle.board, codon)) return setStatus(def.tokens ? 'That piece isn’t in place yet.' : 'That codon isn’t complete yet — finish its three bases first.');
       setPending({ power: 'ligase', cells: codon.cells });
       setStatus('');
     }
@@ -280,20 +291,34 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     const cost = free ? 0 : POWER_COST[targeting];
     const costText = free ? 'Free tutorial use' : `⚡${cost} → ${energy - cost} left`;
     let title = `${POWER_LABEL[targeting]}: choose a target`;
-    let detail = targeting === 'crispr' ? 'Tap any unbonded tile on the board.' : targeting === 'ligase' ? (completeCodons.length ? 'Tap a highlighted codon.' : 'No complete codon yet — finish a 3-base piece first.') : gaps.length ? 'Tap a glowing gap.' : 'No 1–2 cell gap between two segments on this board.';
+    let detail = targeting === 'crispr' ? 'Tap any unbonded tile on the board.' : targeting === 'ligase' ? (completeCodons.length ? (def.tokens ? 'Tap a highlighted piece.' : 'Tap a highlighted codon.') : def.tokens ? 'No target piece in place yet.' : 'No complete codon yet — finish a 3-base piece first.') : gaps.length ? 'Tap a glowing gap.' : 'No 1–2 cell gap between two segments on this board.';
     let basePicker;
+    let posPicker;
     if (pending?.power === 'crispr') {
-      const cur = puzzle.board[pending.cell] as Base;
+      const sym = puzzle.board[pending.cell]!;
+      const seq = symbolSequence(def, puzzle.custom, sym);
+      const cur = seq[pending.pos] as Base;
       const t = def.tracks.find((x) => x.cells.includes(pending.cell));
       const pos = t ? t.cells.indexOf(pending.cell) : -1;
       title = `CRISPR: row ${Math.floor(pending.cell / 9) + 1}, column ${(pending.cell % 9) + 1}`;
       basePicker = { current: cur, chosen: pending.base, onPick: (b: Base) => setPending({ ...pending, base: b }) };
-      detail = !pending.base ? `Currently ${cur}. Pick a base.`
-        : pending.base === cur ? 'Same base — no change, nothing spent.'
-          : `${cur} → ${pending.base}. ${t ? `Target ${t.group} position ${pos + 1} wants ${t.expected[pos]}: ${t.expected[pos] === pending.base ? '✓ it will match.' : '✗ it will not match.'}` : 'Not a target cell (filler only).'} Hints switch to a fresh search after an edit.`;
+      if (def.tokens) {
+        posPicker = { seq, chosen: pending.pos, onPick: (i: number) => setPending({ ...pending, pos: i, base: null }) };
+        const after = pending.base ? seq.slice(0, pending.pos) + pending.base + seq.slice(pending.pos + 1) : seq;
+        const want = t ? symbolSequence(def, puzzle.custom, t.expected[pos]!) : '';
+        detail = !pending.base ? `Piece ${seq} (${seq.length} bases). Base ${pending.pos + 1} is ${cur}. Pick a new base.`
+          : pending.base === cur ? 'Same base — no change, nothing spent.'
+            : `Base ${pending.pos + 1}: ${cur} → ${pending.base}, giving ${after}. ${t ? `Target ${t.group} position ${pos + 1} wants ${want}: ${want === after ? '✓ it will match (equality is by sequence).' : '✗ it will not match.'}` : 'Not a target cell (decoy).'} Hints switch to a fresh search after an edit.`;
+      } else {
+        detail = !pending.base ? `Currently ${cur}. Pick a base.`
+          : pending.base === cur ? 'Same base — no change, nothing spent.'
+            : `${cur} → ${pending.base}. ${t ? `Target ${t.group} position ${pos + 1} wants ${t.expected[pos]}: ${t.expected[pos] === pending.base ? '✓ it will match.' : '✗ it will not match.'}` : 'Not a target cell (filler only).'} Hints switch to a fresh search after an edit.`;
+      }
     } else if (pending?.power === 'ligase') {
-      title = `Ligase: bond ${pending.cells.map((c) => puzzle.board[c]).join('')}`;
-      detail = 'These three tiles will stop every row and column through them from rotating (both axes). Release any time for free; undo refunds.';
+      title = `Ligase: bond ${pending.cells.map((c) => symbolLabel(def, puzzle.custom, puzzle.board[c]!)).join('')}`;
+      detail = def.tokens
+        ? 'This piece will stop every row and column through it from rotating (both axes). Release any time for free; undo refunds.'
+        : 'These three tiles will stop every row and column through them from rotating (both axes). Release any time for free; undo refunds.';
     } else if (pending?.power === 'scaffold') {
       title = `Scaffold: join ${pending.candidate.cells.length} cells across the ${pending.candidate.axis === 'row' ? 'row' : 'column'} gap`;
       detail = 'The two segments rotate as one cyclic track, skipping the gap, for the next 3 rotations (any rotation counts; powers don’t). Only one scaffold at a time.';
@@ -308,6 +333,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         error={err}
         canConfirm={!!previewResult?.accepted}
         basePicker={basePicker}
+        posPicker={posPicker}
         onConfirm={confirmPower}
         onCancel={() => { clearPower(); setStatus('Cancelled — nothing spent.'); }}
       />
@@ -316,14 +342,18 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
 
   const covered = coveredBases(save.completed, def.symbol);
   const sample = sampleBases(def.symbol);
+  const assembly = assemblyStatus(save.completed, gene);
+  const chapter = def.chapter ? chapterOf(def.symbol) : [];
   const labIndex = LAB_LEVELS.findIndex((l) => l.id === def.id);
-  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : LEVELS[def.index + 1];
+  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : def.chapter ? chapter[def.chapter.part] : LEVELS[def.index + 1];
   const own = levelsForGene(def.symbol);
   const position = own.findIndex((l) => l.id === def.id) + 1;
   const par = def.metrics.solver.status === 'optimal' ? `Par ${def.metrics.solver.optimal}` : `Par ≤ ${def.metrics.certificateDrags}`;
   const powerPreview: PowerPreview | null = pending;
 
-  const defaultStatus = showGestureCue
+  const defaultStatus = def.chapter && def.chapter.part === 1 && puzzle.moves === 0 && !solvedView
+    ? `${tierIntro(def)} Tap a tile to read its full sequence below the board.`
+    : showGestureCue
     ? 'Drag the glowing tile in the arrow’s direction — the whole line slides with your finger. Or tap it and use the arrow buttons.'
     : solvedView ? 'Solved. Replay or move on when ready.'
       : def.lab && puzzle.freeUses.length ? LAB_INTRO[def.lab]
@@ -334,14 +364,24 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       <section className="panel info" aria-label="Level information">
         <div className="row-between muted small">
           <span>CHROMOSOME {gene.chromosome} · {gene.transcript}</span>
-          <span data-testid="level-label">{def.lab ? `Enzyme lab ${labIndex + 1} / ${LAB_LEVELS.length}` : `Level ${def.index + 1} / ${LEVELS.length}`}</span>
+          <span data-testid="level-label">{def.lab ? `Enzyme lab ${labIndex + 1} / ${LAB_LEVELS.length}` : def.chapter ? `${gene.symbol} assembly ${def.chapter.part} / ${def.chapter.of}` : `Level ${def.index + 1} / ${LEVELS.length}`}</span>
         </div>
         <div className="row-between">
-          <h2 className="gene">{def.lab ? <>{POWER_LABEL[def.lab]} <span>· practice</span></> : <>{gene.symbol} <span>· {position}/{own.length}</span></>}</h2>
+          <h2 className="gene">{def.lab ? <>{POWER_LABEL[def.lab]} <span>· practice</span></> : def.chapter ? <>{gene.symbol} <span>· {def.title}</span></> : <>{gene.symbol} <span>· {position}/{own.length}</span></>}</h2>
           <span className={`mode mode-${def.mode}`} data-testid="mode-label">{MODE_GLYPH[def.mode]} {MODE_LABEL[def.mode]}</span>
         </div>
         {def.lab ? (
           <p className="muted small lab-note">Practice level: uses {gene.symbol} bases already in the campaign; adds no coverage.</p>
+        ) : def.chapter ? (
+          <>
+            <div className="progress assembly" role="progressbar" aria-label={`${gene.symbol} coding bases assembled`} aria-valuemin={0} aria-valuemax={gene.cdsLength} aria-valuenow={assembly.covered}>
+              <i style={{ width: `${(100 * assembly.covered) / gene.cdsLength}%` }} />
+            </div>
+            <div className="row-between muted small">
+              <span data-testid="progress-text">{assembly.covered} / {gene.cdsLength} {gene.symbol} CDS bases assembled</span>
+              <span>{par} · {def.metrics.rating}</span>
+            </div>
+          </>
         ) : (
           <>
             <div className="progress" role="progressbar" aria-label={`${gene.symbol} sample bases sequenced`} aria-valuemin={0} aria-valuemax={sample} aria-valuenow={covered}>
@@ -355,7 +395,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         )}
       </section>
 
-      <TargetPanel def={def} matches={matches} solved={solvedView} />
+      <TargetPanel def={def} matches={matches} solved={solvedView} custom={puzzle.custom} />
 
       <Board
         def={def}
@@ -381,12 +421,14 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         powerPreview={powerPreview}
         onTarget={onTarget}
         onPickGap={onPickGap}
+        custom={puzzle.custom}
       />
 
       <div className="row-between small meta">
         <span data-testid="moves">{puzzle.moves} {puzzle.moves === 1 ? 'move' : 'moves'}</span>
         <span className="muted">Selected R{Math.floor(selected / 9) + 1} · C{(selected % 9) + 1}</span>
       </div>
+      {def.tokens && puzzle.board[selected] !== '.' && <TokenInspector def={def} puzzle={puzzle} cell={selected} />}
 
       {powers && !solvedView && (
         <PowerTray
@@ -445,6 +487,8 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           powersUsed={powersUsed}
           newBases={celebrate.newBases}
           discovered={celebrate.discovered}
+          assembled={celebrate.assembled}
+          assembledBases={assembly.covered}
           covered={covered}
           sample={sample}
           cdsLength={gene.cdsLength}
@@ -458,5 +502,29 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         />
       )}
     </>
+  );
+}
+
+const tierIntro = (def: LevelDefinition): string =>
+  def.tier === 3 ? 'Codon tiles: each tile is three real bases. Same rules — drag a row or column segment.'
+    : def.tier === 6 ? 'Hexamer tiles: each tile is six bases (two rows of three).'
+      : `Long tiles: each carries ${def.tier} bases, shown as first…last codon with a colour barcode.`;
+
+/** Tap-to-inspect: the full sequence and provenance of the selected multi-base tile. */
+function TokenInspector({ def, puzzle, cell }: { def: LevelDefinition; puzzle: PuzzleState; cell: Cell }) {
+  const sym = puzzle.board[cell]!;
+  const seq = symbolSequence(def, puzzle.custom, sym);
+  const t = def.tokens?.[sym];
+  const track = def.tracks.find((x) => x.cells.includes(cell));
+  const want = track ? symbolSequence(def, puzzle.custom, track.expected[track.cells.indexOf(cell)]!) : null;
+  const where = t?.kind === 'decoy' && t.source
+    ? `decoy — real ${def.symbol} CDS ${t.source.start + 1}–${t.source.end}, not part of this target`
+    : t?.kind === 'target' ? (t.strand === 'complement' ? 'target piece (aligned complement)' : `target piece — ${def.symbol} CDS ${t.source!.start + 1}–${t.source!.end}`)
+      : 'edited by CRISPR (not reference sequence)';
+  return (
+    <div className="inspector small" data-testid="token-inspector" aria-live="polite">
+      <span className="mono seq"><SeqLetters seq={seq} group={3} /></span>
+      <span className="muted">{seq.length} bases · {where}{want ? ` · target here: ${want === seq ? '✓ match' : want}` : ''}</span>
+    </div>
   );
 }

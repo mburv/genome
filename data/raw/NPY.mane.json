@@ -1,0 +1,16 @@
+{
+  "symbol": "NPY",
+  "geneId": "4852",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/NPY/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:43.925Z",
+  "responseSha256": "4b30af9d94314bb9f9168deb587c841f908997c2a83c838cb9a9138aff3e70f5",
+  "description": "neuropeptide Y",
+  "maneSelect": [
+    {
+      "accession": "NM_000905.4",
+      "ensembl": "ENST00000242152.7",
+      "protein": "NP_000896.1",
+      "chromosome": "7"
+    }
+  ]
+}

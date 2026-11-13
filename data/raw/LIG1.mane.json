@@ -1,0 +1,16 @@
+{
+  "symbol": "LIG1",
+  "geneId": "3978",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/LIG1/taxon/9606/product_report",
+  "retrievedAt": "2026-11-13T19:35:49.320Z",
+  "responseSha256": "08d4d6223b97e248d0a99a62546d3d6e02ec3073333ababd3e9c3d2979bc3014",
+  "description": "DNA ligase 1",
+  "maneSelect": [
+    {
+      "accession": "NM_000234.3",
+      "ensembl": "ENST00000263274.12",
+      "protein": "NP_000225.1",
+      "chromosome": "19"
+    }
+  ]
+}

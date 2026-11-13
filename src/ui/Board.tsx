@@ -4,6 +4,8 @@ import type { Scaffold, ScaffoldCandidate } from '../engine/powers.ts';
 import { easeOutCubic, lockAxis, nearestStep, releaseVelocity, resolveSteps, SNAP_MS, wrapOffset } from './dragMath.ts';
 import type { Axis, Base, Board as BoardString, Cell, Direction, LevelDefinition, Move, Power, Slide } from '../engine/types.ts';
 import { slideArrow, slideDir } from './hintCell.ts';
+import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
+import { TokenFace, tierClass } from './TokenFace.tsx';
 
 export interface MoveAnimation {
   nonce: number;
@@ -42,10 +44,12 @@ interface Props {
   powerPreview: PowerPreview | null;
   onTarget: (cell: Cell) => void;
   onPickGap: (candidate: ScaffoldCandidate) => void;
+  /** M4: CRISPR-created sequences of this attempt (token levels). */
+  custom?: CustomTokens;
 }
 
 export type PowerPreview =
-  | { power: 'crispr'; cell: Cell; base: Base | null }
+  | { power: 'crispr'; cell: Cell; base: Base | null; pos: number }
   | { power: 'ligase'; cells: Cell[] }
   | { power: 'scaffold'; candidate: ScaffoldCandidate };
 
@@ -79,7 +83,8 @@ export interface SlidePreview {
 export const SLIDE_MS = 150;
 
 
-export function Board({ def, board, matches, selected, hint, hintCell, repaired, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect, segmentOf, locks, scaffold, hintSegment: hintSeg, targeting, powerPreview, onTarget, onPickGap }: Props) {
+export function Board({ def, board, matches, selected, hint, hintCell, repaired, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect, segmentOf, locks, scaffold, hintSegment: hintSeg, targeting, powerPreview, onTarget, onPickGap, custom }: Props) {
+  const tokens = def.tokens;
   const boardRef = useRef<HTMLDivElement>(null);
   const busyUntil = useRef(0);
 
@@ -365,12 +370,13 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
         const style = { gridRow: r + 1, gridColumn: c + 1 };
         if (ch === '.') {
           if (def.repair?.cell === cell) {
+            const rseq = symbolSequence(def, custom, def.repair.expected);
             return repaired ? (
-              <div key={cell} className={`cell tile restored b-${def.repair.expected}`} style={style} data-testid="repair-cell" aria-label={`Restored ${def.repair.expected}`}>
-                <span className="letter">{def.repair.expected}</span>
+              <div key={cell} className={`cell tile restored ${tokens ? `tok tok-target ${tierClass(rseq.length)}` : `b-${def.repair.expected}`}`} style={style} data-testid="repair-cell" aria-label={`Restored ${rseq}`}>
+                {tokens ? <TokenFace seq={rseq} label={symbolLabel(def, custom, def.repair.expected)} /> : <span className="letter">{def.repair.expected}</span>}
               </div>
             ) : (
-              <div key={cell} className="cell hole repair-gap" style={style} data-testid="repair-cell" aria-label="Missing base, restored on win">
+              <div key={cell} className="cell hole repair-gap" style={style} data-testid="repair-cell" aria-label={tokens ? 'Missing piece, restored on win' : 'Missing base, restored on win'}>
                 <span>?</span>
               </div>
             );
@@ -378,7 +384,10 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
           return <div key={cell} className="cell hole" style={style} aria-hidden="true" />;
         }
         const t = trackInfo.get(cell);
-        const classes = ['cell', 'tile', `b-${ch}`];
+        const seq = tokens ? symbolSequence(def, custom, ch) : ch;
+        const tokLabel = tokens ? symbolLabel(def, custom, ch) : ch;
+        const kind = tokens ? (tokens[ch]?.kind ?? 'custom') : null;
+        const classes = ['cell', 'tile', ...(tokens ? ['tok', `tok-${kind}`, tierClass(seq.length)] : [`b-${ch}`])];
         if (t) classes.push('goal', t.ok ? 'ok' : 'off');
         if (cell === selected) classes.push('selected');
         if (hintSegment.has(cell)) classes.push('hinted');
@@ -388,13 +397,17 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
         if (previewCells.has(cell)) classes.push('previewed');
         const crispr = powerPreview?.power === 'crispr' && powerPreview.cell === cell ? powerPreview : null;
         if (crispr) classes.push('edit-target');
-        const label = `${ch}, row ${r + 1}, column ${c + 1}${t ? `, target ${t.group} position ${t.pos + 1}, ${t.ok ? 'correct' : 'not yet correct'}` : ''}${lockSet.has(cell) ? ', bonded' : ''}`;
+        const spoken = tokens ? `${seq.length}-base piece ${seq}${kind === 'decoy' ? ' (decoy)' : kind === 'custom' ? ' (edited)' : ''}` : ch;
+        const label = `${spoken}, row ${r + 1}, column ${c + 1}${t ? `, target ${t.group} position ${t.pos + 1}, ${t.ok ? 'correct' : 'not yet correct'}` : ''}${lockSet.has(cell) ? ', bonded' : ''}`;
+        const ghost = crispr?.base && seq[crispr.pos] !== crispr.base;
         return (
-          <button key={cell} type="button" data-cell={cell} data-base={ch} className={classes.join(' ')} style={style} tabIndex={cell === selected ? 0 : -1} aria-label={label} aria-pressed={cell === selected}>
-            <span className="letter">{ch}</span>
+          <button key={cell} type="button" data-cell={cell} data-base={ch} data-seq={seq} className={classes.join(' ')} style={style} tabIndex={cell === selected ? 0 : -1} aria-label={label} aria-pressed={cell === selected}>
+            {tokens ? <TokenFace seq={seq} label={tokLabel} /> : <span className="letter">{ch}</span>}
             {t?.ok && <span className="tick" aria-hidden="true" />}
             {lockSet.has(cell) && <span className="lock-badge" aria-hidden="true">🔗</span>}
-            {crispr?.base && crispr.base !== ch && <span className={`edit-ghost b-${crispr.base}`} data-testid="edit-ghost" aria-hidden="true">{crispr.base}</span>}
+            {ghost && (tokens
+              ? <span className={`edit-ghost tok-ghost b-${crispr.base}`} data-testid="edit-ghost" aria-hidden="true">{crispr.pos + 1}:{crispr.base}</span>
+              : <span className={`edit-ghost b-${crispr.base}`} data-testid="edit-ghost" aria-hidden="true">{crispr.base}</span>)}
           </button>
         );
       })}

@@ -1,4 +1,5 @@
 /** Core domain types. Pure data — no DOM, React, time, network or randomness. */
+import type { TokenDef } from './tokens.ts';
 export type Base = 'A' | 'T' | 'C' | 'G';
 export const BASES: readonly Base[] = ['A', 'T', 'C', 'G'];
 export type Axis = 'row' | 'col';
@@ -6,8 +7,9 @@ export type Direction = -1 | 1;
 /** Board coordinate 0..80, row-major. */
 export type Cell = number;
 /**
- * Board encoded as an 81-character string: 'A' | 'T' | 'C' | 'G' for a tile, '.' for a hole.
- * M1 uses single-base tokens only, so a string is an exact, cheap, comparable representation.
+ * Board encoded as an 81-character string: one symbol per cell, '.' for a hole. On single-base levels
+ * the symbols are 'A' | 'T' | 'C' | 'G'; on M4 token levels each symbol maps to an exact DNA sequence
+ * via `LevelDefinition.tokens` (see tokens.ts). A string stays an exact, cheap, comparable representation.
  */
 export type Board = string;
 /** Mask encoded as 81 characters: '#' playable, '.' hole. */
@@ -57,9 +59,12 @@ export interface Track {
 export interface RepairSpec {
   /** A hole in the mask between two coding tracks; filled with `expected` only on win. */
   cell: Cell;
-  expected: Base;
-  /** CDS offset of the restored base (counted exactly once). */
+  /** The restored symbol: a base, or a token symbol on token levels. */
+  expected: string;
+  /** CDS offset of the restored piece's first base (counted exactly once). */
   sourceOffset: number;
+  /** Bases in the restored piece (1 on single-base levels). */
+  length?: number;
 }
 
 export interface SolverSummary {
@@ -119,4 +124,10 @@ export interface LevelDefinition {
   metrics: LevelMetrics;
   /** Enzyme-lab tutorial level: grants one free use of this power. Not part of the 12-level campaign or coverage. */
   lab?: Power;
+  /** M4 token level: symbol → token (sequence, kind, label). Absent = single-base level. */
+  tokens?: Record<string, TokenDef>;
+  /** M4 nominal token size in bases (3, 6, 12, 24…); the last piece of a level may be shorter. */
+  tier?: number;
+  /** M4 assembly chapter membership: this is puzzle `part` of `of` for gene `symbol`. */
+  chapter?: { part: number; of: number };
 }

@@ -1,9 +1,10 @@
-import { applyMove, inverseMove, moveKey, baseCounts, normaliseSteps, segmentCells } from './grid.ts';
+import { applyMove, inverseMove, moveKey, normaliseSteps, segmentCells } from './grid.ts';
 import {
   availableEnergy, codonComplete, effectiveSegment, ENERGY_CAP, levelCodons as codonsOf, POWER_COST, powersEnabled, SCAFFOLD_TURNS, scaffoldTrack,
   START_ENERGY, type Codon, type Scaffold,
 } from './powers.ts';
 import { searchSolution } from './search.ts';
+import { isCustomSymbol, symbolFor, symbolSequence, type CustomTokens } from './tokens.ts';
 import { BASES, type Axis, type Base, type Board, type Cell, type LevelDefinition, type Move, type Power, type Slide } from './types.ts';
 
 export const HISTORY_CAP = 100;
@@ -26,6 +27,8 @@ export interface Snapshot {
   freeUses: Power[];
   /** CRISPR edits applied on this board's lineage (bounds how far the base multiset may differ). */
   edits: number;
+  /** M4: sequences created by CRISPR edits on long tokens (symbol → sequence); {} otherwise. */
+  custom: CustomTokens;
 }
 
 /**
@@ -53,7 +56,8 @@ export interface PuzzleState extends Snapshot {
 export type Command =
   | { type: 'rotate'; move: Move }
   | { type: 'slide'; origin: Cell; axis: Axis; steps: number }
-  | { type: 'edit'; cell: Cell; base: Base }
+  /** CRISPR: set base `base` at position `pos` (0-based) of the tile's sequence (pos 0 on single-base levels). */
+  | { type: 'edit'; cell: Cell; base: Base; pos?: number }
   | { type: 'bond'; cell: Cell }
   | { type: 'release' }
   | { type: 'scaffold'; axis: Axis; gap: Cell[] }
@@ -63,7 +67,7 @@ export type Command =
 export type GameEvent =
   | { type: 'moved'; move: Move; segment: Cell[] }
   | { type: 'slid'; origin: Cell; axis: Axis; steps: number; segment: Cell[] }
-  | { type: 'edited'; cell: Cell; from: Base; to: Base }
+  | { type: 'edited'; cell: Cell; from: string; to: string; pos: number; fromBase: Base; toBase: Base }
   | { type: 'bonded'; cells: Cell[] }
   | { type: 'released'; cells: Cell[] }
   | { type: 'scaffolded'; axis: Axis; gap: Cell[]; cells: Cell[] }
@@ -106,6 +110,7 @@ export function createInitialState(def: LevelDefinition): PuzzleState {
     spent: 0,
     freeUses: def.lab ? [def.lab] : [],
     edits: 0,
+    custom: {},
     // Codons already correct at the start are ineligible for energy.
     ledger: { earned: 0, credited: levelCodons(def).filter((c) => codonComplete(def.initial, c)).map((c) => c.key) },
   };
@@ -163,7 +168,7 @@ function extendRecovery(def: LevelDefinition, recovery: readonly Move[], next: B
 const reject = (state: PuzzleState, reason: RejectReason): CommandResult => ({ state, events: [], accepted: false, reason });
 
 const snapshotOf = (s: PuzzleState): Snapshot => ({
-  board: s.board, moves: s.moves, recovery: s.recovery, locks: s.locks, scaffold: s.scaffold, spent: s.spent, freeUses: s.freeUses, edits: s.edits,
+  board: s.board, moves: s.moves, recovery: s.recovery, locks: s.locks, scaffold: s.scaffold, spent: s.spent, freeUses: s.freeUses, edits: s.edits, custom: s.custom,
 });
 const pushHistory = (s: PuzzleState): Snapshot[] => [...s.history, snapshotOf(s)].slice(-HISTORY_CAP);
 
@@ -243,21 +248,27 @@ export function applyCommand(def: LevelDefinition, state: PuzzleState, command: 
       const g = powerGuard(def, state);
       if (g) return reject(state, g);
       const { cell, base } = command;
+      const pos = command.pos ?? 0;
       if (!Number.isInteger(cell) || def.mask[cell] !== '#' || !BASES.includes(base)) return reject(state, 'invalid-target');
       if (state.locks.includes(cell)) return reject(state, 'locked');
-      const from = state.board[cell] as Base;
-      if (from === base) return reject(state, 'same-base');
+      const from = state.board[cell]!;
+      const fromSeq = symbolSequence(def, state.custom, from);
+      if (!Number.isInteger(pos) || pos < 0 || pos >= fromSeq.length) return reject(state, 'invalid-target');
+      if (fromSeq[pos] === base) return reject(state, 'same-base');
+      // Sequence-based identity: the edited piece becomes whichever token carries the new sequence.
+      const target = symbolFor(def, state.custom, fromSeq.slice(0, pos) + base + fromSeq.slice(pos + 1));
+      if (!target) return reject(state, 'invalid-target');
       const paid = pay(state, 'crispr');
       if (!paid) return reject(state, 'energy');
-      const board = state.board.slice(0, cell) + base + state.board.slice(cell + 1);
+      const board = state.board.slice(0, cell) + target.symbol + state.board.slice(cell + 1);
       // Codons completed by a power are never rewarded (mark them ineligible).
       const done = levelCodons(def).filter((c) => !state.ledger.credited.includes(c.key) && codonComplete(board, c)).map((c) => c.key);
       const solved = isSolved(def, board);
-      const events: GameEvent[] = [{ type: 'spent', power: 'crispr', cost: paid.cost, free: paid.free }, { type: 'edited', cell, from, to: base }];
+      const events: GameEvent[] = [{ type: 'spent', power: 'crispr', cost: paid.cost, free: paid.free }, { type: 'edited', cell, from, to: target.symbol, pos, fromBase: fromSeq[pos] as Base, toBase: base }];
       if (solved) events.push({ type: 'solved', levelId: def.id });
       return {
         state: {
-          ...state, board, moves: state.moves + 1, status: solved ? 'solved' : 'playing', recovery: null, edits: state.edits + 1,
+          ...state, board, moves: state.moves + 1, status: solved ? 'solved' : 'playing', recovery: null, edits: state.edits + 1, custom: target.custom,
           spent: paid.spent, freeUses: paid.freeUses, ledger: { ...state.ledger, credited: [...state.ledger.credited, ...done] }, history: pushHistory(state),
         },
         events,
@@ -402,16 +413,26 @@ export function replayCertificate(def: LevelDefinition, moves: readonly Move[] =
 }
 
 /**
- * Validate that a board fits this level: same holes, ACGT letters, and a base multiset that differs from
- * the initial board by at most `edits` substitutions (0 without CRISPR).
+ * Validate that a board fits this level: same holes, only this level's symbols (plus the attempt's
+ * custom CRISPR symbols), and a symbol multiset that differs from the initial board by at most `edits`
+ * substitutions (0 without CRISPR).
  */
-export function isCompatibleBoard(def: LevelDefinition, board: unknown, edits = 0): board is Board {
-  if (typeof board !== 'string' || board.length !== def.initial.length || !/^[ATCG.]+$/.test(board)) return false;
-  for (let i = 0; i < board.length; i++) if ((board[i] === '.') !== (def.mask[i] === '.')) return false;
-  const a = baseCounts(board);
-  const b = baseCounts(def.initial);
-  const diff = (Math.abs(a.A! - b.A!) + Math.abs(a.T! - b.T!) + Math.abs(a.C! - b.C!) + Math.abs(a.G! - b.G!)) / 2;
-  return diff <= edits;
+export function isCompatibleBoard(def: LevelDefinition, board: unknown, edits = 0, custom: CustomTokens = {}): board is Board {
+  if (typeof board !== 'string' || board.length !== def.initial.length) return false;
+  const known = (ch: string): boolean => (def.tokens ? def.tokens[ch] !== undefined || (isCustomSymbol(ch) && custom[ch] !== undefined) : 'ATCG'.includes(ch));
+  const counts = new Map<string, number>();
+  for (let i = 0; i < board.length; i++) {
+    const a = board[i]!;
+    if ((a === '.') !== (def.mask[i] === '.')) return false;
+    if (a === '.') continue;
+    if (!known(a)) return false;
+    counts.set(a, (counts.get(a) ?? 0) + 1);
+    const b = def.initial[i]!;
+    counts.set(b, (counts.get(b) ?? 0) - 1);
+  }
+  let diff = 0;
+  for (const v of counts.values()) diff += Math.abs(v);
+  return diff / 2 <= edits;
 }
 
 export { moveKey };

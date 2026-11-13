@@ -1,0 +1,260 @@
+LOCUS       NM_000230               3427 bp    mRNA    linear   PRI 02-FEB-2026
+DEFINITION  Homo sapiens leptin (LEP), mRNA.
+ACCESSION   NM_000230
+VERSION     NM_000230.3
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 3427)
+  AUTHORS   Al Zein,M., Akomolafe,A.F., Mahmood,F.R., Khrayzat,A., Sahebkar,A.,
+            Pintus,G., Kobeissy,F. and Eid,A.H.
+  TITLE     Leptin is a potential biomarker of childhood obesity and an
+            indicator of the effectiveness of weight-loss interventions
+  JOURNAL   Obes Rev 25 (11), e13807 (2024)
+   PUBMED   39044542
+  REMARK    GeneRIF: Leptin is a potential biomarker of childhood obesity and
+            an indicator of the effectiveness of weight-loss interventions.
+            Review article
+            Erratum:[Obes Rev. 2025 Dec;26(12):e13972. doi: 10.1111/obr.13972.
+            PMID: 40518600]
+REFERENCE   2  (bases 1 to 3427)
+  AUTHORS   Szumilas,K., Wilk,A., Szumilas,P., Dziedziejko,V. and Pawlik,A.
+  TITLE     Role of leptin and adiponectin in the pathogenesis of
+            post-transplant diabetes mellitus
+  JOURNAL   Prostaglandins Other Lipid Mediat 174, 106876 (2024)
+   PUBMED   39032860
+  REMARK    GeneRIF: Role of leptin and adiponectin in the pathogenesis of
+            post-transplant diabetes mellitus.
+            Review article
+REFERENCE   3  (bases 1 to 3427)
+  AUTHORS   Frak,M., Grenda,A., Krawczyk,P., Kuznar-Kaminska,B., Pazdrowski,P.,
+            Kedra,K., Chmielewska,I. and Milanowski,J.
+  TITLE     The influence of nutritional status, lipid profile, leptin
+            concentration and polymorphism of genes encoding leptin and
+            neuropeptide Y on the effectiveness of immunotherapy in advanced
+            NSCLC patients
+  JOURNAL   BMC Cancer 24 (1), 937 (2024)
+   PUBMED   39090596
+  REMARK    GeneRIF: The influence of nutritional status, lipid profile, leptin
+            concentration and polymorphism of genes encoding leptin and
+            neuropeptide Y on the effectiveness of immunotherapy in advanced
+            NSCLC patients.
+REFERENCE   4  (bases 1 to 3427)
+  AUTHORS   Siregar,M.F., Terauchi,M., Sari,R.A., Adella,C.A., Prabudi,M.O.,
+            Barus,M.N., Rivany,R., Tobing,I.D. and Azmeila,S.
+  TITLE     Comparison of leptin and estrone levels between normal body mass
+            index and obese menopausal women
+  JOURNAL   Narra J 4 (2), e745 (2024)
+   PUBMED   39280324
+  REMARK    GeneRIF: Comparison of leptin and estrone levels between normal
+            body mass index and obese menopausal women.
+REFERENCE   5  (bases 1 to 3427)
+  AUTHORS   Cui,H., Lopez,M. and Rahmouni,K.
+  TITLE     The cellular and molecular bases of leptin and ghrelin resistance
+            in obesity
+  JOURNAL   Nat Rev Endocrinol 13 (6), 338-351 (2017)
+   PUBMED   28232667
+  REMARK    Review article
+REFERENCE   6  (bases 1 to 3427)
+  AUTHORS   Abella,V., Scotece,M., Conde,J., Pino,J., Gonzalez-Gay,M.A.,
+            Gomez-Reino,J.J., Mera,A., Lago,F., Gomez,R. and Gualillo,O.
+  TITLE     Leptin in the interplay of inflammation, metabolism and immune
+            system disorders
+  JOURNAL   Nat Rev Rheumatol 13 (2), 100-109 (2017)
+   PUBMED   28053336
+  REMARK    Review article
+REFERENCE   7  (bases 1 to 3427)
+  AUTHORS   Isse,N., Ogawa,Y., Tamura,N., Masuzaki,H., Mori,K., Okazaki,T.,
+            Satoh,N., Shigemoto,M., Yoshimasa,Y., Nishi,S. et al.
+  TITLE     Structural organization and chromosomal assignment of the human
+            obese gene
+  JOURNAL   J Biol Chem 270 (46), 27728-27733 (1995)
+   PUBMED   7499240
+REFERENCE   8  (bases 1 to 3427)
+  AUTHORS   Zhang,Y., Proenca,R., Maffei,M., Barone,M., Leopold,L. and
+            Friedman,J.M.
+  TITLE     Positional cloning of the mouse obese gene and its human homologue
+  JOURNAL   Nature 372 (6505), 425-432 (1994)
+   PUBMED   7984236
+  REMARK    Erratum:[Nature 1995 Mar 30;374(6521):479]
+REFERENCE   9  (bases 1 to 3427)
+  AUTHORS   Friedman,J.M., Leibel,R.L., Siegel,D.S., Walsh,J. and Bahary,N.
+  TITLE     Molecular mapping of the mouse ob mutation
+  JOURNAL   Genomics 11 (4), 1054-1062 (1991)
+   PUBMED   1686014
+REFERENCE   10 (bases 1 to 3427)
+  AUTHORS   Groot,P.H., Scholte,H.R. and Hulsmann,W.C.
+  TITLE     Fatty acid activation: specificity, localization, and function
+  JOURNAL   Adv Lipid Res 14, 75-126 (1976)
+   PUBMED   3952
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from DA762132.1, U43653.1,
+            AC018635.10 and BU752306.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 23, 2018 this sequence version replaced NM_000230.2.
+            
+            Summary: This gene encodes a protein that is secreted by white
+            adipocytes into the circulation and plays a major role in the
+            regulation of energy homeostasis. Circulating leptin binds to the
+            leptin receptor in the brain, which activates downstream signaling
+            pathways that inhibit feeding and promote energy expenditure. This
+            protein also has several endocrine functions, and is involved in
+            the regulation of immune and inflammatory responses, hematopoiesis,
+            angiogenesis, reproduction, bone formation and wound healing.
+            Mutations in this gene and its regulatory regions cause severe
+            obesity and morbid obesity with hypogonadism in human patients. A
+            mutation in this gene has also been linked to type 2 diabetes
+            mellitus development. [provided by RefSeq, Aug 2017].
+            
+            Sequence Note: This RefSeq record was created from transcript and
+            genomic sequence data to make the sequence consistent with the
+            reference genome assembly. The genomic coordinates used for the
+            transcript record were based on transcript alignments.
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: U43653.1, BC060830.1 [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA1966682, SAMEA1968540
+                                           [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000308868.5/ ENSP00000312652.4
+            RefSeq Select criteria :: based on conservation, expression,
+                                      longest protein
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-309               DA762132.1         1-309
+            310-1807            U43653.1           309-1806
+            1808-3383           AC018635.10        34398-35973
+            3384-3427           BU752306.1         18-61               c
+FEATURES             Location/Qualifiers
+     source          1..3427
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="7"
+                     /map="7q32.1"
+     gene            1..3427
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /note="leptin"
+                     /db_xref="GeneID:3952"
+                     /db_xref="HGNC:HGNC:6553"
+                     /db_xref="MIM:164160"
+     exon            1..29
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /inference="alignment:Splign:2.1.0"
+     exon            30..201
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             58..561
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /note="leptin (murine obesity homolog); leptin (obesity
+                     homolog, mouse); obese, mouse, homolog of; obesity factor;
+                     obese protein"
+                     /codon_start=1
+                     /product="leptin precursor"
+                     /protein_id="NP_000221.1"
+                     /db_xref="CCDS:CCDS5800.1"
+                     /db_xref="GeneID:3952"
+                     /db_xref="HGNC:HGNC:6553"
+                     /db_xref="MIM:164160"
+                     /translation="MHWGTLCGFLWLWPYLFYVQAVPIQKVQDDTKTLIKTIVTRIND
+                     ISHTQSVSSKQKVTGLDFIPGLHPILTLSKMDQTLAVYQQILTSMPSRNVIQISNDLE
+                     NLRDLLHVLAFSKSCHLPWASGLETLDSLGGVLEASGYSTEVVALSRLQGSLQDMLWQ
+                     LDLSPGC"
+     sig_peptide     58..120
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /inference="COORDINATES: ab initio prediction:SignalP:6.0"
+     mat_peptide     121..558
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /product="leptin"
+     exon            202..3427
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      3405..3410
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /note="hexamer: AATAAA"
+     polyA_site      3427
+                     /gene="LEP"
+                     /gene_synonym="LEPD; OB; OBS"
+                     /note="major polyA site"
+ORIGIN      
+        1 gtaggaatcg cagcgccagc ggttgcaagg cccaagaagc ccatcctggg aaggaaaatg
+       61 cattggggaa ccctgtgcgg attcttgtgg ctttggccct atcttttcta tgtccaagct
+      121 gtgcccatcc aaaaagtcca agatgacacc aaaaccctca tcaagacaat tgtcaccagg
+      181 atcaatgaca tttcacacac gcagtcagtc tcctccaaac agaaagtcac cggtttggac
+      241 ttcattcctg ggctccaccc catcctgacc ttatccaaga tggaccagac actggcagtc
+      301 taccaacaga tcctcaccag tatgccttcc agaaacgtga tccaaatatc caacgacctg
+      361 gagaacctcc gggatcttct tcacgtgctg gccttctcta agagctgcca cttgccctgg
+      421 gccagtggcc tggagacctt ggacagcctg gggggtgtcc tggaagcttc aggctactcc
+      481 acagaggtgg tggccctgag caggctgcag gggtctctgc aggacatgct gtggcagctg
+      541 gacctcagcc ctgggtgctg aggccttgaa ggtcactctt cctgcaagga ctacgttaag
+      601 ggaaggaact ctggcttcca ggtatctcca ggattgaaga gcattgcatg gacacccctt
+      661 atccaggact ctgtcaattt ccctgactcc tctaagccac tcttccaaag gcataagacc
+      721 ctaagcctcc ttttgcttga aaccaaagat atatacacag gatcctattc tcaccaggaa
+      781 gggggtccac ccagcaaaga gtgggctgca tctgggattc ccaccaaggt cttcagccat
+      841 caacaagagt tgtcttgtcc cctcttgacc catctccccc tcactgaatg cctcaatgtg
+      901 accaggggtg atttcagaga gggcagaggg gtaggcagag cctttggatg accagaacaa
+      961 ggttccctct gagaattcca aggagttcca tgaagaccac atccacacac gcaggaactc
+     1021 ccagcaacac aagctggaag cacatgttta tttattctgc attttattct ggatggattt
+     1081 gaagcaaagc accagcttct ccaggctctt tggggtcagc cagggccagg ggtctccctg
+     1141 gagtgcagtt tccaatccca tagatgggtc tggctgagct gaacccattt tgagtgactc
+     1201 gagggttggg ttcatctgag caagagctgg caaaggtggc tctccagtta gttctctcgt
+     1261 aactggtttc atttctactg tgactgatgt tacatcacag tgtttgcaat ggtgttgccc
+     1321 tgagtggatc tccaaggacc aggttatttt aaaaagattt gttttgtcaa gtgtcatatg
+     1381 taggtgtctg cacccagggg tggggaatgt ttgggcagaa gggagaagga tctagaatgt
+     1441 gttttctgaa taacatttgt gtggtgggtt ctttggaagg agtgagatca ttttcttatc
+     1501 ttctgcaatt gcttaggatg tttttcatga aaatagctct ttcagggggg ttgtgaggcc
+     1561 tggccaggca ccccctggag agaagtttct ggccctggct gaccccaaag agcctggaga
+     1621 agctgatgct ttgcttcaaa tccatccaga ataaaacgca aagggctgaa agccatttgt
+     1681 tggggcagtg gtaagctctg gctttctccg actgctaggg agtggtcttt cctatcatgg
+     1741 agtgacggtc ccacactggt gactgcgatc ttcagagcag gggtccttgg tgtgaccctc
+     1801 tgaatggtcc agggttgatc acactctggg tttattacat ggcagtgttc ctatttgggg
+     1861 cttgcatgcc aaattgtagt tcttgtctga ttggctcacc caagcaaggc caaaattacc
+     1921 aaaaatcttg gggggttttt actccagtgg tgaagaaaac tcctttagca ggtggtcctg
+     1981 agacctgaca agcactgcta ggcgagtgcc aggactcccc aggccaggcc accaggatgg
+     2041 cccttcccac tggaggtcac attcaggaag atgaaagagg aggtttgggg tctgccacca
+     2101 tcctgctgct gtgtttttgc tatcacacag tgggtggtgg atctgtccaa ggaaacttga
+     2161 atcaaagcag ttaactttaa gactgagcac ctgcttcatg ctcagccctg actggtgcta
+     2221 taggctggag aagctcaccc aataaacatt aagattgagg cctgccctca gggatcttgc
+     2281 attcccagtg gtcaaaccgc actcacccat gtgccaaggt ggggtattta ccacagcagc
+     2341 tgaacagcca aatgcatggt gcagttgaca gcaggtggga aatggtatga gctgaggggg
+     2401 gccgtgccca ggggcccaca gggaaccctg cttgcacttt gtaacatgtt tacttttcag
+     2461 ggcatcttag cttctattat agccacatcc ctttgaaaca agataactga gaatttaaaa
+     2521 ataagaaaat acataagacc ataacagcca acaggtggca ggaccaggac tatagcccag
+     2581 gtcctctgat acccagagca ttacgtgagc caggtaatga gggactggaa ccagggagac
+     2641 cgagcgcttt ctggaaaaga ggagtttcga ggtagagttt gaaggaggtg agggatgtga
+     2701 attgcctgca gagagaagcc tgttttgttg gaaggtttgg tgtgtggaga tgcagaggta
+     2761 aaagtgtgag cagtgagtta cagcgagagg cagagaaaga agagacagga gggcaagggc
+     2821 catgctgaag ggaccttgaa gggtaaagaa gtttgatatt aaaggagtta agagtagcaa
+     2881 gttctagaga agaggctggt gctgtggcca gggtgagagc tgctctggaa aatgtgaccc
+     2941 agatcctcac aaccacctaa tcaggctgag gtgtcttaag ccttttgctc acaaaacctg
+     3001 gcacaatggc taattcccag agtgtgaaac ttcctaagta taaatggttg tctgtttttg
+     3061 taacttaaaa aaaaaaaaaa aagtttggcc gggtgcggtg gctcacgcct gtaatcccag
+     3121 cactttggga ggccaaggtg gggggatcac aaggtcacta gatggcgagc atcctggcca
+     3181 acatggtgaa accccgtctc tactaaaaac acaaaagtta gctgagcgtg gtggcgggcg
+     3241 cctgtagtcc cagccactcg ggaggctgag acaggagaat cgcttaaacc tgggaggcgg
+     3301 agagtacagt gagccaagat cgcgccactg cactccggcc tgatgacaga gcgagattcc
+     3361 gtcttaaaaa aaaaaaaaaa aaagtttgtt tttaaaaaaa tctaaataaa ataactttgc
+     3421 cccctgc
+//
+
