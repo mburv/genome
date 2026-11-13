@@ -1,6 +1,6 @@
 # Development roadmap
 
-Each milestone ends with a runnable build or verified engine and an owner review. No future milestone should be implemented merely because it appears in this document. Mark actual progress only after evidence. Status as of 13 Nov 2026: M1 accepted by the owner; M2 implemented (awaiting owner playtest); M3–M6 not started.
+Each milestone ends with a runnable build or verified engine and an owner review. No future milestone should be implemented merely because it appears in this document. Mark actual progress only after evidence. Status as of 13 Nov 2026: M1 and M2 accepted by the owner; M3 implemented (awaiting owner playtest); M4–M6 not started.
 
 ## M1 — Core vertical slice (first Codex task)
 
@@ -12,13 +12,15 @@ Acceptance: three distinct levels, each unsolved initially and certified solvabl
 
 ## M2 — GENOME v2 mechanics and variety
 
-Status (13 Nov 2026): implemented and automatically tested (see `docs/AUDIT_M2.md`, D-M2-*). Awaiting owner playtest; generator parameters and difficulty labels are not final until then.
+Status: **accepted** (13 Nov 2026). Implemented and automatically tested (see `docs/AUDIT_M2.md`, D-M2-*); the owner playtested the live build and accepted it ("Nice that was good. Move onto M3"). Generator parameters remain as audited; difficulty labels may still be tuned from later playtests.
 
 Expand to the 12-level INS/HBB sample campaign (GDD table), splicing, replication, repair, varied tracks and more interesting generated shapes. Level map, discovery cards, exact 51-base sample tracking, source metadata, progress across reload, improved slide animation and completion feedback. Add generator audit CLI with at least 1,000 candidates, duplicate and certificate checks, metrics for rejection rates and estimated difficulty. Implement bounded solver for shallow puzzle analysis; do not block UI. Playtest before finalising parameters.
 
 Acceptance: all 12 unique masks and legal certificates, all four modes work, no gene fully assembled claim, sample coverage exactly 51 per gene, correct complementary orientation, repair animation adds missing cell only on win, no level map progress loss, no identical or transformed masks. 1,000-candidate audit results recorded, clear solver limits, all previous tests pass.
 
 ## M3 — Enzyme laboratory
+
+Status (13 Nov 2026): implemented and automatically tested (D-M3-*, `tests/engine/powers.test.ts`, `e2e/powers.spec.ts`, `docs/AUDIT_M3.md`). Awaiting the owner's with/without-powers playtest; costs (CRISPR ⚡4, Ligase ⚡2, Scaffold ⚡3, start ⚡2, cap 9) are the GDD §6 values and are not tuned yet.
 
 Implement CRISPR, Ligase and Scaffold one at a time. Energy ledger, tutorials and action previews; powers can be undone and release/restart remains free. Explicit recovery hints after power use. No permanent unlock economy yet; tutorial access. Add reduced-motion, sound/haptic toggles as appropriate. Build dedicated test cases for locks and bridge expiration.
 

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { SIZE, cellAt, colOf, normaliseSteps, rowOf, segmentCells } from '../engine/grid.ts';
+import { SIZE, cellAt, colOf, normaliseSteps, rowOf } from '../engine/grid.ts';
+import type { Scaffold, ScaffoldCandidate } from '../engine/powers.ts';
 import { easeOutCubic, lockAxis, nearestStep, releaseVelocity, resolveSteps, SNAP_MS, wrapOffset } from './dragMath.ts';
-import type { Axis, Board as BoardString, Cell, Direction, LevelDefinition, Move, Slide } from '../engine/types.ts';
+import type { Axis, Base, Board as BoardString, Cell, Direction, LevelDefinition, Move, Power, Slide } from '../engine/types.ts';
 import { slideArrow, slideDir } from './hintCell.ts';
 
 export interface MoveAnimation {
@@ -30,7 +31,23 @@ interface Props {
   /** Live whole-cell preview while dragging (null = none). */
   onPreview: (preview: SlidePreview | null) => void;
   onSelect: (cell: Cell) => void;
+  /** Segment that rotates for (origin, axis) under the current locks/scaffold. */
+  segmentOf: (origin: Cell, axis: Axis) => Cell[];
+  locks: readonly Cell[];
+  scaffold: Scaffold | null;
+  /** Segment highlighted by the hint (may be a scaffold track). */
+  hintSegment: readonly Cell[];
+  /** Power targeting: taps pick a target instead of moving tiles. */
+  targeting: { power: Power; tiles: ReadonlySet<Cell>; gaps: readonly ScaffoldCandidate[] } | null;
+  powerPreview: PowerPreview | null;
+  onTarget: (cell: Cell) => void;
+  onPickGap: (candidate: ScaffoldCandidate) => void;
 }
+
+export type PowerPreview =
+  | { power: 'crispr'; cell: Cell; base: Base | null }
+  | { power: 'ligase'; cells: Cell[] }
+  | { power: 'scaffold'; candidate: ScaffoldCandidate };
 
 interface DragState {
   id: number;
@@ -45,6 +62,8 @@ interface DragState {
   clip: HTMLDivElement | null;
   clones: HTMLElement[][];
   originals: HTMLElement[];
+  /** Offset of each segment cell along the axis, relative to the first (px). Scaffold tracks skip holes. */
+  positions: number[];
   raf: number;
   previewStep: number;
   /** True for a programmatic step animation (arrows/keyboard): no preview, no commit. */
@@ -60,13 +79,16 @@ export interface SlidePreview {
 export const SLIDE_MS = 150;
 
 
-export function Board({ def, board, matches, selected, hint, hintCell, repaired, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect }: Props) {
+export function Board({ def, board, matches, selected, hint, hintCell, repaired, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect, segmentOf, locks, scaffold, hintSegment: hintSeg, targeting, powerPreview, onTarget, onPickGap }: Props) {
   const boardRef = useRef<HTMLDivElement>(null);
   const busyUntil = useRef(0);
 
   const trackInfo = new Map<Cell, { group: number; pos: number; ok: boolean }>();
   def.tracks.forEach((t, ti) => t.cells.forEach((c, i) => trackInfo.set(c, { group: t.group, pos: i, ok: matches[ti]?.[i] ?? false })));
-  const hintSegment = new Set(hint ? segmentCells(def.mask, hint.origin, hint.axis) : []);
+  const hintSegment = new Set(hint ? hintSeg : []);
+  const lockSet = new Set(locks);
+  const scaffoldSet = new Set(scaffold?.cells ?? []);
+  const previewCells = new Set(powerPreview?.power === 'ligase' ? powerPreview.cells : powerPreview?.power === 'scaffold' ? powerPreview.candidate.cells : []);
 
   const tryMove = useCallback(
     (move: Move) => {
@@ -111,12 +133,24 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
     d.raf = 0;
     const n = d.segment.length;
     const length = n * d.pitch;
+    const pos = d.positions;
     d.clones.forEach((pair, i) => {
-      const base = wrapOffset(i * d.pitch + d.delta, length);
-      pair.forEach((clone, copy) => {
-        const p = base - copy * length;
-        clone.style.transform = d.axis === 'row' ? `translate3d(${p}px,0,0)` : `translate3d(0,${p}px,0)`;
-      });
+      // Track coordinate → screen offset. Between neighbours it is linear (a scaffold hop glides over
+      // the bridged hole); past the last cell the tile leaves and its twin re-enters before the first.
+      const s = wrapOffset(i * d.pitch + d.delta, length);
+      const j = Math.min(n - 1, Math.floor(s / d.pitch));
+      const f = s / d.pitch - j;
+      const place = (el: HTMLElement, p: number | null) => {
+        el.style.visibility = p === null ? 'hidden' : '';
+        if (p !== null) el.style.transform = d.axis === 'row' ? `translate3d(${p}px,0,0)` : `translate3d(0,${p}px,0)`;
+      };
+      if (j < n - 1) {
+        place(pair[0]!, pos[j]! + f * (pos[j + 1]! - pos[j]!));
+        place(pair[1]!, null);
+      } else {
+        place(pair[0]!, pos[n - 1]! + f * d.pitch);
+        place(pair[1]!, pos[0]! - (1 - f) * d.pitch);
+      }
     });
     const step = normaliseSteps(nearestStep(d.delta, d.pitch), n);
     if (!d.anim && step !== d.previewStep) {
@@ -135,18 +169,20 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
     if (!el || !layer || !d.axis) return false;
     const originals = d.segment.map((c) => el.querySelector<HTMLElement>(`[data-cell="${c}"]`)!);
     if (originals.some((o) => !o)) return false;
-    const [a, b] = originals as [HTMLElement, HTMLElement];
-    const pitch = d.axis === 'row' ? b.offsetLeft - a.offsetLeft : b.offsetTop - a.offsetTop;
+    const a = originals[0]!;
+    const cells = el.querySelectorAll<HTMLElement>('.board > .cell');
+    const pitch = d.axis === 'row' ? cells[1]!.offsetLeft - cells[0]!.offsetLeft : cells[9]!.offsetTop - cells[0]!.offsetTop;
     const w = a.offsetWidth;
     const h = a.offsetHeight;
-    const n = d.segment.length;
+    const positions = originals.map((o) => (d.axis === 'row' ? o.offsetLeft - a.offsetLeft : o.offsetTop - a.offsetTop));
+    const span = positions[positions.length - 1]!;
     const clip = document.createElement('div');
-    clip.className = `drag-clip ${d.axis}`;
+    clip.className = `drag-clip ${d.axis}${d.segment.length > 1 && span > (d.segment.length - 1) * pitch + 1 ? ' bridged' : ''}`;
     Object.assign(clip.style, {
       left: `${a.offsetLeft}px`,
       top: `${a.offsetTop}px`,
-      width: `${d.axis === 'row' ? n * pitch - (pitch - w) : w}px`,
-      height: `${d.axis === 'col' ? n * pitch - (pitch - h) : h}px`,
+      width: `${d.axis === 'row' ? span + w : w}px`,
+      height: `${d.axis === 'col' ? span + h : h}px`,
     });
     const clones = originals.map((o) =>
       [0, 1].map(() => {
@@ -165,7 +201,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
     layer.appendChild(clip);
     originals.forEach((o) => (o.style.visibility = 'hidden'));
     el.classList.add('is-dragging');
-    Object.assign(d, { pitch, clip, clones, originals, phase: 'dragging' as const });
+    Object.assign(d, { pitch, clip, clones, originals, positions, phase: 'dragging' as const });
     renderDrag();
     return true;
   };
@@ -201,7 +237,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
     if (reducedMotion || drag.current) return;
     const d: DragState = {
       id: -1, startX: 0, startY: 0, cell: animation.segment[0]!, axis: animation.axis, segment: animation.segment,
-      pitch: 0, delta: 0, samples: [], clip: null, clones: [], originals: [], raf: 0, previewStep: 0, anim: true, phase: 'pending',
+      pitch: 0, delta: 0, samples: [], clip: null, clones: [], originals: [], positions: [], raf: 0, previewStep: 0, anim: true, phase: 'pending',
     };
     drag.current = d;
     if (!beginDrag(d)) { drag.current = null; return; }
@@ -229,9 +265,10 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
   const onPointerDown = (e: React.PointerEvent) => {
     const tile = (e.target as HTMLElement).closest<HTMLElement>('[data-cell]');
     if (!tile || drag.current || performance.now() < busyUntil.current) return;
+    if (targeting) return; // targeting taps are handled on click
     drag.current = {
       id: e.pointerId, startX: e.clientX, startY: e.clientY, cell: Number(tile.dataset.cell), axis: null, segment: [],
-      pitch: 0, delta: 0, samples: [], clip: null, clones: [], originals: [], raf: 0, previewStep: 0, phase: 'pending',
+      pitch: 0, delta: 0, samples: [], clip: null, clones: [], originals: [], positions: [], raf: 0, previewStep: 0, phase: 'pending',
     };
     boardRef.current?.setPointerCapture?.(e.pointerId);
   };
@@ -245,7 +282,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
       if (!axis) return;
       onSelect(d.cell);
       d.axis = axis;
-      d.segment = segmentCells(def.mask, d.cell, axis);
+      d.segment = segmentOf(d.cell, axis);
       if (locked || d.segment.length < 2 || !beginDrag(d)) {
         d.phase = 'dead'; // single-cell segment (or solved board): nothing can move on this axis
         return;
@@ -289,18 +326,23 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
+    if (targeting && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      return onTarget(selected);
+    }
     const keys: Record<string, [number, number]> = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
     const k = keys[e.key];
     if (!k) return;
     e.preventDefault();
     if (e.shiftKey) return moveSelection(k[0], k[1]);
+    if (targeting) return moveSelection(k[0], k[1]);
     tryMove({ origin: selected, axis: k[1] !== 0 ? 'row' : 'col', direction: (k[0] + k[1]) as Direction });
   };
 
   return (
     <div
       ref={boardRef}
-      className={`board ${locked ? 'solved' : ''}`}
+      className={`board ${locked ? 'solved' : ''} ${targeting ? `targeting target-${targeting.power}` : ''}`}
       role="group"
       aria-label="Nine by nine DNA board. Drag a tile to slide its whole row or column segment, or use arrow keys to slide the selected tile's segment; Shift plus arrows moves the selection."
       data-testid="board"
@@ -310,6 +352,11 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
       onPointerCancel={onPointerCancel}
       onLostPointerCapture={onPointerCancel}
       onKeyDown={onKeyDown}
+      onClick={(e) => {
+        if (!targeting) return;
+        const tile = (e.target as HTMLElement).closest<HTMLElement>('[data-cell]');
+        if (tile) onTarget(Number(tile.dataset.cell));
+      }}
     >
       {Array.from({ length: SIZE * SIZE }, (_, cell) => {
         const ch = board[cell]!;
@@ -335,11 +382,19 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
         if (t) classes.push('goal', t.ok ? 'ok' : 'off');
         if (cell === selected) classes.push('selected');
         if (hintSegment.has(cell)) classes.push('hinted');
-        const label = `${ch}, row ${r + 1}, column ${c + 1}${t ? `, target ${t.group} position ${t.pos + 1}, ${t.ok ? 'correct' : 'not yet correct'}` : ''}`;
+        if (lockSet.has(cell)) classes.push('locked');
+        if (scaffoldSet.has(cell)) classes.push('scaffolded');
+        if (targeting?.tiles.has(cell)) classes.push('candidate');
+        if (previewCells.has(cell)) classes.push('previewed');
+        const crispr = powerPreview?.power === 'crispr' && powerPreview.cell === cell ? powerPreview : null;
+        if (crispr) classes.push('edit-target');
+        const label = `${ch}, row ${r + 1}, column ${c + 1}${t ? `, target ${t.group} position ${t.pos + 1}, ${t.ok ? 'correct' : 'not yet correct'}` : ''}${lockSet.has(cell) ? ', bonded' : ''}`;
         return (
           <button key={cell} type="button" data-cell={cell} data-base={ch} className={classes.join(' ')} style={style} tabIndex={cell === selected ? 0 : -1} aria-label={label} aria-pressed={cell === selected}>
             <span className="letter">{ch}</span>
             {t?.ok && <span className="tick" aria-hidden="true" />}
+            {lockSet.has(cell) && <span className="lock-badge" aria-hidden="true">🔗</span>}
+            {crispr?.base && crispr.base !== ch && <span className={`edit-ghost b-${crispr.base}`} data-testid="edit-ghost" aria-hidden="true">{crispr.base}</span>}
           </button>
         );
       })}
@@ -354,6 +409,22 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
           </div>
         );
       })}
+      {scaffold && <Bridge gap={scaffold.gap} axis={scaffold.axis} label={`${scaffold.remaining}`} testId="scaffold-bridge" />}
+      {powerPreview?.power === 'scaffold' && <Bridge gap={powerPreview.candidate.gap} axis={powerPreview.candidate.axis} label="3" preview testId="scaffold-preview" />}
+      {targeting?.power === 'scaffold' && !powerPreview &&
+        targeting.gaps.map((g) => (
+          <button
+            key={`${g.axis}${g.gap.join('-')}`}
+            type="button"
+            className={`gap-target ${g.axis}`}
+            style={gapStyle(g.gap)}
+            aria-label={`Scaffold the ${g.axis === 'row' ? 'row' : 'column'} gap at row ${rowOf(g.gap[0]!) + 1}, column ${colOf(g.gap[0]!) + 1}`}
+            data-testid="gap-target"
+            onClick={(e) => { e.stopPropagation(); onPickGap(g); }}
+          >
+            {g.axis === 'row' ? '↔' : '↕'}
+          </button>
+        ))}
       <div ref={layerRef} className="drag-layer" aria-hidden="true" />
       {hint && hintCell !== null && (
         <div className={`hint-cue ${showGestureCue ? 'gesture' : ''} dir-${slideDir(hint)}`} style={{ gridRow: rowOf(hintCell) + 1, gridColumn: colOf(hintCell) + 1 }} aria-hidden="true" data-testid="hint-cue">
@@ -364,3 +435,15 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
   );
 }
 
+const gapStyle = (gap: readonly Cell[]) => {
+  const r0 = rowOf(gap[0]!), c0 = colOf(gap[0]!), r1 = rowOf(gap[gap.length - 1]!), c1 = colOf(gap[gap.length - 1]!);
+  return { gridRow: `${r0 + 1} / ${r1 + 2}`, gridColumn: `${c0 + 1} / ${c1 + 2}` };
+};
+
+function Bridge({ gap, axis, label, preview, testId }: { gap: readonly Cell[]; axis: Axis; label: string; preview?: boolean; testId: string }) {
+  return (
+    <div className={`bridge ${axis} ${preview ? 'preview' : ''}`} style={gapStyle(gap)} data-testid={testId} aria-hidden="true">
+      <span>{label}</span>
+    </div>
+  );
+}

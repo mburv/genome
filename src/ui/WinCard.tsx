@@ -5,6 +5,7 @@ import { MODE_WIN } from './modes.ts';
 interface Props {
   def: LevelDefinition;
   moves: number;
+  powersUsed: number;
   newBases: number;
   discovered: boolean;
   covered: number;
@@ -59,12 +60,16 @@ export function WinCard(p: Props) {
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="win-title" data-testid="win">
       <div className="card">
-        <p className="muted small">LEVEL {def.index + 1} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'}</p>
+        <p className="muted small" data-testid="win-meta">{def.lab ? 'ENZYME LAB' : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
         <h3 id="win-title">{MODE_WIN[def.mode]}</h3>
         <div className={`win-strand ${skipped ? 'skip' : ''}`} onClick={() => setSkipped(true)} title="Tap to skip">{strand}</div>
         {def.mode === 'replicate' && <p className="muted tiny">Complementary pairs A–T and C–G. Only the template strand counts.</p>}
         {def.mode === 'repair' && def.repair && <p className="muted tiny">Restored {def.repair.expected} at CDS position {def.repair.sourceOffset + 1}.</p>}
         {def.mode === 'splice' && <p className="muted tiny">Joined in order 1 → 2{def.tracks.length > 2 ? ' → 3' : ''} (illustrative split).</p>}
+        {def.lab ? (
+          <p data-testid="win-bases"><b>Lab complete</b> <span className="muted">— practice only, no coverage added.</span></p>
+        ) : (
+        <>
         <p data-testid="win-bases">
           {p.newBases > 0 ? <b>+{p.newBases} {def.symbol} coding bases</b> : <b>Already counted</b>} <span className="muted">(CDS {iv.start + 1}–{iv.end})</span>
         </p>
@@ -72,6 +77,8 @@ export function WinCard(p: Props) {
           {p.newBases > 0 ? `${p.covered} / ${p.sample} ${def.symbol} sample bases · ${p.covered} of ${p.cdsLength} coding bases.` : 'Replays never add duplicate bases.'}
           {p.allDone ? ' Sample campaign complete — both genes discovered, neither fully assembled.' : ''}
         </p>
+        </>
+        )}
         {p.discovered && (
           <div className="discovered" data-testid="discovered">
             <b>🧬 {def.symbol} discovered!</b> All six sample challenges complete — {p.covered} of {p.cdsLength} coding bases sampled. Not a fully assembled gene.

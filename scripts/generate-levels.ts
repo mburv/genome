@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { buildCampaign, validateLevel, GENERATOR_VERSION, type GeneSource } from '../src/generator/level.ts';
-import { M2_SPECS, CAMPAIGN_ID } from '../src/campaign/specs.ts';
+import { ALL_SPECS, CAMPAIGN_ID } from '../src/campaign/specs.ts';
 
 const OUT = 'src/campaign/levels.generated.json';
 const genes: Record<string, GeneSource> = {};
@@ -15,7 +15,7 @@ for (const f of ['ins', 'hbb']) {
 }
 
 const t0 = performance.now();
-const levels = buildCampaign(M2_SPECS, genes);
+const levels = buildCampaign(ALL_SPECS, genes);
 const ms = Math.round(performance.now() - t0);
 const errors = levels.flatMap((l) => validateLevel(l, genes[l.symbol]!, levels));
 if (errors.length) throw new Error(errors.join('\n'));

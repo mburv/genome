@@ -1,6 +1,7 @@
 import { allMoves, applyMove, applySlide, cellAt, inBounds, colOf, inverseMove, moveKey, normaliseSteps, rowOf, segmentCells, slideToMoves } from '../engine/grid.ts';
 import { isSolved, replayCertificate } from '../engine/engine.ts';
-import type { Axis, Base, Board, Cell, Interval, LevelDefinition, LevelMetrics, LevelMode, Mask, Move, RepairSpec, Slide, Track } from '../engine/types.ts';
+import type { Axis, Base, Board, Cell, Interval, LevelDefinition, LevelMetrics, LevelMode, Mask, Move, Power, RepairSpec, Slide, Track } from '../engine/types.ts';
+import { scaffoldCandidates } from '../engine/powers.ts';
 import { BASES } from '../engine/types.ts';
 import { alignedComplement } from '../genomics/dna.ts';
 import { canonicalMask, isConnected, maskErrors, maskMetrics, proposeMask, symmetricDistance, tidyMask, type MaskOptions } from './mask.ts';
@@ -51,6 +52,10 @@ export interface LevelSpec {
    * with ≤ depth drags. If the budget runs out first the candidate is kept (bound stays unproven).
    */
   deepCheck?: { depth: number; budget: number };
+  /** Enzyme-lab tutorial level (M3): grants one free use of this power; excluded from coverage. */
+  lab?: Power;
+  /** Require at least one legal scaffold placement whose bridged track contains a target cell. */
+  requireScaffoldGap?: boolean;
 }
 
 export type RejectReason =
@@ -70,6 +75,7 @@ export type RejectReason =
   | 'too-few-wrong'
   | 'certificate-short'
   | 'shallow-solvable'
+  | 'no-scaffold-gap'
   | 'invalid';
 
 export type Candidate = { ok: true; def: LevelDefinition } | { ok: false; reason: RejectReason };
@@ -265,6 +271,7 @@ export function tryCandidate(rng: Rng, spec: LevelSpec, gene: GeneSource, existi
   if (errors.length) return { ok: false, reason: maskReason(errors) };
   // Every target cell must be reachable by a crossing segment so letters can be brought in.
   if (!tracks.every((t) => t.cells.every((c) => segmentCells(mask, c, across(t.orientation)).length >= 2))) return { ok: false, reason: 'track-immobile' };
+  if (spec.requireScaffoldGap && !scaffoldCandidates(mask).some((c) => c.cells.some((x) => protect.includes(x)))) return { ok: false, reason: 'no-scaffold-gap' };
   const canonical = canonicalMask(mask);
   if (existing.some((d) => d.maskCanonical === canonical)) return { ok: false, reason: 'duplicate' };
   if (existing.some((d) => symmetricDistance(mask, d.mask) < MIN_MASK_DISTANCE)) return { ok: false, reason: 'near-duplicate' };
@@ -340,6 +347,7 @@ export function tryCandidate(rng: Rng, spec: LevelSpec, gene: GeneSource, existi
       score,
       difficulty: 'estimated',
     },
+    ...(spec.lab ? { lab: spec.lab } : {}),
   };
   const errs = validateLevel(def, gene, existing);
   return errs.length ? { ok: false, reason: 'invalid' } : { ok: true, def };

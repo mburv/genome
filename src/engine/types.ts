@@ -34,6 +34,8 @@ export interface Slide {
 }
 
 export type LevelMode = 'sequence' | 'splice' | 'replicate' | 'repair';
+/** M3 enzyme power-ups. */
+export type Power = 'crispr' | 'ligase' | 'scaffold';
 
 export interface Track {
   /** Display label: 1, 2, 3… Splicing joins groups in ascending order. */
@@ -115,4 +117,6 @@ export interface LevelDefinition {
   /** The same certificate grouped into drags. */
   certificateSlides: Slide[];
   metrics: LevelMetrics;
+  /** Enzyme-lab tutorial level: grants one free use of this power. Not part of the 12-level campaign or coverage. */
+  lab?: Power;
 }

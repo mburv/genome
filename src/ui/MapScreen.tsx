@@ -2,9 +2,12 @@ import type { LevelDefinition } from '../engine/types.ts';
 import { GENES, GENE_ORDER } from '../genomics/genes.ts';
 import { coveredBases, isDiscovered, levelsForGene, sampleBases } from '../campaign/campaign.ts';
 import { MODE_GLYPH, MODE_LABEL } from './modes.ts';
+import { POWER_BLURB, POWER_ICON, POWER_LABEL } from './PowerTray.tsx';
+import { POWER_COST } from '../engine/powers.ts';
 
 interface Props {
   levels: readonly LevelDefinition[];
+  labs: readonly LevelDefinition[];
   completed: readonly string[];
   attempted: readonly string[];
   currentLevelId: string;
@@ -13,7 +16,7 @@ interface Props {
   onCard: (symbol: string) => void;
 }
 
-export function MapScreen({ levels, completed, attempted, currentLevelId, legacyM1, onPlay, onCard }: Props) {
+export function MapScreen({ levels, labs, completed, attempted, currentLevelId, legacyM1, onPlay, onCard }: Props) {
   const next = levels.find((l) => !completed.includes(l.id)) ?? levels.find((l) => l.id === currentLevelId) ?? levels[0]!;
   return (
     <section className="map" aria-label="Level map" data-testid="level-map">
@@ -65,6 +68,33 @@ export function MapScreen({ levels, completed, attempted, currentLevelId, legacy
           </div>
         );
       })}
+      <div className="panel gene-path lab-path" data-testid="lab-panel">
+        <div className="row-between">
+          <h2 className="gene">Enzyme lab <span>· optional</span></h2>
+          <span className="muted small">Powers from level 4</span>
+        </div>
+        <p className="muted small lab-note">One free use of each power to learn it. Practice only — no coverage. In the campaign powers cost energy, and every level can be solved without them.</p>
+        <ol className="nodes">
+          {labs.map((l, i) => {
+            const done = completed.includes(l.id);
+            const p = l.lab!;
+            return (
+              <li key={l.id}>
+                <button
+                  type="button"
+                  className={`node lab ${done ? 'done' : ''} ${l.id === currentLevelId ? 'current' : ''}`}
+                  onClick={() => onPlay(l.id)}
+                  aria-label={`Enzyme lab ${i + 1}: ${POWER_LABEL[p]}${done ? ', complete' : ''}`}
+                >
+                  <span className="node-num">{done ? '✓' : POWER_ICON[p]}</span>
+                  <span className="node-title">{POWER_LABEL[p]} <small>⚡{POWER_COST[p]}</small></span>
+                  <span className="node-mode">{POWER_BLURB[p]}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
       {legacyM1.length > 0 && (
         <p className="muted small legacy" data-testid="legacy-m1">M1 history: you completed prototype level{legacyM1.length > 1 ? 's' : ''} {legacyM1.map((id) => Number(id.slice(-2))).join(', ')}. Equivalent M2 credit is applied where the challenge is identical.</p>
       )}

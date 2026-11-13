@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState } from '../../src/engine/engine.ts';
-import { LEVEL_PACK, LEVELS, coveredBases, sampleBases } from '../../src/campaign/campaign.ts';
-import { createMemoryAdapter, loadSave, migrateV1, newSave, recordCompletion, serializeSave, M1_TO_M2, SCHEMA_VERSION } from '../../src/persistence/save.ts';
+import { LAB_LEVELS, LEVEL_PACK, LEVELS, coveredBases, sampleBases } from '../../src/campaign/campaign.ts';
+import { createMemoryAdapter, loadSave, migrateV1, newSave, recordCompletion, serializeSave, upgradeAttemptV2, DEFAULT_SETTINGS, M1_TO_M2, SCHEMA_VERSION } from '../../src/persistence/save.ts';
+import { energyOf } from '../../src/engine/engine.ts';
+import { START_ENERGY } from '../../src/engine/powers.ts';
 
 const def = LEVELS[1]!;
 
@@ -24,10 +26,11 @@ const m1Save = (completed: string[], withAttempt = false) => ({
   settings: { reducedMotion: true },
 });
 
-describe('save / reload (v2)', () => {
-  it('schema is v2 and records the campaign and both datasets', () => {
+describe('save / reload (v3)', () => {
+  it('schema is v3 and records the campaign and both datasets', () => {
     const s = newSave(LEVEL_PACK);
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
+    expect(s.settings).toEqual(DEFAULT_SETTINGS);
     expect(s.datasets).toEqual(LEVEL_PACK.datasets);
     expect(s.discovered).toEqual([]);
   });
@@ -91,7 +94,7 @@ describe('save / reload (v2)', () => {
   });
 });
 
-describe('M1 (v1) → M2 (v2) migration', () => {
+describe('M1 (v1) → current migration', () => {
   it('maps only the identical challenge: M1 level 1 → ins-01', () => {
     expect(M1_TO_M2).toEqual({ 'm1-ins-01': 'ins-01' });
     const l = LEVELS.find((x) => x.id === 'ins-01')!;
@@ -102,10 +105,10 @@ describe('M1 (v1) → M2 (v2) migration', () => {
     const raw = JSON.stringify(m1Save(['m1-ins-01', 'm1-ins-02', 'm1-ins-03'], true));
     const adapter = createMemoryAdapter(raw);
     const r = loadSave(adapter, LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(2);
+    expect(r.save.schemaVersion).toBe(SCHEMA_VERSION);
     expect(r.save.completed).toEqual(['ins-01']);
     expect(r.save.legacy.m1Completed).toEqual(['m1-ins-01', 'm1-ins-02', 'm1-ins-03']);
-    expect(r.save.settings.reducedMotion).toBe(true);
+    expect(r.save.settings).toEqual({ ...DEFAULT_SETTINGS, reducedMotion: true });
     expect(r.save.attempts).toEqual({});
     expect(coveredBases(r.save.completed, 'INS')).toBe(9);
     expect(r.notices.join(' ')).toMatch(/carries over/);
@@ -130,6 +133,83 @@ describe('M1 (v1) → M2 (v2) migration', () => {
   });
 });
 
+/** Strip M3 fields: the attempt exactly as M2 (schema v2) wrote it. */
+function asV2Attempt(a: ReturnType<typeof createInitialState>) {
+  const snap = (x: { board: string; moves: number; recovery: unknown }) => ({ board: x.board, moves: x.moves, recovery: x.recovery });
+  return { levelId: a.levelId, status: a.status, ...snap(a), history: a.history.map(snap) };
+}
+
+describe('M2 (v2) → M3 (v3) migration', () => {
+  const mid = LEVELS[4]!;
+  function m2Save() {
+    let s = createInitialState(mid);
+    for (const sl of mid.certificateSlides.slice(0, 2)) s = applyCommand(mid, s, { type: 'slide', ...sl }).state;
+    const v3 = newSave(LEVEL_PACK);
+    const raw = {
+      ...v3,
+      schemaVersion: 2,
+      campaignId: 'genome-m2-ins-hbb',
+      settings: { reducedMotion: true },
+      completed: LEVELS.slice(0, 4).map((l) => l.id),
+      discovered: [],
+      currentLevelId: mid.id,
+      attempts: { [mid.id]: asV2Attempt(s) },
+    };
+    return { s, raw: JSON.stringify(raw) };
+  }
+  it('keeps every completion, the in-progress board, moves and undo history, with a notice and a backup', () => {
+    const { s, raw } = m2Save();
+    const adapter = createMemoryAdapter(raw);
+    const r = loadSave(adapter, LEVEL_PACK);
+    expect(r.save.schemaVersion).toBe(3);
+    expect(r.save.completed).toEqual(LEVELS.slice(0, 4).map((l) => l.id));
+    expect(r.save.currentLevelId).toBe(mid.id);
+    expect(r.save.settings).toEqual({ ...DEFAULT_SETTINGS, reducedMotion: true });
+    const a = r.save.attempts[mid.id]!;
+    expect(a).toBeDefined();
+    expect(a.board).toBe(s.board);
+    expect(a.moves).toBe(s.moves);
+    expect(a.recovery).toEqual(s.recovery);
+    expect(a.history.map((h) => h.board)).toEqual(s.history.map((h) => h.board));
+    expect(a.locks).toEqual([]);
+    expect(a.scaffold).toBeNull();
+    expect(r.notices[0]).toMatch(/All your progress was kept/);
+    expect(adapter.labels).toEqual(['m2']);
+    expect(adapter.backups).toEqual([raw]);
+    // Upgraded attempt is still playable: undo works and certified hints still finish it.
+    expect(applyCommand(mid, a, { type: 'undo' }).state.board).toBe(s.history.at(-1)!.board);
+  });
+  it('credits energy for codons the player had already completed by normal moves (no more, capped)', () => {
+    const { s } = m2Save();
+    const up = upgradeAttemptV2(mid, asV2Attempt(s)) as typeof s;
+    expect(up.ledger).toEqual(s.ledger);
+    expect(energyOf(up)).toBe(energyOf(s));
+    expect(energyOf(up)).toBeGreaterThanOrEqual(START_ENERGY);
+  });
+  it('round-trips as v3 with no further notices', () => {
+    const r = loadSave(createMemoryAdapter(m2Save().raw), LEVEL_PACK);
+    const again = loadSave(createMemoryAdapter(serializeSave(r.save)), LEVEL_PACK);
+    expect(again.notices).toEqual([]);
+    expect(again.save).toEqual(r.save);
+  });
+  it('an M3 attempt with powers in use (lock, scaffold, edit) survives reload', () => {
+    const lab = LAB_LEVELS.find((l) => l.lab === 'scaffold')!;
+    let st = createInitialState(lab);
+    const save0 = newSave(LEVEL_PACK);
+    st = applyCommand(lab, st, { type: 'slide', ...lab.certificateSlides[0]! }).state;
+    const save = { ...save0, currentLevelId: lab.id, attempts: { [lab.id]: st } };
+    const r = loadSave(createMemoryAdapter(serializeSave(save)), LEVEL_PACK);
+    expect(r.notices).toEqual([]);
+    expect(r.save.attempts[lab.id]).toEqual(st);
+  });
+  it('settings toggles persist; unknown setting values fall back to defaults', () => {
+    const save = { ...newSave(LEVEL_PACK), settings: { reducedMotion: false, sound: true, haptics: false } };
+    expect(loadSave(createMemoryAdapter(serializeSave(save)), LEVEL_PACK).save.settings).toEqual({ reducedMotion: false, sound: true, haptics: false });
+    const bad = { ...newSave(LEVEL_PACK), settings: { reducedMotion: 'x', sound: 3 } };
+    expect(loadSave(createMemoryAdapter(JSON.stringify(bad)), LEVEL_PACK).save.settings).toEqual(DEFAULT_SETTINGS);
+  });
+});
+
 describe('completion credit', () => {
   it('is idempotent: replaying a level never adds duplicate credit or bases', () => {
     let save = newSave(LEVEL_PACK);
@@ -149,5 +229,11 @@ describe('completion credit', () => {
     const r = loadSave(createMemoryAdapter(JSON.stringify(save)), LEVEL_PACK).save;
     expect(r.completed).toEqual([def.id]);
     expect(r.discovered).toEqual(['INS']);
+  });
+  it('Enzyme lab completions are kept but add no coverage', () => {
+    const save = recordCompletion(newSave(LEVEL_PACK), LAB_LEVELS[0]!.id);
+    const r = loadSave(createMemoryAdapter(serializeSave(save)), LEVEL_PACK).save;
+    expect(r.completed).toEqual([LAB_LEVELS[0]!.id]);
+    expect(coveredBases(r.completed, 'INS') + coveredBases(r.completed, 'HBB')).toBe(0);
   });
 });

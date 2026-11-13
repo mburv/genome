@@ -46,7 +46,8 @@ test('level map lists 12 levels across INS and HBB with modes; cards are locked'
   await fresh(page);
   await page.getByTestId('open-map').click();
   await expect(page.getByTestId('level-map')).toBeVisible();
-  await expect(page.locator('.node')).toHaveCount(12);
+  await expect(page.locator('.node:not(.lab)')).toHaveCount(12);
+  await expect(page.locator('.node.lab')).toHaveCount(3);
   for (const m of ['Sequencing', 'Splicing', 'Replication', 'Repair']) await expect(page.getByTestId('gene-INS')).toContainText(m);
   for (const m of ['Sequencing', 'Splicing', 'Replication', 'Repair']) await expect(page.getByTestId('gene-HBB')).toContainText(m);
   await expect(page.getByTestId('progress-HBB')).toHaveText('0 / 51 sample bases');
@@ -186,7 +187,7 @@ test('an M1 save migrates: level 1 credit carries over, M1 levels 2–3 kept as 
   await expect(page.getByTestId('progress-INS')).toHaveText('9 / 51 sample bases');
   await expect(page.getByTestId('legacy-m1')).toContainText('1, 2, 3');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m1'))).toContain('"schemaVersion":1');
-  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!).schemaVersion).toBe(2);
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!).schemaVersion).toBe(3);
   await page.getByRole('button', { name: 'OK' }).click();
   await page.reload();
   await expect(page.getByTestId('notice')).toHaveCount(0);

@@ -1,5 +1,5 @@
 {
-  "campaignId": "genome-m2-sample",
+  "campaignId": "genome-m3-lab",
   "generatorVersion": "m2-gen-1",
   "datasets": {
     "INS": "refseq-NM_000207.3-2026-11-13",
@@ -1909,6 +1909,458 @@
         "score": 18.6,
         "difficulty": "estimated"
       }
+    },
+    {
+      "id": "lab-crispr",
+      "index": 12,
+      "title": "CRISPR lab",
+      "mode": "sequence",
+      "tutorial": false,
+      "geneId": "NCBIGene:3043",
+      "symbol": "HBB",
+      "transcript": "NM_000518.5",
+      "datasetId": "refseq-NM_000518.5-2026-11-13",
+      "sequenceSha256": "838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e",
+      "seed": 13013,
+      "generatorVersion": "m2-gen-1",
+      "mask": "#.######.#.#.####.###.####.###########..##.###########..#######..#.#####....#####",
+      "maskCanonical": "######...#############.######################..##.#..#.###.####...####.....######",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            7,
+            16,
+            25,
+            34,
+            43,
+            52,
+            61,
+            70,
+            79
+          ],
+          "expected": "ATGGTGCAT",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 0,
+            "end": 9
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 0,
+          "end": 9
+        }
+      ],
+      "solved": "C.ACTTCA.T.A.GTTT.TCC.ACGG.CAATCAAGGGC..TT.TGGTATTGGGA..GCAGCCG..A.AGGAG....CCCTA",
+      "initial": "C.ACTTCC.T.A.TTTA.TCC.GCGC.CAATAAAAGGC..CT.TGGTATTGGGA..GCTGCGG..A.AGGTG....AACGC",
+      "scramble": [
+        {
+          "origin": 76,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 76,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 4,
+          "axis": "col",
+          "direction": 1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 4,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 76,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 76,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 4,
+          "axis": "col",
+          "steps": -1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "steps": -3
+        },
+        {
+          "origin": 76,
+          "axis": "row",
+          "steps": -2
+        }
+      ],
+      "metrics": {
+        "active": 62,
+        "holes": 19,
+        "deadEnds": 2,
+        "wrongTargetCells": 7,
+        "certificateLength": 6,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 66084,
+          "budget": 400000
+        },
+        "rating": "moderate",
+        "score": 12.3,
+        "difficulty": "estimated"
+      },
+      "lab": "crispr"
+    },
+    {
+      "id": "lab-ligase",
+      "index": 13,
+      "title": "Ligase lab",
+      "mode": "splice",
+      "tutorial": false,
+      "geneId": "NCBIGene:3630",
+      "symbol": "INS",
+      "transcript": "NM_000207.3",
+      "datasetId": "refseq-NM_000207.3-2026-11-13",
+      "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
+      "seed": 14014,
+      "generatorVersion": "m2-gen-1",
+      "mask": "...######...##.########.######....#####...#####...##.####.#########.##########.##",
+      "maskCanonical": "##############.######.####.#....#######...#.####....##..###.###..#######..#######",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            36,
+            37,
+            38
+          ],
+          "expected": "TGG",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 9,
+            "end": 12
+          }
+        },
+        {
+          "group": 2,
+          "cells": [
+            26,
+            35,
+            44
+          ],
+          "expected": "ATG",
+          "orientation": "vertical",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 12,
+            "end": 15
+          }
+        },
+        {
+          "group": 3,
+          "cells": [
+            59,
+            60,
+            61
+          ],
+          "expected": "CGC",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 15,
+            "end": 18
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 9,
+          "end": 18
+        }
+      ],
+      "solved": "...AATGTT...TT.TCCCTAGG.TGAACA....GTTGG...CAGAG...TA.TATT.ACGCCACAT.ACTCAGTGCC.CG",
+      "initial": "...AATGTC...TT.TCACTAGG.TGTACA....GGGTG...AATAG...TG.CATT.ACCCCACAT.ACTGAGTGCC.CT",
+      "scramble": [
+        {
+          "origin": 42,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 36,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 8,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 36,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 42,
+          "axis": "col",
+          "direction": 1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 8,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 36,
+          "axis": "row",
+          "steps": -1
+        },
+        {
+          "origin": 42,
+          "axis": "col",
+          "steps": 1
+        }
+      ],
+      "metrics": {
+        "active": 59,
+        "holes": 22,
+        "deadEnds": 1,
+        "wrongTargetCells": 6,
+        "certificateLength": 3,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 64791,
+          "budget": 400000
+        },
+        "rating": "tricky",
+        "score": 14,
+        "difficulty": "estimated"
+      },
+      "lab": "ligase"
+    },
+    {
+      "id": "lab-scaffold",
+      "index": 14,
+      "title": "Scaffold lab",
+      "mode": "sequence",
+      "tutorial": false,
+      "geneId": "NCBIGene:3630",
+      "symbol": "INS",
+      "transcript": "NM_000207.3",
+      "datasetId": "refseq-NM_000207.3-2026-11-13",
+      "sequenceSha256": "fca80cdee67f516fd2bf95d38ae2e4c068ddbaaec246ec2e2aecebe85c7c2b42",
+      "seed": 15015,
+      "generatorVersion": "m2-gen-1",
+      "mask": "####################...#...##...#...####....######...############################",
+      "maskCanonical": "################################...#####....###...#...##...#...##################",
+      "tracks": [
+        {
+          "group": 1,
+          "cells": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17
+          ],
+          "expected": "ATGGCCCTG",
+          "orientation": "horizontal",
+          "strand": "coding",
+          "readDirection": "5to3",
+          "source": {
+            "start": 0,
+            "end": 9
+          }
+        }
+      ],
+      "sourceIntervals": [
+        {
+          "start": 0,
+          "end": 9
+        }
+      ],
+      "solved": "ACTGTCGCGATGGCCCTGTG...T...GG...G...TCTG....CGACCA...CCGTACGCGCCGCCAGGATTTAGCGTTA",
+      "initial": "ATTGTCGTGCCCCGACGGTT...T...GG...G...TGTG....CGCCCA...CCATACGCGCCGCCAGGATTGAGCGTTA",
+      "scramble": [
+        {
+          "origin": 1,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": -1
+        },
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": -1
+        },
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": -1
+        }
+      ],
+      "certificate": [
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 9,
+          "axis": "row",
+          "direction": 1
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "direction": 1
+        },
+        {
+          "origin": 1,
+          "axis": "col",
+          "direction": -1
+        }
+      ],
+      "certificateSlides": [
+        {
+          "origin": 9,
+          "axis": "row",
+          "steps": 4
+        },
+        {
+          "origin": 7,
+          "axis": "col",
+          "steps": 1
+        },
+        {
+          "origin": 1,
+          "axis": "col",
+          "steps": -1
+        }
+      ],
+      "metrics": {
+        "active": 62,
+        "holes": 19,
+        "deadEnds": 2,
+        "wrongTargetCells": 7,
+        "certificateLength": 6,
+        "certificateDrags": 3,
+        "axesUsed": [
+          "col",
+          "row"
+        ],
+        "solver": {
+          "status": "optimal",
+          "lowerBound": 3,
+          "optimal": 3,
+          "nodes": 154169,
+          "budget": 400000
+        },
+        "rating": "moderate",
+        "score": 12.3,
+        "difficulty": "estimated"
+      },
+      "lab": "scaffold"
     }
   ]
 }

@@ -3,12 +3,13 @@ import { buildCampaign, buildLevel, validateLevel, rateLevel, pruneCertificate, 
 import { canonicalMask, isConnected, isSelfSymmetric, maskMetrics, symmetricDistance, tidyMask, transformMask, TRANSFORMS } from '../../src/generator/mask.ts';
 import { createRng } from '../../src/generator/rng.ts';
 import { solveBounded } from '../../src/generator/solver.ts';
-import { M2_SPECS, CAMPAIGN_ID } from '../../src/campaign/specs.ts';
-import { LEVEL_PACK, LEVELS, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../../src/campaign/campaign.ts';
+import { M2_SPECS, ALL_SPECS, LAB_SPECS, CAMPAIGN_ID } from '../../src/campaign/specs.ts';
+import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, LEVELS, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../../src/campaign/campaign.ts';
 import { GENES, HBB, INS } from '../../src/genomics/genes.ts';
 import { alignedComplement } from '../../src/genomics/dna.ts';
 import { applyMove, applySlide, segmentCells } from '../../src/engine/grid.ts';
 import { isSolved } from '../../src/engine/engine.ts';
+import { scaffoldCandidates } from '../../src/engine/powers.ts';
 import type { LevelDefinition } from '../../src/engine/types.ts';
 
 const geneOf = (l: LevelDefinition) => GENES[l.symbol]!;
@@ -24,6 +25,7 @@ describe('rng', () => {
 
 describe('deterministic generation', () => {
   it('regenerating from specs reproduces the pinned level pack exactly', { timeout: 120_000 }, () => {
+    expect(buildCampaign(ALL_SPECS, GENES)).toEqual(ALL_LEVELS);
     expect(buildCampaign(M2_SPECS, GENES)).toEqual(LEVELS);
     expect(LEVEL_PACK.generatorVersion).toBe(GENERATOR_VERSION);
     expect(LEVEL_PACK.campaignId).toBe(CAMPAIGN_ID);
@@ -286,5 +288,31 @@ describe('coverage & discovery', () => {
     expect(isDiscovered(ins, 'INS')).toBe(true);
     expect(isDiscovered(ins, 'HBB')).toBe(false);
     expect(coveredBases(ins, 'INS')).toBeLessThan(INS.cdsLength);
+  });
+});
+
+describe('Enzyme lab levels (M3)', () => {
+  it('three labs, one per power, after the 12 campaign levels; the campaign is unchanged', () => {
+    expect(ALL_LEVELS).toHaveLength(15);
+    expect(ALL_LEVELS.slice(0, 12)).toEqual(LEVELS);
+    expect(LAB_LEVELS.map((l) => l.lab)).toEqual(['crispr', 'ligase', 'scaffold']);
+    expect(LAB_LEVELS.map((l) => l.index)).toEqual([12, 13, 14]);
+    expect(LAB_SPECS).toHaveLength(3);
+    expect(GENERATOR_VERSION).toBe('m2-gen-1');
+  });
+  it('labs are valid, solvable without powers, reuse real campaign intervals and add no coverage', () => {
+    for (const l of LAB_LEVELS) {
+      expect(validateLevel(l, geneOf(l), [])).toEqual([]);
+      let b = l.initial;
+      for (const x of l.certificateSlides) b = applySlide(l.mask, b, x.origin, x.axis, x.steps).board;
+      expect(isSolved(l, b)).toBe(true);
+      const campaignIntervals = LEVELS.filter((c) => c.symbol === l.symbol).flatMap((c) => c.sourceIntervals);
+      for (const iv of l.sourceIntervals) expect(campaignIntervals.some((c) => c.start <= iv.start && c.end >= iv.end)).toBe(true);
+      expect(coveredBases([l.id], l.symbol)).toBe(0);
+    }
+  });
+  it('ids are unique and the scaffold lab has at least one bridgeable gap', () => {
+    expect(new Set(ALL_LEVELS.map((l) => l.id)).size).toBe(15);
+    expect(scaffoldCandidates(LAB_LEVELS.find((l) => l.lab === 'scaffold')!.mask, []).length).toBeGreaterThan(0);
   });
 });

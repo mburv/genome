@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { touchSwipe, type Dir } from './helpers';
 
-const file = resolve('dist-single/GENOME-M2.html');
+const file = resolve('dist-single/GENOME-M3.html');
 
 test('self-contained single HTML loads and plays from file://', async ({ page }) => {
   test.skip(!existsSync(file), 'run npm run build:single first');

@@ -32,7 +32,7 @@ The initial deliverable is a 12-level mechanics demo. It must not claim that a g
 
 ---
 
-## How to run (M1 accepted; M2 sample campaign, 13 Nov 2026)
+## How to run (M1 + M2 accepted; M3 enzyme lab, 13 Nov 2026)
 
 Requires Node 22.6+ (tested on Node 24.22). All play-time assets are local; the game makes no network requests.
 
@@ -46,19 +46,19 @@ npm run dev                        # http://localhost:5173 — open on a phone-s
 |---|---|
 | `npm run typecheck` | Strict TypeScript for app, tests and tooling |
 | `npm run lint` | ESLint (engine/generator forbid DOM, `Date`, `fetch`, `Math.random`) |
-| `npm test` | Vitest unit tests (engine, generator, solver, genomics, save + M1→M2 migration) |
-| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568): continuous multi-cell drags, snapping, holes, tap/arrows, keyboard, the level map, all 12 levels solved by touch, discovery cards, save/reload, v1→v2 migration, and the single-file HTML via `file://` |
+| `npm test` | Vitest unit tests (engine, generator, solver, genomics, powers, hints, save + v1→v2→v3 migrations) |
+| `npm run test:e2e` | Builds, then Playwright on a 390×844 touch viewport (+320×568): continuous multi-cell drags, snapping, holes, tap/arrows, keyboard, the level map, all 12 levels solved by touch, discovery cards, save/reload, v1→v2 and v2→v3 migrations, CRISPR/Ligase/Scaffold (preview, undo refund, locks on both axes, bridge expiry, recovery after a bad edit), settings toggles, and the single-file HTML via `file://` |
 | `npm run build` | Typecheck + production build to `dist/` |
-| `npm run build:single` | Self-contained one-file build: `dist-single/GENOME-M2.html` (main build unaffected) |
+| `npm run build:single` | Self-contained one-file build: `dist-single/GENOME-M3.html` (main build unaffected) |
 | `npm run validate:data` | Re-verifies the INS and HBB CDS assets against the stored raw GenBank records |
 | `npm run validate:levels` | Regenerates the level pack from seeds and checks it is byte-identical and valid |
-| `npm run audit:levels` | Generator audit: 1,200 candidates (100 per level spec) → `docs/AUDIT_M2.md` + `docs/audit-m2.json` |
+| `npm run audit:levels` | Generator audit: 1,500 candidates (100 per level spec, 15 specs) → `docs/AUDIT_M3.md` + `docs/audit-m3.json` (M2 record kept in `docs/AUDIT_M2.md`) |
 | `npm run fetch:data` / `npm run import:data` | Build-time only: re-download NM_000207.3 / NM_000518.5 from NCBI and re-import |
 
 ### Layout
 
 ```
-src/engine/      pure rules: segment rotation, drag/step commands, undo/restart, completion, recovery hints
+src/engine/      pure rules: segment rotation, drag/step commands, powers (CRISPR/Ligase/Scaffold), energy ledger, undo/restart, completion, hints + bounded hint search
 src/generator/   seeded RNG, mask primitives + dihedral canonicalisation, scramble, certificates, bounded solver
 src/genomics/    verified INS + HBB CDS assets (*.generated.json), gene loader, complement helpers
 src/campaign/    level specs (seeds, CDS intervals) and the pinned level pack (levels.generated.json)
@@ -76,3 +76,16 @@ tests/  e2e/     Vitest and Playwright suites
 ### M2 campaign
 
 12 levels (GDD table): per gene, CDS bases 1–9 sequencing, 10–18 splicing, 19–24 replication, 25–33 repair, 34–42 sequencing, 43–51 splicing — exactly 51 sample bases per gene. Completing all six of a gene's levels **discovers** it (a source-cited card); it is never called assembled. Difficulty is in drags (proven optimum where the bounded solver could prove it, otherwise "≥ k"); ratings are estimates. See `docs/AUDIT_M2.md` for the generator audit and `docs/DECISIONS.md` (D-M2-*) for choices and limits.
+
+### M3 enzyme lab
+
+Three optional power-ups, available from level 4 and in the Enzyme lab (three tutorial levels on the map, each lending one free use; no coverage):
+
+| Power | Cost | Effect |
+|---|---:|---|
+| CRISPR ✂ | ⚡4 | Replace one playable, unlocked tile's base (same base = free no-op). Preview shows the result on the targets before you confirm. |
+| Ligase 🔗 | ⚡2 | Bond one complete, correct codon: those tiles block rotation on both axes. Release is free. |
+| Scaffold ⌒ | ⚡3 | Join two segments across a 1–2-cell gap into one track for exactly 3 rotations. |
+
+Energy: start ⚡2 per level, +1 the first time each reference codon is completed by a normal move, cap ⚡9, level-local. Undo reverses any power and refunds it; the reward ledger survives undo, so nothing can be farmed; restart (free) starts a new attempt. Hints are never stale: certified drag → "release the bond" → bounded search (≤ 3 drags, 40 k nodes) → "Undo ×N to a certified position" → free restart. Every level remains solvable without powers. Settings (⚙): reduce motion, sound (synthesised locally, off by default), haptics (`navigator.vibrate`, where supported). Save schema v3 upgrades M2 saves with a backup and keeps all progress. See D-M3-* in `docs/DECISIONS.md`.
+

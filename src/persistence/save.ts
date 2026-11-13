@@ -1,10 +1,11 @@
-import { isCompatibleBoard, type PuzzleState, type Snapshot, HISTORY_CAP } from '../engine/engine.ts';
+import { isCompatibleBoard, levelCodons, type PuzzleState, type Snapshot, HISTORY_CAP, createInitialState } from '../engine/engine.ts';
+import { codonComplete, ENERGY_CAP, POWERS, START_ENERGY, scaffoldTrack, SCAFFOLD_TURNS, type Power } from '../engine/powers.ts';
 import { applyMove } from '../engine/grid.ts';
 import type { LevelDefinition, Move } from '../engine/types.ts';
 import type { LevelPack } from '../campaign/campaign.ts';
 
 export const SAVE_KEY = 'genome-save';
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export interface SaveData {
   schemaVersion: typeof SCHEMA_VERSION;
@@ -20,8 +21,18 @@ export interface SaveData {
   attempts: Record<string, PuzzleState>;
   /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
   legacy: { m1Completed: string[] };
-  settings: { reducedMotion: boolean };
+  settings: Settings;
 }
+
+export interface Settings {
+  reducedMotion: boolean;
+  /** Locally synthesised sound effects (Web Audio, no files). Off by default. */
+  sound: boolean;
+  /** navigator.vibrate where supported. */
+  haptics: boolean;
+}
+
+export const DEFAULT_SETTINGS: Settings = { reducedMotion: false, sound: false, haptics: true };
 
 /**
  * M1 → M2 level equivalence. Only M1 level 1 is the same challenge in M2 (INS CDS [0,9), sequencing).
@@ -75,7 +86,7 @@ export function newSave(pack: LevelPack): SaveData {
     discovered: [],
     attempts: {},
     legacy: { m1Completed: [] },
-    settings: { reducedMotion: false },
+    settings: { ...DEFAULT_SETTINGS },
   };
 }
 
@@ -98,17 +109,58 @@ function recoveryReplays(def: LevelDefinition, board: string, recovery: Move[]):
   return b === board;
 }
 
+const isCellList = (v: unknown): v is number[] => Array.isArray(v) && v.every((c) => Number.isInteger(c) && c >= 0 && c < 81);
+
+function validScaffold(def: LevelDefinition, locks: number[], v: unknown): boolean {
+  if (v === null) return true;
+  if (typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  if ((o.axis !== 'row' && o.axis !== 'col') || !isCellList(o.gap) || !isCellList(o.cells)) return false;
+  if (!Number.isInteger(o.remaining) || (o.remaining as number) < 1 || (o.remaining as number) > SCAFFOLD_TURNS) return false;
+  const t = scaffoldTrack(def.mask, locks, o.axis, o.gap);
+  return 'cells' in t && t.cells.join() === (o.cells as number[]).join();
+}
+
 function validSnapshot(def: LevelDefinition, s: unknown): s is Snapshot {
   if (typeof s !== 'object' || s === null) return false;
   const o = s as Record<string, unknown>;
-  return isCompatibleBoard(def, o.board) && Number.isInteger(o.moves) && Array.isArray(o.recovery) && o.recovery.every(isMove) && recoveryReplays(def, o.board, o.recovery);
+  if (!Number.isInteger(o.edits) || (o.edits as number) < 0) return false;
+  if (!isCompatibleBoard(def, o.board, o.edits as number) || !Number.isInteger(o.moves)) return false;
+  if (o.recovery !== null && !(Array.isArray(o.recovery) && o.recovery.every(isMove) && recoveryReplays(def, o.board as string, o.recovery))) return false;
+  if (!isCellList(o.locks)) return false;
+  const locks = o.locks;
+  if (locks.length && !levelCodons(def).some((c) => c.cells.join() === locks.join())) return false;
+  if (!validScaffold(def, locks, o.scaffold)) return false;
+  if (!Number.isInteger(o.spent) || (o.spent as number) < 0) return false;
+  return Array.isArray(o.freeUses) && o.freeUses.every((p) => POWERS.includes(p as Power) && p === def.lab);
 }
 
 function validAttempt(def: LevelDefinition, a: unknown): a is PuzzleState {
   if (!validSnapshot(def, a)) return false;
   const o = a as unknown as Record<string, unknown>;
   if (o.levelId !== def.id || (o.status !== 'playing' && o.status !== 'solved') || !Array.isArray(o.history)) return false;
+  const l = o.ledger as Record<string, unknown> | undefined;
+  const keys = new Set(levelCodons(def).map((c) => c.key));
+  if (!l || !Number.isInteger(l.earned) || (l.earned as number) < 0 || !Array.isArray(l.credited) || !l.credited.every((k) => keys.has(k as string))) return false;
   return o.history.length <= HISTORY_CAP && o.history.every((h) => validSnapshot(def, h));
+}
+
+/**
+ * Upgrade an M2 (v2) attempt to v3: no locks/scaffold/edits, nothing spent. Every M2 move was a normal
+ * move, so codons completed since the start are credited as earned (capped), others stay eligible.
+ */
+export function upgradeAttemptV2(def: LevelDefinition, a: unknown): unknown {
+  if (typeof a !== 'object' || a === null) return a;
+  const o = a as Record<string, unknown>;
+  const snap = (x: unknown): unknown => (typeof x === 'object' && x !== null ? { ...(x as object), locks: [], scaffold: null, spent: 0, freeUses: def.lab ? [def.lab] : [], edits: 0 } : x);
+  const fresh = createInitialState(def);
+  const board = typeof o.board === 'string' ? o.board : def.initial;
+  const earnedKeys = levelCodons(def).filter((c) => c.rewardable && !fresh.ledger.credited.includes(c.key) && codonComplete(board, c)).map((c) => c.key);
+  return {
+    ...(snap(o) as object),
+    history: Array.isArray(o.history) ? o.history.map(snap) : o.history,
+    ledger: { earned: Math.min(earnedKeys.length, ENERGY_CAP - START_ENERGY), credited: [...fresh.ledger.credited, ...earnedKeys] },
+  };
 }
 
 export interface LoadResult {
@@ -119,7 +171,14 @@ export interface LoadResult {
 }
 
 const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
-const readSettings = (v: unknown): SaveData['settings'] => ({ reducedMotion: typeof v === 'object' && v !== null && (v as Record<string, unknown>).reducedMotion === true });
+const readSettings = (v: unknown): Settings => {
+  const o = typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {};
+  return {
+    reducedMotion: o.reducedMotion === true,
+    sound: typeof o.sound === 'boolean' ? o.sound : DEFAULT_SETTINGS.sound,
+    haptics: typeof o.haptics === 'boolean' ? o.haptics : DEFAULT_SETTINGS.haptics,
+  };
+};
 
 /** Pure v1 (M1) → v2 (M2) migration. Never drops credit silently: unmapped completions become legacy history. */
 export function migrateV1(data: Record<string, unknown>, pack: LevelPack): { save: SaveData; notices: string[] } {
@@ -159,6 +218,18 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     const m = migrateV1(data, pack);
     return { save: m.save, notices: m.notices, recovered: true };
   }
+  let upgradedV2 = false;
+  if (data.schemaVersion === 2) {
+    // M2 → M3: keep everything; add power state to boards in progress. Raw copy kept first.
+    adapter.backup(raw, 'm2');
+    const rawAttempts = typeof data.attempts === 'object' && data.attempts !== null ? (data.attempts as Record<string, unknown>) : {};
+    const attempts = Object.fromEntries(Object.entries(rawAttempts).map(([id, a]) => {
+      const def = pack.levels.find((l) => l.id === id);
+      return [id, def ? upgradeAttemptV2(def, a) : a];
+    }));
+    data = { ...data, schemaVersion: SCHEMA_VERSION, attempts };
+    upgradedV2 = true;
+  }
   if (data.schemaVersion !== SCHEMA_VERSION) {
     adapter.backup(raw);
     return { save: fresh, notices: [`Save format ${String(data.schemaVersion)} is not supported by this build. A backup copy was kept.`], recovered: true };
@@ -179,7 +250,8 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   }
   if (!sameContent && Object.keys(rawAttempts).length) notices.push('Levels were updated since your last visit. Completed levels are kept; boards in progress were restarted.');
   else if (dropped) notices.push(`${dropped} saved board(s) were invalid and were restarted. Completed levels are kept.`);
-  if (notices.length) adapter.backup(raw);
+  if (notices.length && !upgradedV2) adapter.backup(raw);
+  if (upgradedV2) notices.unshift(`GENOME updated: enzyme power-ups (CRISPR, Ligase, Scaffold) are available from level 4, with three Enzyme lab tutorials on the map. ${notices.length ? 'Completed levels were kept.' : 'All your progress was kept.'}`);
   const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : fresh.currentLevelId;
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   return {

@@ -5,7 +5,7 @@ import type { LevelSpec } from '../generator/level.ts';
  * split 9 / 9 / 6 / 9 / 9 / 9. Difficulty ramps through scramble drags and a shallow proof that no
  * shorter solution exists (see docs/DECISIONS.md D-M2-*).
  */
-export const CAMPAIGN_ID = 'genome-m2-sample';
+export const CAMPAIGN_ID = 'genome-m3-lab';
 
 const base = { edgeBite: 0, cornerCut: 0, cavity: 0, channel: 0, island: 0, diagonal: 0, branch: 0 };
 
@@ -75,3 +75,29 @@ export const M2_SPECS: readonly LevelSpec[] = [
     mask: { minActive: 54, maxActive: 66, maxDeadEnds: 5, operations: 12, weights: { ...base, island: 3, cavity: 2, branch: 2, diagonal: 1, edgeBite: 1 } },
   },
 ];
+
+/**
+ * M3 Enzyme laboratory: three optional tutorial levels, one per power, each lending one free use.
+ * They reuse already-sampled CDS slices and never count toward coverage. Generated after the 12
+ * campaign levels, so those stay byte-identical (and saves stay valid).
+ */
+export const LAB_SPECS: readonly LevelSpec[] = [
+  {
+    id: 'lab-crispr', index: 12, gene: 'HBB', title: 'CRISPR lab', mode: 'sequence', seed: 13013, source: { start: 0, end: 9 }, lab: 'crispr',
+    layout: { kind: 'sequence', orientation: 'vertical' }, tutorial: false, scrambleDrags: 3, minDrags: 2, minWrongCells: 4,
+    mask: { minActive: 58, maxActive: 70, maxDeadEnds: 3, operations: 8, weights: { ...base, cavity: 2, edgeBite: 2, cornerCut: 2, branch: 1 } },
+  },
+  {
+    id: 'lab-ligase', index: 13, gene: 'INS', title: 'Ligase lab', mode: 'splice', seed: 14014, source: { start: 9, end: 18 }, lab: 'ligase',
+    layout: { kind: 'splice', parts: [{ length: 3, orientation: 'horizontal' }, { length: 3, orientation: 'vertical' }, { length: 3, orientation: 'horizontal' }] },
+    tutorial: false, scrambleDrags: 3, minDrags: 2, minWrongCells: 5,
+    mask: { minActive: 58, maxActive: 70, maxDeadEnds: 3, operations: 8, weights: { ...base, island: 2, cavity: 2, edgeBite: 1, diagonal: 1 } },
+  },
+  {
+    id: 'lab-scaffold', index: 14, gene: 'INS', title: 'Scaffold lab', mode: 'sequence', seed: 15015, source: { start: 0, end: 9 }, lab: 'scaffold', requireScaffoldGap: true,
+    layout: { kind: 'sequence', orientation: 'horizontal' }, tutorial: false, scrambleDrags: 3, minDrags: 2, minWrongCells: 4,
+    mask: { minActive: 56, maxActive: 68, maxDeadEnds: 4, operations: 9, weights: { ...base, channel: 3, cavity: 3, edgeBite: 1 } },
+  },
+];
+
+export const ALL_SPECS: readonly LevelSpec[] = [...M2_SPECS, ...LAB_SPECS];

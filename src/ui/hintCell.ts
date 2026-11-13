@@ -6,8 +6,8 @@ import type { Board, Cell, LevelDefinition, Slide } from '../engine/types.ts';
  * target cell of that segment (the most intuitive tile to grab). Any tile in the segment performs
  * the same drag, so this only affects presentation.
  */
-export function hintDisplayCell(def: LevelDefinition, board: Board, hint: Slide): Cell {
-  const seg = segmentCells(def.mask, hint.origin, hint.axis);
+export function hintDisplayCell(def: LevelDefinition, board: Board, hint: Slide, segment?: readonly Cell[]): Cell {
+  const seg = segment ?? segmentCells(def.mask, hint.origin, hint.axis);
   const n = seg.length;
   for (const t of def.tracks) {
     for (let k = 0; k < t.cells.length; k++) {

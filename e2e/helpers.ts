@@ -91,6 +91,7 @@ export async function openLevel(page: Page, n: number): Promise<void> {
 /** Ask for a hint; returns the cued tile and the drag (direction + cells) from the status text. */
 export async function readHint(page: Page): Promise<{ cell: number; dir: Dir; k: number }> {
   await page.getByRole('button', { name: 'Hint' }).click();
+  await page.waitForFunction(() => !/Thinking/.test(document.querySelector('[data-testid="status"]')?.textContent ?? ''));
   const text = await page.getByTestId('status').innerText();
   const m = /Hint: drag (row|column) \d+ (left|right|up|down) (\d+) cells?/.exec(text);
   if (!m) throw new Error(`no hint in: ${text}`);
@@ -115,4 +116,12 @@ export async function solveWithHints(page: Page): Promise<number> {
   }
   await page.getByTestId('win').waitFor();
   return drags;
+}
+
+/** Open Enzyme lab n (1-based) through the level map. */
+export async function openLab(page: Page, n: number): Promise<void> {
+  await fresh(page);
+  await page.getByTestId('open-map').click();
+  await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${n}: `) }).click();
+  await page.getByTestId('board').waitFor();
 }
