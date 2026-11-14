@@ -814,7 +814,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mutation-target-base.mismatch, .lab-cell.mutation-mismatch { outline: 2px solid var(--red); outline-offset: -2px; }
 .mutation-target-base.selected, .lab-cell.mutation-correct.selected, .lab-cell.mutation-mismatch.selected { box-shadow: inset 0 0 0 3px var(--ink); }
 .mutation-selection { font-weight: 700; }
-.mode-lab-mutation { width: min(100%, 420px, calc(100svh - 405px)); min-width: min(100%, 240px); }
+.mode-lab-mutation { width: min(100%, 420px, calc(100svh - 300px)); min-width: min(100%, 240px); }
 
 /* DNA Connections: paired colours identify endpoints, routes and their matching clue. */
 .mode-lab-connections .lab-cell { background: var(--white); }

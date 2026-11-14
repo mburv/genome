@@ -62,6 +62,9 @@ test('Genome Assembly aligns overlapping reads on the board', async ({ page }) =
 
 test('Mutation Detective repairs each complementary mismatch', async ({ page }) => {
   await openLab(page, 'mutation');
+  await expect(page.locator('.mechanic-instructions')).toHaveCount(0);
+  await expect(page.getByText('Target complementary strands · 3′ → 5′', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Green underline = correct · Red outline = needs repair', { exact: true })).toHaveCount(0);
   const target = page.getByTestId('mutation-reference');
   await expect(target).toBeVisible();
   await expect(target.locator('.mutation-reference-row')).toHaveCount(3);
@@ -180,4 +183,19 @@ test('Codon Crush rejected swap returns to the unchanged board; reduced motion s
   await tap(page,12); await tap(page,13);
   await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
   await expect(board).toHaveAttribute('data-crush-phase', 'idle');
+});
+
+
+test('Mutation Detective reclaims board space on a short phone', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await openLab(page, 'mutation');
+  const board = page.getByTestId('mechanics-board');
+  const bounds = (await board.boundingBox())!;
+  expect(bounds.width).toBeGreaterThan(250);
+  expect(Math.abs(bounds.width - bounds.height)).toBeLessThan(2);
+  await expect(page.getByTestId('mutation-reference').locator('.mutation-target-base')).toHaveCount(21);
+  await expect(page.getByTestId('lab-base-A')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeVisible();
+  await tap(page, 20);
+  await expect(page.getByTestId('mutation-selection')).toBeVisible();
 });
