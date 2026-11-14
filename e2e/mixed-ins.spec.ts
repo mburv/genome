@@ -125,3 +125,21 @@ test('sliding tutorial keeps stationary cells opaque and rotates the entire colu
   const solved=await board.locator('[data-demo-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')).join(''));
   expect(solved.slice(36,45)).toBe('ATGGCCCTG');
 });
+
+test('DNA tracing tutorial keeps all bases static while drawing its path once',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();
+  const board=page.getByTestId('tutorial-board');
+  for(let step=1;step<=3;step++){
+    await expect(board.locator('.tutorial-cell')).toHaveCount(81);
+    await expect(board.locator('.tutorial-before,.tutorial-after,.tutorial-change')).toHaveCount(0);
+    const cells=await board.locator('.tutorial-base').evaluateAll(nodes=>nodes.map(n=>({opacity:getComputedStyle(n).opacity,animation:getComputedStyle(n).animationName})));
+    expect(cells.every(c=>c.opacity==='1'&&c.animation==='none')).toBe(true);
+    const path=board.locator('.tutorial-path polyline');
+    await expect(path).toHaveCSS('animation-iteration-count','1');
+    await path.evaluate(el=>{const a=el.getAnimations()[0]!;a.finish();});
+    await expect(path).toHaveCSS('stroke-dashoffset','0px');
+    if(step<3)await page.getByTestId('tutorial-next').click();
+  }
+  await page.getByRole('button',{name:'Replay animation'}).click();
+  await expect(board.locator('.tutorial-path polyline')).toHaveCSS('animation-iteration-count','1');
+});

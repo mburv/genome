@@ -134,11 +134,6 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
   };
   const cursor=item.cursor;
   const from=cursor?xy(cursor[0]):null,to=cursor?xy(cursor[1]):null;
-  const motionStyle=(c:number):CSSProperties|undefined=>{
-    const m=item.motion;if(!m||!m.cells.includes(c))return undefined;
-    const i=m.cells.indexOf(c), dest=m.cells[((i+m.steps)%m.cells.length+m.cells.length)%m.cells.length]!;
-    return {'--demo-dx':(dest%9-c%9)*100+'%','--demo-dy':(Math.floor(dest/9)-Math.floor(c/9))*100+'%'} as CSSProperties;
-  };
   return <div className="overlay tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" data-testid="mechanic-tutorial" data-mechanic={mechanic} onKeyDown={onKey}>
     <div className="card tutorial-card">
       <div className="row-between"><span className="muted small">FIRST-USE GUIDE · {index+1}/{steps.length}</span><button type="button" onClick={onClose} autoFocus data-testid="tutorial-skip">Skip</button></div>
@@ -147,10 +142,15 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
       {item.target && <div className="tutorial-target" aria-label="Example target">{[...item.target].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>}
       <div className={'tutorial-board'+(reducedMotion?' static':'')+(mechanic==='slide'?' slide-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
         {mechanic==='slide' ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : <>
-        {item.before.map((b,c)=><div key={c} className={'tutorial-cell'+(b==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')}>
-          <span className={'tutorial-before b-'+b} style={motionStyle(c)}>{b==='.'||b==='·'?'':b}</span>
-          <span className={'tutorial-after b-'+item.after[c]}>{item.after[c]==='.'||item.after[c]==='·'?'':item.after[c]}</span>
-        </div>)}
+        {item.before.map((b,c)=>{
+          const after=item.after[c]!;
+          const changed=b!==after && !reducedMotion;
+          const shown=reducedMotion?after:b;
+          return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')} data-demo-cell={c}>
+            <span className={'tutorial-base b-'+shown}>{shown==='.'||shown==='·'?'':shown}</span>
+            {changed && <span className={'tutorial-change b-'+after}>{after==='.'||after==='·'?'':after}</span>}
+          </div>;
+        })}
         {item.path && <svg viewBox="0 0 9 9" className="tutorial-path" aria-hidden="true"><polyline points={points(item.path)} pathLength="1" /></svg>}
         {item.cut?.map(c=><span key={c} className="tutorial-cut" style={{left:(c%9+.5)/9*100+'%',top:(Math.floor(c/9)+.5)/9*100+'%'}}>✂</span>)}
         {from&&to&&<span className="tutorial-finger" aria-hidden="true" style={{'--fx':from[0]/9*100+'%','--fy':from[1]/9*100+'%','--tx':to[0]/9*100+'%','--ty':to[1]/9*100+'%'} as CSSProperties}>☝</span>}

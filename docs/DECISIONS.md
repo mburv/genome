@@ -327,3 +327,8 @@ Owner approved integrating all six lab mechanics into INS, with sliding retained
 ### D-TUTORIAL-02 — Accurate sliding demonstration
 
 Owner playtest: remove the pulsing full-board crossfade in the sliding tutorial. Static clue and solved steps remain opaque; the action step shows the actual first INS certificate as a single upward rotation of the entire eight-tile playable column. An opaque clipped strip and wrap duplicates preserve continuous tile movement, with one-shot playback and explicit replay. The finger moves from an interior tile to its neighbour rather than jumping between wrap endpoints. Reduced motion shows the final board immediately. No gameplay or save changes.
+
+
+### D-TUTORIAL-03 — Steady boards throughout tutorials
+
+Owner reported pulsing in DNA Tracing too. Remove shared full-board crossfade from all non-sliding guides. Only changed cells receive a one-shot replacement overlay; tracing and connections keep every base opaque and draw paths once, holding the result. Gesture and cut cues also play once and replay explicitly. Reduced motion displays the final state.
