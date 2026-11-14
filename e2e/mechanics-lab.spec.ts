@@ -116,6 +116,17 @@ test('DNA Connections draws three noncrossing touch paths', async ({ page }) => 
 
 test('Restriction Enzyme isolates the fragment, and replay clears the cuts', async ({ page }) => {
   await openLab(page, 'restriction');
+  const target = page.getByTestId('restriction-target');
+  const chips = target.locator('.restriction-target-base');
+  await expect(chips).toHaveCount(29);
+  expect(await chips.allTextContents()).toEqual([... 'CCCTGGTGCAGGCAGCCTGCAGCCCTTGG']);
+  for (const base of ['A', 'C', 'G', 'T']) {
+    const chip = target.locator('[data-base="' + base + '"]').first();
+    const tile = page.locator('.mechanics-board .lab-cell[data-base="' + base + '"]').first();
+    const style = (el: Element) => ({ background: getComputedStyle(el).backgroundColor, border: getComputedStyle(el).borderTopColor });
+    expect(await chip.evaluate(style)).toEqual(await tile.evaluate(style));
+    await expect(chip).toHaveCSS('font-size', '12px');
+  }
   await tap(page,10); await tap(page,41);
   await won(page);
   await page.getByRole('button', { name: 'Replay', exact: true }).click();
