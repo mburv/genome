@@ -322,3 +322,23 @@ Owner playtest: render the Restriction Enzyme objective as individual base-colou
 ### D-CAMPAIGN-01 — Mixed INS playtest and first-use tutorials
 
 Owner approved integrating all six lab mechanics into INS, with sliding retained. The 13 original stage IDs and CDS intervals remain unchanged: 1 slide, 2 trace, 3 connections, 4 assembly, 5 crush, 6 mutation, 7 trace, 8 slide, 9 mutation, 10 slide, 11 slide, 12 trace, 13 restriction. Each new mechanic uses a deterministic definition and a replayable certificate; only a solved state whose extracted sequence exactly matches its pinned CDS interval grants the existing completion ID. The 333-base checksum and all other genes remain unchanged. Existing unfinished sliding attempts resume their original board; a Classic switch lets players replay original boards. Mixed action logs and tutorial acknowledgements are additive optional v7 fields. Classic best scores are not overwritten by incomparable mixed-mechanic move counts. Restriction uses BsaI top-strand cuts with explicitly synthetic adapters, excluding adapters from coverage. First-use guides are three-step animated demonstrations, skippable/replayable, with reduced-motion snapshots; ? reopens the guide. Lab remains optional practice.
+
+
+### D-TUTORIAL-02 — Accurate sliding demonstration
+
+Owner playtest: remove the pulsing full-board crossfade in the sliding tutorial. Static clue and solved steps remain opaque; the action step shows the actual first INS certificate as a single upward rotation of the entire eight-tile playable column. An opaque clipped strip and wrap duplicates preserve continuous tile movement, with one-shot playback and explicit replay. The finger moves from an interior tile to its neighbour rather than jumping between wrap endpoints. Reduced motion shows the final board immediately. No gameplay or save changes.
+
+
+### D-TUTORIAL-03 — Steady boards throughout tutorials
+
+Owner reported pulsing in DNA Tracing too. Remove shared full-board crossfade from all non-sliding guides. Only changed cells receive a one-shot replacement overlay; tracing and connections keep every base opaque and draw paths once, holding the result. Gesture and cut cues also play once and replay explicitly. Reduced motion displays the final state.
+
+
+### D-UI-33 — Shared classic chrome for DNA Tracing
+
+Owner playtest: tracing uses the same compact gene header, capped TargetShell and coloured clue chips, full-width board-stage sizing, under-board status and standard icon toolbar as sliding. Only the interaction board and trace progress differ. Long clues use existing completed-chip compaction/paging; hint mode persists across campaign mechanics, with a next-base highlight on the certified path. Powers remain unavailable for tracing; the lab practice retains its navigation and separate progress.
+
+
+### D-UI-34 — Trace completion gesture safety
+
+Trace completion happens on the last pointer-down/move, unlike sliding's release. Delay the centered completion banner until the tracing gesture ends, then hold a short 180 ms guard before enabling Replay/Next. This avoids the final touch activating an overlay action underneath the finger. Keep completion credit and resume semantics unchanged.

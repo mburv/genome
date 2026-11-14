@@ -846,21 +846,42 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell.hole { background:var(--hole); }
 .tutorial-cell span { position:absolute; inset:0; display:grid; place-items:center; }
 .tutorial-cell.highlighted { outline:2px solid var(--blue); outline-offset:-2px; z-index:2; }
-.tutorial-before { animation:tutorial-before 2.4s ease-in-out infinite; }
-.tutorial-after { animation:tutorial-after 2.4s ease-in-out infinite; }
-.tutorial-before[style] { z-index:4; }
-@keyframes tutorial-before { 0%,28%{opacity:1;transform:none} 58%{opacity:1;transform:translate(var(--demo-dx,0),var(--demo-dy,0))} 63%,90%{opacity:0;transform:translate(var(--demo-dx,0),var(--demo-dy,0))} 100%{opacity:1;transform:none} }
-@keyframes tutorial-after { 0%,55%{opacity:0} 65%,90%{opacity:1} 100%{opacity:0} }
-.tutorial-finger { position:absolute; z-index:8; left:var(--fx); top:var(--fy); transform:translate(-25%,-20%); font-size:24px; filter:drop-shadow(0 1px 1px #333); pointer-events:none; animation:tutorial-finger 2.4s ease-in-out infinite; }
+.tutorial-base { opacity:1; }
+.tutorial-change { background:var(--white); animation:tutorial-change 1.8s steps(1,end) both; }
+.tutorial-change.b-A { background:var(--A); }
+.tutorial-change.b-C { background:var(--C); }
+.tutorial-change.b-G { background:var(--G); }
+.tutorial-change.b-T { background:var(--T); }
+@keyframes tutorial-change { 0%,55% { opacity:0; } 56%,100% { opacity:1; } }
+.tutorial-finger { position:absolute; z-index:8; left:var(--fx); top:var(--fy); transform:translate(-25%,-20%); font-size:24px; filter:drop-shadow(0 1px 1px #333); pointer-events:none; animation:tutorial-finger 1.8s ease-in-out both; }
 @keyframes tutorial-finger { 0%,20%{left:var(--fx);top:var(--fy);opacity:0} 30%{opacity:1} 65%,85%{left:var(--tx);top:var(--ty);opacity:1} 100%{left:var(--tx);top:var(--ty);opacity:0} }
 .tutorial-path { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5; }
-.tutorial-path polyline { fill:none; stroke:var(--blue); stroke-width:.18; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; animation:tutorial-path 2.4s ease-in-out infinite; }
+.tutorial-path polyline { fill:none; stroke:var(--blue); stroke-width:.18; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; animation:tutorial-path 1.8s ease-in-out both; }
 @keyframes tutorial-path { 0%,20%{stroke-dashoffset:1} 70%,100%{stroke-dashoffset:0} }
-.tutorial-cut { position:absolute; z-index:6; transform:translate(-50%,-50%); color:var(--red); font-size:17px; animation:tutorial-cut 2.4s ease-in-out infinite; }
+.tutorial-cut { position:absolute; z-index:6; transform:translate(-50%,-50%); color:var(--red); font-size:17px; animation:tutorial-cut 1.8s ease-in-out both; }
 @keyframes tutorial-cut { 0%,35%{opacity:0} 65%,100%{opacity:1} }
 .tutorial-actions { display:flex; gap:4px; }
 .tutorial-actions button { flex:1; min-height:40px; font-size:12px; padding:5px; }
-.tutorial-board.static .tutorial-before { opacity:0; animation:none; }
-.tutorial-board.static .tutorial-after { opacity:1; animation:none; }
 .tutorial-board.static .tutorial-finger,.tutorial-board.static .tutorial-path polyline,.tutorial-board.static .tutorial-cut { animation:none; }
-@media(prefers-reduced-motion:reduce){.tutorial-before{opacity:0;animation:none}.tutorial-after{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut{animation:none}}
+@media(prefers-reduced-motion:reduce){.tutorial-change{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut{animation:none}}
+
+/* Sliding guide: one opaque strip, clipped to the exact playable segment. No board crossfade. */
+.slide-demo .tutorial-slide-static { opacity:1; animation:none; }
+.tutorial-slide-clip { position:absolute; inset:0; overflow:hidden; background:var(--rule); z-index:4; outline:2px solid var(--blue); outline-offset:-2px; pointer-events:none; }
+.tutorial-slide-strip { position:absolute; inset:0; animation:tutorial-slide-up 1.4s ease-in-out both; }
+.tutorial-slide-clip.row .tutorial-slide-strip { animation-name:tutorial-slide-across; }
+.tutorial-slide-tile { position:absolute; display:grid; place-items:center; font:700 11px var(--mono); }
+@keyframes tutorial-slide-up { 0%,25% { transform:translateY(0); } 75%,100% { transform:translateY(var(--slide-demo-shift)); } }
+@keyframes tutorial-slide-across { 0%,25% { transform:translateX(0); } 75%,100% { transform:translateX(var(--slide-demo-shift)); } }
+.tutorial-slide-finger { position:absolute; z-index:8; left:var(--fx); top:var(--fy); transform:translate(-25%,-20%); font-size:24px; pointer-events:none; animation:tutorial-slide-finger 1.4s ease-in-out both; }
+@keyframes tutorial-slide-finger { 0%,25%{left:var(--fx);top:var(--fy);opacity:1} 75%{left:var(--tx);top:var(--ty);opacity:1} 100%{left:var(--tx);top:var(--ty);opacity:0} }
+@media(prefers-reduced-motion:reduce){.tutorial-slide-strip,.tutorial-slide-finger{animation:none}}
+
+/* Tracing uses the existing classic play-screen dimensions and controls. */
+.mechanics-board.trace-board { width:100%; min-width:0; max-width:var(--board); aspect-ratio:1; margin:0; align-self:auto; gap:var(--gap); box-shadow:0 -1px 0 var(--ink),0 1px 0 var(--ink); }
+.trace-board .lab-cell { font-family:var(--sans); font-size:calc(var(--board) / 15); color:var(--tile-ink); font-weight:700; }
+.trace-board .lab-hole { background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole); }
+.trace-board .lab-cell:disabled { opacity:.78; }
+.trace-status { min-height:1.4em; }
+.trace-lab-back { padding:6px; }
+.trace-solved .seq-wrap { overflow-wrap:anywhere; }

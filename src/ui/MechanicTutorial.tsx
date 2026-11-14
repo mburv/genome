@@ -12,13 +12,14 @@ function demonstration(mechanic: Mechanic, stage: MixedStage | null): Step[] {
     const def = ALL_LEVELS.find(l => l.id === 'ins-01')!;
     const move = def.certificateSlides[0]!;
     const cells = segmentCells(def.mask,move.origin,move.axis);
-    const i = Math.max(0,Math.min(cells.length-1,cells.indexOf(move.origin)));
-    const end = cells[(i + move.steps + cells.length) % cells.length]!;
+    const i = Math.floor(cells.length / 2);
+    const origin = cells[i]!;
+    const end = cells[i + move.steps]!;
     const after = applySlide(def.mask,def.initial,move.origin,move.axis,move.steps).board;
     const target = def.tracks[0]!.expected;
     return [
       {title:'Read the target',text:'Build the DNA shown in the clue. The marked cells must spell the sequence in order.',before:[...def.initial],after:[...def.initial],cells:def.tracks[0]!.cells,target},
-      {title:'Swipe a row or column',text:'Drag a tile horizontally or vertically. Every tile in that uninterrupted segment moves with it. Tiles wrap around; holes stop the segment.',before:[...def.initial],after:[...after],cells,cursor:[move.origin,end],target,motion:{cells,axis:move.axis,steps:move.steps}},
+      {title:'Slide the whole column',text:'Swipe up one square. Every tile in the column segment moves together; the top tile wraps to the bottom. Holes stop a segment. Horizontal swipes move rows in the same way.',before:[...def.initial],after:[...after],cells,cursor:[origin,end],target,motion:{cells,axis:move.axis,steps:move.steps}},
       {title:'Match all clues',text:'Keep sliding until every target base is in its marked slot. Undo reverses a move; Hint shows the next recovery move.',before:[...after],after:[...def.solved],cells:def.tracks[0]!.cells,target},
     ];
   }
@@ -80,6 +81,41 @@ function demonstration(mechanic: Mechanic, stage: MixedStage | null): Step[] {
 }
 const xy=(c:number):[number,number]=>[c%9+.5,Math.floor(c/9)+.5];
 const points=(p:readonly number[])=>p.map(c=>xy(c).join(',')).join(' ');
+/** One opaque, clipped strip moves as a unit, with a duplicate at each end for wrapping.
+ * The stationary board is never faded or animated. */
+function SlideTutorialBoard({ item, index, reducedMotion }: { item: Step; index: number; reducedMotion: boolean }) {
+  const motion = item.motion;
+  const moving = !!motion && !reducedMotion;
+  const board = reducedMotion || index === 2 ? item.after : item.before;
+  const cells = motion?.cells ?? [];
+  const n = cells.length;
+  const start = cells[0] ?? 0, end = cells.at(-1) ?? 0;
+  const axis = motion?.axis ?? 'col';
+  const stripStyle = {
+    gridColumn: axis === 'col' ? (start % 9 + 1) + ' / span 1' : (start % 9 + 1) + ' / ' + (end % 9 + 2),
+    gridRow: axis === 'col' ? (Math.floor(start / 9) + 1) + ' / ' + (Math.floor(end / 9) + 2) : (Math.floor(start / 9) + 1) + ' / span 1',
+    '--slide-demo-shift': 'calc(' + ((motion?.steps ?? 0) * 100 / Math.max(1,n)) + '% + ' + ((motion?.steps ?? 0) / Math.max(1,n)) + 'px)',
+  } as CSSProperties;
+  const from = item.cursor ? xy(item.cursor[0]) : null, to = item.cursor ? xy(item.cursor[1]) : null;
+  return <>
+    {board.map((b,c)=><div key={c} className={'tutorial-cell'+(b==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')} data-demo-cell={c} data-base={b}>
+      {b!=='.' && <span className={'tutorial-slide-static b-'+b}>{b}</span>}
+    </div>)}
+    {moving && <div className={'tutorial-slide-clip '+axis} style={stripStyle} data-testid="tutorial-slide-column" data-segment={cells.join(',')}>
+      <div className="tutorial-slide-strip" data-testid="tutorial-slide-strip">
+        {Array.from({length:n+2},(_,k)=>{
+          const i=k-1, source=cells[((i%n)+n)%n]!, b=item.before[source]!;
+          const position='calc('+(i*100/n)+'% + '+(i/n)+'px)';
+          const size='calc('+(100/n)+'% - '+((n-1)/n)+'px)';
+          const style:CSSProperties=axis==='col'?{top:position,height:size,left:0,right:0}:{left:position,width:size,top:0,bottom:0};
+          return <span key={i} className={'tutorial-slide-tile b-'+b} style={style} data-source-cell={source} data-wrap={i<0||i>=n?'true':'false'}>{b}</span>;
+        })}
+      </div>
+    </div>}
+    {moving && from && to && <span className="tutorial-slide-finger" aria-hidden="true" style={{'--fx':from[0]/9*100+'%','--fy':from[1]/9*100+'%','--tx':to[0]/9*100+'%','--ty':to[1]/9*100+'%'} as CSSProperties}>☝</span>}
+  </>;
+}
+
 export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { mechanic:Mechanic; stage:MixedStage|null; reducedMotion:boolean; onClose:()=>void }) {
   const [index,setIndex]=useState(0);
   const [replay,setReplay]=useState(0);
@@ -98,25 +134,27 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
   };
   const cursor=item.cursor;
   const from=cursor?xy(cursor[0]):null,to=cursor?xy(cursor[1]):null;
-  const motionStyle=(c:number):CSSProperties|undefined=>{
-    const m=item.motion;if(!m||!m.cells.includes(c))return undefined;
-    const i=m.cells.indexOf(c), dest=m.cells[((i+m.steps)%m.cells.length+m.cells.length)%m.cells.length]!;
-    return {'--demo-dx':(dest%9-c%9)*100+'%','--demo-dy':(Math.floor(dest/9)-Math.floor(c/9))*100+'%'} as CSSProperties;
-  };
   return <div className="overlay tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" data-testid="mechanic-tutorial" data-mechanic={mechanic} onKeyDown={onKey}>
     <div className="card tutorial-card">
       <div className="row-between"><span className="muted small">FIRST-USE GUIDE · {index+1}/{steps.length}</span><button type="button" onClick={onClose} autoFocus data-testid="tutorial-skip">Skip</button></div>
       <h3 id="tutorial-title">{title}</h3>
       <h4>{item.title}</h4><p className="small">{item.text}</p>
       {item.target && <div className="tutorial-target" aria-label="Example target">{[...item.target].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>}
-      <div className={'tutorial-board'+(reducedMotion?' static':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
-        {item.before.map((b,c)=><div key={c} className={'tutorial-cell'+(b==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')}>
-          <span className={'tutorial-before b-'+b} style={motionStyle(c)}>{b==='.'||b==='·'?'':b}</span>
-          <span className={'tutorial-after b-'+item.after[c]}>{item.after[c]==='.'||item.after[c]==='·'?'':item.after[c]}</span>
-        </div>)}
+      <div className={'tutorial-board'+(reducedMotion?' static':'')+(mechanic==='slide'?' slide-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
+        {mechanic==='slide' ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : <>
+        {item.before.map((b,c)=>{
+          const after=item.after[c]!;
+          const changed=b!==after && !reducedMotion;
+          const shown=reducedMotion?after:b;
+          return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')} data-demo-cell={c}>
+            <span className={'tutorial-base b-'+shown}>{shown==='.'||shown==='·'?'':shown}</span>
+            {changed && <span className={'tutorial-change b-'+after}>{after==='.'||after==='·'?'':after}</span>}
+          </div>;
+        })}
         {item.path && <svg viewBox="0 0 9 9" className="tutorial-path" aria-hidden="true"><polyline points={points(item.path)} pathLength="1" /></svg>}
         {item.cut?.map(c=><span key={c} className="tutorial-cut" style={{left:(c%9+.5)/9*100+'%',top:(Math.floor(c/9)+.5)/9*100+'%'}}>✂</span>)}
         {from&&to&&<span className="tutorial-finger" aria-hidden="true" style={{'--fx':from[0]/9*100+'%','--fy':from[1]/9*100+'%','--tx':to[0]/9*100+'%','--ty':to[1]/9*100+'%'} as CSSProperties}>☝</span>}
+        </>}
       </div>
       <div className="tutorial-actions"><button type="button" onClick={()=>move(index-1)} disabled={index===0}>Back</button><button type="button" onClick={()=>setReplay(n=>n+1)}>Replay animation</button><button type="button" className="primary" data-testid="tutorial-next" onClick={()=>index===steps.length-1?onClose():move(index+1)}>{index===steps.length-1?'Play':'Next step →'}</button></div>
     </div>

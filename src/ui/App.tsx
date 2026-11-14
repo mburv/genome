@@ -46,7 +46,9 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   );
 
   const def = ALL_LEVELS.find((l) => l.id === save.currentLevelId) ?? ALL_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
-  const heading = playHeading(def);
+  const labTrace = screen.kind === 'mechanic' && screen.id === 'trace';
+  const playChrome = screen.kind === 'play' || labTrace;
+  const heading = labTrace ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
   const stage = useMemo(() => mixedStage(def), [def]);
   const useMixed = !!stage && !classic && (!!save.mixedAttempts?.[def.id] || !save.attempts[def.id] || save.completed.includes(def.id));
   const activeMechanic: Mechanic | null = screen.kind === 'play' ? useMixed ? stage!.mechanic : 'slide' : screen.kind === 'mechanic' ? screen.id : null;
@@ -92,10 +94,10 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   return (
     <main className={`app${reducedMotion ? ' reduced-motion' : ''}${screen.kind === 'title' ? ' on-title' : ''}`}>
       {screen.kind !== 'title' && (
-      <header className={`top${screen.kind === 'play' ? ' play-top' : ''}${headerCollapsed ? ' collapsed' : ''}`} data-testid={screen.kind === 'play' ? 'play-top' : 'app-top'}>
+      <header className={`top${playChrome ? ' play-top' : ''}${headerCollapsed ? ' collapsed' : ''}`} data-testid={playChrome ? 'play-top' : 'app-top'}>
         <div className="top-collapse">
           <div className="top-collapse-inner" aria-hidden={headerCollapsed || undefined} inert={headerCollapsed || undefined}>
-            {screen.kind === 'play' ? (
+            {playChrome ? (
               <div className="play-heading" data-testid="play-heading">
                 <div className="play-title-row">
                   <h1 data-testid="play-title">{heading.title}</h1>
@@ -151,7 +153,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       )}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
-      {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
+      {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
         stage, initialActions: save.mixedAttempts?.[def.id] ?? [], part: runProgress(def)!.part, of: runProgress(def)!.of,
         covered: assemblyStatus(save.completed, GENES.INS!).covered, assembled: assemblyStatus(save.completed, GENES.INS!).verified,
         onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1]; if (next) play(next.id); else go({ kind: 'map' }); }
