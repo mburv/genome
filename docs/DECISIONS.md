@@ -347,3 +347,8 @@ Trace completion happens on the last pointer-down/move, unlike sliding's release
 ### D-UI-35 — Shared completion experience
 
 Owner playtest: all six mixed mechanics use the original WinCard and SolvedBanner components, including the existing strand pop animation, close button, and next/map actions. Display the exact extracted coding fragment, not the replaced sliding board's tracks. Practice remains uncredited, replay awards no duplicate bases, and mixed solves do not use sliding par or star scores. Wait until the final gesture/Crush animation has finished before showing the dialog. Reopening a solved attempt shows the calm banner rather than repeating the celebration.
+
+
+### D-UI-36 — Shared play layout for every mechanic
+
+Owner playtest: extend DNA Tracing's traditional sliding screen chrome to Codon Crush, Genome Assembly, Mutation Detective, DNA Connections and Restriction Enzyme. All campaign and practice screens use the existing gene header, TargetShell, board-stage dimensions, under-board status and PowerTray icons. Mechanic-specific target colours, position labels, animations, and mutation replacement picker remain; tutorials carry the long instructions. Clue panels reserve height to avoid shifting during gestures; campaign Hint toggle persists between mechanics. No changes to rules, DNA, scores or saves.

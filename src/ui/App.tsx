@@ -46,9 +46,9 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   );
 
   const def = ALL_LEVELS.find((l) => l.id === save.currentLevelId) ?? ALL_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
-  const labTrace = screen.kind === 'mechanic' && screen.id === 'trace';
-  const playChrome = screen.kind === 'play' || labTrace;
-  const heading = labTrace ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
+  const labPlay = screen.kind === 'mechanic';
+  const playChrome = screen.kind === 'play' || labPlay;
+  const heading = labPlay ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
   const stage = useMemo(() => mixedStage(def), [def]);
   const useMixed = !!stage && !classic && (!!save.mixedAttempts?.[def.id] || !save.attempts[def.id] || save.completed.includes(def.id));
   const activeMechanic: Mechanic | null = screen.kind === 'play' ? useMixed ? stage!.mechanic : 'slide' : screen.kind === 'mechanic' ? screen.id : null;

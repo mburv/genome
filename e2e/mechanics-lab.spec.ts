@@ -9,6 +9,10 @@ async function openLab(page: Page, id: string) {
   await page.getByTestId('mechanic-' + id).click();
   await expect(page.getByTestId('mechanics-board')).toBeVisible();
   await expect(page.locator('[data-lab-cell]')).toHaveCount(81);
+  await expect(page.getByTestId('play-title')).toHaveText('INS');
+  await expect(page.getByTestId('play-progress')).toHaveText('PRACTICE');
+  await expect(page.getByTestId('target-panel')).toBeVisible();
+  await expect(page.getByTestId('icon-row')).toBeVisible();
 }
 const tile = (page: Page, c: number) => page.getByTestId('lab-cell-' + c);
 async function tap(page: Page, c: number) { await tile(page, c).tap(); }
@@ -35,7 +39,7 @@ test('mechanics menu exposes six separate games and leaves campaign save untouch
   await trace(page, [10,11,12,21,30,31,40,49,50]);
   await won(page);
   await page.getByRole('button', { name: 'Next mechanic' }).click();
-  await expect(page.getByRole('heading', { name: 'Codon Crush' })).toBeVisible();
+  await expect(page.getByTestId('target-panel').locator('.target-title')).toHaveText('Codon Crush');
   expect(await page.evaluate(() => localStorage.getItem('genome-save'))).toBe(before);
 });
 
