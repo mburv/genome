@@ -75,7 +75,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
     else if(s.kind==='mutation'){
       const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('data-lab-cell'))));
       for(const c of cells){const want=await page.getByTestId('mutation-target-'+c).textContent();await tile(page,c).tap();await page.getByTestId('lab-base-'+want).tap();}
-    }else if(s.kind==='restriction'){await tile(page,6).tap();await tile(page,44).tap();}
+    }else if(s.kind==='restriction'){await tile(page,6).tap();await tile(page,53).tap();}
     if(s.kind!=='slide')await expect(page.getByTestId('mixed-coverage')).toHaveText(s.end+'/333 bp assembled');
     const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('genome-save')!));
     expect(saved.completed).toContain(s.id);
