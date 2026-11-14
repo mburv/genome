@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { dragBy, goToChapter, openChapter, readHint } from './helpers';
+import { dragBy, goToChapter, openChapter, openMap, readHint } from './helpers';
 
 test('Hint stays on across consecutive moves, undo and restart, then turns off', async ({ page }) => {
   await openChapter(page, 'hbb-c07');
@@ -36,8 +36,16 @@ test('Hint mode carries across puzzles and pauses during power targeting', async
   const toggle = page.getByRole('button', { name: 'Hint' });
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('hint-cue')).toBeVisible();
-  await goToChapter(page, 'hbb-c07');
+  await openMap(page);
+  await page.getByRole('button', { name: /^Enzyme lab 1: / }).click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('hint-cue')).toBeVisible();
+  await page.getByTestId('power-crispr').click();
+  await expect(page.getByTestId('power-panel')).toBeVisible();
+  await expect(page.getByTestId('hint-cue')).toHaveCount(0);
+  await page.getByTestId('power-cancel').click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('hint-cue')).toBeVisible();
   await toggle.click();
   await expect(page.getByTestId('hint-cue')).toHaveCount(0);
 });
