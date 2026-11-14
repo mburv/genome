@@ -45,7 +45,7 @@ test('Codon Crush swaps, refills, and supports undo', async ({ page }) => {
   await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/3 codons');
-  for (const [a,b] of [[12,13],[39,40],[66,67]] as const) { await tap(page,a); await tap(page,b); }
+  for (const [a,b] of [[12,13],[39,40],[66,67]] as const) { await tap(page,a); await tap(page,b); await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase', 'idle'); }
   await won(page);
 });
 
@@ -78,4 +78,52 @@ test('Restriction Enzyme isolates the fragment, and replay clears the cuts', asy
   await page.getByRole('button', { name: 'Replay', exact: true }).click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/2 cuts');
   await expect(page.getByTestId('lab-win')).toHaveCount(0);
+});
+
+test('Codon Crush follows a held finger and shows swap, clear and falling phases before committing', async ({ page }) => {
+  await openLab(page, 'crush');
+  const board = page.getByTestId('mechanics-board');
+  const a = tile(page,12), b = tile(page,13);
+  const aa = (await a.boundingBox())!, bb = (await b.boundingBox())!;
+  const p = { x: aa.x + aa.width / 2, y: aa.y + aa.height / 2 };
+  const end = { x: bb.x + bb.width / 2, y: bb.y + bb.height / 2 };
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [p] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: p.x + (end.x - p.x) * .6, y: p.y }] });
+  await expect(board).toHaveAttribute('data-crush-phase', 'drag');
+  await expect(a).toHaveClass(/crush-moving/);
+  await expect(b).toHaveClass(/crush-moving/);
+  expect((await a.boundingBox())!.x).toBeGreaterThan(aa.x + 5);
+  expect((await b.boundingBox())!.x).toBeLessThan(bb.x - 5);
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/3 codons');
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(board).toHaveAttribute('data-crush-phase', 'swap');
+  await expect(board).toHaveAttribute('data-crush-phase', 'clear');
+  await expect(board.locator('.crush-clearing')).toHaveCount(3);
+  await expect(board).toHaveAttribute('data-crush-phase', 'fall');
+  await expect(board.locator('.crush-new')).toHaveCount(3);
+  expect(await board.locator('.crush-falling:not(.crush-new)').count()).toBeGreaterThan(0);
+  await expect(board).toHaveAttribute('data-crush-phase', 'idle');
+  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
+  await cdp.detach();
+});
+
+test('Codon Crush rejected swap returns to the unchanged board; reduced motion skips stages', async ({ page }) => {
+  await openLab(page, 'crush');
+  const board = page.getByTestId('mechanics-board');
+  const snapshot = () => board.locator('.lab-cell').evaluateAll(cells => cells.map(c => c.getAttribute('data-base')).join(''));
+  const before = await snapshot();
+  // Identical bases produce a rejected swap; choose a known nonmatching adjacent pair.
+  await tap(page,10); await tap(page,11);
+  await expect(board).toHaveAttribute('data-crush-phase', 'return');
+  await expect(board).toHaveAttribute('data-crush-phase', 'idle');
+  expect(await snapshot()).toBe(before);
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/3 codons');
+  await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.reload();
+  await openMap(page); await page.getByTestId('open-mechanics').click(); await page.getByTestId('mechanic-crush').click();
+  await tap(page,12); await tap(page,13);
+  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
+  await expect(board).toHaveAttribute('data-crush-phase', 'idle');
 });

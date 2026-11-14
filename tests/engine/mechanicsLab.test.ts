@@ -32,7 +32,18 @@ describe('Mechanics Lab', () => {
     expect(applyLab(state, { type: 'swap', a: 10, b: 40 }).state).toBe(state);
     const mask = state.board.map(b => b === '.');
     CRUSH_SWAPS.forEach(([a, b], i) => {
-      const next = applyLab(state, { type: 'swap', a, b }).state;
+      const result = applyLab(state, { type: 'swap', a, b });
+      const next = result.state;
+      const frame = result.crush!;
+      expect(frame.matched.map(c => frame.swapped[c]).join('')).toBe(CRUSH_TARGETS[i]);
+      expect(frame.falls.filter(f => f.from === null).map(f => f.to)).toEqual(next.fresh);
+      for (const fall of frame.falls) {
+        if (fall.from !== null) {
+          expect(next.board[fall.to]).toBe(frame.swapped[fall.from]);
+          expect(fall.to - fall.from).toBe(fall.rows * 9);
+          for (let c = fall.from; c <= fall.to; c += 9) expect(state.board[c]).not.toBe('.');
+        }
+      }
       expect(next.collected).toBe(i + 1);
       expect(next.refill).toBe(3 * (i + 1));
       expect(next.board.map(b => b === '.')).toEqual(mask);
