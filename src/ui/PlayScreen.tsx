@@ -60,7 +60,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const [selected, setSelected] = useState<Cell>(() => defaultSelection(def, puzzle));
   const [hintRes, setHintRes] = useState<{ key: string; hint: Hint } | null>(null);
   const [animation, setAnimation] = useState<MoveAnimation | null>(null);
-  const [celebrate, setCelebrate] = useState<{ newBases: number; discovered: boolean; assembled: boolean } | null>(null);
+  const [celebrate, setCelebrate] = useState<{ newBases: number; discovered: boolean; assembled: boolean; replayed: boolean } | null>(null);
   const [preview, setPreview] = useState<SlidePreview | null>(null);
   const [targeting, setTargeting] = useState<Power | null>(null);
   const [pending, setPending] = useState<PowerPreview | null>(null);
@@ -153,7 +153,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             if (def.lab) {
               next = recordCompletion(next, def.id);
               next = recordBest(next, def.id, { moves: result.state.moves, powersUsed: used });
-              setCelebrate({ newBases: 0, discovered: false, assembled: false });
+              setCelebrate({ newBases: 0, discovered: false, assembled: false, replayed: alreadyCompleted });
             } else {
               // Bases are counted as a union over every completed chapter puzzle of the gene.
               const before = assemblyStatus(next.completed, gene).covered;
@@ -164,7 +164,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
               const wasAssembled = next.assembled.includes(def.symbol);
               next = recordAssembly(next, def.symbol);
               const assembledNow = !wasAssembled && next.assembled.includes(def.symbol);
-              setCelebrate({ newBases: assemblyStatus(next.completed, gene).covered - before, discovered: discoveredNow, assembled: assembledNow });
+              setCelebrate({ newBases: assemblyStatus(next.completed, gene).covered - before, discovered: discoveredNow, assembled: assembledNow, replayed: alreadyCompleted });
             }
             sound = 'win';
             break;
@@ -178,7 +178,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       persist(next);
       return true;
     },
-    [def, gene, save, persist, cue, powersUsed],
+    [def, gene, save, persist, cue, powersUsed, alreadyCompleted],
   );
 
   const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command)), [commit, def, puzzle]);
@@ -426,6 +426,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           moves={puzzle.moves}
           powersUsed={powersUsed}
           newBases={celebrate.newBases}
+          replayed={celebrate.replayed}
           assembled={celebrate.assembled}
           assembledBases={assembly.covered}
           cdsLength={gene.cdsLength}

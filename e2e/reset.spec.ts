@@ -76,7 +76,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await expect(page.getByTestId('board')).toHaveCount(0);
     await expect(page.getByTestId('settings')).toHaveCount(0);
     await expect(page.getByTestId('reset-confirm')).toHaveCount(0);
-    await expect(page.getByTestId('continue')).toHaveText(/Start · INS 1\/14/);
+    await expect(page.getByTestId('continue')).toHaveText(/Start · INS 1\/13/);
     if (size.width === 390) {
       await page.screenshot({ path: '/workspace/game/screenshots/genome-basics-map-390x844.png', animations: 'disabled' });
     }
@@ -86,7 +86,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await expect(page.getByTestId('toggle-haptics')).not.toBeChecked();
     await expect(page.getByTestId('toggle-motion')).not.toBeChecked();
     await page.getByTestId('open-map').click();
-    await expect(page.getByTestId('continue')).toHaveText(/Start · INS 1\/14/);
+    await expect(page.getByTestId('continue')).toHaveText(/Start · INS 1\/13/);
     await expect(page.getByTestId('cat-progress-INS')).toContainText('0 / 333');
     await expect(page.getByTestId('cat-progress-HBB')).toContainText('0 / 444');
     await expect(page.locator('.cnode.done')).toHaveCount(0);

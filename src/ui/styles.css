@@ -113,9 +113,9 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .strip-cell.gap.restored { border-style: solid; animation: restore 0.5s ease both; }
 .seq-row, .repair-row, .splice-row, .pair-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 .repair-row { gap: 3px; }
-.splice-row { gap: 4px 2px; }
-.splice-part { display: inline-flex; align-items: center; gap: 3px; }
-.plus { color: var(--graphite); font-weight: 700; padding: 0 3px; }
+.splice-row { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.splice-part { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; min-width: 0; width: 100%; }
+.plus { color: var(--graphite); font-weight: 700; padding: 0 3px; flex: none; }
 .pair { margin-top: 4px; }
 .pair-row { margin-top: 2px; flex-wrap: nowrap; }
 .pair-row .end, .win-line .end { font-size: 11px; color: var(--graphite); width: 14px; text-align: center; font-family: var(--mono); }

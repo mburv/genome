@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/chapters.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted } from './helpers';
+import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted, openMap } from './helpers';
 
 const def = (pack.levels as LevelDefinition[])[0]!;
 
@@ -216,10 +216,10 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
   });
 }
 
-test('INS 7/14 has no full-sequence box or tile inspector under the board', async ({ page }) => {
+test('INS 7/13 has no full-sequence box or tile inspector under the board', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openChapter(page, 'ins-c01');
-  await expect(page.getByTestId('play-progress')).toHaveText('7/14');
+  await expect(page.getByTestId('play-progress')).toHaveText('7/13');
   await expect(page.getByTestId('target-panel')).toBeVisible();
   await expect(page.getByTestId('target-sequence')).toHaveCount(0);
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
@@ -227,4 +227,29 @@ test('INS 7/14 has no full-sequence box or tile inspector under the board', asyn
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
   await expect(page.getByTestId('energy')).toBeVisible();
   await page.screenshot({ path: '/workspace/game/screenshots/genome-ins7-tidy-390x844.png' });
+});
+
+test('splice clue keeps + on piece 1’s line and aligns piece numbers at 320 and 390', async ({ page }) => {
+  for (const width of [320, 390] as const) {
+    await page.setViewportSize({ width, height: 844 });
+    await openChapter(page, 'ins-c02');
+    await expect(page.getByTestId('target-panel')).toBeVisible();
+    await expect(page.getByTestId('splice-part-1').locator('.plus')).toHaveCount(1);
+    await expect(page.getByTestId('splice-part-2').locator('.plus')).toHaveCount(0);
+    const xs = await page.locator('[data-testid^="splice-badge-"]').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().x));
+    expect(xs.length).toBeGreaterThanOrEqual(2);
+    for (const x of xs) expect(Math.abs(x - xs[0]!)).toBeLessThanOrEqual(1);
+    if (width === 390) {
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-align-390x844.png' });
+    }
+  }
+});
+
+test('level map lists the re-planned INS run without overlapping chapters', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fresh(page);
+  await openMap(page);
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('13 puzzles');
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('6 intro + 7 assembly');
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-progression-map-390x844.png' });
 });

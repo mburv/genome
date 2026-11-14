@@ -21,7 +21,7 @@ test('self-contained single HTML loads and plays from file://', async ({ page })
   await expect(page.getByTestId('level-map')).toBeVisible();
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('play-title')).toHaveText('INS');
-  await expect(page.getByTestId('play-progress')).toHaveText('2/14');
+  await expect(page.getByTestId('play-progress')).toHaveText('2/13');
   await expect(page.getByTestId('play-fullname')).toHaveText('INSULIN');
   expect(requests).toEqual([]);
   expect(errors).toEqual([]);

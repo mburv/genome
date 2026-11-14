@@ -2,12 +2,13 @@ import type { LevelSpec, TrackLayout } from '../generator/level.ts';
 import type { LevelMode } from '../engine/types.ts';
 
 /**
- * M4 full-CDS assembly chapters. Each gene's CDS is partitioned into ordered, non-overlapping
- * intervals that tile [0, cdsLength) exactly; each interval becomes one puzzle whose tiles carry
+ * M4 full-CDS assembly chapters. Each gene's remaining CDS (after any 1-base intros) is partitioned
+ * into ordered, non-overlapping intervals that continue from where the previous puzzle ended; intros
+ * plus chapters tile [0, cdsLength) exactly once. Each interval becomes one puzzle whose tiles carry
  * pieces of `k` bases (k = 3 codon tiles → 6 → 12 → 24 for long genes). The 9×9 board, segment
  * rotation and win rule are unchanged; only the token size grows. Pure and deterministic.
  */
-export const TOKEN_GENERATOR_VERSION = 'm4-tok-1';
+export const TOKEN_GENERATOR_VERSION = 'm4-tok-2';
 export const MIN_CHAPTER = 6;
 export const MAX_CHAPTER = 10;
 
@@ -73,13 +74,45 @@ export interface PlannedPuzzle {
   cells: number;
 }
 
-/** Partition a CDS into chapter puzzles (pure). Throws if the CDS is outside the chapter policy. */
-export function planChapter(cdsLength: number): PlannedPuzzle[] {
+/** End of 1-base intro coverage for a gene (0 if it has no intros). Intervals are half-open. */
+export function introCoverageEnd(specs: readonly { gene: string; lab?: string | undefined; source: { end: number } }[], symbol: string): number {
+  const ends = specs.filter((s) => s.gene === symbol && !s.lab).map((s) => s.source.end);
+  return ends.length ? Math.max(...ends) : 0;
+}
+
+/**
+ * Campaign-run coverage errors for one gene: every non-lab puzzle must add a fresh, contiguous
+ * stretch, and the union must be exactly [0, cdsLength). Labs are ignored.
+ */
+export function geneRunCoverageErrors(
+  levels: readonly { id: string; symbol: string; lab?: string | undefined; sourceIntervals: readonly { start: number; end: number }[] }[],
+  symbol: string,
+  cdsLength: number,
+): string[] {
+  const run = levels.filter((l) => l.symbol === symbol && !l.lab);
+  const errors: string[] = [];
+  const ivs = run.flatMap((l) => l.sourceIntervals.map((iv) => ({ id: l.id, ...iv }))).sort((a, b) => a.start - b.start || a.end - b.end);
+  if (!ivs.length) return [`${symbol}: no campaign puzzles`];
+  let end = 0;
+  for (const iv of ivs) {
+    if (iv.start < end) errors.push(`${symbol}: ${iv.id} overlaps previous coverage at CDS ${iv.start + 1}–${iv.end}`);
+    else if (iv.start > end) errors.push(`${symbol}: gap before ${iv.id} (CDS ${end + 1}–${iv.start})`);
+    end = Math.max(end, iv.end);
+  }
+  if (ivs[0]!.start !== 0) errors.push(`${symbol}: coverage starts at ${ivs[0]!.start}, not 0`);
+  if (end !== cdsLength) errors.push(`${symbol}: coverage ends at ${end}, not ${cdsLength}`);
+  return errors;
+}
+
+/** Partition a CDS into chapter puzzles (pure). `start` is the first uncovered base (after intros). */
+export function planChapter(cdsLength: number, start = 0): PlannedPuzzle[] {
   if (cdsLength % 3 !== 0 || cdsLength < 9 * 3 * MIN_CHAPTER) throw new Error(`CDS length ${cdsLength} outside chapter policy`);
-  const ks = TIERS.find((t) => tierCapacity(t) >= cdsLength);
-  if (!ks) throw new Error(`CDS ${cdsLength} bp exceeds the largest tier (${MAX_ASSEMBLY_CDS} bp)`);
+  if (start < 0 || start > cdsLength || start % 3 !== 0) throw new Error(`chapter start ${start} is not a valid CDS offset`);
+  const remaining = cdsLength - start;
+  const ks = TIERS.find((t) => tierCapacity(t) >= remaining);
+  if (!ks) throw new Error(`CDS ${cdsLength} bp from ${start} exceeds the largest tier (${MAX_ASSEMBLY_CDS} bp)`);
   const out: PlannedPuzzle[] = [];
-  let pos = 0;
+  let pos = start;
   for (let i = 0; i < SHAPES.length && pos < cdsLength; i++) {
     const shape = SHAPES[i]!;
     let k = ks[i]!;
@@ -104,8 +137,8 @@ export function planChapter(cdsLength: number): PlannedPuzzle[] {
 }
 
 /** Level specs for one gene's assembly chapter. `geneIndex` keeps seeds distinct across genes. */
-export function chapterSpecs(gene: ChapterGene, geneIndex: number, firstIndex: number): LevelSpec[] {
-  const plan = planChapter(gene.cdsLength);
+export function chapterSpecs(gene: ChapterGene, geneIndex: number, firstIndex: number, start = 0): LevelSpec[] {
+  const plan = planChapter(gene.cdsLength, start);
   const sym = gene.symbol.toLowerCase();
   return plan.map((p, i) => ({
     id: `${sym}-c${String(i + 1).padStart(2, '0')}`,

@@ -6,14 +6,14 @@ describe('playHeading', () => {
   it('uses the gene-run fraction (intros then chapters) plus the official name on the small line', () => {
     const opening = introOf('INS')[0]!;
     expect(playHeading(opening)).toEqual({
-      title: 'INS', progress: '1/14', fullName: 'INSULIN', locus: 'CHROMOSOME 11 · NM_000207.3',
+      title: 'INS', progress: '1/13', fullName: 'INSULIN', locus: 'CHROMOSOME 11 · NM_000207.3',
     });
     const ins = chapterOf('INS');
     expect(playHeading(ins[0]!)).toEqual({
-      title: 'INS', progress: '7/14', fullName: 'INSULIN', locus: 'CHROMOSOME 11 · NM_000207.3',
+      title: 'INS', progress: '7/13', fullName: 'INSULIN', locus: 'CHROMOSOME 11 · NM_000207.3',
     });
     expect(playHeading(ins.at(-1)!)).toEqual({
-      title: 'INS', progress: '14/14', fullName: 'INSULIN', locus: 'CHROMOSOME 11 · NM_000207.3',
+      title: 'INS', progress: '13/13', fullName: 'INSULIN', locus: 'CHROMOSOME 11 · NM_000207.3',
     });
     expect(playHeading(chapterOf('HBB')[0]!)).toEqual({
       title: 'HBB', progress: '7/15', fullName: 'HEMOGLOBIN SUBUNIT BETA', locus: 'CHROMOSOME 11 · NM_000518.5',

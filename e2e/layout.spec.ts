@@ -35,7 +35,7 @@ test('a long-token chapter board is also full-bleed at 320px with no overflow', 
   await page.setViewportSize({ width: 320, height: 568 });
   await fresh(page);
   await openMap(page);
-  await page.getByTestId('cnode-ins-c08').click();
+  await page.getByTestId('cnode-hbb-c08').click();
   const r = await page.locator('.board').boundingBox();
   expect(r!.x).toBe(0);
   expect(Math.round(r!.width)).toBe(320);

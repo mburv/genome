@@ -98,11 +98,11 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
         {label}
         <div className="splice-row">
           {def.tracks.map((t, i) => (
-            <span key={t.group} className="splice-part">
-              {i > 0 && <span className="plus" aria-hidden="true">+</span>}
-              <b className="badge">{t.group}</b>
+            <span key={t.group} className="splice-part" data-testid={`splice-part-${t.group}`}>
+              <b className="badge" data-testid={`splice-badge-${t.group}`}>{t.group}</b>
               <Strip track={t} ok={matches[i]!} testId={i === 0 ? 'target-strip' : undefined} />
               <span className="muted tiny">{t.orientation === 'horizontal' ? '→' : '↓'}</span>
+              {i < def.tracks.length - 1 && <span className="plus" aria-hidden="true">+</span>}
             </span>
           ))}
         </div>

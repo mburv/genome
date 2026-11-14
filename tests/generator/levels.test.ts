@@ -4,7 +4,7 @@ import { canonicalMask, isConnected, isSelfSymmetric, maskMetrics, symmetricDist
 import { createRng } from '../../src/generator/rng.ts';
 import { solveBounded } from '../../src/generator/solver.ts';
 import { M2_SPECS, ALL_SPECS, LAB_SPECS, CAMPAIGN_ID } from '../../src/campaign/specs.ts';
-import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, INTRO_LEVELS as LEVELS, chapterOf, coveredBases, isDiscovered } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, INTRO_LEVELS as LEVELS, chapterOf, coveredBases, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
 import { CATALOGUE_ORDER, GENES, HBB, INS } from '../../src/genomics/genes.ts';
 import m2pack from '../../src/campaign/levels.generated.json';
 import { alignedComplement } from '../../src/genomics/dna.ts';
@@ -288,7 +288,8 @@ describe('coverage & discovery', () => {
     expect(coveredBases([ins[0]!.id, ins[0]!.id], 'INS')).toBe(a.end - a.start);
     expect(coveredBases([ins[0]!.id, ins[2]!.id], 'INS')).toBe((a.end - a.start) + (c.end - c.start));
     expect(coveredBases(ins.map((l) => l.id), 'HBB')).toBe(0);
-    expect(coveredBases(ins.map((l) => l.id), 'INS')).toBe(INS.cdsLength);
+    expect(coveredBases(ins.map((l) => l.id), 'INS')).toBe(INS.cdsLength - 51);
+    expect(coveredBases(runOf('INS').map((l) => l.id), 'INS')).toBe(INS.cdsLength);
   });
   it('a gene is discovered when its first run puzzle is complete', () => {
     const ins = chapterOf('INS');
@@ -335,7 +336,7 @@ describe('live campaign order and intro DNA', () => {
     const campaign = ALL_LEVELS.filter((l) => !l.lab);
     const ins = campaign.filter((l) => l.symbol === 'INS');
     const hbb = campaign.filter((l) => l.symbol === 'HBB');
-    expect(ins).toHaveLength(14);
+    expect(ins).toHaveLength(13);
     expect(ins.slice(0, 6).every((l) => !l.tokens && !l.chapter && l.id.startsWith('ins-0'))).toBe(true);
     expect(ins.slice(6).every((l) => !!l.tokens && !!l.chapter && (l.tier ?? 0) >= 3)).toBe(true);
     expect(hbb).toHaveLength(15);
@@ -346,8 +347,8 @@ describe('live campaign order and intro DNA', () => {
     expect(firstInsChapter).toBeGreaterThan(0);
     expect(firstHbbIntro).toBeGreaterThan(firstInsChapter);
     expect(ALL_LEVELS.filter((l) => l.lab)).toEqual(LAB_LEVELS);
-    expect(CHAPTER_LEVELS).toHaveLength(107);
-    expect(ALL_LEVELS).toHaveLength(122);
+    expect(CHAPTER_LEVELS).toHaveLength(106);
+    expect(ALL_LEVELS).toHaveLength(121);
   });
 
   it('intro boards use the pinned NCBI CDS and checksum, with no fabricated DNA', () => {

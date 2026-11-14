@@ -1,6 +1,6 @@
 // M4 scale audit for the pinned assembly chapters (src/campaign/chapters.generated.json).
 // Checks every shipped puzzle (validation, certificate replay, certified-hint walk, bounded solver at the
-// shipped budget, mask uniqueness across all 122 levels, full-CDS reconstruction + SHA-256 per gene), runs
+// shipped budget, mask uniqueness across all 121 levels, full-CDS reconstruction + SHA-256 per gene), runs
 // extra independent generation candidates per chapter spec to measure acceptance at scale, and estimates
 // chapter duration with a stated (non-playtested) model. Writes docs/AUDIT_M4.md and docs/audit-m4.json.
 //   node scripts/audit-chapters.ts [--per-spec 3] [--budget 60000] [--no-write]
@@ -11,7 +11,8 @@ import { canonicalMask, symmetricDistance } from '../src/generator/mask.ts';
 import { createRng } from '../src/generator/rng.ts';
 import { solveBounded } from '../src/generator/solver.ts';
 import { applyCommand, createInitialState, recoverySlideHint, replayCertificate } from '../src/engine/engine.ts';
-import { chapterSpecs, TOKEN_GENERATOR_VERSION } from '../src/campaign/chapters.ts';
+import { chapterSpecs, geneRunCoverageErrors, introCoverageEnd, TOKEN_GENERATOR_VERSION } from '../src/campaign/chapters.ts';
+import { ALL_SPECS } from '../src/campaign/specs.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
 
 const arg = (name: string, d: number): number => {
@@ -21,7 +22,6 @@ const arg = (name: string, d: number): number => {
 const perSpec = arg('--per-spec', 3);
 const budget = arg('--budget', 60_000);
 const sha = (s: string): string => createHash('sha256').update(s).digest('hex');
-
 const manifest = JSON.parse(readFileSync('src/genomics/manifest.generated.json', 'utf8')) as { catalogueId: string; included: { symbol: string; cdsLength: number; sequenceSha256: string }[] };
 const catalogue = JSON.parse(readFileSync('src/genomics/catalogue.generated.json', 'utf8')) as { genes: GeneSource[] };
 const genes: Record<string, GeneSource> = {};
@@ -80,12 +80,14 @@ for (const l of chapters) {
 }
 const checkMs = Math.round(performance.now() - t0);
 
-// Reconstruction per gene from the shipped pieces only (coding tracks + repair pieces).
+// Reconstruction per gene from the shipped campaign run (intros + chapters; labs never count).
 const genesOut = manifest.included.map((m) => {
   const ch = chapters.filter((l) => l.symbol === m.symbol);
+  const run = all.filter((l) => l.symbol === m.symbol && !l.lab);
+  for (const err of geneRunCoverageErrors(run, m.symbol, m.cdsLength)) { console.error(err); failures++; }
   const bases: (string | null)[] = new Array<string | null>(m.cdsLength).fill(null);
-  for (const l of ch) {
-    const seqOf = (s: string) => l.tokens![s]!.seq;
+  for (const l of run) {
+    const seqOf = (s: string) => (l.tokens ? l.tokens[s]!.seq : s);
     for (const t of l.tracks) {
       if (t.strand !== 'coding') continue;
       let off = t.source.start;
@@ -106,7 +108,7 @@ const cand = { candidates: 0, accepted: 0, reasons: {} as Record<string, number>
 const tc = performance.now();
 let index = m2.length;
 for (const [gi, m] of manifest.included.entries()) {
-  const specs = chapterSpecs({ symbol: m.symbol, cdsLength: m.cdsLength }, gi, index);
+  const specs = chapterSpecs({ symbol: m.symbol, cdsLength: m.cdsLength }, gi, index, introCoverageEnd(ALL_SPECS, m.symbol));
   index += specs.length;
   for (const spec of specs) {
     const others = all.filter((l) => l.id !== spec.id);

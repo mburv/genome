@@ -31,11 +31,12 @@ test('map shows the gene catalogue with its count from the manifest, chapter nod
 test('long-token level: readable tiles, drag-solve with hints; finishing the chapter assembles INS', async ({ page }) => {
   const ins = chapterOf('INS');
   const last = ins.at(-1)!;
-  expect(last.tier).toBe(12);
-  await patchSave(page, (s) => ({ ...s, completed: ins.slice(0, -1).map((l) => l.id) }));
+  expect(last.tier).toBe(6);
+  const intros = ['ins-01', 'ins-02', 'ins-03', 'ins-04', 'ins-05', 'ins-06'];
+  await patchSave(page, (s) => ({ ...s, completed: [...intros, ...ins.slice(0, -1).map((l) => l.id)] }));
   await page.getByTestId(`cnode-${last.id}`).click();
   await expect(page.getByTestId('play-title')).toHaveText('INS');
-  await expect(page.getByTestId('play-progress')).toHaveText('14/14');
+  await expect(page.getByTestId('play-progress')).toHaveText('13/13');
   await expect(page.getByTestId('play-fullname')).toHaveText('INSULIN');
   await expect(page.getByTestId('play-locus')).toContainText('NM_000207.3');
   const tile = page.locator('.tile.tok').first();
@@ -45,7 +46,7 @@ test('long-token level: readable tiles, drag-solve with hints; finishing the cha
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
   await expect(page.getByTestId('target-sequence')).toHaveCount(0);
   await solveWithHints(page);
-  await expect(page.getByTestId('win-meta')).toContainText('INS 14/14');
+  await expect(page.getByTestId('win-meta')).toContainText('INS 13/13');
   await expect(page.getByTestId('assembled')).toContainText('INS assembled');
   await expect(page.getByTestId('assembled')).toContainText('SHA-256 verified');
   await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
@@ -107,7 +108,7 @@ test('CRISPR on a multi-base tile: pick a base position, preview by sequence, co
   await expect(page.locator(`[data-cell="${cell}"]`)).toHaveAttribute('data-seq', before!);
 });
 
-test('an M3 (v3) save upgrades to v6, keeps intro completions and lab credit, with a notice and an m3 backup', async ({ page }) => {
+test('an M3 (v3) save upgrades to v7, keeps intro completions and lab credit, with a notice and an m3 backup', async ({ page }) => {
   await page.goto('/');
   const ids = ['ins-01', 'ins-02', 'ins-03', 'ins-04', 'lab-crispr'];
   const m3 = { schemaVersion: 3, campaignId: 'genome-m3-lab', generatorVersion: 'm2-gen-1', datasets: { INS: 'refseq-NM_000207.3-2026-11-13', HBB: 'refseq-NM_000518.5-2026-11-13' }, currentLevelId: 'ins-05', completed: ids, discovered: [], attempts: {}, legacy: { m1Completed: [] }, settings: { reducedMotion: false, sound: false, haptics: true } };
@@ -116,7 +117,7 @@ test('an M3 (v3) save upgrades to v6, keeps intro completions and lab credit, wi
   await expect(page.getByTestId('notice')).toContainText('full gene assembly');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m3'))).toContain('"schemaVersion":3');
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!);
-  expect(saved.schemaVersion).toBe(6);
+  expect(saved.schemaVersion).toBe(7);
   expect(saved.completed).toEqual(ids);
   await expect(page.getByTestId('cat-progress-INS')).toContainText('33 / 333');
 });

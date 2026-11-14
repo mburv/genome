@@ -8,7 +8,7 @@ import { GENES } from '../genomics/genes.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
 
 export const SAVE_KEY = 'genome-save';
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export interface SaveData {
   schemaVersion: typeof SCHEMA_VERSION;
@@ -345,6 +345,20 @@ function mergeIntroProgress(
   return { data: { ...data, completed, attempts: liveAttempts, best: liveBest }, restored };
 }
 
+
+/** INS/HBB chapter ids whose CDS ranges were shifted in v7 so they no longer overlap the 1-base intros. */
+const REMAPPED_CHAPTER = /^(ins|hbb)-c\d+$/;
+
+function dropRemappedChapterProgress(data: Record<string, unknown>): { data: Record<string, unknown>; dropped: string[] } {
+  const dropped = strings(data.completed).filter((id) => REMAPPED_CHAPTER.test(id));
+  const completed = strings(data.completed).filter((id) => !REMAPPED_CHAPTER.test(id));
+  const rawAttempts = typeof data.attempts === 'object' && data.attempts !== null ? (data.attempts as Record<string, unknown>) : {};
+  const attempts = Object.fromEntries(Object.entries(rawAttempts).filter(([id]) => !REMAPPED_CHAPTER.test(id)));
+  const rawBest = typeof data.best === 'object' && data.best !== null && !Array.isArray(data.best) ? (data.best as Record<string, unknown>) : {};
+  const best = Object.fromEntries(Object.entries(rawBest).filter(([id]) => !REMAPPED_CHAPTER.test(id)));
+  return { data: { ...data, completed, attempts, best }, dropped };
+}
+
 export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const raw = adapter.load();
   const fresh = newSave(pack);
@@ -391,16 +405,26 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (data.schemaVersion === 4) {
     // v4 already holds intro (former sample) completions; keep them — they are live again in v6.
     if (!upgradedV2 && !upgradedV3) adapter.backup(raw, 'm4');
-    data = { ...data, schemaVersion: SCHEMA_VERSION };
+    data = { ...data, schemaVersion: 6 };
     upgradedV4 = true;
   }
   if (data.schemaVersion === 5) {
     // v5 dropped intro ids. Restore them from the pre-v5 m4 backup when one exists.
     if (!upgradedV4) adapter.backup(raw, 'm5');
     const merged = mergeIntroProgress(data, adapter.readBackup?.('m4') ?? null);
-    data = { ...merged.data, schemaVersion: SCHEMA_VERSION };
+    data = { ...merged.data, schemaVersion: 6 };
     restoredIntros = merged.restored;
     upgradedV5 = true;
+  }
+  let upgradedV6 = false;
+  let droppedChapters: string[] = [];
+  if (data.schemaVersion === 6) {
+    // v7: INS/HBB assembly chapters continue after the 1-base intros (no overlapping CDS).
+    if (!upgradedV2 && !upgradedV3 && !upgradedV4 && !upgradedV5) adapter.backup(raw, 'm6');
+    const shifted = dropRemappedChapterProgress(data);
+    data = { ...shifted.data, schemaVersion: SCHEMA_VERSION };
+    droppedChapters = shifted.dropped;
+    upgradedV6 = true;
   }
   if (data.schemaVersion !== SCHEMA_VERSION) {
     adapter.backup(raw);
@@ -429,13 +453,16 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const claimed = [...new Set(strings(data.assembled))];
   const assembled = claimed.filter((g) => GENES[g] && g in pack.datasets && assemblyStatus(completed, GENES[g]!, pack.levels).verified);
   if (assembled.length < claimed.length) notices.push('An assembled-gene record could not be re-verified against the pinned reference and was cleared; your completed puzzles are kept.');
-  if (notices.length && !upgradedV2 && !upgradedV3 && !upgradedV4 && !upgradedV5) adapter.backup(raw);
+  if (notices.length && !upgradedV2 && !upgradedV3 && !upgradedV4 && !upgradedV5 && !upgradedV6) adapter.backup(raw);
   const kept = notices.length ? 'Completed levels were kept.' : 'All your progress was kept.';
   if (upgradedV3) notices.unshift(`GENOME updated: full gene assembly — multi-base tiles (codons up to 24-base pieces) and an assembly chapter for each of ${Object.keys(pack.datasets).length} verified catalogue genes.${upgradedV2 ? ' Also new: enzyme power-ups (CRISPR, Ligase, Scaffold), with three optional Enzyme lab tutorials on the map.' : ''} ${kept}`);
   if (upgradedV4 && !upgradedV3) notices.unshift(`GENOME updated: the short INS and HBB 1-base puzzles are now intro levels in the main campaign, ahead of the multi-base assembly chapters. Your progress, stars, best scores and preferences are kept. ${kept}`);
   if (upgradedV5) notices.unshift(restoredIntros.length
     ? `GENOME updated: the 1-base INS and HBB intro puzzles are back in the main campaign. Completions and best scores from your earlier save have been restored. ${kept}`
     : `GENOME updated: the 1-base INS and HBB intro puzzles are back in the main campaign, ahead of the multi-base assembly chapters. Your assembly chapter progress, stars, best scores and preferences are kept. ${kept}`);
+  if (upgradedV6) notices.unshift(droppedChapters.length
+    ? `GENOME updated: assembly chapters now continue from where the 1-base intros left off, so each puzzle adds new coding bases. Your intro, lab and other-gene progress, stars, best scores and preferences are kept. INS and HBB chapter completions (${droppedChapters.join(', ')}) were reset because those puzzles now cover different stretches of the gene.`
+    : `GENOME updated: assembly chapters now continue from where the 1-base intros left off, so each puzzle adds new coding bases. Your progress, stars, best scores and preferences are kept.`);
   const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : nextCampaignId(completed);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);

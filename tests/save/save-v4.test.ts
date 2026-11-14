@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState } from '../../src/engine/engine.ts';
-import { CHAPTER_LEVELS, INTRO_IDS, LAB_LEVELS, LEVEL_PACK, chapterOf } from '../../src/campaign/campaign.ts';
-import { createMemoryAdapter, loadSave, newSave, recordAssembly, recordCompletion, serializeSave } from '../../src/persistence/save.ts';
+import { CHAPTER_LEVELS, INTRO_IDS, LAB_LEVELS, LEVEL_PACK, runOf } from '../../src/campaign/campaign.ts';
+import { createMemoryAdapter, loadSave, newSave, recordAssembly, recordCompletion, serializeSave, SCHEMA_VERSION } from '../../src/persistence/save.ts';
 
 /** An attempt exactly as M3 (schema v3) wrote it: no `custom` table. */
 function asV3(a: ReturnType<typeof createInitialState>) {
@@ -35,7 +35,7 @@ describe('M3 (v3) → current (v6) migration', () => {
     const { mid, s, raw } = m3Save();
     const adapter = createMemoryAdapter(raw);
     const r = loadSave(adapter, LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(6);
+    expect(r.save.schemaVersion).toBe(SCHEMA_VERSION);
     expect(r.save.completed).toEqual([...INTRO_IDS.slice(0, 5), LAB_LEVELS[0]!.id]);
     expect(r.save.settings).toEqual({ reducedMotion: false, sound: true, haptics: false });
     const a = r.save.attempts[mid.id]!;
@@ -49,7 +49,8 @@ describe('M3 (v3) → current (v6) migration', () => {
     expect(adapter.backups).toEqual([raw]);
     expect(r.notices.join(' ')).toMatch(/full gene assembly/);
     expect(r.notices.join(' ')).not.toMatch(/retired/);
-    expect(r.notices[0]).toMatch(/All your progress was kept/);
+    expect(r.notices.join(' ')).toMatch(/All your progress was kept/);
+    expect(r.notices.join(' ')).toMatch(/continue from where the 1-base intros left off/);
   });
   it('round-trips as v6 with no further notices', () => {
     const r = loadSave(createMemoryAdapter(m3Save().raw), LEVEL_PACK);
@@ -62,10 +63,10 @@ describe('M3 (v3) → current (v6) migration', () => {
 describe('assembly records', () => {
   it('recordAssembly only accepts a verified reconstruction and is idempotent', () => {
     let save = newSave(LEVEL_PACK);
-    const ch = chapterOf('INS');
-    for (const l of ch.slice(0, -1)) save = recordCompletion(save, l.id);
+    const run = runOf('INS');
+    for (const l of run.slice(0, -1)) save = recordCompletion(save, l.id);
     expect(recordAssembly(save, 'INS').assembled).toEqual([]);
-    save = recordCompletion(save, ch.at(-1)!.id);
+    save = recordCompletion(save, run.at(-1)!.id);
     save = recordAssembly(save, 'INS');
     expect(save.assembled).toEqual(['INS']);
     expect(recordAssembly(save, 'INS')).toBe(save);
@@ -95,8 +96,8 @@ describe('assembly records', () => {
   });
 });
 
-describe('v4 → v6 intro-level restore', () => {
-  it('keeps matching intro completions, chapters, labs, bests and settings', () => {
+describe('v4 → v7 intro-level restore', () => {
+  it('keeps matching intro completions, labs, bests and settings; drops remapped INS/HBB chapter credit', () => {
     const opener = CHAPTER_LEVELS[0]!;
     const lab = LAB_LEVELS[0]!;
     const base = { ...newSave(LEVEL_PACK) };
@@ -113,13 +114,14 @@ describe('v4 → v6 intro-level restore', () => {
     });
     const adapter = createMemoryAdapter(raw);
     const r = loadSave(adapter, LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(6);
-    expect(r.save.completed).toEqual(['ins-01', 'ins-02', opener.id, lab.id]);
+    expect(r.save.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(r.save.completed).toEqual(['ins-01', 'ins-02', lab.id]);
     expect(r.save.discovered).toEqual(['INS']);
-    expect(r.save.best).toEqual({ 'ins-01': { moves: 1, powersUsed: 0 }, [opener.id]: { moves: 2, powersUsed: 0 }, [lab.id]: { moves: 3, powersUsed: 0 } });
+    expect(r.save.best).toEqual({ 'ins-01': { moves: 1, powersUsed: 0 }, [lab.id]: { moves: 3, powersUsed: 0 } });
     expect(r.save.settings).toEqual({ reducedMotion: true, sound: true, haptics: false });
     expect(r.save.currentLevelId).toBe('ins-06');
     expect(r.notices.join(' ')).toMatch(/intro levels in the main campaign/);
+    expect(r.notices.join(' ')).toMatch(/continue from where the 1-base intros left off/);
     expect(r.notices.join(' ')).not.toMatch(/retired/);
     expect(adapter.labels).toEqual(['m4']);
     const again = loadSave(createMemoryAdapter(serializeSave(r.save)), LEVEL_PACK);
@@ -128,7 +130,7 @@ describe('v4 → v6 intro-level restore', () => {
   });
 });
 
-describe('v5 → v6 intro-level restore', () => {
+describe('v5 → v7 intro-level restore', () => {
   it('restores intro completions and bests from the m4 backup', () => {
     const opener = CHAPTER_LEVELS[0]!;
     const lab = LAB_LEVELS[0]!;
@@ -157,11 +159,10 @@ describe('v5 → v6 intro-level restore', () => {
     const adapter = createMemoryAdapter(v5);
     adapter.backup(v4, 'm4');
     const r = loadSave(adapter, LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(6);
-    expect(r.save.completed).toEqual([opener.id, lab.id, 'ins-01', 'ins-02']);
+    expect(r.save.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(r.save.completed).toEqual([lab.id, 'ins-01', 'ins-02']);
     expect(r.save.discovered).toEqual(['INS']);
     expect(r.save.best).toEqual({
-      [opener.id]: { moves: 2, powersUsed: 0 },
       [lab.id]: { moves: 3, powersUsed: 0 },
       'ins-01': { moves: 1, powersUsed: 0 },
       'ins-02': { moves: 2, powersUsed: 0 },
@@ -188,11 +189,44 @@ describe('v5 → v6 intro-level restore', () => {
       best: { [opener.id]: { moves: 2, powersUsed: 0 } },
     });
     const r = loadSave(createMemoryAdapter(v5), LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(6);
-    expect(r.save.completed).toEqual([opener.id]);
+    expect(r.save.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(r.save.completed).toEqual([]);
     expect(r.save.discovered).toEqual([]); // chapter opener is no longer the first INS puzzle
-    expect(r.save.best).toEqual({ [opener.id]: { moves: 2, powersUsed: 0 } });
+    expect(r.save.best).toEqual({});
     expect(r.notices.join(' ')).toMatch(/intro puzzles are back in the main campaign/);
     expect(r.notices.join(' ')).not.toMatch(/have been restored/);
+  });
+});
+
+describe('v6 → v7 non-overlapping chapters', () => {
+  it('keeps intro, lab and other-gene progress, resets INS/HBB chapter credit, and writes an m6 backup', () => {
+    const lab = LAB_LEVELS[0]!.id;
+    const other = CHAPTER_LEVELS.find((l) => l.symbol === 'HBA1')!.id;
+    const raw = JSON.stringify({
+      ...newSave(LEVEL_PACK),
+      schemaVersion: 6,
+      currentLevelId: 'ins-c01',
+      completed: ['ins-01', 'ins-02', 'ins-c01', 'hbb-c01', other, lab],
+      discovered: ['INS', 'HBB', 'HBA1'],
+      assembled: [],
+      attempts: { 'ins-c01': { levelId: 'ins-c01' } },
+      best: { 'ins-01': { moves: 1, powersUsed: 0 }, 'ins-c01': { moves: 4, powersUsed: 0 }, [other]: { moves: 5, powersUsed: 0 } },
+      settings: { reducedMotion: true, sound: true, haptics: false },
+    });
+    const adapter = createMemoryAdapter(raw);
+    const r = loadSave(adapter, LEVEL_PACK);
+    expect(r.save.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(r.save.completed).toEqual(['ins-01', 'ins-02', other, lab]);
+    expect(r.save.best).toEqual({ 'ins-01': { moves: 1, powersUsed: 0 }, [other]: { moves: 5, powersUsed: 0 } });
+    expect(r.save.attempts['ins-c01']).toBeUndefined();
+    expect(r.save.currentLevelId).toBe('ins-c01');
+    expect(r.save.settings).toEqual({ reducedMotion: true, sound: true, haptics: false });
+    expect(r.save.discovered).toEqual(['INS', 'HBA1']);
+    expect(r.notices.join(' ')).toMatch(/continue from where the 1-base intros left off/);
+    expect(r.notices.join(' ')).toMatch(/ins-c01/);
+    expect(adapter.labels).toEqual(['m6']);
+    const again = loadSave(createMemoryAdapter(serializeSave(r.save)), LEVEL_PACK);
+    expect(again.notices).toEqual([]);
+    expect(again.save).toEqual(r.save);
   });
 });

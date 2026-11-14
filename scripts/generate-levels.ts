@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { buildCampaign, buildLevel, validateLevel, GENERATOR_VERSION, type GeneSource } from '../src/generator/level.ts';
 import { ALL_SPECS, CAMPAIGN_ID } from '../src/campaign/specs.ts';
-import { chapterSpecs, TOKEN_GENERATOR_VERSION } from '../src/campaign/chapters.ts';
+import { chapterSpecs, geneRunCoverageErrors, introCoverageEnd, TOKEN_GENERATOR_VERSION } from '../src/campaign/chapters.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
 
 const OUT = 'src/campaign/levels.generated.json';
@@ -56,7 +56,8 @@ if (!onlyM2) {
     const gene = genes[entry.symbol];
     if (!gene || gene.sequenceSha256 !== entry.sequenceSha256) throw new Error(`${entry.symbol}: manifest/asset mismatch`);
     const tg = performance.now();
-    for (const spec of chapterSpecs({ symbol: gene.symbol, cdsLength: gene.sequence.length }, gi, index)) {
+    const start = introCoverageEnd(ALL_SPECS, gene.symbol);
+    for (const spec of chapterSpecs({ symbol: gene.symbol, cdsLength: gene.sequence.length }, gi, index, start)) {
       const def = { ...buildLevel(spec, gene, all), generatorVersion: TOKEN_GENERATOR_VERSION };
       chapters.push(def);
       all.push(def);
@@ -67,6 +68,8 @@ if (!onlyM2) {
   }
   const cerrors = chapters.flatMap((l) => validateLevel(l, genes[l.symbol]!, all));
   if (cerrors.length) throw new Error(cerrors.join('\n'));
+  const coverageErrors = Object.values(genes).flatMap((g) => geneRunCoverageErrors(all, g.symbol, g.sequence.length));
+  if (coverageErrors.length) throw new Error(coverageErrors.join('\n'));
   const cdatasets = Object.fromEntries(manifest.included.map((g) => [g.symbol, genes[g.symbol]!.datasetId]));
   const cjson = JSON.stringify({ catalogueId: manifest.catalogueId, generatorVersion: TOKEN_GENERATOR_VERSION, datasets: cdatasets, levels: chapters }) + '\n';
   if (check) {

@@ -99,7 +99,7 @@ export async function expectChapterHeading(page: Page, symbol: string, part: num
 }
 
 export async function expectOpeningHeading(page: Page): Promise<void> {
-  await expectChapterHeading(page, 'INS', 1, 14, 'INSULIN');
+  await expectChapterHeading(page, 'INS', 1, 13, 'INSULIN');
 }
 
 /** Open the level map, via Settings when the header Map button is absent. */
@@ -174,7 +174,7 @@ export function completedLevelSave(def: LevelDefinition, opts: { lastMoves?: num
   const lastMoves = opts.lastMoves ?? s.moves;
   const bestMoves = opts.bestMoves ?? Math.min(lastMoves, s.moves);
   const save = {
-    schemaVersion: 6,
+    schemaVersion: 7,
     ...PACK,
     currentLevelId: def.id,
     completed: [def.id],

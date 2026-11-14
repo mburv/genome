@@ -29,7 +29,7 @@ const m1Save = (completed: string[], withAttempt = false) => ({
 describe('save / reload (v3)', () => {
   it('schema is v4 and records the campaign and every catalogue dataset', () => {
     const s = newSave(LEVEL_PACK);
-    expect(SCHEMA_VERSION).toBe(6);
+    expect(SCHEMA_VERSION).toBe(7);
     expect(s.settings).toEqual(DEFAULT_SETTINGS);
     expect(s.datasets).toEqual(LEVEL_PACK.datasets);
     expect(s.discovered).toEqual([]);
@@ -160,7 +160,7 @@ describe('M2 (v2) → M3 (v3) migration', () => {
     const { s, raw } = m2Save();
     const adapter = createMemoryAdapter(raw);
     const r = loadSave(adapter, LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(6);
+    expect(r.save.schemaVersion).toBe(SCHEMA_VERSION);
     expect(r.save.completed).toEqual([LAB_LEVELS[0]!.id]);
     expect(r.save.currentLevelId).toBe(mid.id);
     expect(r.save.settings).toEqual({ ...DEFAULT_SETTINGS, reducedMotion: true });
@@ -172,7 +172,8 @@ describe('M2 (v2) → M3 (v3) migration', () => {
     expect(a.history.map((h) => h.board)).toEqual(s.history.map((h) => h.board));
     expect(a.locks).toEqual([]);
     expect(a.scaffold).toBeNull();
-    expect(r.notices[0]).toMatch(/All your progress was kept/);
+    expect(r.notices.join(' ')).toMatch(/All your progress was kept/);
+    expect(r.notices.join(' ')).toMatch(/continue from where the 1-base intros left off/);
     expect(adapter.labels).toEqual(['m2']);
     expect(adapter.backups).toEqual([raw]);
     // Upgraded attempt is still playable: undo works and certified hints still finish it.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS, LAB_LEVELS, chapterOf, isDiscovered } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CAMPAIGN_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS, LAB_LEVELS, chapterOf, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
 import { assemblyStatus, levelContribution } from '../../src/campaign/assembly.ts';
-import { MAX_ASSEMBLY_CDS, MAX_CHAPTER, MIN_CHAPTER, planChapter } from '../../src/campaign/chapters.ts';
+import { MAX_ASSEMBLY_CDS, MAX_CHAPTER, MIN_CHAPTER, geneRunCoverageErrors, planChapter } from '../../src/campaign/chapters.ts';
 import { CATALOGUE_ORDER, CATALOGUE_SIZE, GENES, MANIFEST } from '../../src/genomics/genes.ts';
 import { sha256Hex } from '../../src/genomics/sha256.ts';
 import { buildLevel, validateLevel } from '../../src/generator/level.ts';
@@ -44,16 +44,30 @@ describe('chapter planner', () => {
       expect(at).toBe(L);
     }
   });
+  it('can start after 1-base intros and still finish the CDS without a gap', () => {
+    const plan = planChapter(333, 51);
+    expect(plan[0]!.start).toBe(51);
+    expect(plan.at(-1)!.end).toBe(333);
+    let at = 51;
+    for (const p of plan) {
+      expect(p.start).toBe(at);
+      expect(p.start % 3).toBe(0);
+      at = p.end;
+    }
+    expect(plan.map((p) => p.k)).toEqual([3, 3, 3, 6, 6, 6, 6]);
+  });
 });
 
 describe('full assembly', () => {
-  it('every catalogue gene has a chapter whose completed pieces reconstruct its CDS exactly, sha256-verified', () => {
+  it('every catalogue gene’s campaign run reconstructs its CDS exactly, sha256-verified, with no overlapping intervals', () => {
     for (const sym of CATALOGUE_ORDER) {
       const gene = GENES[sym]!;
+      const run = runOf(sym);
       const ch = chapterOf(sym);
       expect(ch.length).toBeGreaterThanOrEqual(MIN_CHAPTER);
       expect(ch.map((l) => l.chapter!.part)).toEqual(ch.map((_, i) => i + 1));
-      const st = assemblyStatus(ids(ch), gene);
+      expect(geneRunCoverageErrors(CAMPAIGN_LEVELS, sym, gene.cdsLength)).toEqual([]);
+      const st = assemblyStatus(ids(run), gene);
       expect(st.covered).toBe(gene.cdsLength);
       expect(st.assembled).toBe(gene.sequence);
       expect(st.sha256).toBe(gene.sequenceSha256);
@@ -63,14 +77,16 @@ describe('full assembly', () => {
   it('INS (333 bp) and HBB (444 bp) are proven end-to-end', () => {
     expect(GENES.INS!.cdsLength).toBe(333);
     expect(GENES.HBB!.cdsLength).toBe(444);
-    expect(assemblyStatus(ids(chapterOf('INS')), GENES.INS!).verified).toBe(true);
-    expect(assemblyStatus(ids(chapterOf('HBB')), GENES.HBB!).verified).toBe(true);
+    expect(assemblyStatus(ids(runOf('INS')), GENES.INS!).verified).toBe(true);
+    expect(assemblyStatus(ids(runOf('HBB')), GENES.HBB!).verified).toBe(true);
+    expect(assemblyStatus(ids(chapterOf('INS')), GENES.INS!).covered).toBe(333 - 51);
+    expect(assemblyStatus(ids(chapterOf('HBB')), GENES.HBB!).covered).toBe(444 - 51);
   });
   it('requires every puzzle: dropping any one leaves the gene unassembled (no hidden auto-fill)', () => {
     for (const sym of ['INS', 'HBB']) {
-      const ch = chapterOf(sym);
-      for (const skip of ch) {
-        const st = assemblyStatus(ids(ch.filter((l) => l !== skip)), GENES[sym]!);
+      const run = runOf(sym);
+      for (const skip of run) {
+        const st = assemblyStatus(ids(run.filter((l) => l !== skip)), GENES[sym]!);
         expect(st.verified).toBe(false);
         expect(st.covered).toBeLessThan(GENES[sym]!.cdsLength);
       }
@@ -115,7 +131,7 @@ describe('full assembly', () => {
     for (const def of CHAPTER_LEVELS) expect(validateLevel(def, GENES[def.symbol]!, ALL_LEVELS)).toEqual([]);
     const gi = MANIFEST.included.findIndex((m) => m.symbol === 'INS');
     const first = chapterOf('INS')[0]!;
-    const specs = chapterSpecs({ symbol: 'INS', cdsLength: 333 }, gi, first.index);
+    const specs = chapterSpecs({ symbol: 'INS', cdsLength: 333 }, gi, first.index, 51);
     const prior = [...INTRO_LEVELS, ...LAB_LEVELS];
     const rebuilt = { ...buildLevel(specs[0]!, GENES.INS!, prior), generatorVersion: first.generatorVersion };
     expect(rebuilt).toEqual(first);

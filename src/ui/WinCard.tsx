@@ -9,6 +9,8 @@ interface Props {
   moves: number;
   powersUsed: number;
   newBases: number;
+  /** True when this win is a replay of an already-completed puzzle. */
+  replayed?: boolean;
   /** M4: this solve completed an exact, checksum-verified assembly of the gene. */
   assembled?: boolean;
   assembledBases?: number;
@@ -87,9 +89,11 @@ export function WinCard(p: Props) {
         ) : (
         <>
         <p data-testid="win-bases">
-          {p.newBases > 0 ? <b>+{p.newBases} {def.symbol} coding bases</b> : <b>Already counted</b>} <span className="muted">(CDS {iv.start + 1}–{iv.end})</span>
+          {p.replayed
+            ? <><b>Replay · no new bases</b> <span className="muted">(CDS {iv.start + 1}–{iv.end})</span></>
+            : <><b>+{p.newBases} {def.symbol} coding bases</b> <span className="muted">(CDS {iv.start + 1}–{iv.end})</span></>}
         </p>
-        <p className="muted small" data-testid="win-assembly">{p.assembledBases ?? 0} / {p.cdsLength} {def.symbol} coding bases assembled.{p.newBases > 0 ? '' : ' Replays never add duplicate bases.'}</p>
+        <p className="muted small" data-testid="win-assembly">{p.assembledBases ?? 0} / {p.cdsLength} {def.symbol} coding bases assembled.</p>
         </>
         )}
         {p.assembled && (
