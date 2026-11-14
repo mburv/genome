@@ -1,5 +1,6 @@
 import type { Settings } from '../persistence/save.ts';
 import { hapticsSupported, playCue } from './feedback.ts';
+import { HelpSections } from './HelpSections.tsx';
 
 interface Props {
   settings: Settings;
@@ -41,6 +42,7 @@ export function SettingsScreen({ settings, systemReducedMotion, onChange, onRese
         </span>
         <input type="checkbox" role="switch" checked={settings.haptics} onChange={(e) => { set({ haptics: e.target.checked }); if (e.target.checked) playCue('power', { sound: false, haptics: true }); }} data-testid="toggle-haptics" />
       </label>
+      <HelpSections />
       <p className="muted small">Settings are saved on this device. No timers, accounts or tracking.</p>
       <button type="button" className="link" onClick={onReset}>Reset all progress…</button>
     </section>

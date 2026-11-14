@@ -198,4 +198,11 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - The explanatory lines (the splice “illustrative, not real exon boundaries” caveat, and the equivalent read-out notes on sequencing, replication, repair and assembly chapters) are removed from the layout, not hidden. The split remains illustrative; that caveat stays in these decision notes and in the design doc, not on the play screen. Compact strip labels (piece numbers, →/↓, template/complement) stay.
   - The ink rule at the top of the target section is removed. The play header already has a bottom rule; a second line under the 10 px stack gap was spurious.
 
+- D-UI-11 The puzzle screen is just the gene, the clue, the board and the essential controls.
+  - **Pad.** The on-screen arrow pad is removed. Drag is the only touch way to slide a segment. Keyboard arrow keys (and Shift + arrows to move the selection) stay for desktop. CRISPR, Ligase and Scaffold targeting is unchanged: tap a power, then tap a tile or gap; Confirm/Cancel live in the power panel. Scaffold rotations use drag or the keyboard.
+  - **Status.** The feedback/status block (and the divider above it) is removed from the layout, not hidden. Dropped from the play screen: reject copy (e.g. “Nothing changed: every tile in that segment is the same letter.”), move/power event notes, hint prose, lab/mode/tutorial blurbs, “Thinking…”, and the locked-level sentence. Rejects still play the reject cue; hints still light the board cue (and the Release / Undo×N / Restart actions when those are the hint); the Replay button still pulses on a locked board. Unaffordable or blocked power picks still explain why in a short note on the power tray; invalid targets still surface in the power panel.
+  - **Help.** “How to play” and “About the DNA” move from every screen into Settings as expandable entries. Settings Done returns to the screen Settings was opened from.
+  - **Board.** The board stays full-bleed and as large as the viewport width allows; the freed space shortens the page so more of the remaining controls sit on-screen at 320×568.
+
+
 

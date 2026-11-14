@@ -19,10 +19,11 @@ interface TrayProps {
   highlightRelease: boolean;
   onPick: (p: Power) => void;
   onRelease: () => void;
+  notice?: string | undefined;
 }
 
 /** Energy meter + the three powers. Tapping an unaffordable power explains why (costs nothing). */
-export function PowerTray({ energy, freeUses, locks, scaffold, active, disabled, highlightRelease, onPick, onRelease }: TrayProps) {
+export function PowerTray({ energy, freeUses, locks, scaffold, active, disabled, highlightRelease, onPick, onRelease, notice }: TrayProps) {
   return (
     <section className="tray" aria-label="Enzyme power-ups" data-testid="power-tray">
       <div className="energy" data-testid="energy" aria-label={`Energy ${energy} of ${ENERGY_CAP}`} title="Energy: +1 for each reference codon you first complete with a normal move. Level-local; resets on restart.">
@@ -52,6 +53,7 @@ export function PowerTray({ energy, freeUses, locks, scaffold, active, disabled,
           );
         })}
       </div>
+      {notice && <p className="tray-note" data-testid="tray-note">{notice}</p>}
       {(locks.length > 0 || scaffold) && (
         <div className="power-status">
           {locks.length > 0 && (

@@ -16,8 +16,7 @@ import { TargetPanel } from './TargetPanel.tsx';
 import { SolvedBanner } from './SolvedBanner.tsx';
 import { WinCard } from './WinCard.tsx';
 import { PowerPanel, PowerTray, POWER_LABEL } from './PowerTray.tsx';
-import { describeSlide, hintDisplayCell } from './hintCell.ts';
-import { MODE_BLURB } from './modes.ts';
+import { hintDisplayCell } from './hintCell.ts';
 import { playCue, type Cue } from './feedback.ts';
 
 function defaultSelection(def: LevelDefinition, state: PuzzleState): Cell {
@@ -39,12 +38,6 @@ const REJECT_TEXT: Partial<Record<RejectReason, string>> = {
   'scaffold-conflict': 'A bond can’t sit on the scaffold track.',
   'invalid-target': 'That target isn’t valid for this power.',
   'powers-unavailable': 'Powers unlock from level 4.',
-};
-
-const LAB_INTRO: Record<Power, string> = {
-  crispr: 'Enzyme lab — CRISPR (one free use here, normally ⚡4): tap CRISPR, tap a wrong target tile, pick the right base, check the preview, then Confirm. Undo reverses an edit.',
-  ligase: 'Enzyme lab — Ligase (one free use here, normally ⚡2): complete a 3-base piece, then tap Ligase and tap that piece. Bonded tiles can’t be dragged along any row or column. Release is always free.',
-  scaffold: 'Enzyme lab — Scaffold (one free use here, normally ⚡3): tap Scaffold, then a glowing gap. The two segments beside it rotate as one track for the next 3 rotations.',
 };
 
 interface Props {
@@ -69,10 +62,11 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const [hintRes, setHintRes] = useState<{ key: string; hint: Hint } | null>(null);
   const [animation, setAnimation] = useState<MoveAnimation | null>(null);
   const [celebrate, setCelebrate] = useState<{ newBases: number; discovered: boolean; assembled: boolean } | null>(null);
-  const [status, setStatus] = useState('');
   const [preview, setPreview] = useState<SlidePreview | null>(null);
   const [targeting, setTargeting] = useState<Power | null>(null);
   const [pending, setPending] = useState<PowerPreview | null>(null);
+  const [trayNote, setTrayNote] = useState<string | null>(null);
+  const [panelError, setPanelError] = useState<string | null>(null);
   const [powersUsed, setPowersUsed] = useState(0);
   const [replayPulse, setReplayPulse] = useState(false);
   const nonce = useRef(0);
@@ -107,18 +101,17 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const clearPower = () => {
     setTargeting(null);
     setPending(null);
+    setPanelError(null);
   };
 
   const commit = useCallback(
     (result: CommandResult): boolean => {
       setPreview(null);
       if (!result.accepted) {
-        setStatus(REJECT_TEXT[result.reason!] ?? '');
         if (result.reason !== 'solved') cue('reject');
         return false;
       }
       let next: SaveData = { ...save, attempts: { ...save.attempts, [def.id]: result.state } };
-      const notes: string[] = [];
       let sound: Cue | null = null;
       for (const ev of result.events) {
         switch (ev.type) {
@@ -131,11 +124,9 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             sound ??= 'move';
             break;
           case 'undone':
-            notes.push('Undone — board, bonds, scaffold and any energy spent are restored. Earned codon energy is kept.');
             sound = 'undo';
             break;
           case 'restarted':
-            notes.push('Board restarted: a fresh attempt with fresh energy.');
             setSelected(defaultSelection(def, result.state));
             setPowersUsed(0);
             break;
@@ -144,28 +135,18 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             sound = 'power';
             break;
           case 'edited':
-            notes.push(def.tokens
-              ? `CRISPR edit: base ${ev.pos + 1} of the piece ${ev.fromBase} → ${ev.toBase} (${symbolLabel(def, result.state.custom, ev.from)} → ${symbolLabel(def, result.state.custom, ev.to)}). Undo reverses it and refunds the energy.`
-              : `CRISPR edit: ${ev.from} → ${ev.to}. Undo reverses it and refunds the energy.`);
             break;
           case 'bonded':
-            notes.push(def.tokens ? 'Piece bonded: it now blocks rotation on both axes. Release is free.' : 'Codon bonded: its tiles now block rotation on both axes. Release is free.');
             break;
           case 'released':
-            notes.push('Bond released (free). Rows and columns move freely again.');
             sound = 'release';
             break;
           case 'scaffolded':
-            notes.push('Scaffold placed: the two segments rotate as one track for the next 3 rotations.');
             break;
           case 'scaffold-expired':
-            notes.push('Scaffold expired after 3 rotations.');
             sound = 'expire';
             break;
           case 'energy':
-            notes.push(def.tokens
-              ? (ev.gained > 0 ? `+${ev.gained} energy: ${ev.codons} target piece${ev.codons > 1 ? 's' : ''} placed.` : 'Piece placed (energy is full at 9).')
-              : ev.gained > 0 ? `+${ev.gained} energy: ${ev.codons} codon${ev.codons > 1 ? 's' : ''} completed.` : 'Codon completed (energy is full at 9).');
             if (ev.gained > 0) sound = 'energy';
             break;
           case 'solved': {
@@ -186,13 +167,13 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
               const assembledNow = !wasAssembled && next.assembled.includes(def.symbol);
               setCelebrate({ newBases: assemblyStatus(next.completed, gene).covered - before, discovered: discoveredNow, assembled: assembledNow });
             }
-            notes.push('Solved!');
             sound = 'win';
             break;
           }
         }
       }
-      setStatus(notes.join(' '));
+      setTrayNote(null);
+      setPanelError(null);
       if (sound) cue(sound);
       setHintRes(null);
       persist(next);
@@ -216,23 +197,12 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       s = r.state;
     }
     commit({ state: s, events: [{ type: 'undone' }], accepted: true });
-    setStatus('Back at a certified position. Hint will guide you from here.');
   };
 
   const presentHint = (h: Hint | null) => {
-    if (!h) return setStatus('');
+    if (!h) return;
     setHintRes({ key: stateKey(puzzle), hint: h });
-    if (h.kind === 'drag') {
-      setSelected(hintDisplayCell(def, puzzle.board, h.slide, h.segment));
-      setStatus(
-        `Hint: ${describeSlide(h.slide)}. ` +
-          (h.source === 'certified'
-            ? 'Recovery hint — it leads back to a certified solution, not necessarily the shortest.'
-            : 'Found by a fresh search from this position (powers changed the board), shortest within the search limit.'),
-      );
-    } else if (h.kind === 'release') setStatus('Hint: release the bond (free) — it blocks the certified path.');
-    else if (h.kind === 'undo') setStatus(`No verified move from here within the search limit. Undo ×${h.count} returns to a certified position.`);
-    else setStatus('No verified move from here. Restart (free) for a fresh attempt.');
+    if (h.kind === 'drag') setSelected(hintDisplayCell(def, puzzle.board, h.slide, h.segment));
   };
 
   const showHint = () => {
@@ -240,29 +210,24 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     // The certified path is instant; only after powers change the board is a bounded search needed.
     const quick = certifiedHint(def, puzzle);
     if (quick) return presentHint(quick);
-    setStatus('Thinking…');
-    // Let the status paint first; the bounded search takes up to ~200 ms on a phone.
-    setTimeout(() => presentHint(fullHint(def, puzzle)), 0);
+    presentHint(fullHint(def, puzzle));
   };
 
   // ---- power targeting ------------------------------------------------------------------
   const pickPower = (p: Power) => {
     if (targeting === p) return clearPower();
     setHintRes(null);
+    setTrayNote(null);
+    setPanelError(null);
     const free = puzzle.freeUses.includes(p);
     if (!free && energy < POWER_COST[p]) {
       cue('reject');
-      return setStatus(`${POWER_LABEL[p]} needs ⚡${POWER_COST[p]} (you have ${energy}). Earn +1 for each reference codon you complete with a normal move.`);
+      return setTrayNote(`${POWER_LABEL[p]} needs ⚡${POWER_COST[p]} (you have ${energy}).`);
     }
-    if (p === 'ligase' && puzzle.locks.length) return setStatus(REJECT_TEXT['bond-active']!);
-    if (p === 'scaffold' && puzzle.scaffold) return setStatus(REJECT_TEXT['scaffold-active']!);
+    if (p === 'ligase' && puzzle.locks.length) { cue('reject'); return setTrayNote(REJECT_TEXT['bond-active']!); }
+    if (p === 'scaffold' && puzzle.scaffold) { cue('reject'); return setTrayNote(REJECT_TEXT['scaffold-active']!); }
     setTargeting(p);
     setPending(null);
-    setStatus(
-      p === 'crispr' ? 'CRISPR: tap the tile to edit.'
-        : p === 'ligase' ? 'Ligase: tap a tile of a complete codon (highlighted).'
-          : 'Scaffold: tap a glowing gap (↔ joins a row, ↕ a column).',
-    );
   };
   const completeCodons = levelCodons(def).filter((c) => codonComplete(puzzle.board, c) && !c.cells.some((x) => puzzle.scaffold?.cells.includes(x)));
   const targetTiles = new Set<Cell>(
@@ -273,20 +238,20 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const onTarget = (cell: Cell) => {
     setSelected(cell);
     if (targeting === 'crispr') {
-      if (puzzle.locks.includes(cell)) return setStatus(REJECT_TEXT.locked!);
+      if (puzzle.locks.includes(cell)) return setPanelError(REJECT_TEXT.locked!);
+      setPanelError(null);
       setPending({ power: 'crispr', cell, base: null, pos: 0 });
-      setStatus(def.tokens ? 'Pick which base of the piece to change, then the new base. The targets show the result before you confirm.' : 'Pick the new base. The targets show the result before you confirm.');
     } else if (targeting === 'ligase') {
       const codon = levelCodons(def).find((c) => c.cells.includes(cell));
-      if (!codon) return setStatus(REJECT_TEXT['not-a-codon']!);
-      if (!codonComplete(puzzle.board, codon)) return setStatus(def.tokens ? 'That piece isn’t in place yet.' : 'That codon isn’t complete yet — finish its three bases first.');
+      if (!codon) return setPanelError(REJECT_TEXT['not-a-codon']!);
+      if (!codonComplete(puzzle.board, codon)) return setPanelError(def.tokens ? 'That piece isn’t in place yet.' : 'That codon isn’t complete yet — finish its three bases first.');
+      setPanelError(null);
       setPending({ power: 'ligase', cells: codon.cells });
-      setStatus('');
     }
   };
   const onPickGap = (candidate: ScaffoldCandidate) => {
     setPending({ power: 'scaffold', candidate });
-    setStatus('');
+    setPanelError(null);
   };
   const confirmPower = () => {
     if (previewCmd && dispatch(previewCmd)) clearPower();
@@ -337,12 +302,12 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         title={title}
         detail={detail}
         costText={costText}
-        error={err}
+        error={err ?? panelError}
         canConfirm={!!previewResult?.accepted}
         basePicker={basePicker}
         posPicker={posPicker}
         onConfirm={confirmPower}
-        onCancel={() => { clearPower(); setStatus('Cancelled — nothing spent.'); }}
+        onCancel={() => clearPower()}
       />
     );
   }
@@ -355,14 +320,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : def.chapter ? chapter[def.chapter.part] : LEVELS[def.index + 1];
   const powerPreview: PowerPreview | null = pending;
 
-  const defaultStatus = def.chapter && def.chapter.part === 1 && puzzle.moves === 0 && !solvedView
-    ? `${tierIntro(def)} Tap a tile to read its full sequence below the board.`
-    : showGestureCue
-    ? 'Drag the glowing tile in the arrow’s direction — the whole line slides with your finger. Or tap it and use the arrow buttons.'
-    : solvedView ? 'Solved. Replay or move on when ready.'
-      : def.lab && puzzle.freeUses.length ? LAB_INTRO[def.lab]
-        : `${MODE_BLURB[def.mode]} Drag any tile to slide its row or column segment — gaps block movement.`;
-
   const best = save.best[def.id];
   const replay = () => {
     setCelebrate(null);
@@ -370,7 +327,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     dispatch({ type: 'restart' });
   };
   const nudgeReplay = () => {
-    setStatus('This level is already solved. Tap Replay to play it again.');
     if (reducedMotion) return;
     setReplayPulse(false);
     requestAnimationFrame(() => setReplayPulse(true));
@@ -440,26 +396,17 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           highlightRelease={activeHint?.kind === 'release'}
           onPick={pickPower}
           onRelease={() => dispatch({ type: 'release' })}
+          notice={trayNote ?? undefined}
         />
       )}
 
       {!solvedView && (panel ?? (
-        <>
-          <div className="dpad" aria-label="Slide the selected tile's segment one cell">
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'row', direction: -1 })} aria-label="Slide row left">←</button>
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'col', direction: -1 })} aria-label="Slide column up">↑</button>
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'col', direction: 1 })} aria-label="Slide column down">↓</button>
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'row', direction: 1 })} aria-label="Slide row right">→</button>
-          </div>
-          <div className="actions">
-            <button type="button" onClick={() => dispatch({ type: 'undo' })} disabled={puzzle.history.length === 0}>Undo</button>
-            <button type="button" onClick={showHint}>Hint</button>
-            <button type="button" onClick={() => dispatch({ type: 'restart' })} disabled={puzzle.moves === 0 && puzzle.history.length === 0}>Restart</button>
-          </div>
-        </>
+        <div className="actions">
+          <button type="button" onClick={() => dispatch({ type: 'undo' })} disabled={puzzle.history.length === 0}>Undo</button>
+          <button type="button" onClick={showHint}>Hint</button>
+          <button type="button" onClick={() => dispatch({ type: 'restart' })} disabled={puzzle.moves === 0 && puzzle.history.length === 0}>Restart</button>
+        </div>
       ))}
-
-      <p className="status" role="status" aria-live="polite" data-testid="status">{status || defaultStatus}</p>
       {activeHint?.kind === 'undo' && !solvedView && (
         <div className="solved-bar">
           <button type="button" className="primary" onClick={() => rewind(activeHint.count)} data-testid="rewind">Undo ×{activeHint.count}</button>
@@ -497,11 +444,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     </>
   );
 }
-
-const tierIntro = (def: LevelDefinition): string =>
-  def.tier === 3 ? 'Codon tiles: each tile is three real bases. Same rules — drag a row or column segment.'
-    : def.tier === 6 ? 'Hexamer tiles: each tile is six bases (two rows of three).'
-      : `Long tiles: each carries ${def.tier} bases, shown as first…last codon with a colour barcode.`;
 
 /** Tap-to-inspect: the full sequence and provenance of the selected multi-base tile. */
 function TokenInspector({ def, puzzle, cell }: { def: LevelDefinition; puzzle: PuzzleState; cell: Cell }) {

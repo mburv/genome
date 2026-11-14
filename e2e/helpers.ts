@@ -123,15 +123,16 @@ export async function openLevel(page: Page, n: number): Promise<void> {
   await page.getByTestId('board').waitFor();
 }
 
-/** Ask for a hint; returns the cued tile and the drag (direction + cells) from the status text. */
+/** Ask for a hint; returns the cued tile and the drag (direction + cells) from the board cue. */
 export async function readHint(page: Page): Promise<{ cell: number; dir: Dir; k: number }> {
   await page.getByRole('button', { name: 'Hint' }).click();
-  await page.waitForFunction(() => !/Thinking/.test(document.querySelector('[data-testid="status"]')?.textContent ?? ''));
-  const text = await page.getByTestId('status').innerText();
-  const m = /Hint: drag (row|column) \d+ (left|right|up|down) (\d+) cells?/.exec(text);
-  if (!m) throw new Error(`no hint in: ${text}`);
-  const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
-  return { cell, dir: m[2] as Dir, k: Number(m[3]) };
+  const cue = page.getByTestId('hint-cue');
+  await cue.waitFor();
+  const dir = (await cue.getAttribute('data-hint-dir')) as Dir;
+  const k = Number(await cue.getAttribute('data-hint-k'));
+  const cell = Number(await cue.getAttribute('data-hint-cell'));
+  if (!dir || !k || Number.isNaN(cell)) throw new Error(`no hint cue data: dir=${dir} k=${k} cell=${cell}`);
+  return { cell, dir, k };
 }
 
 /** Perform one hinted drag with a real touch gesture of k cells. */

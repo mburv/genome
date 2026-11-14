@@ -13,7 +13,7 @@ test('no power tray on levels 1–3; from level 4 it shows ⚡2 and unaffordable
   await expect(page.getByTestId('power-tray')).toBeVisible();
   await expect(page.getByTestId('energy')).toContainText('2');
   await page.getByTestId('power-crispr').click();
-  await expect(page.getByTestId('status')).toContainText('needs ⚡4');
+  await expect(page.getByTestId('tray-note')).toContainText('needs ⚡4');
   await expect(page.getByTestId('power-panel')).toHaveCount(0);
   await expect(page.getByTestId('energy')).toContainText('2');
 });
@@ -56,7 +56,7 @@ test('CRISPR: preview before spending, cancel is free, same base is a no-op, con
   await expect(page.getByTestId('power-crispr')).toContainText('⚡4');
   // Hints stay valid after an edit (search, undo-to-certified or restart — never a stale drag).
   await page.getByRole('button', { name: 'Hint' }).click();
-  await expect(page.getByTestId('status')).toContainText(/Hint: drag|Undo ×|Restart/);
+  await expect(page.getByTestId('hint-cue').or(page.getByTestId('rewind')).or(page.getByTestId('restart-hint'))).toBeVisible();
   // Undo: base restored, free use back.
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   expect(await baseAt(page, target)).toBe(before);
@@ -77,10 +77,17 @@ test('CRISPR recovery: after a bad edit, hint guidance still reaches the win', a
   await page.getByTestId('power-confirm').click();
   for (let i = 0; i < 20 && !(await page.getByTestId('win').isVisible()); i++) {
     await page.getByRole('button', { name: 'Hint' }).click();
-    await page.waitForFunction(() => !/Thinking/.test(document.querySelector('[data-testid="status"]')?.textContent ?? ''));
+    await page.waitForFunction(() => !!(
+      document.querySelector('[data-testid="hint-cue"]')
+      || document.querySelector('[data-testid="rewind"]')
+      || document.querySelector('[data-testid="restart-hint"]')
+    ));
     if (await page.getByTestId('rewind').isVisible()) { await page.getByTestId('rewind').click(); continue; }
     if (await page.getByTestId('restart-hint').isVisible()) { await page.getByTestId('restart-hint').click(); continue; }
-    const { cell, dir, k } = await readHint(page);
+    const cue = page.getByTestId('hint-cue');
+    const cell = Number(await cue.getAttribute('data-hint-cell'));
+    const dir = (await cue.getAttribute('data-hint-dir')) as 'left' | 'right' | 'up' | 'down';
+    const k = Number(await cue.getAttribute('data-hint-k'));
     await dragBy(page, cell, dir, k);
   }
   await expect(page.getByTestId('win')).toBeVisible();
@@ -129,16 +136,16 @@ test('Scaffold: bridge across a gap, rotations tick it, it expires after exactly
   await expect(page.getByTestId('scaffold-bridge')).toBeVisible();
   await expect(page.getByTestId('scaffold-remaining')).toContainText('3 rotations');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
-  // Rotate the bridged track three times with the arrow pad.
-  await page.locator('.tile.scaffolded').first().click();
+  // Rotate the bridged track three times by dragging (the on-screen pad is gone).
+  const cell = Number(await page.locator('.tile.scaffolded').first().getAttribute('data-cell'));
+  const pitch = await cellPitch(page);
   for (const left of [2, 1]) {
-    await page.getByRole('button', { name: 'Slide column down' }).click();
+    await touchDrag(page, cell, [{ dx: 1, dy: pitch }], { holdMs: 100 });
     await expect(page.getByTestId('scaffold-remaining')).toContainText(`${left} rotation`);
   }
-  await page.getByRole('button', { name: 'Slide column down' }).click();
+  await touchDrag(page, cell, [{ dx: 1, dy: pitch }], { holdMs: 100 });
   await expect(page.getByTestId('scaffold-bridge')).toHaveCount(0);
   await expect(page.getByTestId('scaffold-remaining')).toHaveCount(0);
-  await expect(page.getByTestId('status')).toContainText(/expired/i);
   await expect(page.getByTestId('moves')).toHaveText('4 moves');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByTestId('scaffold-remaining')).toContainText('1 rotation');

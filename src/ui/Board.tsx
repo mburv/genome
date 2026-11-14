@@ -466,7 +466,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
         ))}
       <div ref={layerRef} className="drag-layer" aria-hidden="true" />
       {hint && hintCell !== null && (
-        <div className={`hint-cue ${showGestureCue ? 'gesture' : ''} dir-${slideDir(hint)}`} style={{ gridRow: rowOf(hintCell) + 1, gridColumn: colOf(hintCell) + 1 }} aria-hidden="true" data-testid="hint-cue">
+        <div className={`hint-cue ${showGestureCue ? 'gesture' : ''} dir-${slideDir(hint)}`} style={{ gridRow: rowOf(hintCell) + 1, gridColumn: colOf(hintCell) + 1 }} aria-hidden="true" data-testid="hint-cue" data-hint-dir={slideDir(hint)} data-hint-k={Math.abs(hint.steps)} data-hint-cell={hintCell}>
           <span>{slideArrow(hint)}{Math.abs(hint.steps) > 1 ? <sup>{Math.abs(hint.steps)}</sup> : null}</span>
         </div>
       )}

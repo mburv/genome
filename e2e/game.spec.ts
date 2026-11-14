@@ -30,7 +30,6 @@ test('tutorial: first-time players start in level 1; one swipe on the cued tile 
   await fresh(page);
   await expectSampleHeading(page, 1);
   await expect(page.getByTestId('hint-cue')).toBeVisible();
-  await expect(page.getByTestId('status')).toContainText('Drag the glowing tile');
   const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
   const dir = /dir-(\w+)/.exec((await page.getByTestId('hint-cue').getAttribute('class'))!)![1] as Dir;
   await touchSwipe(page, cell, dir);
@@ -75,7 +74,7 @@ test('splicing level: three numbered pieces; replication: dashed complement stra
   await expect(page.getByTestId('repair-slot')).toHaveText('?');
 });
 
-test('swiping a hole does nothing; tap + arrow buttons and undo work', async ({ page }) => {
+test('swiping a hole does nothing; tap + keyboard arrow and undo work', async ({ page }) => {
   await openLevel(page, 2);
   await expectSampleHeading(page, 2);
   const hb = (await page.locator('.board > .hole').first().boundingBox())!;
@@ -89,7 +88,8 @@ test('swiping a hole does nothing; tap + arrow buttons and undo work', async ({ 
   const track = page.locator('.tile.goal').nth(2);
   await track.tap();
   await expect(track).toHaveClass(/selected/);
-  await page.getByRole('button', { name: 'Slide row right' }).click();
+  await track.focus();
+  await page.keyboard.press('ArrowRight');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await page.waitForTimeout(250);
   expect(await page.locator('.board').innerText()).not.toBe(before);
@@ -160,8 +160,10 @@ test('progress and the board in play survive a reload; returning players see the
   const dir = /dir-(\w+)/.exec((await page.getByTestId('hint-cue').getAttribute('class'))!)![1] as Dir;
   await touchSwipe(page, cell, dir);
   await page.getByRole('button', { name: 'Next level →' }).click();
-  await page.locator('.tile.goal').nth(1).tap();
-  await page.getByRole('button', { name: 'Slide column down' }).click();
+  const tile = page.locator('.tile.goal').nth(1);
+  await tile.tap();
+  await tile.focus();
+  await page.keyboard.press('ArrowDown');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await page.waitForTimeout(250);
   const board = await page.locator('.board').innerText();

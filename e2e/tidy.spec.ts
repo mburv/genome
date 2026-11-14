@@ -165,3 +165,55 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await assertCluePanelClean(page, size.width);
   });
 }
+
+async function assertPlayScreenDecluttered(page: Page, width: number) {
+  await expect(page.locator('.dpad')).toHaveCount(0);
+  await expect(page.getByTestId('status')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Slide (row|column)/ })).toHaveCount(0);
+  await expect(page.getByTestId('help-how-to-play')).toHaveCount(0);
+  await expect(page.getByTestId('help-about-dna')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Hint' })).toBeVisible();
+  const metrics = await page.evaluate(() => {
+    const board = document.querySelector('[data-testid="board"]') as HTMLElement;
+    const b = board.getBoundingClientRect();
+    return {
+      boardWidth: b.width,
+      boardHeight: b.height,
+      pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+      x: b.x,
+    };
+  });
+  expect(metrics.x).toBeGreaterThanOrEqual(0);
+  expect(metrics.x + metrics.boardWidth).toBeLessThanOrEqual(width);
+  expect(Math.abs(metrics.boardWidth - metrics.boardHeight)).toBeLessThan(2);
+  expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
+  expect(metrics.pageOverflow).toBeLessThanOrEqual(0);
+}
+
+for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
+  test(`puzzle screen has no pad, status or help links at ${size.width}x${size.height}; help lives in Settings`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await fresh(page);
+    await assertPlayScreenDecluttered(page, size.width);
+    if (size.width === 390) {
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-declutter-390x844.png' });
+    }
+    await page.getByTestId('open-settings').click();
+    await expect(page.getByTestId('settings')).toBeVisible();
+    await expect(page.getByTestId('help-how-to-play')).toBeVisible();
+    await expect(page.getByTestId('help-about-dna')).toBeVisible();
+    if (size.width === 390) {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-settings-390x844.png' });
+    }
+    await page.getByTestId('help-how-to-play').locator('summary').click();
+    await expect(page.getByTestId('help-how-to-play')).toContainText('Drag a tile left/right');
+    await expect(page.getByTestId('help-how-to-play')).not.toContainText('arrow buttons');
+    await page.getByTestId('help-about-dna').locator('summary').click();
+    await expect(page.getByTestId('help-about-dna')).toContainText('NM_000207.3');
+    await page.getByRole('button', { name: 'Done' }).click();
+    await expect(page.getByTestId('board')).toBeVisible();
+    await expect(page.getByTestId('settings')).toHaveCount(0);
+    await assertPlayScreenDecluttered(page, size.width);
+  });
+}
