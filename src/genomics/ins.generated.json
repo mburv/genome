@@ -3,6 +3,8 @@
   "geneId": "NCBIGene:3630",
   "symbol": "INS",
   "name": "Insulin",
+  "fullName": "insulin",
+  "fullNameProvenance": "NCBI RefSeq gene /note in NM_000207.3",
   "chromosome": "11",
   "transcript": "NM_000207.3",
   "protein": "NP_000198.1",

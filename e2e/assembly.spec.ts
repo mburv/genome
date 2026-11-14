@@ -34,7 +34,9 @@ test('long-token level: readable tiles, tap-to-inspect, drag-solve with hints; f
   expect(last.tier).toBe(12);
   await patchSave(page, (s) => ({ ...s, completed: ins.slice(0, -1).map((l) => l.id) }));
   await page.getByTestId(`cnode-${last.id}`).click();
-  await expect(page.getByTestId('play-title')).toHaveText(`INS · ${ins.length}/${ins.length}`);
+  await expect(page.getByTestId('play-title')).toHaveText('INS');
+  await expect(page.getByTestId('play-progress')).toHaveText(`${ins.length}/${ins.length}`);
+  await expect(page.getByTestId('play-fullname')).toHaveText('INSULIN');
   await expect(page.getByTestId('play-locus')).toContainText('NM_000207.3');
   const tile = page.locator('.tile.tok').first();
   const seq = (await tile.getAttribute('data-seq'))!;

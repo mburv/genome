@@ -3,6 +3,8 @@
   "geneId": "NCBIGene:3043",
   "symbol": "HBB",
   "name": "Beta-globin",
+  "fullName": "hemoglobin subunit beta",
+  "fullNameProvenance": "NCBI RefSeq gene /note in NM_000518.5",
   "chromosome": "11",
   "transcript": "NM_000518.5",
   "protein": "NP_000509.1",

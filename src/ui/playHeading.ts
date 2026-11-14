@@ -3,13 +3,24 @@ import type { LevelDefinition } from '../engine/types.ts';
 import { GENES } from '../genomics/genes.ts';
 import { POWER_LABEL } from './PowerTray.tsx';
 
-/** Compact play-screen heading: current gene (or lab) and its RefSeq locus. */
-export function playHeading(def: LevelDefinition): { title: string; locus: string } {
+export interface PlayHeading {
+  /** Large title: the gene symbol, or the lab power name. */
+  title: string;
+  /** Small progress (e.g. "4/8") or lab tag ("PRACTICE"), shown at locus size. */
+  progress: string | null;
+  /** Official full name, already in the small-line letter case (uppercase). */
+  fullName: string | null;
+  locus: string;
+}
+
+/** Compact play-screen heading: symbol, fraction + official name, and RefSeq locus. */
+export function playHeading(def: LevelDefinition): PlayHeading {
   const gene = GENES[def.symbol]!;
   const locus = `CHROMOSOME ${gene.chromosome} · ${gene.transcript}`;
-  if (def.lab) return { title: `${POWER_LABEL[def.lab]} · practice`, locus };
-  if (def.chapter) return { title: `${gene.symbol} · ${def.chapter.part}/${def.chapter.of}`, locus };
+  const fullName = gene.fullName ? gene.fullName.toUpperCase() : null;
+  if (def.lab) return { title: POWER_LABEL[def.lab], progress: 'PRACTICE', fullName, locus };
+  if (def.chapter) return { title: gene.symbol, progress: `${def.chapter.part}/${def.chapter.of}`, fullName, locus };
   const own = levelsForGene(def.symbol);
   const position = own.findIndex((l) => l.id === def.id) + 1;
-  return { title: `${gene.symbol} · ${position}/${own.length}`, locus };
+  return { title: gene.symbol, progress: `${position}/${own.length}`, fullName, locus };
 }

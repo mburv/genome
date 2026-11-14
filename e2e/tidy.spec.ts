@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { completedLevelSave, fresh, openCompleted, openLevel } from './helpers';
+import { completedLevelSave, expectSampleHeading, fresh, openCompleted, openLevel } from './helpers';
 
 const def = (pack.levels as LevelDefinition[])[0]!;
 
@@ -21,8 +21,19 @@ function assertCentred(banner: { x: number; y: number; width: number; height: nu
 test('play header shows the current gene and locus; the info card is gone; Map lives in Settings', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await fresh(page);
-  await expect(page.getByTestId('play-title')).toHaveText('INS · 1/6');
+  await expectSampleHeading(page, 1);
   await expect(page.getByTestId('play-locus')).toHaveText('CHROMOSOME 11 · NM_000207.3');
+  const typography = await page.evaluate(() => {
+    const style = (id: string) => {
+      const cs = getComputedStyle(document.querySelector(`[data-testid="${id}"]`)!);
+      return { fontSize: cs.fontSize, fontWeight: cs.fontWeight, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform, fontFamily: cs.fontFamily };
+    };
+    return { progress: style('play-progress'), fullName: style('play-fullname'), detail: style('play-detail'), locus: style('play-locus') };
+  });
+  expect(typography.progress).toEqual(typography.locus);
+  expect(typography.fullName).toEqual(typography.locus);
+  expect(typography.detail.fontSize).toBe(typography.locus.fontSize);
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-header-390x844.png' });
   await expect(page.getByRole('heading', { name: 'GENOME' })).toHaveCount(0);
   await expect(page.getByText('Build what makes you human')).toHaveCount(0);
   await expect(page.locator('.panel.info')).toHaveCount(0);
@@ -45,13 +56,29 @@ test('play header shows the current gene and locus; the info card is gone; Map l
 test('heading stays compact at 320px and updates on the next gene', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openLevel(page, 7);
-  await expect(page.getByTestId('play-title')).toHaveText('HBB · 1/6');
+  await expectSampleHeading(page, 7);
   await expect(page.getByTestId('play-locus')).toHaveText('CHROMOSOME 11 · NM_000518.5');
+  const typography = await page.evaluate(() => {
+    const sizeOf = (id: string) => getComputedStyle(document.querySelector(`[data-testid="${id}"]`)!).fontSize;
+    return { progress: sizeOf('play-progress'), fullName: sizeOf('play-fullname'), locus: sizeOf('play-locus') };
+  });
+  expect(typography.progress).toBe(typography.locus);
+  expect(typography.fullName).toBe(typography.locus);
   const heading = (await page.getByTestId('play-heading').boundingBox())!;
   expect(heading.x).toBeGreaterThanOrEqual(0);
   expect(heading.x + heading.width).toBeLessThanOrEqual(320);
-  const overflow = await page.getByTestId('play-heading').evaluate((el) => el.scrollWidth - el.clientWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
+  const overflow = await page.evaluate(() => {
+    const heading = document.querySelector('[data-testid="play-heading"]') as HTMLElement;
+    const detail = document.querySelector('[data-testid="play-detail"]') as HTMLElement;
+    const locus = document.querySelector('[data-testid="play-locus"]') as HTMLElement;
+    const row = heading.querySelector('.play-title-row') as HTMLElement;
+    const measure = (el: HTMLElement) => ({ scroll: el.scrollWidth, client: el.clientWidth, overflow: el.scrollWidth - el.clientWidth });
+    return { heading: measure(heading), row: measure(row), detail: measure(detail), locus: measure(locus) };
+  });
+  expect(overflow.heading.overflow).toBeLessThanOrEqual(0);
+  expect(overflow.row.overflow).toBeLessThanOrEqual(0);
+  expect(overflow.detail.overflow).toBeLessThanOrEqual(0);
+  expect(overflow.locus.overflow).toBeLessThanOrEqual(0);
 });
 
 for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {

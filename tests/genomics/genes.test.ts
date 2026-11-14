@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { GENES, GENE_ORDER, HBB, INS, type GeneAsset } from '../../src/genomics/genes.ts';
+import { CATALOGUE_ORDER, GENES, GENE_ORDER, HBB, INS, MANIFEST, type GeneAsset } from '../../src/genomics/genes.ts';
 import { alignedComplement, complementBase, reverseComplement } from '../../src/genomics/dna.ts';
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -75,5 +75,41 @@ describe('DNA helpers', () => {
     expect(reverseComplement('ATGC')).toBe('GCAT');
     expect(alignedComplement(alignedComplement(INS.sequence))).toBe(INS.sequence);
     expect(reverseComplement(HBB.sequence).split('').reverse().join('')).toBe(alignedComplement(HBB.sequence));
+  });
+});
+
+/** Official names taken verbatim from each included record's gene /note (never invented). */
+const OFFICIAL_NOTE: Record<string, string> = {
+  INS: 'insulin',
+  HBB: 'hemoglobin subunit beta',
+  HBA1: 'hemoglobin subunit alpha 1',
+  HBD: 'hemoglobin subunit delta',
+  MB: 'myoglobin',
+  GCG: 'glucagon',
+  LEP: 'leptin',
+  PTH: 'parathyroid hormone',
+  NPY: 'neuropeptide Y',
+  TTR: 'transthyretin',
+  B2M: 'beta-2-microglobulin',
+  RHO: 'rhodopsin',
+};
+
+describe('official full names', () => {
+  it('covers every included catalogue gene with a provenanced name from the pinned record', () => {
+    expect(CATALOGUE_ORDER).toHaveLength(12);
+    expect(Object.keys(OFFICIAL_NOTE).sort()).toEqual([...CATALOGUE_ORDER].sort());
+    for (const symbol of CATALOGUE_ORDER) {
+      const asset = GENES[symbol]!;
+      const entry = MANIFEST.included.find((g) => g.symbol === symbol)!;
+      const expected = OFFICIAL_NOTE[symbol]!;
+      expect(asset.fullName).toBe(expected);
+      expect(entry.fullName).toBe(expected);
+      expect(asset.fullNameProvenance).toBe(`NCBI RefSeq gene /note in ${asset.transcript}`);
+      expect(entry.fullNameProvenance).toBe(asset.fullNameProvenance);
+      const raw = readFileSync(`data/raw/${asset.transcript}.gb`, 'utf8');
+      const geneBlock = /^ {5}gene {12}.+\n((?: {21}.*\n)*)/m.exec(raw.split('FEATURES')[1] ?? raw);
+      const note = /\/note="([^"]+)"/.exec((geneBlock?.[1] ?? '').replace(/\n {21}/g, ' '))?.[1]?.replace(/\s+/g, ' ').trim();
+      expect(note).toBe(expected);
+    }
   });
 });

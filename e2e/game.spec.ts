@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { fresh, openLevel, openMap, sampleTitle, solveWithHints, touchSwipe, type Dir } from './helpers';
+import { expectSampleHeading, fresh, openLevel, openMap, solveWithHints, touchSwipe, type Dir } from './helpers';
 
 const LEVELS = pack.levels as LevelDefinition[];
 
@@ -28,7 +28,7 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
 
 test('tutorial: first-time players start in level 1; one swipe on the cued tile completes it', async ({ page }) => {
   await fresh(page);
-  await expect(page.getByTestId('play-title')).toHaveText('INS · 1/6');
+  await expectSampleHeading(page, 1);
   await expect(page.getByTestId('hint-cue')).toBeVisible();
   await expect(page.getByTestId('status')).toContainText('Drag the glowing tile');
   const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
@@ -59,24 +59,24 @@ test('level map lists 12 levels across INS and HBB with modes; cards are locked'
 
 test('splicing level: three numbered pieces; replication: dashed complement strand; repair: gap cell', async ({ page }) => {
   await openLevel(page, 2);
-  await expect(page.getByTestId('play-title')).toHaveText('INS · 2/6');
+  await expectSampleHeading(page, 2);
   await expect(page.locator('.track-outline')).toHaveCount(LEVELS[1]!.tracks.length);
   await expect(page.getByTestId('target-panel')).toContainText('illustrative');
   await openMap(page);
   await page.getByRole('button', { name: /^Level 3: / }).click();
-  await expect(page.getByTestId('play-title')).toHaveText('INS · 3/6');
+  await expectSampleHeading(page, 3);
   await expect(page.locator('.track-outline.strand-complement')).toHaveCount(1);
   await expect(page.getByTestId('target-panel')).toContainText('complement');
   await openMap(page);
   await page.getByRole('button', { name: /^Level 4: / }).click();
-  await expect(page.getByTestId('play-title')).toHaveText('INS · 4/6');
+  await expectSampleHeading(page, 4);
   await expect(page.getByTestId('repair-cell')).toHaveText('?');
   await expect(page.getByTestId('repair-slot')).toHaveText('?');
 });
 
 test('swiping a hole does nothing; tap + arrow buttons and undo work', async ({ page }) => {
   await openLevel(page, 2);
-  await expect(page.getByTestId('play-title')).toHaveText('INS · 2/6');
+  await expectSampleHeading(page, 2);
   const hb = (await page.locator('.board > .hole').first().boundingBox())!;
   await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
   await page.mouse.down();
@@ -118,7 +118,7 @@ test('full campaign: all 12 levels solvable by touch drags + hints; genes discov
   test.setTimeout(240_000);
   await fresh(page);
   for (let level = 1; level <= 12; level++) {
-    await expect(page.getByTestId('play-title')).toHaveText(sampleTitle(level));
+    await expectSampleHeading(page, level);
     await solveWithHints(page);
     const def = LEVELS[level - 1]!;
     const iv = def.sourceIntervals[0]!;
@@ -169,7 +169,7 @@ test('progress and the board in play survive a reload; returning players see the
   await expect(page.getByTestId('progress-INS')).toHaveText('9 / 51 sample bases');
   await expect(page.getByRole('button', { name: /^Level 1: First drag, .*complete/ })).toBeVisible();
   await page.getByTestId('continue').click();
-  await expect(page.getByTestId('play-title')).toHaveText('INS · 2/6');
+  await expectSampleHeading(page, 2);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   expect(await page.locator('.board').innerText()).toBe(board);
   await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();

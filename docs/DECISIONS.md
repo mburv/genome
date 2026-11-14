@@ -188,3 +188,9 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - **Map.** The header Map button is gone. Settings has a Map action that opens the level map. Done returns to the screen Settings was opened from.
   - **Info card.** The whole level-information panel (chromosome/accession, LEVEL x/y, gene · n/m, mode badge, sample/assembly progress, par and rating) is removed and not relocated. The move counter under the board stays. The board remains full-bleed and maximal; the freed space shortens the page rather than shrinking tiles.
   - **Solved.** The D-UI-07 banner is an overlay, centred horizontally and vertically on the board, with the solved arrangement visible around it. Replay (coral), Next, last/best moves, stars and the locked-drag pulse are unchanged.
+
+- D-UI-09 Play header shows the official full gene name beside a smaller progress fraction.
+  - **Layout.** The large title is only the gene symbol (or the lab power name). The progress fraction (`4/8`, chapter `part/of`, or lab `PRACTICE`) sits on the same baseline in the same size, weight, tracking and uppercase as the locus line (`CHROMOSOME 11 · NM_000207.3`), followed by ` · ` and the official full name. Example: `INS` then `4/8 · INSULIN`, with the chromosome line below.
+  - **Names.** `fullName` is taken verbatim from the pinned NCBI GenBank record by the data pipeline (`scripts/import-genes.mjs`): the gene feature's `/note`, or CDS `/product` if `/note` is missing, never invented. Provenance is stored as `fullNameProvenance` (e.g. `NCBI RefSeq gene /note in NM_000207.3`) and checked by `validate:data`. The existing card `name` field is unchanged (HBB stays "Beta-globin" on cards). The header displays the official name in uppercase to match the locus line.
+  - **Fit.** At 320 px the official name truncates with an ellipsis; the symbol and fraction do not wrap or overflow.
+

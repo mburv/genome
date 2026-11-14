@@ -19,6 +19,28 @@ const CODE = 'FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG';
 const translate = (s) => s.match(/.{3}/g).map((c) => CODE['TCAG'.indexOf(c[0]) * 16 + 'TCAG'.indexOf(c[1]) * 4 + 'TCAG'.indexOf(c[2])]).join('');
 class Exclusion extends Error { constructor(reason, verified) { super(reason); this.verified = verified; } }
 
+/** Join a GenBank qualifier block (continuation lines start with 21 spaces). */
+const joinQuals = (qualText) => (qualText ?? '').replace(/\n {21}/g, ' ');
+const qualifier = (quals, name) => {
+  const m = new RegExp(`/${name}="([^"]+)"`).exec(quals);
+  return m ? m[1].replace(/\s+/g, ' ').trim() : '';
+};
+
+/**
+ * Official gene full name, taken verbatim from the pinned GenBank record.
+ * Prefer the gene feature's /note (the usual official name, e.g. "insulin");
+ * fall back to CDS /product only when /note is absent. Never invent a name.
+ */
+function officialFullName(features, accession, fail) {
+  const geneBlock = /^ {5}gene {12}.+\n((?: {21}.*\n)*)/m.exec(features);
+  const cdsBlock = /^ {5}CDS {13}.+\n((?: {21}.*\n)*)/m.exec(features);
+  const note = qualifier(joinQuals(geneBlock?.[1]), 'note');
+  if (note) return { fullName: note, fullNameProvenance: `NCBI RefSeq gene /note in ${accession}` };
+  const product = qualifier(joinQuals(cdsBlock?.[1]), 'product');
+  if (product) return { fullName: product, fullNameProvenance: `NCBI RefSeq CDS /product in ${accession}` };
+  fail('no official full name (gene /note or CDS /product) in the record');
+}
+
 function importGene(c) {
   const fail = (m) => { throw new Error(`${c.symbol}: ${m}`); };
   const exclude = (m, verified = false) => { throw new Exclusion(m, verified); };
@@ -78,11 +100,14 @@ function importGene(c) {
   const summary = sentences.slice(0, c.summarySentences).join(' ');
   const summaryCredit = /\[provided by (RefSeq, [A-Za-z]+ \d{4})\]/.exec(comment)?.[1];
   if (!summary || !summaryCredit) fail('RefSeq summary not found');
+  const { fullName, fullNameProvenance } = officialFullName(features, accession, fail);
   const asset = {
     datasetId: `refseq-${accession}-${prov.retrievedAt.slice(0, 10)}`,
     geneId: `NCBIGene:${geneId}`,
     symbol: c.symbol,
     name,
+    fullName,
+    fullNameProvenance,
     chromosome,
     transcript: accession,
     protein: proteinId,
@@ -114,7 +139,7 @@ for (const c of CANDIDATES) {
   try {
     const asset = importGene(c);
     included.push({ c, asset });
-    console.log(`OK ${c.symbol} ${asset.transcript} chr${asset.chromosome} CDS ${asset.cdsLocation} length ${asset.cdsLength} sha256 ${asset.sequenceSha256} translation matches ${asset.protein} (${asset.proteinLength} aa)`);
+    console.log(`OK ${c.symbol} ${asset.transcript} chr${asset.chromosome} fullName "${asset.fullName}" (${asset.fullNameProvenance}) CDS ${asset.cdsLocation} length ${asset.cdsLength} sha256 ${asset.sequenceSha256} translation matches ${asset.protein} (${asset.proteinLength} aa)`);
   } catch (e) {
     if (e instanceof Exclusion) {
       excluded.push({ symbol: c.symbol, geneId: `NCBIGene:${c.geneId}`, verified: e.verified, reason: e.message });
@@ -135,7 +160,7 @@ const manifest = {
   attribution: 'Sequences and summaries: NCBI RefSeq (O\'Leary et al., Nucleic Acids Res 2016); MANE Select: Morales et al., Nature 2022 (doi:10.1038/s41586-022-04558-8). NCBI data are provided without restriction on use; see https://www.ncbi.nlm.nih.gov/home/about/policies/.',
   candidates: CANDIDATES.length,
   included: included.map(({ c, asset }) => ({
-    symbol: asset.symbol, geneId: asset.geneId, name: asset.name, chromosome: asset.chromosome, theme: c.theme, transcript: asset.transcript,
+    symbol: asset.symbol, geneId: asset.geneId, name: asset.name, fullName: asset.fullName, fullNameProvenance: asset.fullNameProvenance, chromosome: asset.chromosome, theme: c.theme, transcript: asset.transcript,
     protein: asset.protein, biotype: asset.biotype, cdsLength: asset.cdsLength, sequenceSha256: asset.sequenceSha256, datasetId: asset.datasetId, sourceUrl: asset.sourceUrl,
   })),
   excluded,
@@ -161,5 +186,8 @@ for (const [path, data] of outputs) {
   } else writeFileSync(path, text);
 }
 for (const { asset } of included) if (sha256(asset.sequence) !== asset.sequenceSha256) { console.error(`checksum ${asset.symbol}`); failed = true; }
+for (const { asset } of included) {
+  if (!asset.fullName || !asset.fullNameProvenance) { console.error(`DATA VALIDATION FAILED: ${asset.symbol} is missing a provenanced fullName`); failed = true; }
+}
 console.log(`${check ? 'Checked' : 'Wrote'} manifest ${CATALOGUE_ID}: ${included.length} included, ${excluded.length} excluded of ${CANDIDATES.length} candidates; ${manifest.counts.totalCdsBases} CDS bases`);
 if (failed) process.exit(1);

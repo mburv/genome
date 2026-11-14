@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { applyCommand, createInitialState, type PuzzleState } from '../src/engine/engine.ts';
 import type { Axis, LevelDefinition } from '../src/engine/types.ts';
 import m2Pack from '../src/campaign/levels.generated.json' with { type: 'json' };
@@ -92,8 +92,16 @@ export async function fresh(page: Page): Promise<void> {
   await page.getByTestId('board').waitFor();
 }
 
-/** 1-based sample-campaign heading, e.g. level 1 → "INS · 1/6", level 7 → "HBB · 1/6". */
-export const sampleTitle = (n: number): string => (n <= 6 ? `INS · ${n}/6` : `HBB · ${n - 6}/6`);
+/** 1-based sample-campaign symbol and fraction, e.g. level 1 → INS / 1/6, level 7 → HBB / 1/6. */
+export const sampleSymbol = (n: number): string => (n <= 6 ? 'INS' : 'HBB');
+export const sampleProgress = (n: number): string => (n <= 6 ? `${n}/6` : `${n - 6}/6`);
+export const sampleFullName = (n: number): string => (n <= 6 ? 'INSULIN' : 'HEMOGLOBIN SUBUNIT BETA');
+
+export async function expectSampleHeading(page: Page, n: number): Promise<void> {
+  await expect(page.getByTestId('play-title')).toHaveText(sampleSymbol(n));
+  await expect(page.getByTestId('play-progress')).toHaveText(sampleProgress(n));
+  await expect(page.getByTestId('play-fullname')).toHaveText(sampleFullName(n));
+}
 
 /** Open the level map, via Settings when the header Map button is absent. */
 export async function openMap(page: Page): Promise<void> {

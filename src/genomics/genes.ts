@@ -13,6 +13,10 @@ export interface GeneAsset {
   geneId: string;
   symbol: string;
   name: string;
+  /** Official full name, verbatim from the pinned GenBank record (gene /note, else CDS /product). */
+  fullName: string;
+  /** Where `fullName` was taken from, e.g. "NCBI RefSeq gene /note in NM_000207.3". */
+  fullNameProvenance: string;
   chromosome: string;
   transcript: string;
   protein: string;
@@ -38,6 +42,8 @@ export interface ManifestEntry {
   symbol: string;
   geneId: string;
   name: string;
+  fullName: string;
+  fullNameProvenance: string;
   chromosome: string;
   theme: string;
   transcript: string;

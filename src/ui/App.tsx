@@ -57,7 +57,16 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       <header className={`top${screen.kind === 'play' ? ' play-top' : ''}`}>
         {screen.kind === 'play' ? (
           <div className="play-heading" data-testid="play-heading">
-            <h1 data-testid="play-title">{heading.title}</h1>
+            <div className="play-title-row">
+              <h1 data-testid="play-title">{heading.title}</h1>
+              {(heading.progress || heading.fullName) && (
+                <p className="play-detail" data-testid="play-detail">
+                  {heading.progress && <span data-testid="play-progress">{heading.progress}</span>}
+                  {heading.progress && heading.fullName && <span aria-hidden="true">{'\u00a0·\u00a0'}</span>}
+                  {heading.fullName && <span className="play-fullname" data-testid="play-fullname">{heading.fullName}</span>}
+                </p>
+              )}
+            </div>
             <p className="play-locus" data-testid="play-locus">{heading.locus}</p>
           </div>
         ) : (
