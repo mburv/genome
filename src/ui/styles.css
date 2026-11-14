@@ -885,3 +885,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .trace-status { min-height:1.4em; }
 .trace-lab-back { padding:6px; }
 .trace-solved .seq-wrap { overflow-wrap:anywhere; }
+
+/* Mixed boards use the same centered solved banner as the sliding board. */
+.lab-board-stage { position:relative; display:flex; flex-direction:column; align-items:center; }
+.lab-board-stage .solved-banner { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:30; width:min(calc(100% - 28px),320px); box-sizing:border-box; }

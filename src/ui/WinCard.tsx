@@ -6,6 +6,8 @@ import { symbolSequence } from '../engine/tokens.ts';
 
 interface Props {
   def: LevelDefinition;
+  /** Mixed mechanics display the verified coding fragment, not the legacy sliding tracks. */
+  mechanic?: { title: string; sequence: string; practice: boolean; nextLabel?: string };
   moves: number;
   powersUsed: number;
   newBases: number;
@@ -39,7 +41,10 @@ export function WinCard(p: Props) {
   const cells = cellsFor(def);
   const restored = def.repair ? expand(def.repair.expected) : '';
   let strand;
-  if (def.mode === 'splice') {
+  const practice = p.mechanic?.practice ?? !!def.lab;
+  if (p.mechanic) {
+    strand = <div className="win-line" data-testid="mixed-extracted">{[...p.mechanic.sequence].map((b,i)=><span key={i} className={'strip-cell b-'+b+' ok'} style={{animationDelay:skipped?'0ms':(i*(p.mechanic!.sequence.length>27?4:40))+'ms'}}>{b}</span>)}</div>;
+  } else if (def.mode === 'splice') {
     strand = (
       <div className="win-splice">
         {def.tracks.map((t, i) => <span key={t.group} className="win-part" style={{ animationDelay: skipped ? '0ms' : `${300 + i * 80}ms` }}>{cells(t.expected, '', i * 120, skipped)}</span>)}
@@ -70,8 +75,8 @@ export function WinCard(p: Props) {
       <div className="card">
         <div className="card-head">
           <div className="card-head-copy">
-            <p className="muted small" data-testid="win-meta">{def.lab ? 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
-            <h3 id="win-title">{MODE_WIN[def.mode]}</h3>
+            <p className="muted small" data-testid="win-meta">{practice ? p.mechanic ? 'MECHANICS LAB' : 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
+            <h3 id="win-title">{p.mechanic?.title ?? MODE_WIN[def.mode]}</h3>
           </div>
           <button type="button" className="win-close" onClick={p.onClose} aria-label="Close and view board" data-testid="win-close">
             <span className="win-close-box" aria-hidden="true">
@@ -81,10 +86,10 @@ export function WinCard(p: Props) {
             </span>
           </button>
         </div>
-        <div className={`win-strand ${skipped ? 'skip' : ''} ${def.tokens ? 'tok' : ''}`} onClick={() => setSkipped(true)} title="Tap to skip">{strand}</div>
-        {def.mode === 'replicate' && <p className="muted tiny">Complementary pairs A–T and C–G. Only the template strand counts.</p>}
-        {def.mode === 'repair' && def.repair && <p className="muted tiny">Restored {restored.length > 1 ? `${restored.length} bases` : restored} at CDS position {def.repair.sourceOffset + 1}{restored.length > 1 ? `–${def.repair.sourceOffset + restored.length}` : ''}.</p>}
-        {def.lab ? (
+        <div className={`win-strand ${skipped ? 'skip' : ''} ${p.mechanic ? p.mechanic.sequence.length>27?'tok':'' : def.tokens ? 'tok' : ''}`} onClick={() => setSkipped(true)} title="Tap to skip">{strand}</div>
+        {!p.mechanic && def.mode === 'replicate' && <p className="muted tiny">Complementary pairs A–T and C–G. Only the template strand counts.</p>}
+        {!p.mechanic && def.mode === 'repair' && def.repair && <p className="muted tiny">Restored {restored.length > 1 ? `${restored.length} bases` : restored} at CDS position {def.repair.sourceOffset + 1}{restored.length > 1 ? `–${def.repair.sourceOffset + restored.length}` : ''}.</p>}
+        {practice ? (
           <p data-testid="win-bases"><b>Lab complete</b> <span className="muted">— practice only, no coverage added.</span></p>
         ) : (
         <>
@@ -102,11 +107,11 @@ export function WinCard(p: Props) {
           </div>
         )}
         <div className="card-actions">
-          <button type="button" onClick={p.onMap} data-testid="win-map">Level map</button>
+          <button type="button" onClick={p.onMap} data-testid="win-map">{p.mechanic?.practice ? 'Lab menu' : 'Level map'}</button>
           {p.assembled && !p.hasNext ? (
             <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
           ) : (
-            <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? 'Next level →' : 'Map'}</button>
+            <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? p.mechanic?.nextLabel ?? 'Next level →' : p.mechanic?.practice ? 'Lab menu' : 'Map'}</button>
           )}
         </div>
       </div>

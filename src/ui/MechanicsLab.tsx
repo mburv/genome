@@ -2,6 +2,12 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } fr
 import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
 import { TargetShell } from './TargetPanel.tsx';
 import { PowerTray } from './PowerTray.tsx';
+import { WinCard } from './WinCard.tsx';
+import { SolvedBanner } from './SolvedBanner.tsx';
+import { ALL_LEVELS, OPENING_LEVEL_ID } from '../campaign/campaign.ts';
+import { INS } from '../genomics/genes.ts';
+import type { LevelDefinition } from '../engine/types.ts';
+import { labExtractedSequence } from '../engine/mechanicsLab.ts';
 import { type MixedStage } from '../campaign/mixed.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
@@ -18,13 +24,14 @@ const cellPoint = (c: number): [number, number] => [c % 9 + .5, Math.floor(c / 9
 const pathPoints = (path: readonly number[]): string => path.map(c => cellPoint(c).join(',')).join(' ');
 const pathColors = ['#2a6e4f', '#2b5f9e', '#8c5a10'];
 const pathFills = ['var(--mint)', 'var(--sky)', 'var(--butter)'];
-type Session = { state: LabState; history: LabState[]; actions: LabAction[]; message: string };
+type WinCredit = { newBases: number; replayed: boolean; assembled: boolean };
+type Session = { state: LabState; history: LabState[]; actions: LabAction[]; message: string; celebration: WinCredit | null };
 type CrushDrag = { a: number; b: number; fraction: number };
-type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; result: LabResult; action: LabAction };
+type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; result: LabResult; action: LabAction; credit: WinCredit };
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
-function acceptResult(prev: Session, result: LabResult, action: LabAction): Session {
-  return { state: result.state, history: result.state === prev.state ? prev.history : [...prev.history, prev.state], actions: result.state === prev.state ? prev.actions : [...prev.actions, action], message: result.message || prev.message };
+function acceptResult(prev: Session, result: LabResult, action: LabAction, credit: WinCredit | null = null): Session {
+  return { state: result.state, history: result.state === prev.state ? prev.history : [...prev.history, prev.state], actions: result.state === prev.state ? prev.actions : [...prev.actions, action], message: result.message || prev.message, celebration: result.state.won && !prev.state.won ? credit : prev.celebration };
 }
 function crushDirection(a: number, dx: number, dy: number, pitch: number, board: readonly string[]): CrushDrag | null {
   const horizontal = Math.abs(dx) >= Math.abs(dy);
@@ -44,6 +51,7 @@ function swapTransform(cell: number, motion: CrushDrag): string | undefined {
 }
 
 interface CampaignPlay {
+  def: LevelDefinition; completed: boolean; onCard: () => void; hasNext: boolean;
   stage: MixedStage; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
@@ -57,7 +65,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const mutationExpected = (c: number) => expectedMutation(c, spec);
   const mutationCount = (board: readonly string[]) => countMutations(board, spec);
   const [session, setSession] = useState<Session>(() => {
-    const initial: Session = { state: createLab(id, spec), history: [], actions: [], message: '' };
+    const initial: Session = { state: createLab(id, spec), history: [], actions: [], message: '', celebration: null };
     return (campaign?.initialActions ?? []).reduce((prev, action) => acceptResult(prev, applyLab(prev.state, action), action), initial);
   });
   const [selected, setSelected] = useState<number | null>(null);
@@ -69,31 +77,36 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
   const busy = crushAnimation !== null;
   const { state } = session;
-  // Finishing a trace on pointerdown must not let the same touch activate a
-  // button on the newly mounted completion banner. Wait for pointer release.
-  const [traceGestureActive, setTraceGestureActive] = useState(false);
-  const [traceWinReady, setTraceWinReady] = useState(false);
+  // All mechanics share the sliding completion dialog. Wait until the final
+  // gesture has ended so the same touch cannot activate a new overlay button.
+  const [gestureActive, setGestureActive] = useState(false);
+  const [winReady, setWinReady] = useState(state.won);
   useEffect(() => {
-    if (id !== 'trace' || !state.won || traceGestureActive) return;
-    const timer = window.setTimeout(() => setTraceWinReady(true), 180);
+    if (!state.won || gestureActive) return;
+    const timer = window.setTimeout(() => setWinReady(true), 180);
     return () => window.clearTimeout(timer);
-  }, [id, state.won, traceGestureActive]);
+  }, [state.won, gestureActive]);
+  const credit: WinCredit = {
+    newBases: campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
+    replayed: campaign?.completed ?? false,
+    assembled: !!campaign && !campaign.assembled && !campaign.completed && campaign.covered + campaign.stage.sequence.length === INS.cdsLength,
+  };
   const onProgress = campaign?.onProgress;
   useEffect(() => { onProgress?.(session.actions, state); }, [onProgress, session.actions, state]);
   const boardRef = useRef<HTMLDivElement>(null);
   const dispatch = (action: LabAction) => setSession(prev => {
     const result = applyLab(prev.state, action);
-    return acceptResult(prev, result, action);
+    return acceptResult(prev, result, action, credit);
   });
   // Only presentation is delayed. Commit the exact engine result once, after the final frame.
   useEffect(() => {
     if (!crushAnimation) return;
-    const { stage, result, action } = crushAnimation;
+    const { stage, result, action, credit } = crushAnimation;
     const timer = window.setTimeout(() => {
       if (stage === 'swap') setCrushAnimation({ ...crushAnimation, stage: result.crush ? 'clear' : 'return' });
       else if (stage === 'clear') setCrushAnimation({ ...crushAnimation, stage: 'fall' });
       else {
-        setSession(prev => acceptResult(prev, result, action));
+        setSession(prev => acceptResult(prev, result, action, credit));
         setCrushAnimation(null);
       }
     }, crushTiming[stage]);
@@ -109,7 +122,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       setSession(prev => acceptResult(prev, result, action));
       return;
     }
-    setCrushAnimation({ a, b, stage: 'swap', result, action });
+    setCrushAnimation({ a, b, stage: 'swap', result, action, credit });
   };
   const animationFrame = crushAnimation?.result.crush;
   const displayBoard = crushAnimation?.stage === 'clear' && animationFrame ? animationFrame.swapped
@@ -118,8 +131,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { setTraceWinReady(false); setTraceGestureActive(false); setSession({ state: createLab(id, spec), history: [], actions: [], message: '' }); setSelected(null); };
-  const undo = () => { setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.' } : prev; }); setSelected(null); };
+  const reset = () => { setWinReady(false); setGestureActive(false); setSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
+  const undo = () => { setWinReady(false); setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null } : prev; }); setSelected(null); };
   const choose = (cell: number) => {
     if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
@@ -151,7 +164,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     const pitch = (e.currentTarget.getBoundingClientRect().width + 1) / 9;
     gesture.current = { pointer: e.pointerId, start: cell, last: cell, pair: pair >= 0 ? pair : selected ?? -1, read, x: e.clientX, y: e.clientY, pitch };
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (id === 'trace') setTraceGestureActive(true);
+    setGestureActive(true);
     if (id !== 'crush') choose(cell);
   };
   const pointerMove = (e: PointerEvent<HTMLDivElement>) => {
@@ -174,6 +187,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       const dx = e.clientX - g.x, dy = e.clientY - g.y;
       const motion = crushDirection(g.start, dx, dy, g.pitch, state.board);
       gesture.current = null;
+      setGestureActive(false);
       if (motion && motion.fraction >= .35) startCrushSwap(motion.a, motion.b);
       else {
         setCrushDrag(null);
@@ -182,7 +196,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       return;
     }
     const cell = cellFromPoint(e);
-    if (id === 'trace') setTraceGestureActive(false);
+    setGestureActive(false);
     if (id === 'assembly' && g.read >= 0 && cell !== null && ASSEMBLY_CELLS.includes(cell)) dispatch({ type: 'place', read: g.read, offset: cell - ASSEMBLY_CELLS[0]! });
     gesture.current = null;
   };
@@ -196,7 +210,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     : id === 'connections' ? state.routes.filter((p, i) => p.at(-1) === CONNECTION_PAIRS[i]!.end).length + '/3 pairs'
     : state.cuts.length + '/2 cuts';
   const board = (
-    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (id === 'trace' ? ' board trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setTraceGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setTraceGestureActive(false); }}>
+    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (id === 'trace' ? ' board trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
         if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
@@ -212,7 +226,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
         const badge = id === 'mutation' && c % 9 === 1 ? (isTop ? 'REF' : 'R' + (Math.floor(c / 9) + 1)) : endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
         const motionStyle: CSSProperties = { transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}) } as CSSProperties;
-        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won && !(id === 'trace' && traceGestureActive)} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
+        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won && !gestureActive} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
           <span className={id === 'trace' ? 'letter' : undefined}>{b === '·' ? '' : b}</span>{badge && <small>{badge}</small>}
         </button>;
       })}
@@ -223,6 +237,28 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       </svg>
     </div>
   );
+  const winDef = campaign?.def ?? ALL_LEVELS.find(l=>l.id===OPENING_LEVEL_ID)!;
+  const hasNext = campaign?.hasNext ?? !!next;
+  const advance = campaign ? campaign.onNext : () => next ? onNext(next) : onBack();
+  const nextLabel = campaign ? 'Next level →' : 'Next mechanic →';
+  const winTitle: Record<LabId,string> = {
+    trace:'Fragment traced', crush:'Codons collected', assembly:'Fragment assembled',
+    mutation:'Mismatches repaired', connections:'Strands connected', restriction:'Fragment isolated',
+  };
+  // Lab connections are an abstract routing exercise: their complete pair sequences
+  // are in the labels, whereas campaign endpoints encode the exact two-base fragment.
+  const extracted = state.won ? !campaign && id==='connections'
+    ? spec.CONNECTION_PAIRS.map(p=>p.seq).join('') : labExtractedSequence(state) : null;
+  const closeWin = () => setSession(prev=>({...prev,celebration:null}));
+  const popup = state.won && winReady && session.celebration && extracted !== null &&
+    <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel}}
+      moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
+      replayed={session.celebration.replayed} assembled={session.celebration.assembled && !!campaign?.assembled}
+      assembledBases={campaign?.covered ?? 0} cdsLength={INS.cdsLength} reducedMotion={reducedMotion}
+      hasNext={hasNext} onNext={advance} onMap={onBack} onCard={campaign?.onCard ?? onBack} onClose={closeWin} />;
+  const solved = state.won && winReady && !session.celebration &&
+    <SolvedBanner def={winDef} moves={state.moves} unranked pulse={false} hasNext={hasNext}
+      nextLabel={nextLabel} mapLabel={campaign?'Level map':'Lab menu'} onReplay={reset} onNext={advance} onMap={onBack} />;
   // Tracing uses exactly the same screen chrome as a classic sliding level.
   // Only the board interaction and the reference-progress feedback differ.
   if (id === 'trace') return <>
@@ -239,14 +275,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     </TargetShell>
     <div className="board-stage">
       {board}
-      {state.won && traceWinReady && <aside className="solved-banner trace-solved" data-testid="lab-win" aria-label="Level solved">
-        <div className="solved-banner-head"><span className="solved-kicker">Solved</span><span className="solved-result">{TRACE_TARGET.length} bp verified</span></div>
-        {campaign && <div className="mono small seq-wrap" data-testid="mixed-extracted">{campaign.stage.sequence}</div>}
-        <div className="solved-banner-actions">
-          <button type="button" className="primary" onClick={reset}>Replay</button>
-          {campaign ? <button type="button" onClick={campaign.onNext}>Next level →</button> : next ? <button type="button" onClick={()=>onNext(next)}>Next mechanic →</button> : <button type="button" onClick={onBack}>Lab menu</button>}
-        </div>
-      </aside>}
+      {solved}
     </div>
     <div className="under-board" data-testid="under-board">
       <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/333 bp assembled</span>}</div>
@@ -255,6 +284,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       <span className="trace-status muted small" role="status" data-testid="lab-message">{session.message || 'Trace the reference in order.'}</span>
       {!campaign && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
     </div>
+    {popup}
   </>;
   return <section className="mechanics-play" data-testid="mechanics-play">
     <div className="mechanic-heading"><button type="button" onClick={onBack} aria-label={campaign ? "Back to level map" : "Back to Mechanics Lab"}>{campaign ? "← Map" : "← Lab"}</button><div><h2 className="gene">{meta.title}</h2><span className="muted tiny">{campaign ? 'CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end : 'CHALLENGE ' + (index + 1) + '/6 · INS'}</span></div></div>
@@ -280,13 +310,14 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i], background: pathFills[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
       {id === 'restriction' && <div className="mono small restriction-target" data-testid="restriction-target" aria-label={'Target sequence: ' + target}>{[...target].map((b, i) => <span key={i} className={'restriction-target-base b-' + b} data-base={b}>{b}</span>)}</div>}
     </div>
-    {board}
+    <div className="lab-board-stage">{board}{solved}</div>
     {id === 'mutation' && selected !== null && <p className="small mutation-selection" data-testid="mutation-selection">Row {Math.floor(selected / 9) + 1}, column {selected % 9 + 1} · Current {state.board[selected]} → Target {mutationExpected(selected)}</p>}
     {id === 'mutation' && <div className="lab-base-picker" aria-label="Choose replacement base">{(['A','C','G','T'] as DNA[]).map(b => <button type="button" className={'b-' + b} key={b} disabled={selected === null || state.won} onClick={() => { if (selected !== null) dispatch({ type: 'edit', cell: selected, base: b }); }} data-testid={'lab-base-' + b}>{b}</button>)}</div>}
-    <div className="lab-controls"><button type="button" onClick={undo} disabled={busy || !session.history.length}>Undo</button><button type="button" className={hint ? 'primary' : ''} aria-pressed={hint} onClick={toggleHint}>Hint</button><button type="button" onClick={reset} disabled={busy}>Replay</button></div>
+    {!state.won && <div className="lab-controls"><button type="button" onClick={undo} disabled={busy || !session.history.length}>Undo</button><button type="button" className={hint ? 'primary' : ''} aria-pressed={hint} onClick={toggleHint}>Hint</button><button type="button" onClick={reset} disabled={busy}>Replay</button></div>}
+    {!campaign && state.won && !session.celebration && id!=='trace' && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
     {hint && !state.won && <p className="lab-hint small" role="status">{labHint(state)}</p>}
     <p className="lab-message small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</p>
-    {state.won && <div className="lab-win panel" data-testid="lab-win"><h3>{campaign ? 'Stage complete ✓' : 'Challenge complete ✓'}</h3><p className="small">{campaign ? 'Exact INS fragment verified · ' + campaign.stage.sequence.length + ' bp. ' + campaign.covered + '/333 bp assembled.' : 'Practice complete — no campaign progress changed.'}</p>{campaign && <><div className="mono small seq-wrap" data-testid="mixed-extracted">{campaign.stage.sequence}</div>{campaign.assembled && <p className="small" data-testid="mixed-assembled">INS fully assembled — exact reference and SHA-256 verified.</p>}</>}<div className="lab-controls"><button type="button" onClick={onBack}>{campaign ? 'Level map' : 'Lab menu'}</button>{campaign ? <button type="button" className="primary" onClick={campaign.onNext}>Next level →</button> : next && <button type="button" className="primary" onClick={() => onNext(next)}>Next mechanic →</button>}</div></div>}
+    {popup}
     <p className="muted tiny">{campaign && id === 'restriction' ? 'BsaI recognizes GGTCTC and cuts outside that motif; the synthetic adapters are not credited.' : meta.biology} Reference: {LAB_REFERENCE.symbol} · {LAB_REFERENCE.transcript}.</p>
   </section>;
 }

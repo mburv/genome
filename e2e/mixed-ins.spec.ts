@@ -82,10 +82,17 @@ test('every mixed INS stage can be solved through the real game controls and rea
       const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('data-lab-cell'))));
       for(const c of cells){const want=await page.getByTestId('mutation-target-'+c).textContent();await tile(page,c).tap();await page.getByTestId('lab-base-'+want).tap();}
     }else if(s.kind==='restriction'){await tile(page,6).tap();await tile(page,53).tap();}
-    if(s.kind!=='slide')await expect(page.getByTestId('mixed-coverage')).toHaveText(s.end+'/333 bp assembled');
+    if(s.kind!=='slide'){
+      await expect(page.getByTestId('mixed-coverage')).toHaveText(s.end+'/333 bp assembled');
+      const win=page.getByTestId('win');
+      await expect(win).toBeVisible();
+      await expect(win.locator('.win-strand .strip-cell')).toHaveCount(s.end-(stages[stages.indexOf(s)-1]?.end??0));
+      await expect(win.locator('.win-strand .strip-cell').first()).toHaveCSS('animation-name','pop');
+      await expect(page.getByTestId('win-assembly')).toHaveText(s.end+' / 333 INS coding bases assembled.');
+    }
     const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('genome-save')!));
     expect(saved.completed).toContain(s.id);
-    if(s.end===333){await expect(page.getByTestId('mixed-assembled')).toBeVisible();expect(saved.assembled).toContain('INS');}
+    if(s.end===333){await expect(page.getByTestId('assembled')).toBeVisible();expect(saved.assembled).toContain('INS');}
     else {const next=page.getByRole('button',{name:'Next level →'});await expect(next).toBeVisible();await next.click();}
   }
 });
@@ -185,4 +192,27 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   }
   expect(Math.abs((await page.getByTestId('mechanics-board').boundingBox())!.y-startY)).toBeLessThan(1);
   await expect(page.getByTestId('lab-progress')).toHaveText('40/54 bases');
+});
+
+ test('mixed completion shares sliding win card, close/replay, and no duplicate gene credit',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
+  for(const c of [10,11,12,21,30,31,40,49,50])await tile(page,c).tap();
+  const win=page.getByTestId('win');
+  await expect(win).toBeVisible();
+  await expect(win.locator('.card .card-head')).toBeVisible();
+  await expect(page.getByTestId('win-bases')).toContainText('+9 INS coding bases');
+  await expect(page.getByTestId('win-assembly')).toHaveText('9 / 333 INS coding bases assembled.');
+  await expect(page.getByTestId('mixed-extracted')).toHaveText('TGGATGCGC');
+  await win.locator('.win-strand').click();
+  await expect(win.locator('.win-strand')).toHaveClass(/skip/);
+  await page.getByTestId('win-close').click();
+  await expect(page.getByTestId('solved-banner')).toBeVisible();
+  await expect(page.getByTestId('solved-stars')).toHaveCount(0);
+  await page.getByTestId('replay').click();
+  for(const c of [10,11,12,21,30,31,40,49,50])await tile(page,c).tap();
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('win-assembly')).toHaveText('9 / 333 INS coding bases assembled.');
+  await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
+  await expect(win).toHaveCount(0);
+  await expect(page.getByTestId('solved-banner')).toBeVisible();
 });

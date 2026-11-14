@@ -342,3 +342,8 @@ Owner playtest: tracing uses the same compact gene header, capped TargetShell an
 ### D-UI-34 — Trace completion gesture safety
 
 Trace completion happens on the last pointer-down/move, unlike sliding's release. Delay the centered completion banner until the tracing gesture ends, then hold a short 180 ms guard before enabling Replay/Next. This avoids the final touch activating an overlay action underneath the finger. Keep completion credit and resume semantics unchanged.
+
+
+### D-UI-35 — Shared completion experience
+
+Owner playtest: all six mixed mechanics use the original WinCard and SolvedBanner components, including the existing strand pop animation, close button, and next/map actions. Display the exact extracted coding fragment, not the replaced sliding board's tracks. Practice remains uncredited, replay awards no duplicate bases, and mixed solves do not use sliding par or star scores. Wait until the final gesture/Crush animation has finished before showing the dialog. Reopening a solved attempt shows the calm banner rather than repeating the celebration.

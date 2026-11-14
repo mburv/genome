@@ -4,6 +4,10 @@ import type { LevelDefinition } from '../engine/types.ts';
 
 interface Props {
   def: LevelDefinition;
+  /** Mixed mechanics have no comparable sliding par or best score. */
+  unranked?: boolean;
+  nextLabel?: string;
+  mapLabel?: string;
   moves: number;
   best?: LevelBest | undefined;
   pulse: boolean;
@@ -19,9 +23,9 @@ const starGlyphs = (n: 1 | 2 | 3) =>
   ));
 
 /** Calm post-solve / reopen banner: result, best, Replay and Next. */
-export function SolvedBanner({ def, moves, best, pulse, hasNext, onReplay, onNext, onMap }: Props) {
+export function SolvedBanner({ def, moves, best, pulse, hasNext, onReplay, onNext, onMap, unranked = false, nextLabel = 'Next level →', mapLabel = 'Level map' }: Props) {
   const par = parMoves(def);
-  const shown = best?.moves ?? (moves > 0 ? moves : null);
+  const shown = unranked ? null : best?.moves ?? (moves > 0 ? moves : null);
   const stars = shown != null ? starsFor(shown, par) : null;
   const thisSolve = moves > 0 ? `${moves} ${moves === 1 ? 'move' : 'moves'}` : null;
   const bestText = best && (thisSolve == null || best.moves !== moves) ? `Best ${best.moves}` : best ? `Best ${best.moves}` : null;
@@ -42,8 +46,8 @@ export function SolvedBanner({ def, moves, best, pulse, hasNext, onReplay, onNex
       <div className="solved-banner-actions">
         <button type="button" className={`primary${pulse ? ' pulse' : ''}`} onClick={onReplay} data-testid="replay">Replay</button>
         {hasNext
-          ? <button type="button" onClick={onNext} data-testid="next-level">Next level →</button>
-          : <button type="button" onClick={onMap} data-testid="solved-map">Level map</button>}
+          ? <button type="button" onClick={onNext} data-testid="next-level">{nextLabel}</button>
+          : <button type="button" onClick={onMap} data-testid="solved-map">{mapLabel}</button>}
       </div>
     </aside>
   );
