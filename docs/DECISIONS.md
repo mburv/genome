@@ -357,3 +357,8 @@ Owner playtest: extend DNA Tracing's traditional sliding screen chrome to Codon 
 ### D-UI-37 — Grey placed assembly reads
 
 Owner playtest: render every source tile of a successfully placed Genome Assembly read in neutral grey, preserving readable bases, read badges and selection feedback. Numbered destination slots and target clues keep their DNA colours. Derive the visual state from committed placements so rejected actions do not grey a read and undo, restart and resume reflect the saved engine state. Placed reads remain selectable and repositionable.
+
+
+### D-TUTORIAL-04 — Faithful Codon Crush demonstration
+
+Owner playtest: replace the generic before/after cell transitions with a slowed-down demonstration driven by the actual certified swap and engine CrushTransition metadata. Step two physically swaps both adjacent tiles. Step three displays the matched three bases clearing first, then the real surviving tiles falling within their column segments and three new bases appearing. The final frame equals the actual gameplay board. Keep the stationary board opaque, use one-shot replay, and honour reduced motion. No gameplay rule changes.

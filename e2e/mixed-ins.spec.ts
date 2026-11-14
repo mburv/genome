@@ -268,3 +268,50 @@ test('INS Genome Assembly restores grey placed reads after a reload',async({page
   await page.getByTestId('action-undo').click();
   await expect(page.locator('.assembly-placed')).toHaveCount(0);
 });
+
+
+test('Codon Crush guide swaps real neighbours then clears and refills the exact gameplay board',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();
+  const guide=page.getByTestId('tutorial-board'), actual=page.getByTestId('mechanics-board');
+  const initial=await actual.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
+  await expect(guide.locator('[data-demo-cell]')).toHaveCount(81);
+  await expect(guide.locator('.tutorial-crush-swap,.tutorial-crush-fall,.tutorial-crush-clear')).toHaveCount(0);
+  await page.getByTestId('tutorial-next').click();
+  const swap=guide.getByTestId('tutorial-crush-swap');
+  await expect(swap).toHaveCount(2);
+  const motion=await swap.evaluateAll(nodes=>nodes.map(n=>{
+    const a=n.getAnimations()[0]!;a.pause();a.currentTime=0;
+    const start=n.getBoundingClientRect();a.currentTime=1800;const end=n.getBoundingClientRect();
+    return {source:Number(n.getAttribute('data-source')),dest:Number(n.getAttribute('data-destination')),dx:end.x-start.x,dy:end.y-start.y,width:start.width};
+  }));
+  expect(motion.map(m=>[m.source,m.dest])).toEqual([[12,13],[13,12]]);
+  expect(Math.abs(motion[0]!.dx-motion[0]!.width-1)).toBeLessThan(1);
+  expect(Math.abs(motion[1]!.dx+motion[1]!.width+1)).toBeLessThan(1);
+  expect(motion.every(m=>Math.abs(m.dy)<1)).toBe(true);
+  await page.getByTestId('tutorial-next').click();
+  const cleared=guide.getByTestId('tutorial-crush-clear'), falling=guide.getByTestId('tutorial-crush-fall');
+  await expect(cleared).toHaveCount(3);
+  const target=await page.locator('.tutorial-target').textContent();
+  expect((await cleared.allTextContents()).join('')).toBe(target);
+  await expect(guide.locator('.tutorial-crush-new')).toHaveCount(3);
+  const fallData=await falling.evaluateAll(nodes=>nodes.map(n=>{
+    const a=n.getAnimations()[0]!;a.pause();a.currentTime=0;
+    const start=n.getBoundingClientRect();a.currentTime=1500;const end=n.getBoundingClientRect();
+    return {source:n.getAttribute('data-source'),dest:Number(n.getAttribute('data-destination')),dy:end.y-start.y,height:start.height,delay:a.effect?.getTiming().delay};
+  }));
+  expect(fallData.every(f=>f.delay===650)).toBe(true);
+  expect(fallData.some(f=>f.source!=='new')).toBe(true);
+  for(const f of fallData.filter(f=>f.source!=='new')) expect(Math.abs(f.dy-((f.dest-Number(f.source))/9)*(f.height+1))).toBeLessThan(1);
+  await cleared.evaluateAll(nodes=>nodes.forEach(n=>n.getAnimations()[0]!.finish()));
+  await expect(cleared.first()).toHaveCSS('opacity','0');
+  const final=await guide.locator('[data-demo-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')).join(''));
+  expect(final).not.toBe(initial);
+  await page.getByRole('button',{name:'Replay animation'}).click();
+  await expect(guide.getByTestId('tutorial-crush-clear')).toHaveCount(3);
+  await page.getByTestId('tutorial-next').click();
+  await tile(page,12).tap();await tile(page,13).tap();
+  await expect(actual).toHaveAttribute('data-crush-phase','idle');
+  const live=await actual.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
+  expect(live).toBe(final);
+  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
+});

@@ -2,9 +2,10 @@ import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { ALL_LEVELS } from '../campaign/campaign.ts';
 import { type Mechanic, type MixedStage } from '../campaign/mixed.ts';
 import { applySlide, segmentCells } from '../engine/grid.ts';
-import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, type LabAction, type LabState } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, type LabAction, type LabState, type CrushTransition } from '../engine/mechanicsLab.ts';
 
-type Step = { title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
+type CrushDemo = { phase: 'swap' | 'settle'; a: number; b: number; frame: CrushTransition };
+type Step = { crush?: CrushDemo; title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
 const run = (state: LabState, actions: readonly LabAction[]) => actions.reduce((s,a) => applyLab(s,a).state,state);
 const step = (title: string, text: string, before: LabState, after: LabState, cells: number[], cursor?: [number,number], path?: number[], target?: string): Step => ({title,text,before:before.board,after:after.board,cells,...(cursor ? {cursor} : {}),...(path ? {path} : {}),...(target ? {target} : {})});
 function demonstration(mechanic: Mechanic, stage: MixedStage | null): Step[] {
@@ -37,12 +38,13 @@ function demonstration(mechanic: Mechanic, stage: MixedStage | null): Step[] {
   if (mechanic === 'crush') {
     const [a,b]=s.CRUSH_SWAPS[0]!, action:LabAction={type:'swap',a,b};
     const result=applyLab(start,action), frame=result.crush;
-    const match=frame?.matched ?? [a-2,a-1,a];
-    const swapped=frame ? {...start,board:frame.swapped} : start;
+    if (!frame) throw new Error('Codon Crush tutorial requires a certified swap');
+    const match=frame.matched;
+    const swapped={...start,board:frame.swapped};
     return [
       step('Read the next codon','Collect the target three-base codons in order. Find two adjacent tiles whose swap would form the next codon.',start,start,[a,b],undefined,undefined,s.CRUSH_TARGETS[0]),
-      step('Swap neighbours','Drag one tile into its neighbour, or tap the two tiles. A wrong swap returns to its starting position.',start,swapped,[a,b],[a,b],undefined,s.CRUSH_TARGETS[0]),
-      step('Clear and refill','The matched three bases disappear, and tiles fall into the gaps. Collect the remaining codons to assemble the fragment.',swapped,result.state,[...match],undefined,undefined,s.CRUSH_TARGETS[0]),
+      {...step('Swap neighbours','Drag one tile into its neighbour, or tap the two tiles. Watch both tiles trade places. A wrong swap returns to its starting position.',start,swapped,[a,b],[a,b],undefined,s.CRUSH_TARGETS[0]),crush:{phase:'swap',a,b,frame}},
+      {...step('Clear and refill','The three matching bases shrink and disappear. Existing bases fall down into the gaps, then new bases refill the columns. Collect the next codon to continue.',swapped,result.state,[...match],undefined,undefined,s.CRUSH_TARGETS[0]),crush:{phase:'settle',a,b,frame}},
     ];
   }
   if (mechanic === 'assembly') {
@@ -116,6 +118,35 @@ function SlideTutorialBoard({ item, index, reducedMotion }: { item: Step; index:
   </>;
 }
 
+/** Use the engine's exact swap, match and gravity metadata. Each existing
+ * tile occupies its real source and destination; no crossfade of the board. */
+function CrushTutorialBoard({item,reducedMotion}:{item:Step;reducedMotion:boolean}) {
+  const demo=item.crush;
+  const phase=reducedMotion?undefined:demo?.phase;
+  const board=reducedMotion?item.after:item.before;
+  const falls=new Map(phase==='settle'?demo!.frame.falls.map(f=>[f.to,f]):[]);
+  return <>
+    {board.map((b,c)=>{
+      const hole=b==='.';
+      const swap=phase==='swap'&&(c===demo!.a||c===demo!.b);
+      const match=phase==='settle'&&demo!.frame.matched.includes(c);
+      const fall=falls.get(c);
+      // A fall is rendered once at its destination, translated back to its
+      // original cell until the match has cleared. Stationary tiles stay opaque.
+      const base=phase==='settle'?item.after[c]!:b;
+      const to=swap?(c===demo!.a?demo!.b:demo!.a):c;
+      const dx=to%9-c%9,dy=Math.floor(to/9)-Math.floor(c/9);
+      const style=swap?{'--demo-swap-x':'calc('+(dx*100)+'% + '+dx+'px)','--demo-swap-y':'calc('+(dy*100)+'% + '+dy+'px)'} as CSSProperties:fall?{'--fall-rows':fall.rows} as CSSProperties:undefined;
+      const classes=['tutorial-crush-tile','b-'+base,swap?'tutorial-crush-swap':'',fall?'tutorial-crush-fall':'',fall?.from===null?'tutorial-crush-new':'',!phase&&item.cells.includes(c)?'tutorial-crush-highlight':''].filter(Boolean).join(' ');
+      return <div key={c} className={'tutorial-cell'+(hole?' hole':'')} data-demo-cell={c} data-base={base}>
+        {!hole&&<span className={classes} style={style} data-testid={swap?'tutorial-crush-swap':fall?'tutorial-crush-fall':undefined} data-source={fall?fall.from??'new':c} data-destination={to} data-base={base}>{base}</span>}
+        {match&&<span className={'tutorial-crush-clear b-'+b} data-testid="tutorial-crush-clear" data-base={b}>{b}</span>}
+      </div>;
+    })}
+    {phase==='swap'&&<span className="tutorial-finger" aria-hidden="true" style={{'--fx':xy(demo!.a)[0]/9*100+'%','--fy':xy(demo!.a)[1]/9*100+'%','--tx':xy(demo!.b)[0]/9*100+'%','--ty':xy(demo!.b)[1]/9*100+'%'} as CSSProperties}>☝</span>}
+  </>;
+}
+
 export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { mechanic:Mechanic; stage:MixedStage|null; reducedMotion:boolean; onClose:()=>void }) {
   const [index,setIndex]=useState(0);
   const [replay,setReplay]=useState(0);
@@ -140,8 +171,8 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
       <h3 id="tutorial-title">{title}</h3>
       <h4>{item.title}</h4><p className="small">{item.text}</p>
       {item.target && <div className="tutorial-target" aria-label="Example target">{[...item.target].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>}
-      <div className={'tutorial-board'+(reducedMotion?' static':'')+(mechanic==='slide'?' slide-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
-        {mechanic==='slide' ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : <>
+      <div className={'tutorial-board'+(reducedMotion?' static':'')+(mechanic==='slide'?' slide-demo':mechanic==='crush'?' crush-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
+        {mechanic==='slide' ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : mechanic==='crush' ? <CrushTutorialBoard item={item} reducedMotion={reducedMotion} /> : <>
         {item.before.map((b,c)=>{
           const after=item.after[c]!;
           const changed=b!==after && !reducedMotion;
