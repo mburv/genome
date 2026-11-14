@@ -3,6 +3,8 @@ import { GENES, MANIFEST } from '../genomics/genes.ts';
 import { CAMPAIGN_GENES, CAMPAIGN_LEVELS, introOf, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { tierName } from '../campaign/chapters.ts';
+import { mechanicOf } from '../campaign/mixed.ts';
+import { LAB_META } from '../engine/mechanicsLab.ts';
 import { MODE_LABEL } from './modes.ts';
 import { POWER_BLURB, POWER_ICON, POWER_LABEL } from './PowerTray.tsx';
 import { POWER_COST } from '../engine/powers.ts';
@@ -15,10 +17,12 @@ interface Props {
   legacyM1: readonly string[];
   onPlay: (levelId: string) => void;
   onMechanics: () => void;
+  classic: boolean;
+  onClassic: (classic: boolean) => void;
   onCard: (symbol: string) => void;
 }
 
-export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onMechanics, onCard, legacyM1 }: Props) {
+export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onMechanics, onCard, legacyM1, classic, onClassic }: Props) {
   const nextUnfinished = CAMPAIGN_LEVELS.find((l) => !completed.includes(l.id));
   const next = nextUnfinished ?? CAMPAIGN_LEVELS[0]!;
   const nextRun = runProgress(next)!;
@@ -29,6 +33,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
         {completed.length === 0 ? 'Start' : !nextUnfinished ? 'Replay' : 'Continue'} · {next.symbol} {nextRun.part}/{nextRun.of}
       </button>
       <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 new puzzles →</button>
+      <div className="row-between small"><span>INS · {classic ? 'original sliding boards' : 'mixed mechanics'}</span><button type="button" data-testid="classic-toggle" aria-pressed={classic} onClick={() => onClassic(!classic)}>{classic ? 'Use mixed puzzles' : 'Use classic boards'}</button></div>
       <div className="panel catalogue" data-testid="catalogue">
         <h2 className="gene">Gene catalogue</h2>
         {catalogue.map((m) => {
@@ -43,22 +48,24 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
                 ...(intros.length ? ['1-base tiles'] : []),
                 ...[...new Set(chapters.map((l) => l.tier!))].sort((a, b) => a - b).map(tierName),
               ];
-              const countLabel = intros.length
+              const countLabel = m.symbol === 'INS' && !classic ? '13 stages · 7 mechanics' : intros.length
                 ? `${run.length} puzzles · ${intros.length} intro + ${chapters.length} assembly`
                 : `${run.length} puzzles`;
               const node = (l: LevelDefinition) => {
                 const done = completed.includes(l.id);
                 const part = runProgress(l)!.part;
+                const mechanic = classic ? 'slide' : mechanicOf(l);
+                const label = mechanic === 'slide' ? MODE_LABEL[l.mode] : LAB_META[mechanic].title;
                 return (
                   <li key={l.id}>
                     <button
                       type="button"
                       className={`cnode ${l.chapter ? '' : 'intro '} ${done ? 'done' : ''} ${l.id === currentLevelId ? 'current' : ''} ${attempted.includes(l.id) && !done ? 'started' : ''}`.replace(/  +/g, ' ').trim()}
                       onClick={() => onPlay(l.id)}
-                      aria-label={`${m.symbol} ${part} of ${run.length}: ${MODE_LABEL[l.mode]}, ${l.chapter ? `${l.tier}-base tiles` : '1-base tiles'}${done ? ', complete' : ''}`}
+                      aria-label={`${m.symbol} ${part} of ${run.length}: ${label}, ${mechanic === 'slide' ? l.chapter ? `${l.tier}-base tiles` : '1-base tiles' : 'mixed mechanic'}${done ? ', complete' : ''}`}
                       data-testid={`cnode-${l.id}`}
                     >
-                      {done ? '✓' : part}
+                      {done ? '✓' : part}{mechanic !== 'slide' && <small className="node-mechanic" aria-hidden="true">{LAB_META[mechanic].icon}</small>}
                     </button>
                   </li>
                 );

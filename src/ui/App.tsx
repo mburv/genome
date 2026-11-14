@@ -1,14 +1,17 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, OPENING_LEVEL_ID } from '../campaign/campaign.ts';
+import { ALL_LEVELS, CAMPAIGN_LEVELS, LAB_LEVELS, LEVEL_PACK, OPENING_LEVEL_ID, runProgress, isDiscovered } from '../campaign/campaign.ts';
 import { GENES } from '../genomics/genes.ts';
-import { clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
+import { assemblyStatus } from '../campaign/assembly.ts';
+import { mixedStage, verifiedMixed, type Mechanic } from '../campaign/mixed.ts';
+import { MechanicTutorial } from './MechanicTutorial.tsx';
+import { recordAssembly, recordCompletion, clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
 import { MapScreen } from './MapScreen.tsx';
 import { PlayScreen } from './PlayScreen.tsx';
 import { playHeading } from './playHeading.ts';
 import { SettingsScreen } from './SettingsScreen.tsx';
 import { MechanicsMenu, MechanicsPlay } from './MechanicsLab.tsx';
-import type { LabId } from '../engine/mechanicsLab.ts';
+import type { LabAction, LabId, LabState } from '../engine/mechanicsLab.ts';
 import { TitleScreen } from './TitleScreen.tsx';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -18,6 +21,9 @@ type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: '
 export function App({ storage = createLocalStorageAdapter() }: { storage?: StorageAdapter }) {
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
   const [save, setSave] = useState<SaveData>(initial.save);
+  const saveRef = useRef(initial.save);
+  const [classic, setClassic] = useState(() => typeof location !== 'undefined' && new URLSearchParams(location.search).get('classic') === '1');
+  const [tutorial, setTutorial] = useState<Mechanic | null>(null);
   const [notices, setNotices] = useState<string[]>(initial.notices);
   // Write once on load (idempotent) so a fresh/migrated save is stored in the current format.
   const [saveOk, setSaveOk] = useState(() => storage.save(serializeSave(initial.save)));
@@ -32,6 +38,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
   const persist = useCallback(
     (next: SaveData) => {
+      saveRef.current = next;
       setSave(next);
       setSaveOk(storage.save(serializeSave(next)));
     },
@@ -40,15 +47,37 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
   const def = ALL_LEVELS.find((l) => l.id === save.currentLevelId) ?? ALL_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
   const heading = playHeading(def);
+  const stage = useMemo(() => mixedStage(def), [def]);
+  const useMixed = !!stage && !classic && (!!save.mixedAttempts?.[def.id] || !save.attempts[def.id] || save.completed.includes(def.id));
+  const activeMechanic: Mechanic | null = screen.kind === 'play' ? useMixed ? stage!.mechanic : 'slide' : screen.kind === 'mechanic' ? screen.id : null;
+  const firstTutorial = activeMechanic && !save.tutorialsSeen?.includes(activeMechanic) ? activeMechanic : null;
+  const shownTutorial = tutorial ?? firstTutorial;
+  const closeTutorial = () => {
+    if (shownTutorial && !saveRef.current.tutorialsSeen?.includes(shownTutorial)) persist({ ...saveRef.current, tutorialsSeen: [...(saveRef.current.tutorialsSeen ?? []), shownTutorial] });
+    setTutorial(null);
+  };
+  const mixedProgress = useCallback((actions: readonly LabAction[], state: LabState) => {
+    if (!stage) return;
+    let next = saveRef.current;
+    const prior = next.mixedAttempts?.[stage.id] ?? [];
+    if (JSON.stringify(prior) !== JSON.stringify(actions)) next = { ...next, mixedAttempts: { ...next.mixedAttempts, [stage.id]: [...actions] } };
+    if (verifiedMixed(stage, state)) {
+      next = recordCompletion(next, stage.id);
+      if (isDiscovered(next.completed, 'INS') && !next.discovered.includes('INS')) next = { ...next, discovered: [...next.discovered, 'INS'] };
+      next = recordAssembly(next, 'INS');
+    }
+    if (next !== saveRef.current) persist(next);
+  }, [stage, persist]);
   const settingsFrom = useRef<Screen>({ kind: 'title' });
   const go = (next: Screen) => {
+    setTutorial(null);
     if (next.kind === 'settings' && screen.kind !== 'settings') settingsFrom.current = screen;
     if (next.kind !== 'play') setHeaderCollapsed(false);
     setScreen(next);
     if (next.kind === 'play' || next.kind === 'map' || next.kind === 'title' || next.kind === 'mechanics' || next.kind === 'mechanic') window.scrollTo?.(0, 0);
   };
   const play = (levelId: string) => {
-    persist({ ...save, currentLevelId: levelId });
+    persist({ ...saveRef.current, currentLevelId: levelId });
     go({ kind: 'play' });
   };
   const applyReset = () => {
@@ -86,6 +115,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
               </div>
             )}
             <div className="top-buttons">
+              {activeMechanic && <button type="button" className="map-button" aria-label="Show mechanic tutorial" data-testid="show-tutorial" onClick={() => setTutorial(activeMechanic)}>?</button>}
               {screen.kind !== 'settings' && (
                 <button type="button" className="map-button" onClick={() => go({ kind: 'settings' })} aria-label="Settings" data-testid="open-settings">⚙</button>
               )}
@@ -109,7 +139,9 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         <MapScreen
           labs={LAB_LEVELS}
           completed={save.completed}
-          attempted={Object.keys(save.attempts)}
+          attempted={[...Object.keys(save.attempts), ...Object.keys(save.mixedAttempts ?? {})]}
+          classic={classic}
+          onClassic={setClassic}
           currentLevelId={save.currentLevelId}
           legacyM1={save.legacy.m1Completed}
           onPlay={play}
@@ -119,7 +151,12 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       )}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
-      {screen.kind === 'play' && (
+      {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
+        stage, initialActions: save.mixedAttempts?.[def.id] ?? [], part: runProgress(def)!.part, of: runProgress(def)!.of,
+        covered: assemblyStatus(save.completed, GENES.INS!).covered, assembled: assemblyStatus(save.completed, GENES.INS!).verified,
+        onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1]; if (next) play(next.id); else go({ kind: 'map' }); }
+      }} />}
+      {screen.kind === 'play' && !useMixed && (
         <PlayScreen
           key={def.id}
           def={def}
@@ -148,6 +185,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} onPlay={play} onBack={() => go({ kind: 'map' })} />
       )}
 
+      {shownTutorial && <MechanicTutorial key={shownTutorial} mechanic={shownTutorial} stage={useMixed && screen.kind === 'play' ? stage : null} reducedMotion={reducedMotion} onClose={closeTutorial} />}
       {screen.kind !== 'title' && (
         <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · M4 gene assembly</footer>
       )}
