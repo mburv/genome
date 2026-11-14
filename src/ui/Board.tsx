@@ -132,6 +132,20 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
   }, [board, teardown]);
   useEffect(() => () => teardown(), [teardown]);
 
+  // iOS Safari can still start a page scroll / edge-swipe from a touch that began on the board (the page
+  // now scrolls vertically, and the full-bleed board touches the screen edges). While a board gesture is
+  // live, a non-passive touchmove listener cancels the browser default so the gesture stays with the drag.
+  // touchstart is left alone, so taps (selection, power targeting) still produce clicks.
+  useEffect(() => {
+    const el = boardRef.current;
+    if (!el) return;
+    const onTouchMove = (ev: TouchEvent) => {
+      if (drag.current && ev.cancelable) ev.preventDefault();
+    };
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onTouchMove);
+  }, []);
+
   const renderDrag = () => {
     const d = drag.current;
     if (!d || !d.clip) return;
@@ -275,7 +289,13 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
       id: e.pointerId, startX: e.clientX, startY: e.clientY, cell: Number(tile.dataset.cell), axis: null, segment: [],
       pitch: 0, delta: 0, samples: [], clip: null, clones: [], originals: [], positions: [], raf: 0, previewStep: 0, phase: 'pending',
     };
-    boardRef.current?.setPointerCapture?.(e.pointerId);
+    // Touch pointers are already implicitly captured by the touched tile (Pointer Events spec; WebKit/iOS
+    // and Chromium), and its events bubble here. Re-capturing them on the board makes a spec-compliant
+    // browser fire `lostpointercapture` at the tile, which bubbles up and used to cancel the gesture before
+    // the first move (iOS Safari: rows/columns would not drag). Only mouse and pen need explicit capture.
+    if (e.pointerType !== 'touch') {
+      try { boardRef.current?.setPointerCapture?.(e.pointerId); } catch { /* pointer already gone */ }
+    }
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = drag.current;
@@ -315,6 +335,9 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
   const onPointerCancel = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
+    // `lostpointercapture` bubbles: only the board's own capture ending counts (never a tile's implicit
+    // touch capture being handed over or released).
+    if (e.type === 'lostpointercapture' && e.target !== e.currentTarget) return;
     if (d.phase === 'dragging') finishDrag(true);
     else if (d.phase === 'pending' || d.phase === 'dead') drag.current = null;
     // 'settling'/'committing' finish on their own (lostpointercapture also fires after a normal pointerup).

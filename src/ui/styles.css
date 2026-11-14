@@ -43,14 +43,14 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); font: 15px/1.4 var(--sans); font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent; overflow-x: clip; }
+html, body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); font: 15px/1.4 var(--sans); font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent; }
 body { overscroll-behavior: none; }
 button { font: inherit; color: var(--ink); background: var(--white); border: 1px solid var(--ink); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; touch-action: manipulation; }
 @media (hover: hover) { button:not(.tile):hover:not(:disabled) { filter: brightness(0.94); } }
 button:disabled { opacity: 0.35; cursor: default; }
 button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 a { color: var(--blue); }
-.app { max-width: var(--app-max); margin: 0 auto; padding: max(0px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
+.app { max-width: var(--app-max); overflow-x: clip; margin: 0 auto; padding: max(0px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
 /* Everything except the board keeps a clean inner margin; the board is full-bleed. */
 .app > :not(.board):not(.overlay):not(.top) { margin-inline: var(--pad); }
 .app > .top { margin-inline: 0; padding: 12px var(--pad) 10px; border-bottom: 1px solid var(--ink); background: var(--white); }
@@ -120,6 +120,8 @@ h1::before { content: ''; display: inline-block; width: 12px; height: 12px; back
 .cell { min-width: 0; min-height: 0; border-radius: 0; }
 .hole { background: repeating-linear-gradient(135deg, #d9d9d2 0 1px, transparent 1px 6px), var(--hole); }
 .tile { position: relative; display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; font-family: var(--sans); font-weight: 700; font-size: calc(var(--board) / 15); will-change: transform; }
+/* Explicit on every board surface: the global button rule is touch-action: manipulation (pans allowed). */
+.board .tile, .board .cell, .drag-layer, .drag-clip { touch-action: none; }
 .tile .letter { pointer-events: none; }
 .tile.b-A { border: 1px solid var(--A-edge); } .tile.b-C { border: 1px solid var(--C-edge); } .tile.b-G { border: 1px solid var(--G-edge); } .tile.b-T { border: 1px solid var(--T-edge); }
 .tile .tick { position: absolute; right: 5px; bottom: 5px; width: 24%; height: 24%; background: var(--ink); pointer-events: none; }

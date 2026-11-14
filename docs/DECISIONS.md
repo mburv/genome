@@ -155,3 +155,18 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - **Measured across all 107 puzzles.** There are zero colour collisions. The minimum distance within a puzzle is ΔE_OK 5.01 (rho-c06, 65 combos), against 7.27 with the old vivid grid. Main-label contrast is at least 7.20:1 and badge contrast at least 4.80:1.
   - **Lower test threshold.** The threshold drops honestly from 7 to 5: a soft pastel volume holds fewer well-separated colours, and ΔE 5 is still about 2.5× a just-noticeable difference. Tests also pin the pastel L/C bounds, the deeper same-hue edge and the 7:1 ink contrast.
   - **Caveat.** At the low-lightness end some combos read as muted mid-tones (dusty teal, olive, cornflower) rather than pure pastel. A lighter floor (L ≥ 0.76) would drop separation to ΔE 4.3, so separation won.
+
+## Touch drag on iOS Safari (14 Nov 2026, owner report — "the tile dragging mechanic has stopped working … make the lines draggable again")
+
+- D-INPUT-01 The board no longer re-captures touch pointers.
+  - **Root cause.** The touched tile already holds the pointer: WebKit/iOS (and the Pointer Events spec) capture a touch implicitly to the element touched. `onPointerDown` then called `board.setPointerCapture()`. Moving capture from the tile to the board makes WebKit fire `lostpointercapture` at the tile. That event bubbles, and the board's `onLostPointerCapture` treated it as a cancel, clearing the pending drag before the first `pointermove`. So on an iPhone, rows and columns never moved, while taps (select) and the arrow buttons still worked.
+  - **Why tests missed it.** Chromium (all existing Playwright e2e) does not fire that event, so every Chromium touch test passed.
+  - **Not introduced by a commit in this range.** Built and run side by side, 83ea3d8 (M4), b2f5d5a, a96f3a7 and 34bb756 behave identically in Chromium real touch (works) and under WebKit capture semantics (fails). No CSS, overlay or z-index change in the colour and Swiss commits intercepted the board.
+  - **Fix.**
+    - Explicit capture is used only for mouse and pen; touch keeps the tile's implicit capture, whose events bubble to the board.
+    - `lostpointercapture` cancels only when it targets the board itself.
+    - While a board gesture is live, a non-passive `touchmove` listener calls `preventDefault()`. This stops iOS from starting a page scroll or edge swipe now that the page scrolls vertically and the full-bleed board touches the screen edges. `touchstart` is left alone, so taps and power targeting still click.
+    - `touch-action: none` is now explicit on tiles, cells and the drag layer (the global button rule is `manipulation`).
+    - `overflow-x: clip` moved from `html, body` to `.app`, avoiding root-overflow quirks on iOS.
+  - **Regression tests.** `e2e/touch-regression.spec.ts` emulates WebKit's capture hand-over on top of genuine CDP touch input. It covers row and column drags at 390×844 and 320×568 (one move, the board changes, undo restores, no page scroll, every board touchmove default-prevented), a check that a swipe starting off the board still scrolls the page, and a mouse drag. These tests fail on the previous code and pass with the fix.
+  - **Engine.** Unchanged: 1 drag = 1 move/undo, flick, 8px axis lock, nudge buttons.
