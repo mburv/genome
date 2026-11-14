@@ -98,6 +98,7 @@ test('DNA Connections draws three noncrossing touch paths', async ({ page }) => 
   for (let i = 0; i < paths.length; i++) {
     const path = paths[i]!;
     const start = path[0]!, end = path.at(-1)!, middle = path[1]!;
+    await expect(tile(page,start)).toHaveAttribute('data-connection-pair', String(i + 1));
     expect(await color(end)).toBe(colors[i]);
     expect(await color(middle)).not.toBe(colors[i]);
     await trace(page,path);
