@@ -154,6 +154,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
+        def, completed: save.completed.includes(def.id), onCard: () => go({ kind: 'card', symbol: def.symbol }), hasNext: CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) < CAMPAIGN_LEVELS.length - 1,
         stage, initialActions: save.mixedAttempts?.[def.id] ?? [], part: runProgress(def)!.part, of: runProgress(def)!.of,
         covered: assemblyStatus(save.completed, GENES.INS!).covered, assembled: assemblyStatus(save.completed, GENES.INS!).verified,
         onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1]; if (next) play(next.id); else go({ kind: 'map' }); }

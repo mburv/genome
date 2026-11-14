@@ -24,7 +24,7 @@ async function trace(page: Page, path: readonly number[]) {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await cdp.detach();
 }
-const won = async (page: Page) => { await expect(page.getByTestId('lab-win')).toBeVisible(); };
+const won = async (page: Page) => { await expect(page.getByTestId('win')).toBeVisible(); };
 
 test('mechanics menu exposes six separate games and leaves campaign save untouched', async ({ page }) => {
   await fresh(page); await openMap(page);
@@ -86,6 +86,7 @@ test('Mutation Detective repairs each complementary mismatch', async ({ page }) 
     await expect(page.getByTestId('mutation-target-' + c)).toHaveClass(/matched/);
   }
   await won(page);
+  await page.getByTestId('win-close').click();
   await expect(target.locator('.matched')).toHaveCount(21);
   await expect(target.locator('.mismatch')).toHaveCount(0);
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
@@ -109,6 +110,7 @@ test('DNA Connections draws three noncrossing touch paths', async ({ page }) => 
     expect(await color(middle)).toBe(colors[i]);
   }
   await won(page);
+  await page.getByTestId('win-close').click();
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByTestId('lab-progress')).toHaveText('2/3 pairs');
   // Re-start the third route: old path squares immediately lose their colour.
@@ -132,9 +134,10 @@ test('Restriction Enzyme isolates the fragment, and replay clears the cuts', asy
   }
   await tap(page,10); await tap(page,41);
   await won(page);
-  await page.getByRole('button', { name: 'Replay', exact: true }).click();
+  await page.getByTestId('win-close').click();
+  await page.getByTestId('replay').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/2 cuts');
-  await expect(page.getByTestId('lab-win')).toHaveCount(0);
+  await expect(page.getByTestId('win')).toHaveCount(0);
 });
 
 test('Codon Crush follows a held finger and shows swap, clear and falling phases before committing', async ({ page }) => {
