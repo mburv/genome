@@ -30,6 +30,7 @@ interface TrayProps {
   canUndo: boolean;
   canRestart: boolean;
   onUndo: () => void;
+  hintEnabled: boolean;
   onHint: () => void;
   onRestart: () => void;
 }
@@ -37,7 +38,7 @@ interface TrayProps {
 /** Full-width energy meter + a six-icon action row (powers hidden on the opening puzzle). */
 export function PowerTray({
   energy, powersEnabled, freeUses, locks, scaffold, active, disabled, highlightRelease,
-  onPick, onRelease, canUndo, canRestart, onUndo, onHint, onRestart,
+  onPick, onRelease, canUndo, canRestart, onUndo, hintEnabled, onHint, onRestart,
 }: TrayProps) {
   return (
     <section className="tray" aria-label={powersEnabled ? 'Enzyme power-ups' : 'Puzzle controls'} data-testid="power-tray">
@@ -73,7 +74,7 @@ export function PowerTray({
         <button type="button" className="icon-btn" onClick={onUndo} disabled={disabled || !canUndo} aria-label="Undo" title="Undo last move" data-testid="action-undo">
           <IconUndo />
         </button>
-        <button type="button" className="icon-btn" onClick={onHint} disabled={disabled} aria-label="Hint" title="Show a recovery drag" data-testid="action-hint">
+        <button type="button" className={`icon-btn hint-toggle${hintEnabled ? ' active' : ''}`} onClick={onHint} disabled={disabled} aria-label="Hint" aria-pressed={hintEnabled} title={hintEnabled ? 'Turn hints off' : 'Turn hints on'} data-testid="action-hint">
           <IconHint />
         </button>
         <button type="button" className="icon-btn" onClick={onRestart} disabled={disabled || !canRestart} aria-label="Restart" title="Restart this level" data-testid="action-restart">

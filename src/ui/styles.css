@@ -606,7 +606,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .icon-row .p-cost { font-size: 9px; line-height: 1; color: var(--amber); font-weight: 700; letter-spacing: 0.02em; }
 .icon-row .p-cost.free { color: var(--green); letter-spacing: 0.04em; }
 .icon-row .power.poor { opacity: 0.45; }
-.icon-row .power.active { background: var(--ink); color: var(--white); }
+.icon-row .power.active, .icon-row .hint-toggle.active { background: var(--ink); color: var(--white); }
 .icon-row .power.active .p-cost { color: var(--white); }
 .power-status { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .release { padding: 6px 10px; font-size: 13px; border-color: var(--amber); }
