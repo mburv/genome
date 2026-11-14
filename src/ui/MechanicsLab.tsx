@@ -286,7 +286,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     </div>
     {popup}
   </>;
-  return <section className="mechanics-play" data-testid="mechanics-play">
+  return <><section className="mechanics-play" data-testid="mechanics-play">
     <div className="mechanic-heading"><button type="button" onClick={onBack} aria-label={campaign ? "Back to level map" : "Back to Mechanics Lab"}>{campaign ? "← Map" : "← Lab"}</button><div><h2 className="gene">{meta.title}</h2><span className="muted tiny">{campaign ? 'CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end : 'CHALLENGE ' + (index + 1) + '/6 · INS'}</span></div></div>
     {id !== 'mutation' && <p className="mechanic-instructions">{campaign && id === 'restriction' ? 'BsaI cuts at the marked bonds outside its recognition sites. Isolate the reference fragment; synthetic adapters and the decoy do not count.' : meta.instructions}</p>}
     {campaign && <div className="mixed-coverage"><span data-testid="mixed-range">INS CDS {campaign.stage.start + 1}–{campaign.stage.end} · {campaign.stage.sequence.length} bp</span><span data-testid="mixed-coverage">{campaign.covered}/333 bp assembled</span></div>}
@@ -317,7 +317,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
     {hint && !state.won && <p className="lab-hint small" role="status">{labHint(state)}</p>}
     <p className="lab-message small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</p>
-    {popup}
     <p className="muted tiny">{campaign && id === 'restriction' ? 'BsaI recognizes GGTCTC and cuts outside that motif; the synthetic adapters are not credited.' : meta.biology} Reference: {LAB_REFERENCE.symbol} · {LAB_REFERENCE.transcript}.</p>
-  </section>;
+  </section>
+    {popup}
+  </>;
 }
