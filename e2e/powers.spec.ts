@@ -251,7 +251,7 @@ test('Ligase: bonding a finished codon blocks drags on both axes; release is fre
   expect(await cand.count()).toBeGreaterThanOrEqual(3);
   const locked = Number(await cand.first().getAttribute('data-cell'));
   await cand.first().click();
-  await expect(page.getByTestId('power-preview')).toContainText('will stop every row and column');
+  await expect(page.getByTestId('power-preview')).toHaveText('Stop every row and column through them from rotating (both axes). Release any time for free. Undo will refund');
   await expect(page.getByTestId('power-error')).toHaveCount(0);
   await expect(page.getByTestId('tray-note')).toHaveCount(0);
   await page.screenshot({ path: '/workspace/game/screenshots/genome-no-errors-390x844.png' });
@@ -272,6 +272,19 @@ test('Ligase: bonding a finished codon blocks drags on both axes; release is fre
   // Movement restored: the rest of the level solves by hints.
   await solveWithHints(page);
   await expect(page.getByTestId('win-meta')).toContainText('1 power used');
+});
+
+test('Ligase preview on a multi-base piece uses the shorter lock copy', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  // ins-c01 starts with no complete target tiles, so Ligase has no candidates there.
+  // ins-c02 already has placed target pieces that Ligase can lock.
+  await openChapter(page, 'ins-c02');
+  await page.getByTestId('power-ligase').click();
+  const cand = page.locator('.tile.candidate');
+  await expect(cand.first()).toBeVisible();
+  await cand.first().click();
+  await expect(page.getByTestId('power-preview')).toHaveText('Stop every row and column through it from rotating (both axes). Release any time for free. Undo will refund');
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-lock-copy-390x844.png', animations: 'disabled' });
 });
 
 test('Scaffold: bridge across a gap, rotations tick it, it expires after exactly 3 and undo brings it back', async ({ page }) => {

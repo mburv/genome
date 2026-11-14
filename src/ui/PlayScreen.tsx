@@ -269,8 +269,8 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     } else if (pending?.power === 'ligase') {
       title = `Ligase: bond ${pending.cells.map((c) => symbolLabel(def, puzzle.custom, puzzle.board[c]!)).join('')}`;
       detail = def.tokens
-        ? 'This piece will stop every row and column through it from rotating (both axes). Release any time for free; undo refunds.'
-        : 'These three tiles will stop every row and column through them from rotating (both axes). Release any time for free; undo refunds.';
+        ? 'Stop every row and column through it from rotating (both axes). Release any time for free. Undo will refund'
+        : 'Stop every row and column through them from rotating (both axes). Release any time for free. Undo will refund';
     } else if (pending?.power === 'scaffold') {
       title = 'Scaffold: Join cells across the gap';
       detail = `The two segments skip the gap for the next ${SCAFFOLD_TURNS} rotations`;
