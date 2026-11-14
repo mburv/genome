@@ -2,13 +2,13 @@ import { isCompatibleBoard, levelCodons, type PuzzleState, type Snapshot, HISTOR
 import { codonComplete, ENERGY_CAP, POWERS, START_ENERGY, scaffoldTrack, SCAFFOLD_TURNS, type Power } from '../engine/powers.ts';
 import { applyMove } from '../engine/grid.ts';
 import type { LevelDefinition, Move } from '../engine/types.ts';
-import { isDiscovered, nextChapterId, RETIRED_SAMPLE_IDS, type LevelPack } from '../campaign/campaign.ts';
+import { INTRO_IDS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES } from '../genomics/genes.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
 
 export const SAVE_KEY = 'genome-save';
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export interface SaveData {
   schemaVersion: typeof SCHEMA_VERSION;
@@ -51,7 +51,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = { reducedMotion: false, sound: false, haptics: true };
 
-/** M1 prototype completions are kept as history only; the equivalent sample level has been retired. */
+/** M1 prototype completions are kept as history only; they do not grant campaign credit. */
 export const M1_TO_M2: Readonly<Record<string, string>> = {};
 
 /** Injected persistence. The browser uses localStorage for the demo only. */
@@ -60,6 +60,8 @@ export interface StorageAdapter {
   save(raw: string): boolean;
   /** Keep a raw copy before anything is changed. `label` gives it its own slot (e.g. the M1 save). */
   backup(raw: string, label?: string): boolean;
+  /** Read a labelled backup slot (e.g. 'm4'), if the adapter has one. */
+  readBackup?(label: string): string | null;
 }
 
 export function createLocalStorageAdapter(key = SAVE_KEY): StorageAdapter {
@@ -74,6 +76,7 @@ export function createLocalStorageAdapter(key = SAVE_KEY): StorageAdapter {
     load: () => safe(() => localStorage.getItem(key), null),
     save: (raw) => safe(() => (localStorage.setItem(key, raw), true), false),
     backup: (raw, label) => safe(() => (localStorage.setItem(label ? `${key}-backup-${label}` : `${key}-backup`, raw), true), false),
+    readBackup: (label) => safe(() => localStorage.getItem(`${key}-backup-${label}`), null),
   };
 }
 
@@ -85,6 +88,12 @@ export function createMemoryAdapter(initial: string | null = null): StorageAdapt
     load: () => a.raw,
     save: (raw: string) => ((a.raw = raw), true),
     backup: (raw: string, label?: string) => (a.backups.push(raw), a.labels.push(label), true),
+    readBackup: (label: string) => {
+      for (let i = a.labels.length - 1; i >= 0; i--) {
+        if (a.labels[i] === label) return a.backups[i]!;
+      }
+      return null;
+    },
   };
   return a;
 }
@@ -247,7 +256,7 @@ const readSettings = (v: unknown): Settings => {
 export function migrateV1(data: Record<string, unknown>, pack: LevelPack): { save: SaveData; notices: string[] } {
   const fresh = newSave(pack);
   const m1Completed = [...new Set(strings(data.completed).filter((id) => id.startsWith('m1-')))];
-  const notices = ['GENOME updated: the short INS and HBB sample challenges have been retired. The game now starts with each gene’s full-sequence assembly chapter.'];
+  const notices = ['GENOME updated: the M1 prototype campaign has been retired. The game now starts with short 1-base INS intro puzzles, then each gene’s full-sequence assembly chapter.'];
   if (m1Completed.length) notices.push(`M1 prototype level${m1Completed.length > 1 ? 's' : ''} ${m1Completed.map((id) => Number(id.slice(-2))).join(' and ')} are kept as history on the map. They no longer grant campaign credit.`);
   if (Object.keys((data.attempts as object | undefined) ?? {}).length) notices.push('Boards in progress from M1 were restarted because the levels changed.');
   return {
@@ -260,6 +269,82 @@ export function migrateV1(data: Record<string, unknown>, pack: LevelPack): { sav
  * Parse, migrate and validate a save. Invalid parts are never silently discarded: the raw save is backed
  * up and a notice is returned for the UI. Completion credit is kept whenever its level still exists.
  */
+
+const INTRO_ID_SET = new Set(INTRO_IDS);
+
+/**
+ * Re-apply 1-base intro completions, attempts and bests from a pre-v5 (m4) backup.
+ * Used when a v5 save dropped those ids; missing or unreadable backups leave the live save as-is.
+ */
+function mergeIntroProgress(
+  data: Record<string, unknown>,
+  backupRaw: string | null,
+): { data: Record<string, unknown>; restored: string[] } {
+  if (!backupRaw) return { data, restored: [] };
+  let backup: Record<string, unknown>;
+  try {
+    backup = JSON.parse(backupRaw) as Record<string, unknown>;
+    if (typeof backup !== 'object' || backup === null || Array.isArray(backup)) return { data, restored: [] };
+  } catch {
+    return { data, restored: [] };
+  }
+  const had = new Set(strings(data.completed));
+  const fromBackup = strings(backup.completed).filter((id) => INTRO_ID_SET.has(id));
+  const added = fromBackup.filter((id) => !had.has(id));
+  const completed = [...new Set([...strings(data.completed), ...fromBackup])];
+
+  const liveAttempts = typeof data.attempts === 'object' && data.attempts !== null ? { ...(data.attempts as Record<string, unknown>) } : {};
+  const backupAttempts = typeof backup.attempts === 'object' && backup.attempts !== null ? (backup.attempts as Record<string, unknown>) : {};
+  const restoredAttempts: string[] = [];
+  for (const id of INTRO_IDS) {
+    if (liveAttempts[id] == null && backupAttempts[id] != null) {
+      liveAttempts[id] = backupAttempts[id];
+      restoredAttempts.push(id);
+    }
+  }
+
+  const liveBest = typeof data.best === 'object' && data.best !== null && !Array.isArray(data.best)
+    ? { ...(data.best as Record<string, unknown>) }
+    : {};
+  const backupBest = typeof backup.best === 'object' && backup.best !== null && !Array.isArray(backup.best)
+    ? (backup.best as Record<string, unknown>)
+    : {};
+  const restoredBests: string[] = [];
+  for (const id of INTRO_IDS) {
+    const incoming = backupBest[id];
+    if (typeof incoming !== 'object' || incoming === null) continue;
+    const prev = liveBest[id];
+    if (prev == null) {
+      liveBest[id] = incoming;
+      restoredBests.push(id);
+      continue;
+    }
+    const nextBest: LevelBest | null = Number.isInteger((incoming as Record<string, unknown>).moves) && ((incoming as Record<string, unknown>).moves as number) >= 0
+      ? {
+          moves: (incoming as Record<string, unknown>).moves as number,
+          ...((Number.isInteger((incoming as Record<string, unknown>).powersUsed) && ((incoming as Record<string, unknown>).powersUsed as number) >= 0)
+            ? { powersUsed: (incoming as Record<string, unknown>).powersUsed as number }
+            : {}),
+        }
+      : null;
+    const prevBest: LevelBest | null = typeof prev === 'object' && prev !== null && Number.isInteger((prev as Record<string, unknown>).moves)
+      ? {
+          moves: (prev as Record<string, unknown>).moves as number,
+          ...((Number.isInteger((prev as Record<string, unknown>).powersUsed) && ((prev as Record<string, unknown>).powersUsed as number) >= 0)
+            ? { powersUsed: (prev as Record<string, unknown>).powersUsed as number }
+            : {}),
+        }
+      : null;
+    if (nextBest && prevBest && isBetterResult(nextBest, prevBest)) {
+      liveBest[id] = incoming;
+      restoredBests.push(id);
+    }
+  }
+
+  const restored = [...new Set([...added, ...restoredBests, ...restoredAttempts])];
+  return { data: { ...data, completed, attempts: liveAttempts, best: liveBest }, restored };
+}
+
 export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const raw = adapter.load();
   const fresh = newSave(pack);
@@ -301,10 +386,21 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     upgradedV3 = true;
   }
   let upgradedV4 = false;
+  let upgradedV5 = false;
+  let restoredIntros: string[] = [];
   if (data.schemaVersion === 4) {
+    // v4 already holds intro (former sample) completions; keep them — they are live again in v6.
     if (!upgradedV2 && !upgradedV3) adapter.backup(raw, 'm4');
     data = { ...data, schemaVersion: SCHEMA_VERSION };
     upgradedV4 = true;
+  }
+  if (data.schemaVersion === 5) {
+    // v5 dropped intro ids. Restore them from the pre-v5 m4 backup when one exists.
+    if (!upgradedV4) adapter.backup(raw, 'm5');
+    const merged = mergeIntroProgress(data, adapter.readBackup?.('m4') ?? null);
+    data = { ...merged.data, schemaVersion: SCHEMA_VERSION };
+    restoredIntros = merged.restored;
+    upgradedV5 = true;
   }
   if (data.schemaVersion !== SCHEMA_VERSION) {
     adapter.backup(raw);
@@ -312,9 +408,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   }
   const notices: string[] = [];
   const ids = new Set(pack.levels.map((l) => l.id));
-  const retired = new Set(RETIRED_SAMPLE_IDS);
   const rawCompleted = strings(data.completed);
-  const droppedSamples = rawCompleted.some((id) => retired.has(id));
   const completed = [...new Set(rawCompleted.filter((id) => ids.has(id)))];
   const discovered = [...new Set(
     Object.keys(pack.datasets).filter((g) => isDiscovered(completed, g)),
@@ -335,11 +429,14 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const claimed = [...new Set(strings(data.assembled))];
   const assembled = claimed.filter((g) => GENES[g] && g in pack.datasets && assemblyStatus(completed, GENES[g]!, pack.levels).verified);
   if (assembled.length < claimed.length) notices.push('An assembled-gene record could not be re-verified against the pinned reference and was cleared; your completed puzzles are kept.');
-  if (notices.length && !upgradedV2 && !upgradedV3 && !upgradedV4) adapter.backup(raw);
+  if (notices.length && !upgradedV2 && !upgradedV3 && !upgradedV4 && !upgradedV5) adapter.backup(raw);
   const kept = notices.length ? 'Completed levels were kept.' : 'All your progress was kept.';
   if (upgradedV3) notices.unshift(`GENOME updated: full gene assembly — multi-base tiles (codons up to 24-base pieces) and an assembly chapter for each of ${Object.keys(pack.datasets).length} verified catalogue genes.${upgradedV2 ? ' Also new: enzyme power-ups (CRISPR, Ligase, Scaffold), with three optional Enzyme lab tutorials on the map.' : ''} ${kept}`);
-  if (upgradedV4) notices.unshift(`GENOME updated: the short INS and HBB sample challenges have been retired. Your assembly chapter progress, stars, best scores and preferences are kept. A gene is now discovered by solving its first assembly puzzle.${droppedSamples ? ' Sample-level completions no longer count toward coverage.' : ''} ${kept}`);
-  const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : nextChapterId(completed);
+  if (upgradedV4 && !upgradedV3) notices.unshift(`GENOME updated: the short INS and HBB 1-base puzzles are now intro levels in the main campaign, ahead of the multi-base assembly chapters. Your progress, stars, best scores and preferences are kept. ${kept}`);
+  if (upgradedV5) notices.unshift(restoredIntros.length
+    ? `GENOME updated: the 1-base INS and HBB intro puzzles are back in the main campaign. Completions and best scores from your earlier save have been restored. ${kept}`
+    : `GENOME updated: the 1-base INS and HBB intro puzzles are back in the main campaign, ahead of the multi-base assembly chapters. Your assembly chapter progress, stars, best scores and preferences are kept. ${kept}`);
+  const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : nextCampaignId(completed);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
   return {

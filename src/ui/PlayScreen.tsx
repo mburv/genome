@@ -5,7 +5,7 @@ import {
 } from '../engine/engine.ts';
 import { codonComplete, OPENING_LEVEL_ID, POWER_COST, powersEnabled, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
-import { LAB_LEVELS, chapterOf, isDiscovered } from '../campaign/campaign.ts';
+import { CAMPAIGN_LEVELS, LAB_LEVELS, isDiscovered } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
 import { SeqLetters, tokenStyle } from './TokenFace.tsx';
@@ -313,9 +313,9 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   }
 
   const assembly = assemblyStatus(save.completed, gene);
-  const chapter = def.chapter ? chapterOf(def.symbol) : [];
   const labIndex = LAB_LEVELS.findIndex((l) => l.id === def.id);
-  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : def.chapter ? chapter[def.chapter.part] : undefined;
+  const campaignIndex = CAMPAIGN_LEVELS.findIndex((l) => l.id === def.id);
+  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : campaignIndex >= 0 ? CAMPAIGN_LEVELS[campaignIndex + 1] : undefined;
   const powerPreview: PowerPreview | null = pending;
 
   const best = save.best[def.id];

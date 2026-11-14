@@ -5,9 +5,9 @@ const boardText = (page: import('@playwright/test').Page) => page.locator('.boar
 const baseAt = (page: import('@playwright/test').Page, c: number) => page.locator(`[data-cell="${c}"]`).getAttribute('data-base');
 
 test('no power tray on the opening puzzle; later puzzles show ⚡2 and unaffordable powers explain why (nothing spent)', async ({ page }) => {
-  await openChapter(page, 'ins-c01');
+  await openChapter(page, 'ins-01');
   await expect(page.getByTestId('power-tray')).toHaveCount(0);
-  await openChapter(page, 'ins-c02');
+  await openChapter(page, 'ins-02');
   await expect(page.getByTestId('power-tray')).toBeVisible();
   await expect(page.getByTestId('energy')).toContainText('2');
   await page.getByTestId('power-crispr').click();
@@ -166,17 +166,17 @@ test('settings: sound, haptics and reduced motion toggles persist across reloads
   expect(s).toEqual({ reducedMotion: true, sound: true, haptics: false });
 });
 
-test('an M2 save upgrades to v5, drops sample completions, with a notice and a backup', async ({ page }) => {
+test('an M2 save upgrades to v6, keeps intro completions, with a notice and a backup', async ({ page }) => {
   await page.goto('/');
   const ids = ['ins-01', 'ins-02', 'ins-03', 'ins-04', 'ins-05', 'ins-06', 'hbb-01'];
   const m2 = { schemaVersion: 2, campaignId: 'genome-m2-ins-hbb', generatorVersion: 'm2-gen-1', datasets: { INS: 'refseq-NM_000207.3-2026-11-13', HBB: 'refseq-NM_000518.5-2026-11-13' }, currentLevelId: 'hbb-02', completed: ids, discovered: ['INS'], attempts: {}, legacy: { m1Completed: [] }, settings: { reducedMotion: false } };
   await page.evaluate((raw) => { localStorage.clear(); localStorage.setItem('genome-save', raw); }, JSON.stringify(m2));
   await page.reload();
-  await expect(page.getByTestId('notice')).toContainText('retired');
+  await expect(page.getByTestId('notice')).toContainText('full gene assembly');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m2'))).toContain('"schemaVersion":2');
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!);
-  expect(saved.schemaVersion).toBe(5);
-  expect(saved.completed).toEqual([]);
-  expect(saved.discovered).toEqual([]);
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('0 / 333');
+  expect(saved.schemaVersion).toBe(6);
+  expect(saved.completed).toEqual(ids);
+  expect(saved.discovered).toEqual(['INS', 'HBB']);
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('51 / 333');
 });

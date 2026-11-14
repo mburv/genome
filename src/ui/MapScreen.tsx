@@ -1,6 +1,6 @@
 import type { LevelDefinition } from '../engine/types.ts';
 import { CATALOGUE_SIZE, GENES, MANIFEST } from '../genomics/genes.ts';
-import { chapterOf, isDiscovered } from '../campaign/campaign.ts';
+import { CAMPAIGN_LEVELS, introOf, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { tierName } from '../campaign/chapters.ts';
 import { MODE_LABEL } from './modes.ts';
@@ -17,31 +17,57 @@ interface Props {
   onCard: (symbol: string) => void;
 }
 
-export function MapScreen({ labs, completed, attempted, currentLevelId, legacyM1, onPlay, onCard }: Props) {
-  const nextChapter = MANIFEST.included.flatMap((g) => chapterOf(g.symbol)).find((l) => !completed.includes(l.id));
-  const next = nextChapter ?? chapterOf(MANIFEST.included[0]!.symbol)[0]!;
+export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onCard, legacyM1 }: Props) {
+  const nextUnfinished = CAMPAIGN_LEVELS.find((l) => !completed.includes(l.id));
+  const next = nextUnfinished ?? CAMPAIGN_LEVELS[0]!;
+  const nextRun = runProgress(next)!;
   const themes = [...new Set(MANIFEST.included.map((g) => g.theme))];
   return (
     <section className="map" aria-label="Level map" data-testid="level-map">
       <button type="button" className="primary big" onClick={() => onPlay(next.id)} data-testid="continue">
-        {completed.length === 0 ? 'Start' : !nextChapter ? 'Replay' : 'Continue'} · {next.symbol} assembly {next.chapter!.part}/{next.chapter!.of}
+        {completed.length === 0 ? 'Start' : !nextUnfinished ? 'Replay' : 'Continue'} · {next.symbol} {nextRun.part}/{nextRun.of}
       </button>
       <div className="panel catalogue" data-testid="catalogue">
         <div className="row-between">
           <h2 className="gene">Gene catalogue <span>· full assembly</span></h2>
           <span className="muted small" data-testid="catalogue-count">{CATALOGUE_SIZE} verified genes</span>
         </div>
-        <p className="muted small lab-note">Each chapter rebuilds a gene’s entire coding sequence (MANE Select RefSeq) from multi-base tiles. A gene is discovered by solving its first puzzle, and assembled only when every base is placed and the SHA-256 matches.</p>
+        <p className="muted small lab-note">INS and HBB open with short 1-base intro puzzles, then every gene is rebuilt from multi-base tiles (MANE Select RefSeq). A gene is discovered by solving its first puzzle, and assembled only when every base is placed and the SHA-256 matches.</p>
         {themes.map((theme) => (
           <div key={theme} className="theme">
             <h3 className="theme-title">{theme}</h3>
             {MANIFEST.included.filter((g) => g.theme === theme).map((m) => {
               const gene = GENES[m.symbol]!;
-              const chapter = chapterOf(m.symbol);
+              const intros = introOf(m.symbol);
+              const run = runOf(m.symbol);
               const st = assemblyStatus(completed, gene);
               const disc = isDiscovered(completed, m.symbol);
-              const nextPart = chapter.find((l) => !completed.includes(l.id)) ?? chapter[0]!;
-              const tiers = [...new Set(chapter.map((l) => l.tier!))].sort((a, b) => a - b);
+              const nextPart = run.find((l) => !completed.includes(l.id)) ?? run[0]!;
+              const chapters = run.filter((l) => l.chapter);
+              const tiers = [
+                ...(intros.length ? ['1-base tiles'] : []),
+                ...[...new Set(chapters.map((l) => l.tier!))].sort((a, b) => a - b).map(tierName),
+              ];
+              const countLabel = intros.length
+                ? `${run.length} puzzles · ${intros.length} intro + ${chapters.length} assembly`
+                : `${run.length} puzzles`;
+              const node = (l: LevelDefinition) => {
+                const done = completed.includes(l.id);
+                const part = runProgress(l)!.part;
+                return (
+                  <li key={l.id}>
+                    <button
+                      type="button"
+                      className={`cnode ${l.chapter ? '' : 'intro '} ${done ? 'done' : ''} ${l.id === currentLevelId ? 'current' : ''} ${attempted.includes(l.id) && !done ? 'started' : ''}`.replace(/  +/g, ' ').trim()}
+                      onClick={() => onPlay(l.id)}
+                      aria-label={`${m.symbol} ${part} of ${run.length}: ${MODE_LABEL[l.mode]}, ${l.chapter ? `${l.tier}-base tiles` : '1-base tiles'}${done ? ', complete' : ''}`}
+                      data-testid={`cnode-${l.id}`}
+                    >
+                      {done ? '✓' : part}
+                    </button>
+                  </li>
+                );
+              };
               return (
                 <div key={m.symbol} className={`cat-gene ${st.verified ? 'assembled' : ''}`} data-testid={`cat-${m.symbol}`}>
                   <div className="row-between">
@@ -54,26 +80,20 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, legacyM1
                     <i style={{ width: `${(100 * st.covered) / m.cdsLength}%` }} />
                   </div>
                   <div className="row-between muted tiny">
-                    <span data-testid={`cat-progress-${m.symbol}`}>{st.covered} / {m.cdsLength} bp · chr {m.chromosome} · {chapter.length} puzzles · {tiers.map(tierName).join(', ')}</span>
+                    <span data-testid={`cat-progress-${m.symbol}`}>{st.covered} / {m.cdsLength} bp · chr {m.chromosome} · {countLabel} · {tiers.join(', ')}</span>
                   </div>
+                  {intros.length > 0 && (
+                    <>
+                      <p className="muted tiny run-label">Intro · 1-base tiles</p>
+                      <ol className="chapter-nodes" aria-label={`${m.symbol} intro puzzles`} data-testid={`intro-nodes-${m.symbol}`}>
+                        {intros.map(node)}
+                      </ol>
+                      <p className="muted tiny run-label">Assembly · multi-base tiles</p>
+                    </>
+                  )}
                   <ol className="chapter-nodes" aria-label={`${m.symbol} assembly puzzles`}>
-                    {chapter.map((l) => {
-                      const done = completed.includes(l.id);
-                      return (
-                        <li key={l.id}>
-                          <button
-                            type="button"
-                            className={`cnode ${done ? 'done' : ''} ${l.id === currentLevelId ? 'current' : ''} ${attempted.includes(l.id) && !done ? 'started' : ''}`}
-                            onClick={() => onPlay(l.id)}
-                            aria-label={`${m.symbol} assembly ${l.chapter!.part} of ${l.chapter!.of}: ${MODE_LABEL[l.mode]}, ${l.tier}-base tiles${done ? ', complete' : ''}`}
-                            data-testid={`cnode-${l.id}`}
-                          >
-                            {done ? '✓' : l.chapter!.part}
-                          </button>
-                        </li>
-                      );
-                    })}
-                    <li><button type="button" className="cnode play" onClick={() => onPlay(nextPart.id)} aria-label={`Play ${m.symbol} assembly`}>▶</button></li>
+                    {chapters.map(node)}
+                    <li><button type="button" className="cnode play" onClick={() => onPlay(nextPart.id)} aria-label={`Play ${m.symbol}`}>▶</button></li>
                   </ol>
                 </div>
               );
@@ -115,7 +135,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, legacyM1
         </ol>
       </div>
       {legacyM1.length > 0 && (
-        <p className="muted small legacy" data-testid="legacy-m1">M1 history: you completed prototype level{legacyM1.length > 1 ? 's' : ''} {legacyM1.map((id) => Number(id.slice(-2))).join(', ')}. The prototype challenges were retired with the sample campaign; they are kept here as history only.</p>
+        <p className="muted small legacy" data-testid="legacy-m1">M1 history: you completed prototype level{legacyM1.length > 1 ? 's' : ''} {legacyM1.map((id) => Number(id.slice(-2))).join(', ')}. The prototype challenges are kept here as history only.</p>
       )}
     </section>
   );

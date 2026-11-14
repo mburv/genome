@@ -28,39 +28,46 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
   });
 }
 
-test('first-run: players start on INS assembly 1/8; hinted drags complete it and discover the gene', async ({ page }) => {
+test('first-run: players start on the 1-base INS intro 1/14; hinted drags complete it and discover the gene', async ({ page }) => {
   await fresh(page);
   await expectOpeningHeading(page);
   await expect(page.getByTestId('hint-cue')).toBeVisible();
+  // Opening board is single-letter tiles, not 3-base codon pieces.
+  await expect(page.locator('.tile.tok')).toHaveCount(0);
+  await expect(page.locator('.board .tile .letter').first()).toHaveText(/^[ACGT]$/);
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-basics-level1-390x844.png', animations: 'disabled' });
   const drags = await solveWithHints(page);
-  expect(drags).toBe(ins[0]!.certificateSlides.length);
+  expect(drags).toBe(1);
   await expect(page.getByTestId('win')).toBeVisible();
   await expect(page.getByTestId('win')).toContainText('Fragment sequenced');
+  await expect(page.getByTestId('win')).toContainText('INS 1/14');
   await expect(page.getByTestId('win')).not.toContainText('sample bases');
   await expect(page.getByTestId('win')).not.toContainText('illustrative split');
-  await expect(page.getByTestId('win-bases')).toContainText('+27 INS coding bases');
-  await expect(page.getByTestId('win-bases')).toContainText('CDS 1–27');
-  await expect(page.getByTestId('win-assembly')).toContainText('27 / 333 INS coding bases assembled');
+  await expect(page.getByTestId('win-bases')).toContainText('+9 INS coding bases');
+  await expect(page.getByTestId('win-bases')).toContainText('CDS 1–9');
+  await expect(page.getByTestId('win-assembly')).toContainText('9 / 333 INS coding bases assembled');
   await expect(page.getByTestId('discovered')).toContainText('INS discovered');
-  await expect(page.getByTestId('discovered')).toContainText('First assembly puzzle solved');
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-nosamples-win-390x844.png', animations: 'disabled' });
+  await expect(page.getByTestId('discovered')).toContainText('First puzzle solved');
   await expect(page.getByRole('button', { name: 'Level map' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'View card' })).toBeVisible();
 });
 
-test('level map lists the gene catalogue and labs; cards stay locked until the chapter opener', async ({ page }) => {
+test('level map lists the gene catalogue and labs; cards stay locked until the first puzzle', async ({ page }) => {
   await fresh(page);
   await openMap(page);
   await expect(page.getByTestId('level-map')).toBeVisible();
-  await expect(page.getByTestId('continue')).toHaveText(/Start · INS assembly 1\/8/);
+  await expect(page.getByTestId('continue')).toHaveText(/Start · INS 1\/14/);
   await expect(page.locator('.node:not(.lab)')).toHaveCount(0);
   await expect(page.locator('.node.lab')).toHaveCount(3);
   await expect(page.getByTestId('catalogue')).toBeVisible();
+  await expect(page.getByTestId('intro-nodes-INS')).toBeVisible();
+  await expect(page.getByTestId('cnode-ins-01')).toBeVisible();
   await expect(page.getByTestId('cat-progress-INS')).toContainText('0 / 333');
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('6 intro + 8 assembly');
   await expect(page.getByTestId('cat-INS')).toContainText('New');
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-nosamples-map-390x844.png', animations: 'disabled' });
+  await expect(page.getByText('Intro · 1-base tiles').first()).toBeVisible();
   await page.getByTestId('cat-card-HBB').click();
-  await expect(page.getByTestId('gene-card')).toContainText('Solve the first HBB assembly puzzle');
+  await expect(page.getByTestId('gene-card')).toContainText('Solve the first HBB puzzle');
   await expect(page.getByTestId('gene-card')).toContainText('NM_000518.5');
   await expect(page.getByTestId('gene-card')).not.toContainText('Not yet assembled');
   await expect(page.getByTestId('gene-card')).not.toContainText('sample bases');
@@ -68,17 +75,17 @@ test('level map lists the gene catalogue and labs; cards stay locked until the c
 
 test('splicing, replication and repair chapter puzzles show their mode cues', async ({ page }) => {
   await openChapter(page, 'ins-c02');
-  await expectChapterHeading(page, 'INS', 2, 8, 'INSULIN');
+  await expectChapterHeading(page, 'INS', 8, 14, 'INSULIN');
   await expect(page.locator('.track-outline')).toHaveCount(ins[1]!.tracks.length);
   await expect(page.getByTestId('target-panel')).not.toContainText('illustrative');
   await openMap(page);
   await page.getByTestId('cnode-ins-c03').click();
-  await expectChapterHeading(page, 'INS', 3, 8, 'INSULIN');
+  await expectChapterHeading(page, 'INS', 9, 14, 'INSULIN');
   await expect(page.locator('.track-outline.strand-complement')).toHaveCount(1);
   await expect(page.getByTestId('target-panel')).toContainText('complement');
   await openMap(page);
   await page.getByTestId('cnode-ins-c04').click();
-  await expectChapterHeading(page, 'INS', 4, 8, 'INSULIN');
+  await expectChapterHeading(page, 'INS', 10, 14, 'INSULIN');
   await expect(page.getByTestId('repair-cell')).toContainText('?');
   await expect(page.getByTestId('repair-slot')).toContainText('?');
 });
@@ -134,14 +141,14 @@ test('opening puzzles discover a gene; a replay never adds duplicate bases and d
   await page.getByRole('button', { name: 'View card' }).click();
   const card = page.getByTestId('gene-card');
   await expect(card).toContainText('INS');
-  await expect(page.getByTestId('card-coverage')).toContainText('27 of 333');
+  await expect(page.getByTestId('card-coverage')).toContainText('9 of 333');
   await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
   await expect(card).toContainText('RefSeq');
   await expect(card).toContainText('NM_000207.3');
   await card.getByRole('button', { name: '← Map' }).click();
   await expect(page.getByTestId('cat-INS')).toContainText('Discovered');
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('27 / 333');
-  await page.getByTestId('cnode-ins-c01').click();
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('9 / 333');
+  await page.getByTestId('cnode-ins-01').click();
   await page.getByRole('button', { name: 'Replay' }).click();
   await solveWithHints(page);
   await expect(page.getByTestId('win-bases')).toContainText('Already counted');
@@ -153,8 +160,8 @@ test('progress and the board in play survive a reload; returning players see the
   await solveWithHints(page);
   await page.getByTestId('win-map').click();
   await expect(page.getByTestId('level-map')).toBeVisible();
-  await page.getByTestId('cnode-ins-c02').click();
-  await expectChapterHeading(page, 'INS', 2, 8, 'INSULIN');
+  await page.getByTestId('cnode-ins-02').click();
+  await expectChapterHeading(page, 'INS', 2, 14, 'INSULIN');
   const tile = page.locator('.tile.goal').nth(1);
   await tile.tap();
   await tile.focus();
@@ -164,16 +171,16 @@ test('progress and the board in play survive a reload; returning players see the
   const board = await page.locator('.board').innerText();
   await page.reload();
   await expect(page.getByTestId('level-map')).toBeVisible();
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('27 / 333');
-  await expect(page.getByTestId('cnode-ins-c01')).toHaveClass(/done/);
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('9 / 333');
+  await expect(page.getByTestId('cnode-ins-01')).toHaveClass(/done/);
   await page.getByTestId('continue').click();
-  await expectChapterHeading(page, 'INS', 2, 8, 'INSULIN');
+  await expectChapterHeading(page, 'INS', 2, 14, 'INSULIN');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   expect(await page.locator('.board').innerText()).toBe(board);
   await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
 });
 
-test('an M1 save migrates: sample campaign retired, prototype history kept, with a notice', async ({ page }) => {
+test('an M1 save migrates: prototype history kept, no campaign credit, with a notice', async ({ page }) => {
   await page.goto('/');
   const m1 = { schemaVersion: 1, campaignId: 'genome-m1-ins-sample', generatorVersion: 'm1-gen-1', datasetId: 'refseq-NM_000207.3', currentLevelId: 'm1-ins-03', completed: ['m1-ins-01', 'm1-ins-02', 'm1-ins-03'], attempts: {}, settings: { reducedMotion: false } };
   await page.evaluate((raw) => { localStorage.clear(); localStorage.setItem('genome-save', raw); }, JSON.stringify(m1));
@@ -183,7 +190,7 @@ test('an M1 save migrates: sample campaign retired, prototype history kept, with
   await expect(page.getByTestId('cat-progress-INS')).toContainText('0 / 333');
   await expect(page.getByTestId('legacy-m1')).toContainText('1, 2, 3');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m1'))).toContain('"schemaVersion":1');
-  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!).schemaVersion).toBe(5);
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!).schemaVersion).toBe(6);
   await page.getByRole('button', { name: 'OK' }).click();
   await page.reload();
   await expect(page.getByTestId('notice')).toHaveCount(0);

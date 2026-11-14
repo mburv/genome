@@ -4,7 +4,7 @@ import { canonicalMask, isConnected, isSelfSymmetric, maskMetrics, symmetricDist
 import { createRng } from '../../src/generator/rng.ts';
 import { solveBounded } from '../../src/generator/solver.ts';
 import { M2_SPECS, ALL_SPECS, LAB_SPECS, CAMPAIGN_ID } from '../../src/campaign/specs.ts';
-import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, RETIRED_SAMPLE_LEVELS as LEVELS, chapterOf, coveredBases, isDiscovered } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, INTRO_LEVELS as LEVELS, chapterOf, coveredBases, isDiscovered } from '../../src/campaign/campaign.ts';
 import { CATALOGUE_ORDER, GENES, HBB, INS } from '../../src/genomics/genes.ts';
 import m2pack from '../../src/campaign/levels.generated.json';
 import { alignedComplement } from '../../src/genomics/dna.ts';
@@ -26,11 +26,11 @@ describe('rng', () => {
 
 describe('deterministic generation', () => {
   it('regenerating from specs reproduces the pinned level pack exactly', { timeout: 120_000 }, () => {
-    // Retired sample campaign + Enzyme labs stay byte-identical (chapter-generation context).
+    // 1-base intro boards + Enzyme labs stay byte-identical (chapter-generation context).
     expect(buildCampaign(ALL_SPECS, GENES)).toEqual([...LEVELS, ...LAB_LEVELS]);
     expect(buildCampaign(M2_SPECS, GENES)).toEqual(LEVELS);
-    expect(ALL_LEVELS[0]!.id).toBe('ins-c01');
-    expect(ALL_LEVELS.filter((l) => !l.chapter)).toEqual(LAB_LEVELS);
+    expect(ALL_LEVELS[0]!.id).toBe('ins-01');
+    expect(ALL_LEVELS.filter((l) => l.lab)).toEqual(LAB_LEVELS);
     expect(LEVEL_PACK.generatorVersion).toBe(GENERATOR_VERSION);
     expect((m2pack as { campaignId: string }).campaignId).toBe(CAMPAIGN_ID);
     expect(LEVEL_PACK.campaignId).toBe('genome-m4-assembly');
@@ -290,19 +290,21 @@ describe('coverage & discovery', () => {
     expect(coveredBases(ins.map((l) => l.id), 'HBB')).toBe(0);
     expect(coveredBases(ins.map((l) => l.id), 'INS')).toBe(INS.cdsLength);
   });
-  it('a gene is discovered when its chapter opener is complete', () => {
+  it('a gene is discovered when its first run puzzle is complete', () => {
     const ins = chapterOf('INS');
     expect(isDiscovered([], 'INS')).toBe(false);
-    expect(isDiscovered([ins[0]!.id], 'INS')).toBe(true);
+    expect(isDiscovered(['ins-01'], 'INS')).toBe(true);
+    expect(isDiscovered([ins[0]!.id], 'INS')).toBe(false); // chapter opener is no longer first
     expect(isDiscovered([ins[1]!.id], 'INS')).toBe(false);
-    expect(isDiscovered([ins[0]!.id], 'HBB')).toBe(false);
-    expect(coveredBases([ins[0]!.id], 'INS')).toBeLessThan(INS.cdsLength);
+    expect(isDiscovered(['ins-01'], 'HBB')).toBe(false);
+    expect(isDiscovered(['hbb-01'], 'HBB')).toBe(true);
+    expect(coveredBases(['ins-01'], 'INS')).toBeLessThan(INS.cdsLength);
   });
 });
 
 describe('Enzyme lab levels (M3)', () => {
-  it('three optional labs, one per power; the live pack is chapters then labs', () => {
-    expect(ALL_LEVELS.filter((l) => !l.chapter)).toEqual(LAB_LEVELS);
+  it('three optional labs, one per power; the live pack is intros, chapters, then labs', () => {
+    expect(ALL_LEVELS.filter((l) => l.lab)).toEqual(LAB_LEVELS);
     expect(ALL_LEVELS.filter((l) => l.chapter)).toEqual(CHAPTER_LEVELS);
     expect(LAB_LEVELS.map((l) => l.lab)).toEqual(['crispr', 'ligase', 'scaffold']);
     expect(LAB_LEVELS.map((l) => l.index)).toEqual([12, 13, 14]);
@@ -323,5 +325,42 @@ describe('Enzyme lab levels (M3)', () => {
   it('ids are unique and the scaffold lab has at least one bridgeable gap', () => {
     expect(new Set(ALL_LEVELS.map((l) => l.id)).size).toBe(ALL_LEVELS.length);
     expect(scaffoldCandidates(LAB_LEVELS.find((l) => l.lab === 'scaffold')!.mask, []).length).toBeGreaterThan(0);
+  });
+});
+
+describe('live campaign order and intro DNA', () => {
+  it('places 1-base INS/HBB intros before that gene’s multi-base chapters, then labs last', () => {
+    expect(ALL_LEVELS[0]!.id).toBe('ins-01');
+    expect(ALL_LEVELS.at(-3)!.lab).toBe('crispr');
+    const campaign = ALL_LEVELS.filter((l) => !l.lab);
+    const ins = campaign.filter((l) => l.symbol === 'INS');
+    const hbb = campaign.filter((l) => l.symbol === 'HBB');
+    expect(ins).toHaveLength(14);
+    expect(ins.slice(0, 6).every((l) => !l.tokens && !l.chapter && l.id.startsWith('ins-0'))).toBe(true);
+    expect(ins.slice(6).every((l) => !!l.tokens && !!l.chapter && (l.tier ?? 0) >= 3)).toBe(true);
+    expect(hbb).toHaveLength(15);
+    expect(hbb.slice(0, 6).every((l) => !l.tokens && !l.chapter && l.id.startsWith('hbb-0'))).toBe(true);
+    expect(hbb.slice(6).every((l) => !!l.tokens && !!l.chapter && (l.tier ?? 0) >= 3)).toBe(true);
+    const firstInsChapter = campaign.findIndex((l) => l.id === 'ins-c01');
+    const firstHbbIntro = campaign.findIndex((l) => l.id === 'hbb-01');
+    expect(firstInsChapter).toBeGreaterThan(0);
+    expect(firstHbbIntro).toBeGreaterThan(firstInsChapter);
+    expect(ALL_LEVELS.filter((l) => l.lab)).toEqual(LAB_LEVELS);
+    expect(CHAPTER_LEVELS).toHaveLength(107);
+    expect(ALL_LEVELS).toHaveLength(122);
+  });
+
+  it('intro boards use the pinned NCBI CDS and checksum, with no fabricated DNA', () => {
+    for (const l of LEVELS) {
+      const gene = geneOf(l);
+      expect(l.sequenceSha256).toBe(gene.sequenceSha256);
+      expect(l.transcript).toBe(gene.transcript);
+      expect(l.geneId).toBe(gene.geneId);
+      for (const track of l.tracks) {
+        const slice = gene.sequence.slice(track.source.start, track.source.end);
+        if (track.strand === 'coding') expect(track.expected).toBe(slice);
+        else expect(track.expected).toBe(alignedComplement(slice));
+      }
+    }
   });
 });

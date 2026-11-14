@@ -56,7 +56,7 @@ test('play header shows the current gene and locus; the info card is gone; Map l
 test('heading stays compact at 320px and updates on the next gene', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openChapter(page, 'hbb-c01');
-  await expectChapterHeading(page, 'HBB', 1, 9, 'HEMOGLOBIN SUBUNIT BETA');
+  await expectChapterHeading(page, 'HBB', 7, 15, 'HEMOGLOBIN SUBUNIT BETA');
   await expect(page.getByTestId('play-locus')).toHaveText('CHROMOSOME 11 · NM_000518.5');
   const typography = await page.evaluate(() => {
     const sizeOf = (id: string) => getComputedStyle(document.querySelector(`[data-testid="${id}"]`)!).fontSize;

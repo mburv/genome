@@ -75,6 +75,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .panel { background: var(--white); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px var(--pad); }
 .row-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .row-between > span { white-space: nowrap; }
+.cat-gene .row-between.muted > span { white-space: normal; }
 .muted { color: var(--graphite); }
 .small { font-size: 12px; }
 .tiny { font-size: 11px; margin: 4px 0 0; }
@@ -309,6 +310,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .cnode.current { box-shadow: inset 0 -4px 0 var(--coral-edge); }
 .cnode.started { box-shadow: inset 0 -4px 0 var(--butter-edge); }
 .cnode.play { background: var(--coral); color: var(--ink); border-color: var(--ink); margin-left: 6px; }
+.cnode.intro { font-weight: 600; }
+.run-label { margin: 8px 0 2px; letter-spacing: 0.02em; }
+
 .excluded ul { padding-left: 18px; margin: 4px 0; }
 
 /* ---------- Gene card ---------- */

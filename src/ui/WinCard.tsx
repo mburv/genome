@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { LevelDefinition } from '../engine/types.ts';
+import { runProgress } from '../campaign/campaign.ts';
 import { MODE_WIN } from './modes.ts';
 import { symbolSequence } from '../engine/tokens.ts';
 
@@ -30,6 +31,7 @@ const cellsFor = (def: LevelDefinition) => (syms: string, cls = '', delay = 0, r
 /** Completion card with a short, skippable mode-specific animation (tap the strand to skip). */
 export function WinCard(p: Props) {
   const { def } = p;
+  const run = runProgress(def);
   const [skipped, setSkipped] = useState(p.reducedMotion);
   const iv = def.sourceIntervals[0]!;
   const expand = expandFor(def);
@@ -67,7 +69,7 @@ export function WinCard(p: Props) {
       <div className="card">
         <div className="card-head">
           <div className="card-head-copy">
-            <p className="muted small" data-testid="win-meta">{def.lab ? 'ENZYME LAB' : def.chapter ? `${def.symbol} ASSEMBLY ${def.chapter.part}/${def.chapter.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
+            <p className="muted small" data-testid="win-meta">{def.lab ? 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
             <h3 id="win-title">{MODE_WIN[def.mode]}</h3>
           </div>
           <button type="button" className="win-close" onClick={p.onClose} aria-label="Close and view board" data-testid="win-close">
@@ -97,7 +99,7 @@ export function WinCard(p: Props) {
           </div>
         ) : p.discovered && (
           <div className="discovered" data-testid="discovered">
-            <b>🧬 {def.symbol} discovered!</b> First assembly puzzle solved — {p.assembledBases ?? 0} of {p.cdsLength} coding bases placed. Not yet fully assembled.
+            <b>🧬 {def.symbol} discovered!</b> First puzzle solved — {p.assembledBases ?? 0} of {p.cdsLength} coding bases placed. Not yet fully assembled.
           </div>
         )}
         <div className="card-actions">

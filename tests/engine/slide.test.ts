@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyMove, applySlide, normaliseSteps, slideToMoves, cellAt, segmentCells } from '../../src/engine/grid.ts';
 import { applyCommand, createInitialState, recoveryHint, replayCertificate } from '../../src/engine/engine.ts';
-import { RETIRED_SAMPLE_LEVELS as LEVELS } from '../../src/campaign/campaign.ts';
+import { INTRO_LEVELS as LEVELS } from '../../src/campaign/campaign.ts';
 import { createRng } from '../../src/generator/rng.ts';
 import { grid, maskOf } from '../helpers.ts';
 

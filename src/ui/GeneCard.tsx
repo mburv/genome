@@ -1,6 +1,6 @@
 import type { GeneAsset } from '../genomics/genes.ts';
 import { MANIFEST } from '../genomics/genes.ts';
-import { chapterOf, isDiscovered } from '../campaign/campaign.ts';
+import { runOf, isDiscovered } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 
 interface Props {
@@ -11,14 +11,14 @@ interface Props {
 }
 
 /**
- * Gene card. Discovery (the chapter opener) and assembly (every coding base placed by the
- * player, exact and SHA-256 verified) are separate states.
+ * Gene card. Discovery (the first puzzle of the gene's run) and assembly (every coding base
+ * placed by the player, exact and SHA-256 verified) are separate states.
  */
 export function GeneCard({ gene, completed, onPlay, onBack }: Props) {
   const discovered = isDiscovered(completed, gene.symbol);
   const status = assemblyStatus(completed, gene);
-  const chapter = chapterOf(gene.symbol);
-  const nextPuzzle = chapter.find((l) => !completed.includes(l.id));
+  const run = runOf(gene.symbol);
+  const nextPuzzle = run.find((l) => !completed.includes(l.id));
   const theme = MANIFEST.included.find((m) => m.symbol === gene.symbol)?.theme;
   const state = status.verified ? 'Assembled' : discovered ? 'Discovered' : 'Locked';
   return (
@@ -35,7 +35,7 @@ export function GeneCard({ gene, completed, onPlay, onBack }: Props) {
           <p className="muted tiny">— {gene.functionSummaryCredit}</p>
         </>
       ) : (
-        <p>Solve the first {gene.symbol} assembly puzzle to discover this gene.</p>
+        <p>Solve the first {gene.symbol} puzzle to discover this gene.</p>
       )}
       {(discovered || status.verified) && (<>
       <div className="card-strand" aria-label={`Player-assembled coding sequence: ${status.covered} of ${gene.cdsLength} bases`} data-testid="card-strand">
@@ -53,9 +53,9 @@ export function GeneCard({ gene, completed, onPlay, onBack }: Props) {
           <p className="mono tiny seq-wrap">{status.assembled.match(/.{1,60}/g)!.join('\n')}</p>
         </details>
       )}
-      {chapter.length > 0 && !status.verified && (
-        <button type="button" className="primary" onClick={() => onPlay((nextPuzzle ?? chapter[0]!).id)} data-testid="card-play-chapter">
-          {nextPuzzle ? `Assemble ${gene.symbol} · puzzle ${nextPuzzle.chapter!.part} / ${chapter.length}` : `Replay ${gene.symbol} assembly`}
+      {run.length > 0 && !status.verified && (
+        <button type="button" className="primary" onClick={() => onPlay((nextPuzzle ?? run[0]!).id)} data-testid="card-play-chapter">
+          {nextPuzzle ? `Play ${gene.symbol} · puzzle ${run.findIndex((l) => l.id === nextPuzzle.id) + 1} / ${run.length}` : `Replay ${gene.symbol}`}
         </button>
       )}
       <dl className="card-meta">

@@ -18,7 +18,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const [notices, setNotices] = useState<string[]>(initial.notices);
   // Write once on load (idempotent) so a fresh/migrated save is stored in the current format.
   const [saveOk, setSaveOk] = useState(() => storage.save(serializeSave(initial.save)));
-  // First-time players go straight into the tutorial; returning players see the map.
+  // First-time players go straight into the opening puzzle; returning players see the map. Reset lands on the map.
   const [screen, setScreen] = useState<Screen>(() =>
     initial.save.completed.length === 0 && Object.keys(initial.save.attempts).length === 0 && initial.notices.length === 0 ? { kind: 'play' } : { kind: 'map' },
   );
@@ -50,7 +50,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     if (typeof localStorage !== 'undefined') clearProgressStorage(localStorage);
     persist(resetProgress(LEVEL_PACK, settings));
     setNotices([]);
-    go({ kind: 'play' });
+    go({ kind: 'map' });
   };
 
   return (

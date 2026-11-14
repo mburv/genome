@@ -84,7 +84,7 @@ export function rotated(s: string, k: number): string {
   return out.join('');
 }
 
-/** Fresh device: clear storage; first-time players land on the opening assembly puzzle. */
+/** Fresh device: clear storage; first-time players land on the opening 1-base puzzle. */
 export async function fresh(page: Page): Promise<void> {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
@@ -99,7 +99,7 @@ export async function expectChapterHeading(page: Page, symbol: string, part: num
 }
 
 export async function expectOpeningHeading(page: Page): Promise<void> {
-  await expectChapterHeading(page, 'INS', 1, 8, 'INSULIN');
+  await expectChapterHeading(page, 'INS', 1, 14, 'INSULIN');
 }
 
 /** Open the level map, via Settings when the header Map button is absent. */
@@ -120,10 +120,10 @@ export async function goToChapter(page: Page, id: string): Promise<void> {
   await page.getByTestId('board').waitFor();
 }
 
-/** Open an assembly chapter puzzle through the level map. The opening puzzle is already on screen after fresh(). */
+/** Open a campaign puzzle through the level map. The opening 1-base puzzle is already on screen after fresh(). */
 export async function openChapter(page: Page, id: string): Promise<void> {
   await fresh(page);
-  if (id === 'ins-c01') return;
+  if (id === 'ins-01') return;
   await goToChapter(page, id);
 }
 
@@ -174,7 +174,7 @@ export function completedLevelSave(def: LevelDefinition, opts: { lastMoves?: num
   const lastMoves = opts.lastMoves ?? s.moves;
   const bestMoves = opts.bestMoves ?? Math.min(lastMoves, s.moves);
   const save = {
-    schemaVersion: 5,
+    schemaVersion: 6,
     ...PACK,
     currentLevelId: def.id,
     completed: [def.id],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LEVELS, CHAPTER_LEVELS, RETIRED_SAMPLE_LEVELS as LEVELS } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS as LEVELS } from '../../src/campaign/campaign.ts';
 import { contrastRatio, CORE_SIZE, deltaE, hexToOklab, levelTokenColours, MIN_CONTRAST, MIN_INK_CONTRAST, MIN_SURFACE_DELTA, PASTEL, SURFACE_COLOURS, tokenColour, tokenPalette, INK } from '../../src/engine/tokenColours.ts';
 import { TOKEN_SYMBOL_BASE } from '../../src/engine/tokens.ts';
 

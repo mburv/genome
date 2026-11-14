@@ -4,8 +4,8 @@ import { sha256Hex } from '../genomics/sha256.ts';
 import { ALL_LEVELS } from './campaign.ts';
 
 /**
- * M4 full-CDS assembly. Coverage = the union of CDS intervals of completed chapter puzzles
- * (Enzyme labs never count). Complementary strands and replays add nothing, and
+ * M4 full-CDS assembly. Coverage = the union of CDS intervals of completed campaign puzzles
+ * (intros and chapters; Enzyme labs never count). Complementary strands and replays add nothing, and
  * overlapping intervals are counted once. A gene is **assembled** only when the reconstruction —
  * every base taken from the target pieces the player actually completed, in CDS order, with no
  * auto-fill — covers the whole CDS, equals the pinned reference byte-for-byte and its SHA-256 matches

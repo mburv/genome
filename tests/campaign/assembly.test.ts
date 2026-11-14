@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, RETIRED_SAMPLE_LEVELS, chapterOf, isDiscovered } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS, LAB_LEVELS, chapterOf, isDiscovered } from '../../src/campaign/campaign.ts';
 import { assemblyStatus, levelContribution } from '../../src/campaign/assembly.ts';
 import { MAX_ASSEMBLY_CDS, MAX_CHAPTER, MIN_CHAPTER, planChapter } from '../../src/campaign/chapters.ts';
 import { CATALOGUE_ORDER, CATALOGUE_SIZE, GENES, MANIFEST } from '../../src/genomics/genes.ts';
@@ -76,9 +76,9 @@ describe('full assembly', () => {
       }
     }
   });
-  it('retired sample completions do not count toward live assembly coverage', () => {
-    const st = assemblyStatus(ids(RETIRED_SAMPLE_LEVELS.filter((l) => l.symbol === 'INS')), GENES.INS!);
-    expect(st.covered).toBe(0);
+  it('intro completions count toward coverage but do not assemble the gene', () => {
+    const st = assemblyStatus(ids(INTRO_LEVELS.filter((l) => l.symbol === 'INS')), GENES.INS!);
+    expect(st.covered).toBe(51);
     expect(st.verified).toBe(false);
   });
   it('replays and complementary strands are idempotent', () => {
@@ -91,11 +91,13 @@ describe('full assembly', () => {
       expect(contributed).toBe(l.sourceIntervals.reduce((n, iv) => n + iv.end - iv.start, 0));
     }
   });
-  it('discovery is separate from assembly: the chapter opener discovers, assembly needs everything', () => {
+  it('discovery is separate from assembly: the first run puzzle discovers, assembly needs everything', () => {
     const ch = chapterOf('MB');
     expect(isDiscovered([ch[0]!.id], 'MB')).toBe(true);
     expect(assemblyStatus([ch[0]!.id], GENES.MB!).verified).toBe(false);
     expect(isDiscovered([ch[1]!.id], 'MB')).toBe(false);
+    expect(isDiscovered(['ins-01'], 'INS')).toBe(true);
+    expect(isDiscovered([chapterOf('INS')[0]!.id], 'INS')).toBe(false);
   });
   it('decoys are real in-frame slices of the same gene, outside the interval, never equal to a target piece', () => {
     for (const def of CHAPTER_LEVELS) {
@@ -114,7 +116,7 @@ describe('full assembly', () => {
     const gi = MANIFEST.included.findIndex((m) => m.symbol === 'INS');
     const first = chapterOf('INS')[0]!;
     const specs = chapterSpecs({ symbol: 'INS', cdsLength: 333 }, gi, first.index);
-    const prior = [...RETIRED_SAMPLE_LEVELS, ...LAB_LEVELS];
+    const prior = [...INTRO_LEVELS, ...LAB_LEVELS];
     const rebuilt = { ...buildLevel(specs[0]!, GENES.INS!, prior), generatorVersion: first.generatorVersion };
     expect(rebuilt).toEqual(first);
   });

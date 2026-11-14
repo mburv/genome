@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState, isSolved, recoveryHint, replayCertificate, HISTORY_CAP, type PuzzleState } from '../../src/engine/engine.ts';
 import { applyMove, cellAt } from '../../src/engine/grid.ts';
 import type { LevelDefinition, Move } from '../../src/engine/types.ts';
-import { RETIRED_SAMPLE_LEVELS as LEVELS } from '../../src/campaign/campaign.ts';
+import { INTRO_LEVELS as LEVELS } from '../../src/campaign/campaign.ts';
 import { syntheticLevel } from '../helpers.ts';
 
 const rotate = (move: Move) => ({ type: 'rotate' as const, move });
@@ -155,7 +155,7 @@ describe('certificates', () => {
 
 describe('recoverySlideHint (M2)', () => {
   it('following slide hints from the start solves every pinned level in exactly its drag certificate length', async () => {
-    const { RETIRED_SAMPLE_LEVELS: LEVELS } = await import('../../src/campaign/campaign.ts');
+    const { INTRO_LEVELS: LEVELS } = await import('../../src/campaign/campaign.ts');
     const { recoverySlideHint, applyCommand: apply, createInitialState: init } = await import('../../src/engine/engine.ts');
     for (const def of LEVELS) {
       let s = init(def);
@@ -171,7 +171,7 @@ describe('recoverySlideHint (M2)', () => {
     }
   });
   it('after a wrong drag the hint undoes it, then resumes the certificate', async () => {
-    const { RETIRED_SAMPLE_LEVELS: LEVELS } = await import('../../src/campaign/campaign.ts');
+    const { INTRO_LEVELS: LEVELS } = await import('../../src/campaign/campaign.ts');
     const { recoverySlideHint, applyCommand: apply, createInitialState: init } = await import('../../src/engine/engine.ts');
     const def = LEVELS[4]!;
     const first = recoverySlideHint(def, init(def))!;
@@ -187,7 +187,7 @@ describe('recoverySlideHint (M2)', () => {
     expect(recoverySlideHint(def, back)).toEqual(first);
   });
   it('returns null once solved', async () => {
-    const { RETIRED_SAMPLE_LEVELS: LEVELS } = await import('../../src/campaign/campaign.ts');
+    const { INTRO_LEVELS: LEVELS } = await import('../../src/campaign/campaign.ts');
     const { recoverySlideHint, createInitialState: init } = await import('../../src/engine/engine.ts');
     const def = LEVELS[0]!;
     expect(recoverySlideHint(def, { ...init(def), board: def.solved, status: 'solved', recovery: [] })).toBeNull();

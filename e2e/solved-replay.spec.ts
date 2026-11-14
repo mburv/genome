@@ -80,12 +80,12 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await close.click();
     await expect(page.getByTestId('win')).toHaveCount(0);
     await expect(page.getByTestId('solved-banner')).toBeVisible();
-    await expect(page.getByTestId('solved-result')).toContainText('2 moves');
-    await expect(page.getByTestId('best')).toHaveText('Best 2');
+    await expect(page.getByTestId('solved-result')).toContainText('1 move');
+    await expect(page.getByTestId('best')).toHaveText('Best 1');
     await page.getByRole('button', { name: 'Replay' }).click();
     await expect(page.getByTestId('solved-banner')).toHaveCount(0);
     await expect(page.getByTestId('moves')).toHaveText('0 moves');
-    await expect(page.getByTestId('best')).toHaveText('Best 2');
+    await expect(page.getByTestId('best')).toHaveText('Best 1');
   });
 }
 

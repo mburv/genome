@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState, energyOf, fullHint, certifiedHint, isSolved, levelCodons, segmentIn, type Command, type PuzzleState } from '../../src/engine/engine.ts';
 import { ENERGY_CAP, POWER_COST, powersEnabled, scaffoldCandidates, scaffoldTrack, SCAFFOLD_TURNS, START_ENERGY } from '../../src/engine/powers.ts';
 import { searchSolution } from '../../src/engine/search.ts';
-import { ALL_LEVELS, LAB_LEVELS, RETIRED_SAMPLE_LEVELS as LEVELS, CHAPTER_LEVELS, OPENING_LEVEL_ID } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, LAB_LEVELS, INTRO_LEVELS as LEVELS, CAMPAIGN_LEVELS, CHAPTER_LEVELS, OPENING_LEVEL_ID } from '../../src/campaign/campaign.ts';
 import { createRng } from '../../src/generator/rng.ts';
 import type { Base, LevelDefinition } from '../../src/engine/types.ts';
 import { syntheticLevel } from '../helpers.ts';
@@ -47,10 +47,12 @@ const rejected = (def: LevelDefinition, s: PuzzleState, c: Command, reason: stri
 const rowLeft = { type: 'rotate', move: { origin: 27, axis: 'row', direction: -1 } } as const;
 
 describe('availability and costs', () => {
-  it('powers are off for the first three campaign levels and on from level 4 and in the labs', () => {
-    const opening = CHAPTER_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
+  it('powers are off only on the opening 1-base puzzle, and on for every later intro, chapter and lab', () => {
+    const opening = CAMPAIGN_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
+    expect(opening.id).toBe('ins-01');
     expect(powersEnabled(opening)).toBe(false);
-    expect(CHAPTER_LEVELS.filter((l) => l.id !== OPENING_LEVEL_ID).every(powersEnabled)).toBe(true);
+    expect(CAMPAIGN_LEVELS.filter((l) => l.id !== OPENING_LEVEL_ID).every(powersEnabled)).toBe(true);
+    expect(CHAPTER_LEVELS.every(powersEnabled)).toBe(true);
     expect(LAB_LEVELS.map((l) => l.lab)).toEqual(['crispr', 'ligase', 'scaffold']);
     expect(LAB_LEVELS.every(powersEnabled)).toBe(true);
     const s = createInitialState(opening);
