@@ -248,7 +248,12 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .card { width: min(440px, 100%); background: var(--white); border: 1px solid var(--ink); border-top: 6px solid var(--coral); border-radius: 0; padding: 18px; }
 .card h3 { margin: 2px 0 10px; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
 .card p { margin: 8px 0; }
-.card .link { display: block; margin: 8px auto 0; color: var(--graphite); }
+.card-head { display: flex; align-items: flex-start; gap: 8px; }
+.card-head-copy { flex: 1; min-width: 0; }
+.card-head-copy [data-testid="win-meta"] { margin-top: 0; }
+.card-head .win-close { flex: none; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; margin: 0; margin-right: -10px; margin-top: -10px; background: none; border: 0; border-radius: 0; color: var(--ink); cursor: pointer; }
+.win-close-box { width: 24px; height: 24px; box-sizing: border-box; border: 1px solid var(--ink); display: grid; place-items: center; }
+.win-close svg { display: block; }
 .win-strand { display: block; cursor: pointer; margin: 6px 0; width: 100%; }
 .win-line, .win-splice { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; justify-content: flex-start; }
 .win-pair { display: flex; flex-direction: column; gap: 2px; }

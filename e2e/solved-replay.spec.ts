@@ -51,20 +51,52 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
   });
 }
 
-test('after solving, View board reveals the Solved banner; Replay then plays again', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await fresh(page);
+async function solveTutorial(page: import('@playwright/test').Page) {
   const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
   const dir = /dir-(\w+)/.exec((await page.getByTestId('hint-cue').getAttribute('class'))!)![1] as 'left' | 'right' | 'up' | 'down';
   await touchSwipe(page, cell, dir);
   await expect(page.getByTestId('win')).toBeVisible();
-  await page.getByRole('button', { name: 'View board' }).click();
+}
+
+function boxesOverlap(a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) {
+  return !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+}
+
+for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
+  test(`after solving, close reveals the Solved banner at ${size.width}x${size.height}; Replay then plays again`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await fresh(page);
+    await solveTutorial(page);
+    await expect(page.getByTestId('win')).not.toContainText('View board');
+    await expect(page.getByRole('button', { name: 'View board', exact: true })).toHaveCount(0);
+    const close = page.getByRole('button', { name: 'Close and view board' });
+    await expect(close).toBeVisible();
+    const closeBox = (await close.boundingBox())!;
+    expect(closeBox.width).toBeGreaterThanOrEqual(44);
+    expect(closeBox.height).toBeGreaterThanOrEqual(44);
+    const title = (await page.locator('#win-title').boundingBox())!;
+    expect(boxesOverlap(closeBox, title), 'close must not overlap the dialog title').toBe(false);
+    if (size.width === 390) {
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-win-dialog-390x844.png', animations: 'disabled' });
+    }
+    await close.click();
+    await expect(page.getByTestId('win')).toHaveCount(0);
+    await expect(page.getByTestId('solved-banner')).toBeVisible();
+    await expect(page.getByTestId('solved-result')).toContainText('1 move');
+    await expect(page.getByTestId('best')).toHaveText('Best 1');
+    await page.getByRole('button', { name: 'Replay' }).click();
+    await expect(page.getByTestId('solved-banner')).toHaveCount(0);
+    await expect(page.getByTestId('moves')).toHaveText('0 moves');
+    await expect(page.getByTestId('best')).toHaveText('Best 1');
+  });
+}
+
+test('after solving, Level map navigates to the map', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fresh(page);
+  await solveTutorial(page);
+  await expect(page.getByRole('button', { name: 'View board', exact: true })).toHaveCount(0);
+  await page.getByTestId('win-map').click();
   await expect(page.getByTestId('win')).toHaveCount(0);
-  await expect(page.getByTestId('solved-banner')).toBeVisible();
-  await expect(page.getByTestId('solved-result')).toContainText('1 move');
-  await expect(page.getByTestId('best')).toHaveText('Best 1');
-  await page.getByRole('button', { name: 'Replay' }).click();
-  await expect(page.getByTestId('solved-banner')).toHaveCount(0);
-  await expect(page.getByTestId('moves')).toHaveText('0 moves');
-  await expect(page.getByTestId('best')).toHaveText('Best 1');
+  await expect(page.getByTestId('level-map')).toBeVisible();
 });

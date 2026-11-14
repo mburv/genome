@@ -68,8 +68,19 @@ export function WinCard(p: Props) {
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="win-title" data-testid="win">
       <div className="card">
-        <p className="muted small" data-testid="win-meta">{def.lab ? 'ENZYME LAB' : def.chapter ? `${def.symbol} ASSEMBLY ${def.chapter.part}/${def.chapter.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
-        <h3 id="win-title">{MODE_WIN[def.mode]}</h3>
+        <div className="card-head">
+          <div className="card-head-copy">
+            <p className="muted small" data-testid="win-meta">{def.lab ? 'ENZYME LAB' : def.chapter ? `${def.symbol} ASSEMBLY ${def.chapter.part}/${def.chapter.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
+            <h3 id="win-title">{MODE_WIN[def.mode]}</h3>
+          </div>
+          <button type="button" className="win-close" onClick={p.onClose} aria-label="Close and view board" data-testid="win-close">
+            <span className="win-close-box" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square">
+                <path d="M2 2l8 8M10 2L2 10" />
+              </svg>
+            </span>
+          </button>
+        </div>
         <div className={`win-strand ${skipped ? 'skip' : ''} ${def.tokens ? 'tok' : ''}`} onClick={() => setSkipped(true)} title="Tap to skip">{strand}</div>
         {def.mode === 'replicate' && <p className="muted tiny">Complementary pairs A–T and C–G. Only the template strand counts.</p>}
         {def.mode === 'repair' && def.repair && <p className="muted tiny">Restored {restored.length > 1 ? `${restored.length} bases` : restored} at CDS position {def.repair.sourceOffset + 1}{restored.length > 1 ? `–${def.repair.sourceOffset + restored.length}` : ''}.</p>}
@@ -101,14 +112,13 @@ export function WinCard(p: Props) {
           </div>
         )}
         <div className="card-actions">
-          <button type="button" onClick={p.onClose}>View board</button>
+          <button type="button" onClick={p.onMap} data-testid="win-map">Level map</button>
           {p.discovered || p.assembled ? (
             <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
           ) : (
             <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? 'Next level →' : 'Map'}</button>
           )}
         </div>
-        <button type="button" className="link small" onClick={p.onMap}>Level map</button>
       </div>
     </div>
   );

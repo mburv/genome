@@ -208,6 +208,7 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - The control sits at the bottom of Settings, styled as a quiet destructive action (muted red text, no fill). Tapping it reveals an inline confirmation: all level progress, stars, best scores and unlocks will be erased and this cannot be undone. Cancel is the default (focused, ink outline). Reset confirms.
   - Confirm writes a fresh campaign save that keeps sound, haptics and reduced-motion settings, clears `genome-save` and every `genome-save-backup` slot (including labelled migration backups), resets in-memory state, dismisses any save-migration notices, and lands on the first puzzle as a new player would (the tutorial board, not the map). Under D-M2-14 every sample level remains open; the map shows a fresh campaign (no completions, locked discovery cards, no stars or bests).
 
-
-
+- D-UI-13 The level-complete dialog's Level map button replaces View board; a square close control reveals the solved board.
+  - The secondary action that used to say View board is now Level map, in the same position and button style, and opens the level map. Next level (or View card / Map) stays as the primary action. The previous small Level map text link under the actions is removed so the dialog has only one map control.
+  - View board's dismiss behaviour moves to a close control in the top-right corner of the dialog: an X inside a 1px ink-outline square, thin stroke, at least a 44×44 tap target, labelled "Close and view board". It dismisses the dialog and leaves the player on the solved board with the existing Solved overlay and Replay (D-UI-07). The title and meta line keep a right inset so the close control does not overlap them at 320px.
 
