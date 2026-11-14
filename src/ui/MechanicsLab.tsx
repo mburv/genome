@@ -69,6 +69,15 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
   const busy = crushAnimation !== null;
   const { state } = session;
+  // Finishing a trace on pointerdown must not let the same touch activate a
+  // button on the newly mounted completion banner. Wait for pointer release.
+  const [traceGestureActive, setTraceGestureActive] = useState(false);
+  const [traceWinReady, setTraceWinReady] = useState(false);
+  useEffect(() => {
+    if (id !== 'trace' || !state.won || traceGestureActive) return;
+    const timer = window.setTimeout(() => setTraceWinReady(true), 180);
+    return () => window.clearTimeout(timer);
+  }, [id, state.won, traceGestureActive]);
   const onProgress = campaign?.onProgress;
   useEffect(() => { onProgress?.(session.actions, state); }, [onProgress, session.actions, state]);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -109,7 +118,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { setSession({ state: createLab(id, spec), history: [], actions: [], message: '' }); setSelected(null); };
+  const reset = () => { setTraceWinReady(false); setTraceGestureActive(false); setSession({ state: createLab(id, spec), history: [], actions: [], message: '' }); setSelected(null); };
   const undo = () => { setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.' } : prev; }); setSelected(null); };
   const choose = (cell: number) => {
     if (state.won || busy || state.board[cell] === '.') return;
@@ -142,6 +151,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     const pitch = (e.currentTarget.getBoundingClientRect().width + 1) / 9;
     gesture.current = { pointer: e.pointerId, start: cell, last: cell, pair: pair >= 0 ? pair : selected ?? -1, read, x: e.clientX, y: e.clientY, pitch };
     e.currentTarget.setPointerCapture(e.pointerId);
+    if (id === 'trace') setTraceGestureActive(true);
     if (id !== 'crush') choose(cell);
   };
   const pointerMove = (e: PointerEvent<HTMLDivElement>) => {
@@ -172,6 +182,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       return;
     }
     const cell = cellFromPoint(e);
+    if (id === 'trace') setTraceGestureActive(false);
     if (id === 'assembly' && g.read >= 0 && cell !== null && ASSEMBLY_CELLS.includes(cell)) dispatch({ type: 'place', read: g.read, offset: cell - ASSEMBLY_CELLS[0]! });
     gesture.current = null;
   };
@@ -185,7 +196,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     : id === 'connections' ? state.routes.filter((p, i) => p.at(-1) === CONNECTION_PAIRS[i]!.end).length + '/3 pairs'
     : state.cuts.length + '/2 cuts';
   const board = (
-    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (id === 'trace' ? ' board trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); }}>
+    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (id === 'trace' ? ' board trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setTraceGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setTraceGestureActive(false); }}>
       {displayBoard.map((b, c) => {
         if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
@@ -201,7 +212,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
         const badge = id === 'mutation' && c % 9 === 1 ? (isTop ? 'REF' : 'R' + (Math.floor(c / 9) + 1)) : endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
         const motionStyle: CSSProperties = { transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}) } as CSSProperties;
-        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
+        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won && !(id === 'trace' && traceGestureActive)} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
           <span className={id === 'trace' ? 'letter' : undefined}>{b === '·' ? '' : b}</span>{badge && <small>{badge}</small>}
         </button>;
       })}
@@ -228,7 +239,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     </TargetShell>
     <div className="board-stage">
       {board}
-      {state.won && <aside className="solved-banner trace-solved" data-testid="lab-win" aria-label="Level solved">
+      {state.won && traceWinReady && <aside className="solved-banner trace-solved" data-testid="lab-win" aria-label="Level solved">
         <div className="solved-banner-head"><span className="solved-kicker">Solved</span><span className="solved-result">{TRACE_TARGET.length} bp verified</span></div>
         {campaign && <div className="mono small seq-wrap" data-testid="mixed-extracted">{campaign.stage.sequence}</div>}
         <div className="solved-banner-actions">

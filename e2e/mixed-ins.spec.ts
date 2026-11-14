@@ -41,8 +41,8 @@ test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances 
     await tile(page,c).tap();
     await expect(page.getByTestId('lab-progress')).toHaveText((i+4)+'/9 bases');
   }
-  console.log('TRACE completion',await page.locator('body').innerText(),await page.evaluate(()=>localStorage.getItem('genome-save')));
   await expect(page.getByTestId('mixed-extracted')).toHaveText('TGGATGCGC');
+  await expect(page.getByTestId('play-progress')).toHaveText('2/13');
   await expect(page.getByTestId('mixed-coverage')).toHaveText('18/333 bp assembled');
   await page.getByRole('button',{name:'Next level →'}).click();
   await expect(page.getByTestId('mechanic-tutorial')).toHaveAttribute('data-mechanic','connections');

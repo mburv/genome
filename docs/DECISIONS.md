@@ -337,3 +337,8 @@ Owner reported pulsing in DNA Tracing too. Remove shared full-board crossfade fr
 ### D-UI-33 — Shared classic chrome for DNA Tracing
 
 Owner playtest: tracing uses the same compact gene header, capped TargetShell and coloured clue chips, full-width board-stage sizing, under-board status and standard icon toolbar as sliding. Only the interaction board and trace progress differ. Long clues use existing completed-chip compaction/paging; hint mode persists across campaign mechanics, with a next-base highlight on the certified path. Powers remain unavailable for tracing; the lab practice retains its navigation and separate progress.
+
+
+### D-UI-34 — Trace completion gesture safety
+
+Trace completion happens on the last pointer-down/move, unlike sliding's release. Delay the centered completion banner until the tracing gesture ends, then hold a short 180 ms guard before enabling Replay/Next. This avoids the final touch activating an overlay action underneath the finger. Keep completion credit and resume semantics unchanged.
