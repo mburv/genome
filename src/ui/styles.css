@@ -907,3 +907,18 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mixed-under-board .lab-base-picker { display:grid; gap:1px; }
 .mixed-under-board .lab-base-picker button { min-height:36px; padding:5px 0; }
 .mixed-under-board .lab-hint { margin:0; }
+
+/* Placed assembly reads remain editable, but the numbered destination row retains its DNA colours. */
+.mode-lab-assembly .lab-cell.assembly-placed { background:#e8e8e4; border-color:#b8b8b2; color:var(--graphite); }
+.mode-lab-assembly .lab-cell.assembly-placed small { background:transparent; color:var(--graphite); }
+
+/* Codon Crush guide: deliberately slowed version of the real swap/clear/fall phases. */
+.crush-demo .tutorial-cell:not(.hole) { background:var(--rule); }
+.crush-demo .tutorial-crush-tile { opacity:1; }
+.tutorial-crush-highlight { outline:2px solid var(--blue); outline-offset:-2px; }
+.tutorial-crush-swap { z-index:4; animation:tutorial-crush-swap 1.8s ease-in-out both; }
+@keyframes tutorial-crush-swap { 0%,25% {transform:translate(0,0)} 65%,100% {transform:translate(var(--demo-swap-x),var(--demo-swap-y))} }
+.tutorial-crush-clear { z-index:5; animation:crush-clear 650ms ease-in both; }
+.tutorial-crush-fall { z-index:3; animation:crush-fall 850ms cubic-bezier(.2,.65,.45,1) 650ms both; }
+.tutorial-crush-new { animation-name:crush-enter; }
+@media(prefers-reduced-motion:reduce){.tutorial-crush-swap,.tutorial-crush-clear,.tutorial-crush-fall{animation:none}.tutorial-crush-clear{opacity:0}}
