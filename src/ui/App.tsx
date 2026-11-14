@@ -7,11 +7,13 @@ import { MapScreen } from './MapScreen.tsx';
 import { PlayScreen } from './PlayScreen.tsx';
 import { playHeading } from './playHeading.ts';
 import { SettingsScreen } from './SettingsScreen.tsx';
+import { MechanicsMenu, MechanicsPlay } from './MechanicsLab.tsx';
+import type { LabId } from '../engine/mechanicsLab.ts';
 import { TitleScreen } from './TitleScreen.tsx';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string } | { kind: 'settings' };
+type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string } | { kind: 'settings' } | { kind: 'mechanics' } | { kind: 'mechanic'; id: LabId };
 
 export function App({ storage = createLocalStorageAdapter() }: { storage?: StorageAdapter }) {
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
@@ -43,7 +45,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     if (next.kind === 'settings' && screen.kind !== 'settings') settingsFrom.current = screen;
     if (next.kind !== 'play') setHeaderCollapsed(false);
     setScreen(next);
-    if (next.kind === 'play' || next.kind === 'map' || next.kind === 'title') window.scrollTo?.(0, 0);
+    if (next.kind === 'play' || next.kind === 'map' || next.kind === 'title' || next.kind === 'mechanics' || next.kind === 'mechanic') window.scrollTo?.(0, 0);
   };
   const play = (levelId: string) => {
     persist({ ...save, currentLevelId: levelId });
@@ -111,9 +113,12 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           currentLevelId={save.currentLevelId}
           legacyM1={save.legacy.m1Completed}
           onPlay={play}
+          onMechanics={() => go({ kind: 'mechanics' })}
           onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
+      {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
+      {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && (
         <PlayScreen
           key={def.id}

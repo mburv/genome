@@ -14,10 +14,11 @@ interface Props {
   currentLevelId: string;
   legacyM1: readonly string[];
   onPlay: (levelId: string) => void;
+  onMechanics: () => void;
   onCard: (symbol: string) => void;
 }
 
-export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onCard, legacyM1 }: Props) {
+export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onMechanics, onCard, legacyM1 }: Props) {
   const nextUnfinished = CAMPAIGN_LEVELS.find((l) => !completed.includes(l.id));
   const next = nextUnfinished ?? CAMPAIGN_LEVELS[0]!;
   const nextRun = runProgress(next)!;
@@ -27,6 +28,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
       <button type="button" className="primary big" onClick={() => onPlay(next.id)} data-testid="continue">
         {completed.length === 0 ? 'Start' : !nextUnfinished ? 'Replay' : 'Continue'} · {next.symbol} {nextRun.part}/{nextRun.of}
       </button>
+      <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 new puzzles →</button>
       <div className="panel catalogue" data-testid="catalogue">
         <h2 className="gene">Gene catalogue</h2>
         {catalogue.map((m) => {
