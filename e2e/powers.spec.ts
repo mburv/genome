@@ -4,7 +4,7 @@ import { dragBy, fresh, openChapter, openLab, openMap, readHint, solveWithHints,
 const boardText = (page: import('@playwright/test').Page) => page.locator('.board').innerText();
 const baseAt = (page: import('@playwright/test').Page, c: number) => page.locator(`[data-cell="${c}"]`).getAttribute('data-base');
 
-test('opening puzzle hides powers; later puzzles show ⚡2 and unaffordable powers explain why (nothing spent)', async ({ page }) => {
+test('opening puzzle hides powers; later puzzles show ⚡2 and unaffordable powers spend nothing', async ({ page }) => {
   await openChapter(page, 'ins-01');
   await expect(page.getByTestId('energy')).toHaveCount(0);
   await expect(page.getByTestId('power-crispr')).toHaveCount(0);
@@ -17,7 +17,8 @@ test('opening puzzle hides powers; later puzzles show ⚡2 and unaffordable powe
   await expect(page.getByTestId('energy')).toContainText('2');
   await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(6);
   await page.getByTestId('power-crispr').click();
-  await expect(page.getByTestId('tray-note')).toContainText('needs ⚡4');
+  await expect(page.getByTestId('tray-note')).toHaveCount(0);
+  await expect(page.getByTestId('power-error')).toHaveCount(0);
   await expect(page.getByTestId('power-panel')).toHaveCount(0);
   await expect(page.getByTestId('energy')).toContainText('2');
 });
@@ -226,7 +227,21 @@ test('CRISPR recovery: after a bad edit, hint guidance still reaches the win', a
 
 test('Ligase: bonding a finished codon blocks drags on both axes; release is free and restores movement', async ({ page }) => {
   test.setTimeout(60_000);
+  await page.setViewportSize({ width: 390, height: 844 });
   await openLab(page, 2);
+  // Invalid taps stay silent: no instructional/error line in the panel.
+  await page.getByTestId('power-ligase').click();
+  await expect(page.getByTestId('power-panel')).toBeVisible();
+  await expect(page.getByTestId('power-preview')).toHaveCount(0);
+  await expect(page.getByTestId('power-error')).toHaveCount(0);
+  await expect(page.getByTestId('tray-note')).toHaveCount(0);
+  await expect(page.getByTestId('power-panel')).not.toContainText('Bond a codon');
+  await expect(page.getByTestId('power-panel')).not.toContainText('complete yet');
+  await page.locator('.tile').first().click();
+  await expect(page.getByTestId('power-error')).toHaveCount(0);
+  await expect(page.getByTestId('power-preview')).toHaveCount(0);
+  await expect(page.getByTestId('power-confirm')).toBeDisabled();
+  await page.getByTestId('power-cancel').click();
   // Complete the first piece with a hinted drag (+1 energy).
   const { cell, dir, k } = await readHint(page);
   await dragBy(page, cell, dir, k);
@@ -236,7 +251,10 @@ test('Ligase: bonding a finished codon blocks drags on both axes; release is fre
   expect(await cand.count()).toBeGreaterThanOrEqual(3);
   const locked = Number(await cand.first().getAttribute('data-cell'));
   await cand.first().click();
-  await expect(page.getByTestId('power-preview')).toBeVisible();
+  await expect(page.getByTestId('power-preview')).toContainText('will stop every row and column');
+  await expect(page.getByTestId('power-error')).toHaveCount(0);
+  await expect(page.getByTestId('tray-note')).toHaveCount(0);
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-no-errors-390x844.png' });
   await page.getByTestId('power-confirm').click();
   await expect(page.locator('.tile.locked')).toHaveCount(3);
   await expect(page.getByTestId('release')).toBeVisible();

@@ -32,13 +32,12 @@ interface TrayProps {
   onUndo: () => void;
   onHint: () => void;
   onRestart: () => void;
-  notice?: string | undefined;
 }
 
 /** Full-width energy meter + a six-icon action row (powers hidden on the opening puzzle). */
 export function PowerTray({
   energy, powersEnabled, freeUses, locks, scaffold, active, disabled, highlightRelease,
-  onPick, onRelease, canUndo, canRestart, onUndo, onHint, onRestart, notice,
+  onPick, onRelease, canUndo, canRestart, onUndo, onHint, onRestart,
 }: TrayProps) {
   return (
     <section className="tray" aria-label={powersEnabled ? 'Enzyme power-ups' : 'Puzzle controls'} data-testid="power-tray">
@@ -81,7 +80,6 @@ export function PowerTray({
           <IconRestart />
         </button>
       </div>
-      {notice && <p className="tray-note" data-testid="tray-note">{notice}</p>}
       {powersEnabled && (locks.length > 0 || scaffold) && (
         <div className="power-status">
           {locks.length > 0 && (
@@ -99,9 +97,8 @@ export function PowerTray({
 interface PanelProps {
   power: Power;
   title: string;
-  detail: string;
+  detail?: string;
   costText: string;
-  error: string | null;
   canConfirm: boolean;
   basePicker?: { current: Base; chosen: Base | null; onPick: (b: Base) => void } | undefined;
   /** M4 token levels: which base of the piece to edit. */
@@ -111,7 +108,7 @@ interface PanelProps {
 }
 
 /** Targeting + preview panel. Nothing changes (and nothing is spent) until Confirm. */
-export function PowerPanel({ power, title, detail, costText, error, canConfirm, basePicker, posPicker, onConfirm, onCancel }: PanelProps) {
+export function PowerPanel({ power, title, detail, costText, canConfirm, basePicker, posPicker, onConfirm, onCancel }: PanelProps) {
   return (
     <section className={`power-panel p-${power}`} aria-label={`${POWER_LABEL[power]} preview`} data-testid="power-panel">
       <div className="row-between">
@@ -145,8 +142,7 @@ export function PowerPanel({ power, title, detail, costText, error, canConfirm, 
           ))}
         </div>
       )}
-      <p className="small preview-text" data-testid="power-preview">{detail}</p>
-      {error && <p className="small warn" data-testid="power-error">{error}</p>}
+      {detail ? <p className="small preview-text" data-testid="power-preview">{detail}</p> : null}
       <div className="card-actions">
         <button type="button" onClick={onCancel} data-testid="power-cancel">Cancel</button>
         <button type="button" className="primary" onClick={onConfirm} disabled={!canConfirm} data-testid="power-confirm">Confirm</button>

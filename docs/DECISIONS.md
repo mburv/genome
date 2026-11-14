@@ -264,3 +264,7 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
 
 - D-UI-23 Scaffold’s power-panel title and description are shorter.
   - After a gap is picked the title is “Scaffold: Join cells across the gap” (no cell count or row/column axis). The cost line is unchanged (`⚡3 → N left`). The description is “The two segments skip the gap for the next 3 rotations”, with the number taken from `SCAFFOLD_TURNS`. The earlier remarks about a cyclic track, what counts as a rotation, and “only one scaffold at a time” are dropped from the panel (the one-at-a-time rule still rejects a second scaffold).
+
+- D-UI-24 Power panels and the tray no longer show instructional or error copy.
+  - Invalid taps (an unfinished codon, a non-codon tile, a locked CRISPR cell, an unaffordable or already-active power) do nothing except the existing reject cue. The Ligase lines “That codon isn’t complete yet — finish its three bases first.” and “Bond a codon: three matching bases of a numbered target, in frame.” are gone, as are the other panel/tray notes (“needs ⚡n”, “only one bond/scaffold”, “tap a highlighted codon”, “no complete codon yet”, “same base — nothing spent”, and the remaining `REJECT_TEXT` phrases).
+  - The panel keeps its title, cost line and the main description of the effect (Ligase’s bond result, Scaffold’s “The two segments skip the gap for the next 3 rotations”, CRISPR’s base-change preview once a new base is picked). Empty error slots are not reserved, so the layout does not leave a gap.

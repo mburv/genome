@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   applyCommand, certifiedHint, createInitialState, energyOf, fullHint, levelCodons, segmentIn, trackMatches,
-  type Command, type CommandResult, type Hint, type PuzzleState, type RejectReason,
+  type Command, type CommandResult, type Hint, type PuzzleState,
 } from '../engine/engine.ts';
 import { codonComplete, OPENING_LEVEL_ID, POWER_COST, powersEnabled, SCAFFOLD_TURNS, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
@@ -22,22 +22,6 @@ function defaultSelection(def: LevelDefinition, state: PuzzleState): Cell {
   const h = certifiedHint(def, state);
   return h?.kind === 'drag' ? hintDisplayCell(def, state.board, h.slide, h.segment) : def.tracks[0]!.cells[0]!;
 }
-
-const REJECT_TEXT: Partial<Record<RejectReason, string>> = {
-  immobile: 'That tile is boxed in by gaps on this axis — try the other direction.',
-  'no-op': 'Nothing changed: every tile in that segment is the same letter.',
-  'no-history': 'Nothing to undo yet.',
-  locked: 'Bonded tiles can’t move on either axis. Release the bond (free) to move them.',
-  energy: 'Not enough energy. Earn +1 for each reference codon you complete with a normal move.',
-  'same-base': 'Same base — nothing to change (and nothing spent).',
-  'codon-incomplete': 'Only a complete, correct codon can be bonded.',
-  'not-a-codon': 'Bond a codon: three matching bases of a numbered target, in frame.',
-  'bond-active': 'Only one bond at a time — release the current one first (free).',
-  'scaffold-active': 'Only one scaffold at a time — wait for it to expire or undo it.',
-  'scaffold-conflict': 'A bond can’t sit on the scaffold track.',
-  'invalid-target': 'That target isn’t valid for this power.',
-  'powers-unavailable': 'Powers are available after the first puzzle.',
-};
 
 interface Props {
   def: LevelDefinition;
@@ -65,8 +49,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const [preview, setPreview] = useState<SlidePreview | null>(null);
   const [targeting, setTargeting] = useState<Power | null>(null);
   const [pending, setPending] = useState<PowerPreview | null>(null);
-  const [trayNote, setTrayNote] = useState<string | null>(null);
-  const [panelError, setPanelError] = useState<string | null>(null);
   const [powersUsed, setPowersUsed] = useState(0);
   const [replayPulse, setReplayPulse] = useState(false);
   const nonce = useRef(0);
@@ -101,7 +83,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const clearPower = () => {
     setTargeting(null);
     setPending(null);
-    setPanelError(null);
   };
   useEffect(() => {
     onPowerArmed?.(!!targeting);
@@ -176,8 +157,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           }
         }
       }
-      setTrayNote(null);
-      setPanelError(null);
       if (sound) cue(sound);
       setHintRes(null);
       persist(next);
@@ -221,15 +200,13 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const pickPower = (p: Power) => {
     if (targeting === p) return clearPower();
     setHintRes(null);
-    setTrayNote(null);
-    setPanelError(null);
     const free = puzzle.freeUses.includes(p);
     if (!free && energy < POWER_COST[p]) {
       cue('reject');
-      return setTrayNote(`${POWER_LABEL[p]} needs ⚡${POWER_COST[p]} (you have ${energy}).`);
+      return;
     }
-    if (p === 'ligase' && puzzle.locks.length) { cue('reject'); return setTrayNote(REJECT_TEXT['bond-active']!); }
-    if (p === 'scaffold' && puzzle.scaffold) { cue('reject'); return setTrayNote(REJECT_TEXT['scaffold-active']!); }
+    if (p === 'ligase' && puzzle.locks.length) { cue('reject'); return; }
+    if (p === 'scaffold' && puzzle.scaffold) { cue('reject'); return; }
     setTargeting(p);
     setPending(null);
   };
@@ -240,22 +217,21 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   );
   const gaps: ScaffoldCandidate[] = targeting === 'scaffold' ? scaffoldCandidates(def.mask, puzzle.locks) : [];
   const onTarget = (cell: Cell) => {
-    setSelected(cell);
     if (targeting === 'crispr') {
-      if (puzzle.locks.includes(cell)) return setPanelError(REJECT_TEXT.locked!);
-      setPanelError(null);
+      if (puzzle.locks.includes(cell)) { cue('reject'); return; }
+      setSelected(cell);
       setPending({ power: 'crispr', cell, base: null, pos: 0 });
     } else if (targeting === 'ligase') {
       const codon = levelCodons(def).find((c) => c.cells.includes(cell));
-      if (!codon) return setPanelError(REJECT_TEXT['not-a-codon']!);
-      if (!codonComplete(puzzle.board, codon)) return setPanelError(def.tokens ? 'That piece isn’t in place yet.' : 'That codon isn’t complete yet — finish its three bases first.');
-      setPanelError(null);
+      if (!codon || !codonComplete(puzzle.board, codon)) { cue('reject'); return; }
+      setSelected(cell);
       setPending({ power: 'ligase', cells: codon.cells });
+    } else {
+      setSelected(cell);
     }
   };
   const onPickGap = (candidate: ScaffoldCandidate) => {
     setPending({ power: 'scaffold', candidate });
-    setPanelError(null);
   };
   const confirmPower = () => {
     if (previewCmd && dispatch(previewCmd)) clearPower();
@@ -267,7 +243,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     const cost = free ? 0 : POWER_COST[targeting];
     const costText = free ? 'Free tutorial use' : `⚡${cost} → ${energy - cost} left`;
     let title = `${POWER_LABEL[targeting]}: choose a target`;
-    let detail = targeting === 'crispr' ? 'Tap any unbonded tile on the board.' : targeting === 'ligase' ? (completeCodons.length ? (def.tokens ? 'Tap a highlighted piece.' : 'Tap a highlighted codon.') : def.tokens ? 'No target piece in place yet.' : 'No complete codon yet — finish a 3-base piece first.') : gaps.length ? 'Tap a glowing gap.' : 'No 1–2 cell gap between two segments on this board.';
+    let detail = '';
     let basePicker;
     let posPicker;
     if (pending?.power === 'crispr') {
@@ -282,13 +258,13 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         posPicker = { seq, chosen: pending.pos, onPick: (i: number) => setPending({ ...pending, pos: i, base: null }) };
         const after = pending.base ? seq.slice(0, pending.pos) + pending.base + seq.slice(pending.pos + 1) : seq;
         const want = t ? symbolSequence(def, puzzle.custom, t.expected[pos]!) : '';
-        detail = !pending.base ? `Piece ${seq} (${seq.length} bases). Base ${pending.pos + 1} is ${cur}. Pick a new base.`
-          : pending.base === cur ? 'Same base — no change, nothing spent.'
-            : `Base ${pending.pos + 1}: ${cur} → ${pending.base}, giving ${after}. ${t ? `Target ${t.group} position ${pos + 1} wants ${want}: ${want === after ? '✓ it will match (equality is by sequence).' : '✗ it will not match.'}` : 'Not a target cell (decoy).'} Hints switch to a fresh search after an edit.`;
+        if (pending.base && pending.base !== cur) {
+          detail = `Base ${pending.pos + 1}: ${cur} → ${pending.base}, giving ${after}. ${t ? `Target ${t.group} position ${pos + 1} wants ${want}: ${want === after ? '✓ it will match (equality is by sequence).' : '✗ it will not match.'}` : 'Not a target cell (decoy).'}`;
+        }
       } else {
-        detail = !pending.base ? `Currently ${cur}. Pick a base.`
-          : pending.base === cur ? 'Same base — no change, nothing spent.'
-            : `${cur} → ${pending.base}. ${t ? `Target ${t.group} position ${pos + 1} wants ${t.expected[pos]}: ${t.expected[pos] === pending.base ? '✓ it will match.' : '✗ it will not match.'}` : 'Not a target cell (filler only).'} Hints switch to a fresh search after an edit.`;
+        if (pending.base && pending.base !== cur) {
+          detail = `${cur} → ${pending.base}. ${t ? `Target ${t.group} position ${pos + 1} wants ${t.expected[pos]}: ${t.expected[pos] === pending.base ? '✓ it will match.' : '✗ it will not match.'}` : 'Not a target cell (filler only).'}`;
+        }
       }
     } else if (pending?.power === 'ligase') {
       title = `Ligase: bond ${pending.cells.map((c) => symbolLabel(def, puzzle.custom, puzzle.board[c]!)).join('')}`;
@@ -299,14 +275,12 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       title = 'Scaffold: Join cells across the gap';
       detail = `The two segments skip the gap for the next ${SCAFFOLD_TURNS} rotations`;
     }
-    const err = previewResult && !previewResult.accepted ? REJECT_TEXT[previewResult.reason!] ?? 'Not possible.' : null;
     panel = (
       <PowerPanel
         power={targeting}
         title={title}
         detail={detail}
         costText={costText}
-        error={err ?? panelError}
         canConfirm={!!previewResult?.accepted}
         basePicker={basePicker}
         posPicker={posPicker}
@@ -405,7 +379,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           onUndo={() => dispatch({ type: 'undo' })}
           onHint={showHint}
           onRestart={() => dispatch({ type: 'restart' })}
-          notice={trayNote ?? undefined}
         />
       )}
 
