@@ -78,9 +78,9 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
 /** Measure the actual wrapped clues, not an assumed phone width.
  * Only crowded panels hide committed matches. If unmatched clues still overflow, use
  * explicit pages rather than a scrolling box. DOM visibility is recalculated after
- * every React commit; a drag preview never changes the committed completion flags.
+ * committed-match change; a drag preview never changes the committed completion flags.
  */
-function TargetShell({ defId, label, solved, children }: { defId: string; label: string; solved: boolean; children: ReactNode }) {
+function TargetShell({ defId, label, solved, committedKey, children }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
   const page = useRef(0);
   const previous = useRef('');
@@ -138,7 +138,7 @@ function TargetShell({ defId, label, solved, children }: { defId: string; label:
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  });
+  }, [defId, solved, committedKey]);
   return (
     <section ref={ref} className="target" aria-label={label} data-testid="target-panel">
       <div className="clue-pagination" hidden>
@@ -161,6 +161,7 @@ export function TargetPanel({ custom = {}, ...p }: Props) {
 }
 
 function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Props & { custom: CustomTokens }) {
+  const committedKey = committedMatches.map(row => row.map(Number).join('')).join('|');
   const t0 = def.tracks[0]!;
   const toks = !!def.tokens;
   const range = `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}`;
@@ -174,7 +175,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
   if (def.mode === 'replicate') {
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} solved={solved} label="Target strands">
+      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target strands">
         {heading}
         <div className={stackClass('replicate', tier)}>
           <div className="rep-start">
@@ -207,7 +208,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
   if (def.mode === 'repair' && def.repair) {
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} solved={solved} label="Target sequence with a gap">
+      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
         {heading}
         <div className={stackClass('repair', tier)}>
           <CluePart group={a.group} testId="clue-part-1" badgeTestId="clue-badge-1">
@@ -229,7 +230,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
   }
   if (def.mode === 'splice') {
     return (
-      <TargetShell defId={def.id} solved={solved} label="Target pieces">
+      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target pieces">
         {heading}
         <div className={stackClass('splice', tier)}>
           {def.tracks.map((t, i) => (
@@ -248,7 +249,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     );
   }
   return (
-    <TargetShell defId={def.id} solved={solved} label="Target sequence">
+    <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence">
       {heading}
       <div className={stackClass('sequence', tier)}>
         <CluePart group={t0.group} testId="clue-part-1" badgeTestId="clue-badge-1">
