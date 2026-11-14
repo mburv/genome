@@ -7,7 +7,7 @@ import { symbolSequence } from '../engine/tokens.ts';
 interface Props {
   def: LevelDefinition;
   /** Mixed mechanics display the verified coding fragment, not the legacy sliding tracks. */
-  mechanic?: { title: string; sequence: string; practice: boolean; nextLabel?: string };
+  mechanic?: { title: string; sequence: string; practice: boolean; nextLabel?: string; range?: {start:number;end:number} };
   moves: number;
   powersUsed: number;
   newBases: number;
@@ -36,7 +36,7 @@ export function WinCard(p: Props) {
   const { def } = p;
   const run = runProgress(def);
   const [skipped, setSkipped] = useState(p.reducedMotion);
-  const iv = def.sourceIntervals[0]!;
+  const iv = p.mechanic?.range ?? def.sourceIntervals[0]!;
   const expand = expandFor(def);
   const cells = cellsFor(def);
   const restored = def.repair ? expand(def.repair.expected) : '';
@@ -110,7 +110,7 @@ export function WinCard(p: Props) {
           <button type="button" onClick={p.onMap} data-testid="win-map">{p.mechanic?.practice ? 'Lab menu' : 'Level map'}</button>
           {p.assembled && !p.hasNext ? (
             <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
-          ) : (
+          ) : p.mechanic?.practice && !p.hasNext ? null : (
             <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? p.mechanic?.nextLabel ?? 'Next level →' : p.mechanic?.practice ? 'Lab menu' : 'Map'}</button>
           )}
         </div>

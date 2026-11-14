@@ -119,7 +119,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     const action: LabAction = { type: 'swap', a, b };
     const result = applyLab(state, action);
     if (!adjacent(a, b) || state.board[b] === '.' || reducedMotion) {
-      setSession(prev => acceptResult(prev, result, action));
+      setSession(prev => acceptResult(prev, result, action, credit));
       return;
     }
     setCrushAnimation({ a, b, stage: 'swap', result, action, credit });
@@ -251,7 +251,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     ? spec.CONNECTION_PAIRS.map(p=>p.seq).join('') : labExtractedSequence(state) : null;
   const closeWin = () => setSession(prev=>({...prev,celebration:null}));
   const popup = state.won && winReady && session.celebration && extracted !== null &&
-    <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel}}
+    <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel,...(campaign?{range:{start:campaign.stage.start,end:campaign.stage.end}}:{})}}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
       replayed={session.celebration.replayed} assembled={session.celebration.assembled && !!campaign?.assembled}
       assembledBases={campaign?.covered ?? 0} cdsLength={INS.cdsLength} reducedMotion={reducedMotion}
@@ -314,7 +314,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     {id === 'mutation' && selected !== null && <p className="small mutation-selection" data-testid="mutation-selection">Row {Math.floor(selected / 9) + 1}, column {selected % 9 + 1} · Current {state.board[selected]} → Target {mutationExpected(selected)}</p>}
     {id === 'mutation' && <div className="lab-base-picker" aria-label="Choose replacement base">{(['A','C','G','T'] as DNA[]).map(b => <button type="button" className={'b-' + b} key={b} disabled={selected === null || state.won} onClick={() => { if (selected !== null) dispatch({ type: 'edit', cell: selected, base: b }); }} data-testid={'lab-base-' + b}>{b}</button>)}</div>}
     {!state.won && <div className="lab-controls"><button type="button" onClick={undo} disabled={busy || !session.history.length}>Undo</button><button type="button" className={hint ? 'primary' : ''} aria-pressed={hint} onClick={toggleHint}>Hint</button><button type="button" onClick={reset} disabled={busy}>Replay</button></div>}
-    {!campaign && state.won && !session.celebration && id!=='trace' && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
+    {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
     {hint && !state.won && <p className="lab-hint small" role="status">{labHint(state)}</p>}
     <p className="lab-message small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</p>
     {popup}
