@@ -189,6 +189,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 
 /* ---------- Target panel ---------- */
 .target { padding: 0; border-top: 0; }
+.target .row-between { flex-wrap: wrap; gap: 2px 8px; }
+.target .row-between > span { min-width: 0; }
 .target-title { font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; }
 .badge { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 0; background: var(--ink); color: var(--white); font-size: 11px; font-weight: 700; }
 .badge.alt { background: var(--sky); color: var(--ink); box-shadow: inset 0 0 0 1px var(--sky-edge); }
@@ -204,18 +206,38 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .mini-strip .strip-cell, .strip-cell.gap { width: clamp(18px, 5.4vw, 26px); height: 26px; font-size: 13px; }
 .strip-cell.gap { display: inline-grid; place-items: center; background: var(--white); color: var(--red); border: 1.5px dashed var(--red); font-weight: 700; }
 .strip-cell.gap.restored { border-style: solid; animation: restore 0.5s ease both; }
-.clue-stack { display: grid; column-gap: 3px; row-gap: 4px; align-items: center; margin-top: 6px; }
-.clue-stack.mode-sequence { grid-template-columns: 18px repeat(var(--clue-tiles), minmax(0, 1fr)); }
-.clue-stack.mode-repair { grid-template-columns: 18px repeat(var(--clue-tiles), minmax(0, 1fr)) auto; }
-.clue-stack.mode-splice { grid-template-columns: 18px repeat(var(--clue-tiles), minmax(0, 1fr)) auto auto; }
-.clue-stack.mode-replicate { grid-template-columns: 18px 14px repeat(var(--clue-tiles), minmax(0, 1fr)) 14px auto; }
-.clue-part { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; }
-.clue-stack .tok-chip, .clue-stack .strip-cell { min-width: 0; width: 100%; }
+.clue-stack { display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 3px; row-gap: 4px; align-items: start; margin-top: 6px; }
+.clue-stack.mode-replicate { grid-template-columns: 18px 14px minmax(0, 1fr) 14px auto; }
+.clue-part { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: start; }
+/* Chips size to their letters and wrap in shared columns instead of shrinking to one row (D-UI-28). */
+.clue-tokens {
+  display: grid;
+  /* Fixed tracks so auto-fill never packs more columns than fit (max-content was overflowing by a few px). */
+  grid-template-columns: repeat(auto-fill, var(--chip-min, calc(3ch + 12px)));
+  gap: 3px;
+  justify-content: start;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  font: 700 10.5px/1 var(--mono);
+}
+.clue-stack.tier-6 .clue-tokens { --chip-min: calc(6ch + 14px); }
+.clue-stack.tier-12 .clue-tokens, .clue-stack.tier-24 .clue-tokens { --chip-min: calc(9ch + 14px); }
+.clue-stack .tok-chip, .clue-stack .strip-cell {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 26px;
+  justify-self: stretch;
+}
+.chip-label { display: block; white-space: nowrap; overflow: visible; }
 .plus { color: var(--graphite); font-weight: 700; padding: 0 3px; flex: none; }
 .pair { margin-top: 4px; }
 .pair-row, .seq-row, .repair-row, .splice-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 .pair-row .end, .clue-stack .end, .win-line .end { font-size: 11px; color: var(--graphite); width: 14px; text-align: center; font-family: var(--mono); }
-.clue-part.pair-bonds { height: 6px; }
+.clue-part.pair-bonds { height: auto; min-height: 6px; align-self: start; }
 .clue-part.pair-bonds i { width: 100%; display: flex; justify-content: center; height: 6px; }
 .clue-part.pair-bonds i::before { content: ''; width: 1px; height: 6px; background: var(--ink); }
 
@@ -518,7 +540,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .barcode i { flex: 1; }
 .tok-ghost { inset: auto 3% 3% auto; padding: 1px 3px; font-size: calc(var(--board) / 38); border: 1px solid var(--ink); }
 .tok-strip { flex-wrap: wrap; gap: 2px; }
-.tok-chip { --tok-bg: #e8e8e2; --tok-fg: #111111; --tok-border: #8a8a84; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 30px; height: 26px; padding: 0 4px; border-radius: 0; background: var(--tok-bg); color: var(--tok-fg); font: 700 10.5px/1 var(--mono); border: 1px solid var(--tok-border); }
+.tok-chip { --tok-bg: #e8e8e2; --tok-fg: #111111; --tok-border: #8a8a84; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 30px; min-height: 26px; height: auto; padding: 3px 4px; border-radius: 0; background: var(--tok-bg); color: var(--tok-fg); font: 700 10.5px/1 var(--mono); border: 1px solid var(--tok-border); }
 .tok-chip i { font-style: normal; color: inherit; }
 .tok-chip .barcode {
   width: 100%;

@@ -1,4 +1,4 @@
-import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import type { LevelDefinition, Track } from '../engine/types.ts';
 import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
 import { Barcode, SeqLetters, tierClass, tokenStyle } from './TokenFace.tsx';
@@ -57,6 +57,15 @@ function CluePart({ group, alt, testId, badgeTestId, extraClass, children }: {
   );
 }
 
+/** Wrapping chip row. Chips size to their letters; extra chips wrap into the same columns. */
+function TokenRow({ children }: { children: ReactNode }) {
+  return <div className="clue-tokens">{children}</div>;
+}
+
+function stackClass(mode: string, tier?: number): string {
+  return `clue-stack mode-${mode}${tier ? ` tier-${tier}` : ''}`;
+}
+
 function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): string {
   const repair = def.repair!;
   if (solved) return def.tokens ? symbolLabel(def, custom, repair.expected) : repair.expected;
@@ -85,27 +94,32 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
       <span className="muted">{range}{toks ? ` · ${def.tier}-base tiles` : ''}</span>
     </div>
   );
-  const cols = Math.max(0, ...def.tracks.map((t) => t.expected.length));
-  const stackStyle = { '--clue-tiles': cols } as CSSProperties;
+  const tier = toks ? def.tier : undefined;
   if (def.mode === 'replicate') {
     const [a, b] = def.tracks as [Track, Track];
     return (
       <section className="target" aria-label="Target strands" data-testid="target-panel">
         {label}
-        <div className="clue-stack mode-replicate" style={stackStyle}>
+        <div className={stackClass('replicate', tier)}>
           <CluePart group={a.group} testId="clue-part-1" badgeTestId="clue-badge-1">
             <span className="end">5′</span>
-            <Strip track={a} ok={matches[0]!} testId="target-strip" />
+            <TokenRow>
+              <Strip track={a} ok={matches[0]!} testId="target-strip" />
+            </TokenRow>
             <span className="end">3′</span>
             <span className="muted tiny">template</span>
           </CluePart>
           <CluePart extraClass="pair-bonds" testId="clue-bonds">
             <span />
-            {a.expected.split('').map((_, i) => <i key={i} />)}
+            <TokenRow>{a.expected.split('').map((_, i) => <i key={i} />)}</TokenRow>
+            <span />
+            <span />
           </CluePart>
           <CluePart group={b.group} alt testId="clue-part-2" badgeTestId="clue-badge-2">
             <span className="end">3′</span>
-            <Strip track={b} ok={matches[1]!} />
+            <TokenRow>
+              <Strip track={b} ok={matches[1]!} />
+            </TokenRow>
             <span className="end">5′</span>
             <span className="muted tiny">complement</span>
           </CluePart>
@@ -118,15 +132,19 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
     return (
       <section className="target" aria-label="Target sequence with a gap" data-testid="target-panel">
         {label}
-        <div className="clue-stack mode-repair" style={stackStyle}>
+        <div className={stackClass('repair', tier)}>
           <CluePart group={a.group} testId="clue-part-1" badgeTestId="clue-badge-1">
-            <Strip track={a} ok={matches[0]!} testId="target-strip" />
-            {toks
-              ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" style={solved ? tokenStyle(def, def.repair.expected) : {}}>{gapLabel(def, custom, solved)}</span>
-              : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot">{gapLabel(def, custom, solved)}</span>}
+            <TokenRow>
+              <Strip track={a} ok={matches[0]!} testId="target-strip" />
+              {toks
+                ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" style={solved ? tokenStyle(def, def.repair.expected) : {}}>{gapLabel(def, custom, solved)}</span>
+                : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot">{gapLabel(def, custom, solved)}</span>}
+            </TokenRow>
           </CluePart>
           <CluePart group={b.group} testId="clue-part-2" badgeTestId="clue-badge-2">
-            <Strip track={b} ok={matches[1]!} />
+            <TokenRow>
+              <Strip track={b} ok={matches[1]!} />
+            </TokenRow>
           </CluePart>
         </div>
       </section>
@@ -136,12 +154,14 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
     return (
       <section className="target" aria-label="Target pieces" data-testid="target-panel">
         {label}
-        <div className="clue-stack mode-splice" style={stackStyle}>
+        <div className={stackClass('splice', tier)}>
           {def.tracks.map((t, i) => (
             <CluePart key={t.group} group={t.group} testId={`clue-part-${t.group}`} badgeTestId={`clue-badge-${t.group}`}>
-              <Strip track={t} ok={matches[i]!} testId={i === 0 ? 'target-strip' : undefined} />
-              <span className="muted tiny">{t.orientation === 'horizontal' ? '→' : '↓'}</span>
-              {i < def.tracks.length - 1 ? <span className="plus" aria-hidden="true">+</span> : null}
+              <TokenRow>
+                <Strip track={t} ok={matches[i]!} testId={i === 0 ? 'target-strip' : undefined} />
+                <span className="muted tiny">{t.orientation === 'horizontal' ? '→' : '↓'}</span>
+                {i < def.tracks.length - 1 ? <span className="plus" aria-hidden="true">+</span> : null}
+              </TokenRow>
             </CluePart>
           ))}
         </div>
@@ -151,9 +171,11 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
   return (
     <section className="target" aria-label="Target sequence" data-testid="target-panel">
       {label}
-      <div className="clue-stack mode-sequence" style={stackStyle}>
+      <div className={stackClass('sequence', tier)}>
         <CluePart group={t0.group} testId="clue-part-1" badgeTestId="clue-badge-1">
-          <Strip track={t0} ok={matches[0]!} testId="target-strip" />
+          <TokenRow>
+            <Strip track={t0} ok={matches[0]!} testId="target-strip" />
+          </TokenRow>
         </CluePart>
       </div>
     </section>

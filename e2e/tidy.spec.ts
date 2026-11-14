@@ -339,11 +339,14 @@ test('repair clue keeps labels in one column, chips lined up, and the gap at the
     await expect(page.getByTestId('target-panel').getByText(/^0$/)).toHaveCount(0);
     await expectClueAlignment(page);
     const slot = page.getByTestId('repair-slot');
-    const chip = page.getByTestId('clue-part-1').locator('.tok-chip:not(.gap), .strip-cell:not(.gap)').first();
+    const chips = page.getByTestId('clue-part-1').locator('.tok-chip:not(.gap), .strip-cell:not(.gap)');
     const slotBox = (await slot.boundingBox())!;
-    const chipBox = (await chip.boundingBox())!;
-    expect(Math.abs(slotBox.y - chipBox.y)).toBeLessThanOrEqual(8);
-    expect(slotBox.x).toBeGreaterThan(chipBox.x);
+    const firstBox = (await chips.first().boundingBox())!;
+    const lastBox = (await chips.last().boundingBox())!;
+    expect(slotBox.x).toBeGreaterThan(firstBox.x - 0.5);
+    // Gap stays with piece 1, after its last real chip (same wrap row to the right, or the next row).
+    if (Math.abs(slotBox.y - lastBox.y) <= 8) expect(slotBox.x).toBeGreaterThan(lastBox.x);
+    else expect(slotBox.y).toBeGreaterThan(lastBox.y);
     if (width === 390) {
       await page.screenshot({ path: '/workspace/game/screenshots/genome-repair-clue-390x844.png' });
     }
@@ -361,3 +364,79 @@ test('replication and sequencing clues use the same left-aligned piece labels at
     await expectClueAlignment(page);
   }
 });
+
+async function expectClueChipsFit(page: Page): Promise<void> {
+  const report = await page.locator('[data-testid="target-panel"]').evaluate((panel) => {
+    const overflows: string[] = [];
+    const check = (el: Element, name: string) => {
+      const h = el as HTMLElement;
+      if (h.scrollWidth > h.clientWidth + 1 || h.scrollHeight > h.clientHeight + 1) {
+        overflows.push(`${name} scroll=${h.scrollWidth}x${h.scrollHeight} client=${h.clientWidth}x${h.clientHeight} text=${(h.textContent ?? '').trim()}`);
+      }
+      const cs = getComputedStyle(h);
+      if (cs.textOverflow === 'ellipsis' && (cs.overflowX === 'hidden' || cs.overflow === 'hidden') && h.scrollWidth > h.clientWidth + 1) {
+        overflows.push(`${name} ellipsis`);
+      }
+    };
+    for (const chip of panel.querySelectorAll('.tok-chip, .strip-cell')) {
+      check(chip, chip.className);
+      const label = chip.querySelector('.chip-label');
+      if (label) check(label, 'chip-label');
+    }
+    const pageOverflow = document.documentElement.scrollWidth - window.innerWidth;
+    const target = panel as HTMLElement;
+    return { overflows, pageOverflow, panelOverflow: target.scrollWidth - target.clientWidth };
+  });
+  expect(report.overflows, report.overflows.join('; ')).toEqual([]);
+  expect(report.pageOverflow).toBeLessThanOrEqual(0);
+  expect(report.panelOverflow).toBeLessThanOrEqual(0);
+}
+
+/** Wrapped chips share x with the chip/column above. */
+async function expectClueWrapColumns(page: Page): Promise<void> {
+  const parts = await page.locator('[data-testid^="clue-part-"]').evaluateAll((els) => els
+    .filter((p) => !p.classList.contains('pair-bonds'))
+    .map((p) => [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].map((e) => {
+      const r = e.getBoundingClientRect();
+      return { x: r.x, y: r.y };
+    })));
+  for (const chips of parts) {
+    const rows: { x: number; y: number }[][] = [];
+    for (const c of chips) {
+      const row = rows.find((r) => Math.abs(r[0]!.y - c.y) <= 2);
+      if (row) row.push(c);
+      else rows.push([c]);
+    }
+    if (rows.length < 2) continue;
+    const colX = rows[0]!.map((c) => c.x);
+    expect(Math.abs(rows[1]![0]!.x - colX[0]!)).toBeLessThanOrEqual(2);
+    for (const c of rows.slice(1).flat()) {
+      expect(colX.some((x) => Math.abs(c.x - x) <= 2)).toBe(true);
+    }
+  }
+}
+
+test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 430', async ({ page }) => {
+  test.setTimeout(60_000);
+  const levels = [
+    { id: 'ins-c01', heading: 'INS' },
+    { id: 'ins-c05', heading: 'INS' },
+    { id: 'hbb-c08', heading: 'HBB' },
+  ] as const;
+  for (const width of [320, 375, 390, 430] as const) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const level of levels) {
+      await openChapter(page, level.id);
+      await expect(page.getByTestId('target-panel')).toBeVisible();
+      await expect(page.getByTestId('play-title')).toHaveText(level.heading);
+      if (level.id === 'ins-c05') await expect(page.getByTestId('play-progress')).toHaveText('11/13');
+      await expectClueChipsFit(page);
+      await expectClueAlignment(page);
+      await expectClueWrapColumns(page);
+      if (width === 390 && level.id === 'ins-c05') {
+        await page.screenshot({ path: '/workspace/game/screenshots/genome-ins11-clue-390x844.png', animations: 'disabled' });
+      }
+    }
+  }
+});
+
