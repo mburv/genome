@@ -31,6 +31,14 @@ export interface SaveData {
   /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
   legacy: { m1Completed: string[] };
   settings: Settings;
+  /** Best recorded solve per level. Replays never worsen this; completion credit is separate. */
+  best: Record<string, LevelBest>;
+}
+
+/** One stored result. `powersUsed` is omitted when unknown (legacy backfill from a solved board). */
+export interface LevelBest {
+  moves: number;
+  powersUsed?: number;
 }
 
 export interface Settings {
@@ -99,6 +107,7 @@ export function newSave(pack: LevelPack): SaveData {
     attempts: {},
     legacy: { m1Completed: [] },
     settings: { ...DEFAULT_SETTINGS },
+    best: {},
   };
 }
 
@@ -302,8 +311,9 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (upgradedV3) notices.unshift(`GENOME updated: full gene assembly — multi-base tiles (codons up to 24-base pieces) and an assembly chapter for each of ${Object.keys(pack.datasets).length} verified catalogue genes.${upgradedV2 ? ' Also new: enzyme power-ups (CRISPR, Ligase, Scaffold) from level 4, with three Enzyme lab tutorials on the map.' : ''} ${kept}`);
   const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : fresh.currentLevelId;
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
+  const best = readBest(data.best, ids, attempts);
   return {
-    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings) },
+    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best },
     notices,
     recovered: notices.length > 0,
   };
@@ -319,4 +329,62 @@ export function recordAssembly(save: SaveData, symbol: string, levels?: readonly
 /** Idempotent completion: a level is credited at most once. */
 export function recordCompletion(save: SaveData, levelId: string): SaveData {
   return save.completed.includes(levelId) ? save : { ...save, completed: [...save.completed, levelId] };
+}
+
+
+/** True when `next` should replace `prev` as the stored best (fewer moves, then fewer powers). */
+export function isBetterResult(next: LevelBest, prev: LevelBest): boolean {
+  if (next.moves !== prev.moves) return next.moves < prev.moves;
+  if (next.powersUsed == null || prev.powersUsed == null) return false;
+  return next.powersUsed < prev.powersUsed;
+}
+
+/** Keep the better of the stored best and this result. Never removes a previous best. */
+export function recordBest(save: SaveData, levelId: string, result: LevelBest): SaveData {
+  if (!Number.isInteger(result.moves) || result.moves < 0) return save;
+  const clean: LevelBest = { moves: result.moves };
+  if (result.powersUsed != null && Number.isInteger(result.powersUsed) && result.powersUsed >= 0) clean.powersUsed = result.powersUsed;
+  const prev = save.best[levelId];
+  if (!prev || isBetterResult(clean, prev)) return { ...save, best: { ...save.best, [levelId]: clean } };
+  // Same move count: fill in powers if the stored best was a legacy backfill without them.
+  if (clean.moves === prev.moves && prev.powersUsed == null && clean.powersUsed != null) {
+    return { ...save, best: { ...save.best, [levelId]: { ...prev, powersUsed: clean.powersUsed } } };
+  }
+  return save;
+}
+
+/**
+ * Read stored bests, drop invalid / unknown ids, and backfill moves from any solved attempt
+ * that has no (or a worse) recorded best. Powers are left unknown on a backfill.
+ */
+function readBest(raw: unknown, ids: Set<string>, attempts: Record<string, PuzzleState>): Record<string, LevelBest> {
+  const best: Record<string, LevelBest> = {};
+  if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+    for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (!ids.has(id) || typeof v !== 'object' || v === null) continue;
+      const o = v as Record<string, unknown>;
+      if (!Number.isInteger(o.moves) || (o.moves as number) < 0) continue;
+      const entry: LevelBest = { moves: o.moves as number };
+      if (Number.isInteger(o.powersUsed) && (o.powersUsed as number) >= 0) entry.powersUsed = o.powersUsed as number;
+      best[id] = entry;
+    }
+  }
+  const shell = { best } as SaveData;
+  for (const [id, attempt] of Object.entries(attempts)) {
+    if (attempt.status !== 'solved') continue;
+    const next = recordBest(shell, id, { moves: attempt.moves });
+    shell.best = next.best;
+  }
+  return shell.best;
+}
+
+/** Read-only solved board shown when a completed level is reopened with no stored attempt. */
+export function solvedDisplayState(def: LevelDefinition, best?: LevelBest): PuzzleState {
+  return {
+    ...createInitialState(def),
+    board: def.solved,
+    status: 'solved',
+    moves: best?.moves ?? 0,
+    recovery: [],
+  };
 }

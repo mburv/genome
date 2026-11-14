@@ -10,9 +10,10 @@ import { assemblyStatus } from '../campaign/assembly.ts';
 import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
 import { SeqLetters, tokenStyle } from './TokenFace.tsx';
 import { GENES } from '../genomics/genes.ts';
-import { recordAssembly, recordCompletion, type SaveData } from '../persistence/save.ts';
+import { recordAssembly, recordBest, recordCompletion, solvedDisplayState, type SaveData } from '../persistence/save.ts';
 import { Board, type MoveAnimation, type PowerPreview, type SlidePreview } from './Board.tsx';
 import { TargetPanel } from './TargetPanel.tsx';
+import { SolvedBanner } from './SolvedBanner.tsx';
 import { WinCard } from './WinCard.tsx';
 import { PowerPanel, PowerTray, POWER_LABEL } from './PowerTray.tsx';
 import { describeSlide, hintDisplayCell } from './hintCell.ts';
@@ -59,7 +60,9 @@ interface Props {
 const stateKey = (s: PuzzleState): string => `${s.board}|${s.moves}|${s.history.length}|${s.locks.join()}|${s.scaffold?.remaining ?? 0}|${s.edits}|${Object.keys(s.custom).length}`;
 
 export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, onCard }: Props) {
-  const puzzle = save.attempts[def.id] ?? createInitialState(def);
+  const attempt = save.attempts[def.id];
+  const alreadyCompleted = save.completed.includes(def.id);
+  const puzzle = attempt ?? (alreadyCompleted ? solvedDisplayState(def, save.best[def.id]) : createInitialState(def));
   const gene = GENES[def.symbol]!;
   const powers = powersEnabled(def);
   const [selected, setSelected] = useState<Cell>(() => defaultSelection(def, puzzle));
@@ -71,6 +74,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const [targeting, setTargeting] = useState<Power | null>(null);
   const [pending, setPending] = useState<PowerPreview | null>(null);
   const [powersUsed, setPowersUsed] = useState(0);
+  const [replayPulse, setReplayPulse] = useState(false);
   const nonce = useRef(0);
   const cue = useCallback((c: Cue) => playCue(c, save.settings), [save.settings]);
 
@@ -165,13 +169,16 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             if (ev.gained > 0) sound = 'energy';
             break;
           case 'solved': {
+            const used = powersUsed + result.events.filter((e) => e.type === 'spent').length;
             if (def.lab) {
               next = recordCompletion(next, def.id);
+              next = recordBest(next, def.id, { moves: result.state.moves, powersUsed: used });
               setCelebrate({ newBases: 0, discovered: false, assembled: false });
             } else {
               // Bases are counted as a union over every completed puzzle of the gene (sample + chapter).
               const before = assemblyStatus(next.completed, gene).covered;
               next = recordCompletion(next, def.id);
+              next = recordBest(next, def.id, { moves: result.state.moves, powersUsed: used });
               const discoveredNow = isDiscovered(next.completed, def.symbol) && !next.discovered.includes(def.symbol);
               if (discoveredNow) next = { ...next, discovered: [...next.discovered, def.symbol] };
               const wasAssembled = next.assembled.includes(def.symbol);
@@ -191,7 +198,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       persist(next);
       return true;
     },
-    [def, gene, save, persist, cue],
+    [def, gene, save, persist, cue, powersUsed],
   );
 
   const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command)), [commit, def, puzzle]);
@@ -359,6 +366,19 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       : def.lab && puzzle.freeUses.length ? LAB_INTRO[def.lab]
         : `${MODE_BLURB[def.mode]} Drag any tile to slide its row or column segment — gaps block movement.`;
 
+  const best = save.best[def.id];
+  const replay = () => {
+    setCelebrate(null);
+    setReplayPulse(false);
+    dispatch({ type: 'restart' });
+  };
+  const nudgeReplay = () => {
+    setStatus('This level is already solved. Tap Replay to play it again.');
+    if (reducedMotion) return;
+    setReplayPulse(false);
+    requestAnimationFrame(() => setReplayPulse(true));
+  };
+
   return (
     <>
       <section className="panel info" aria-label="Level information">
@@ -397,6 +417,19 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
 
       <TargetPanel def={def} matches={matches} solved={solvedView} custom={puzzle.custom} />
 
+      {solvedView && !celebrate && (
+        <SolvedBanner
+          def={def}
+          moves={puzzle.moves}
+          best={best}
+          pulse={replayPulse}
+          hasNext={!!nextLevel}
+          onReplay={replay}
+          onNext={() => (nextLevel ? onPlay(nextLevel.id) : onMap())}
+          onMap={onMap}
+        />
+      )}
+
       <Board
         def={def}
         board={puzzle.board}
@@ -422,10 +455,12 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         onTarget={onTarget}
         onPickGap={onPickGap}
         custom={puzzle.custom}
+        onLockedInteract={nudgeReplay}
       />
 
       <div className="row-between small meta">
         <span data-testid="moves">{puzzle.moves} {puzzle.moves === 1 ? 'move' : 'moves'}</span>
+        {best && <span className="muted" data-testid="best">Best {best.moves}</span>}
         <span className="muted">Selected R{Math.floor(selected / 9) + 1} · C{(selected % 9) + 1}</span>
       </div>
       {def.tokens && puzzle.board[selected] !== '.' && <TokenInspector def={def} puzzle={puzzle} cell={selected} />}
@@ -444,21 +479,21 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         />
       )}
 
-      {panel ?? (
+      {!solvedView && (panel ?? (
         <>
           <div className="dpad" aria-label="Slide the selected tile's segment one cell">
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'row', direction: -1 })} disabled={solvedView} aria-label="Slide row left">←</button>
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'col', direction: -1 })} disabled={solvedView} aria-label="Slide column up">↑</button>
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'col', direction: 1 })} disabled={solvedView} aria-label="Slide column down">↓</button>
-            <button type="button" onClick={() => onMove({ origin: selected, axis: 'row', direction: 1 })} disabled={solvedView} aria-label="Slide row right">→</button>
+            <button type="button" onClick={() => onMove({ origin: selected, axis: 'row', direction: -1 })} aria-label="Slide row left">←</button>
+            <button type="button" onClick={() => onMove({ origin: selected, axis: 'col', direction: -1 })} aria-label="Slide column up">↑</button>
+            <button type="button" onClick={() => onMove({ origin: selected, axis: 'col', direction: 1 })} aria-label="Slide column down">↓</button>
+            <button type="button" onClick={() => onMove({ origin: selected, axis: 'row', direction: 1 })} aria-label="Slide row right">→</button>
           </div>
           <div className="actions">
-            <button type="button" onClick={() => dispatch({ type: 'undo' })} disabled={solvedView || puzzle.history.length === 0}>Undo</button>
-            <button type="button" onClick={showHint} disabled={solvedView}>Hint</button>
-            <button type="button" onClick={() => dispatch({ type: 'restart' })} disabled={solvedView || (puzzle.moves === 0 && puzzle.history.length === 0)}>Restart</button>
+            <button type="button" onClick={() => dispatch({ type: 'undo' })} disabled={puzzle.history.length === 0}>Undo</button>
+            <button type="button" onClick={showHint}>Hint</button>
+            <button type="button" onClick={() => dispatch({ type: 'restart' })} disabled={puzzle.moves === 0 && puzzle.history.length === 0}>Restart</button>
           </div>
         </>
-      )}
+      ))}
 
       <p className="status" role="status" aria-live="polite" data-testid="status">{status || defaultStatus}</p>
       {activeHint?.kind === 'undo' && !solvedView && (
@@ -473,12 +508,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         </div>
       )}
 
-      {solvedView && !celebrate && (
-        <div className="solved-bar">
-          <button type="button" onClick={() => dispatch({ type: 'restart' })}>Replay</button>
-          {nextLevel && <button type="button" className="primary" onClick={() => onPlay(nextLevel.id)}>Next level →</button>}
-        </div>
-      )}
 
       {celebrate && (
         <WinCard

@@ -156,8 +156,26 @@ h1::before { content: ''; display: inline-block; width: 12px; height: 12px; back
 .repair-gap { display: grid; place-items: center; background: var(--white); box-shadow: inset 0 0 0 2px var(--red); color: var(--red); font-weight: 700; font-size: calc(var(--board) / 18); z-index: 3; position: relative; animation: blink 1.6s ease-in-out infinite; }
 .tile.restored { animation: restore 0.5s ease both; box-shadow: inset 0 0 0 3px var(--ink); z-index: 3; }
 @keyframes restore { 0% { transform: scale(0.3); opacity: 0; } 70% { transform: scale(1.06); opacity: 1; } 100% { transform: none; } }
+.board.solved { opacity: 0.78; }
 .board.solved .tile.goal.ok { animation: solvedpulse 0.6s ease both; animation-delay: calc(var(--i, 0) * 30ms); }
 @keyframes solvedpulse { 40% { transform: scale(0.9); } }
+
+/* ---------- Solved banner (completed level / after closing the win card) ---------- */
+.solved-banner { background: var(--white); border: 1px solid var(--ink); border-left: 6px solid var(--mint-edge); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.solved-banner-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.solved-kicker { font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; font-size: 12px; color: var(--ink); }
+.solved-result { font-size: 13px; color: var(--graphite); }
+.solved-stars { margin-left: 8px; letter-spacing: 0.08em; color: var(--ink); }
+.solved-stars .empty { color: var(--rule); }
+.solved-banner-actions { display: flex; gap: 0; }
+.solved-banner-actions button { flex: 1; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; font-size: 12.5px; }
+.solved-banner-actions button + button { border-left: 0; }
+.solved-banner .primary.pulse { animation: replay-pulse 0.55s ease-in-out 3; }
+@keyframes replay-pulse { 50% { box-shadow: 0 0 0 3px var(--coral-edge); background: #f8d5cc; } }
+@media (prefers-reduced-motion: reduce) {
+  .solved-banner .primary.pulse { animation: none; }
+  .board.solved .tile.goal.ok { animation: none; }
+}
 
 /* Continuous drag: clones in a clipped strip over the segment; transform-only updates. */
 .drag-layer { position: absolute; inset: 0; pointer-events: none; z-index: 2; }

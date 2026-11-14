@@ -33,6 +33,7 @@ describe('save / reload (v3)', () => {
     expect(s.settings).toEqual(DEFAULT_SETTINGS);
     expect(s.datasets).toEqual(LEVEL_PACK.datasets);
     expect(s.discovered).toEqual([]);
+    expect(s.best).toEqual({});
   });
   it('a mid-game board, moves, recovery path and undo history survive reload', () => {
     const { s, save } = savedMidGame();

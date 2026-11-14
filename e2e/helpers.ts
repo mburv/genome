@@ -1,4 +1,17 @@
 import type { Page } from '@playwright/test';
+import { applyCommand, createInitialState, type PuzzleState } from '../src/engine/engine.ts';
+import type { Axis, LevelDefinition } from '../src/engine/types.ts';
+import m2Pack from '../src/campaign/levels.generated.json' with { type: 'json' };
+import chapterPack from '../src/campaign/chapters.generated.json' with { type: 'json' };
+
+// Built here (not via campaign.ts) so Playwright's ESM loader can apply the JSON import attribute.
+const PACK = {
+  campaignId: 'genome-m4-assembly',
+  generatorVersion: m2Pack.generatorVersion,
+  tokenGeneratorVersion: chapterPack.generatorVersion,
+  catalogueId: chapterPack.catalogueId,
+  datasets: { ...chapterPack.datasets, ...m2Pack.datasets },
+};
 
 /** Real touch swipe via CDP so the app receives pointer events of type "touch". */
 export async function touchSwipe(page: Page, cell: number, dir: Dir, distance = 40): Promise<void> {
@@ -124,4 +137,49 @@ export async function openLab(page: Page, n: number): Promise<void> {
   await page.getByTestId('open-map').click();
   await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${n}: `) }).click();
   await page.getByTestId('board').waitFor();
+}
+
+/** A valid v4 save with `levelId` already completed, a solved board, and a recorded best. */
+export function completedLevelSave(def: LevelDefinition, opts: { lastMoves?: number; bestMoves?: number } = {}): { save: Record<string, unknown>; raw: string } {
+  let s: PuzzleState = createInitialState(def);
+  for (const slide of def.certificateSlides) s = applyCommand(def, s, { type: 'slide', ...slide }).state;
+  if (s.status !== 'solved') throw new Error(`certificate did not solve ${def.id}`);
+  const lastMoves = opts.lastMoves ?? s.moves;
+  const bestMoves = opts.bestMoves ?? Math.min(lastMoves, s.moves);
+  const save = {
+    schemaVersion: 4,
+    ...PACK,
+    currentLevelId: def.id,
+    completed: [def.id],
+    discovered: [],
+    assembled: [],
+    attempts: { [def.id]: { ...s, moves: lastMoves } },
+    legacy: { m1Completed: [] },
+    settings: { reducedMotion: false, sound: false, haptics: true },
+    best: { [def.id]: { moves: bestMoves, powersUsed: 0 } },
+  };
+  return { save, raw: JSON.stringify(save) };
+}
+
+/** One accepted slide from the initial scramble that does not win the level. */
+export function aNonWinningSlide(def: LevelDefinition): { origin: number; axis: Axis; steps: 1 | -1 } {
+  const start = createInitialState(def);
+  for (let origin = 0; origin < 81; origin++) {
+    if (def.mask[origin] !== '#') continue;
+    for (const axis of ['row', 'col'] as const) {
+      for (const steps of [1, -1] as const) {
+        const r = applyCommand(def, start, { type: 'slide', origin, axis, steps });
+        if (r.accepted && r.state.status !== 'solved') return { origin, axis, steps };
+      }
+    }
+  }
+  throw new Error(`no non-winning slide on ${def.id}`);
+}
+
+/** Seed localStorage with a completed level and open it (returning players land on the map). */
+export async function openCompleted(page: Page, raw: string): Promise<void> {
+  await page.goto('/');
+  await page.evaluate((value) => { localStorage.clear(); localStorage.setItem('genome-save', value); }, raw);
+  await page.reload();
+  await page.getByTestId('level-map').waitFor();
 }

@@ -46,6 +46,8 @@ interface Props {
   onPickGap: (candidate: ScaffoldCandidate) => void;
   /** M4: CRISPR-created sequences of this attempt (token levels). */
   custom?: CustomTokens;
+  /** Fired when the player tries to drag a locked (solved) board, so the UI can nudge Replay. */
+  onLockedInteract?: () => void;
 }
 
 export type PowerPreview =
@@ -83,7 +85,7 @@ export interface SlidePreview {
 export const SLIDE_MS = 150;
 
 
-export function Board({ def, board, matches, selected, hint, hintCell, repaired, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect, segmentOf, locks, scaffold, hintSegment: hintSeg, targeting, powerPreview, onTarget, onPickGap, custom }: Props) {
+export function Board({ def, board, matches, selected, hint, hintCell, repaired, showGestureCue, locked, reducedMotion, animation, onMove, onSlide, onPreview, onSelect, segmentOf, locks, scaffold, hintSegment: hintSeg, targeting, powerPreview, onTarget, onPickGap, custom, onLockedInteract }: Props) {
   const tokens = def.tokens;
   const boardRef = useRef<HTMLDivElement>(null);
   const busyUntil = useRef(0);
@@ -309,6 +311,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
       d.axis = axis;
       d.segment = segmentOf(d.cell, axis);
       if (locked || d.segment.length < 2 || !beginDrag(d)) {
+        if (locked) onLockedInteract?.();
         d.phase = 'dead'; // single-cell segment (or solved board): nothing can move on this axis
         return;
       }
