@@ -72,7 +72,10 @@ export type LabAction =
   | { type: 'edit'; cell: number; base: DNA }
   | { type: 'route'; pair: number; cell: number }
   | { type: 'cut'; cell: number };
-export interface LabResult { state: LabState; message: string }
+/** Visual metadata for one successful codon swap, derived by the same pure rules as the final board. */
+export interface CrushFall { from: number | null; to: number; rows: number }
+export interface CrushTransition { swapped: string[]; matched: number[]; falls: CrushFall[] }
+export interface LabResult { state: LabState; message: string; crush?: CrushTransition }
 
 export function createLab(id: LabId): LabState {
   let board = blank();
@@ -123,8 +126,8 @@ function matchingTriples(board: readonly string[], seq: string): number[][] {
 }
 
 /** Clear the matched codon, settle independently within each vertical segment, then refill. */
-function settle(board: string[], cells: readonly number[], refill: number): { board: string[]; refill: number; fresh: number[] } {
-  const out = [...board]; const fresh: number[] = [];
+function settle(board: string[], cells: readonly number[], refill: number): { board: string[]; refill: number; fresh: number[]; falls: CrushFall[] } {
+  const out = [...board]; const fresh: number[] = []; const falls: CrushFall[] = [];
   cells.forEach(c => { out[c] = ''; });
   for (let col = 0; col < 9; col++) {
     let bottom = 8;
@@ -133,13 +136,23 @@ function settle(board: string[], cells: readonly number[], refill: number): { bo
       let top = bottom;
       while (top > 0 && out[(top - 1) * 9 + col] !== '.') top--;
       const segment = Array.from({ length: bottom - top + 1 }, (_, i) => (top + i) * 9 + col);
-      const kept = segment.map(c => out[c]!).filter(Boolean);
+      const kept = segment.filter(c => out[c] !== '').map(c => ({ cell: c, base: out[c]! }));
       const missing = segment.length - kept.length;
-      segment.forEach((c, i) => { if (i < missing) { out[c] = filler(refill++, 3); fresh.push(c); } else out[c] = kept[i - missing]!; });
+      segment.forEach((c, i) => {
+        if (i < missing) {
+          out[c] = filler(refill++, 3); fresh.push(c);
+          // New bases fade in from within their own segment, not through a hole.
+          falls.push({ from: null, to: c, rows: Math.min(1, i) });
+        } else {
+          const tile = kept[i - missing]!;
+          out[c] = tile.base;
+          if (tile.cell !== c) falls.push({ from: tile.cell, to: c, rows: (c - tile.cell) / 9 });
+        }
+      });
       bottom = top - 1;
     }
   }
-  return { board: out, refill, fresh };
+  return { board: out, refill, fresh, falls };
 }
 
 function assemblyRow(placements: readonly number[]): string[] | null {
@@ -182,7 +195,8 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
     const match = matchingTriples(board, target).find(c => (c.includes(a) || c.includes(b)) && !old.has(c.join(',')));
     if (!match) return no('That swap does not create the next codon.');
     const collected = state.collected + 1;
-    return yes({ ...settle(board, match, state.refill), collected, won: collected === CRUSH_TARGETS.length }, 'Collected ' + target + ' — tiles refilled.');
+    const { falls, ...settled } = settle(board, match, state.refill);
+    return { ...yes({ ...settled, collected, won: collected === CRUSH_TARGETS.length }, 'Collected ' + target + ' — tiles refilled.'), crush: { swapped: board, matched: match, falls } };
   }
   if (action.type === 'place' && state.id === 'assembly') {
     const { read, offset } = action;

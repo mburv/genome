@@ -1,5 +1,5 @@
-import { useRef, useState, type PointerEvent } from 'react';
-import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, MUTATION_ROWS, mutationExpected, mutationCount, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET, reverseComplement, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATION_ROWS, mutationExpected, mutationCount, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">
@@ -18,27 +18,85 @@ const readAt = (c: number) => READ_CELLS.findIndex(row => row.includes(c));
 const endAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c || p.end === c);
 const startAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c);
 type Session = { state: LabState; history: LabState[]; message: string };
+type CrushDrag = { a: number; b: number; fraction: number };
+type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; result: LabResult };
+const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
-export function MechanicsPlay({ id, onBack, onNext }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void }) {
+function acceptResult(prev: Session, result: LabResult): Session {
+  return { state: result.state, history: result.state === prev.state ? prev.history : [...prev.history, prev.state], message: result.message || prev.message };
+}
+function crushDirection(a: number, dx: number, dy: number, pitch: number, board: readonly string[]): CrushDrag | null {
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+  const distance = horizontal ? dx : dy;
+  if (Math.abs(distance) < 2 || pitch <= 0) return null;
+  const b = a + Math.sign(distance) * (horizontal ? 1 : 9);
+  if (b < 0 || b >= 81 || !adjacent(a, b) || board[b] === '.') return null;
+  return { a, b, fraction: Math.min(1, Math.abs(distance) / pitch) };
+}
+function swapTransform(cell: number, motion: CrushDrag): string | undefined {
+  if (cell !== motion.a && cell !== motion.b) return undefined;
+  const from = cell === motion.a ? motion.a : motion.b;
+  const to = cell === motion.a ? motion.b : motion.a;
+  const dx = (to % 9 - from % 9) * motion.fraction;
+  const dy = (Math.floor(to / 9) - Math.floor(from / 9)) * motion.fraction;
+  return 'translate(calc(' + (dx * 100) + '% + ' + dx + 'px), calc(' + (dy * 100) + '% + ' + dy + 'px))';
+}
+
+export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean }) {
   const meta = LAB_META[id];
   const [session, setSession] = useState<Session>(() => ({ state: createLab(id), history: [], message: '' }));
   const [selected, setSelected] = useState<number | null>(null);
   const [hint, setHint] = useState(false);
-  const gesture = useRef<{ pointer: number; start: number; last: number; pair: number; read: number; swapped: boolean } | null>(null);
+  const gesture = useRef<{ pointer: number; start: number; last: number; pair: number; read: number; x: number; y: number; pitch: number } | null>(null);
+  const [crushDrag, setCrushDrag] = useState<CrushDrag | null>(null);
+  const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
+  const busy = crushAnimation !== null;
   const { state } = session;
   const boardRef = useRef<HTMLDivElement>(null);
   const dispatch = (action: LabAction) => setSession(prev => {
     const result = applyLab(prev.state, action);
-    return { state: result.state, history: result.state === prev.state ? prev.history : [...prev.history, prev.state], message: result.message || prev.message };
+    return acceptResult(prev, result);
   });
+  // Only presentation is delayed. Commit the exact engine result once, after the final frame.
+  useEffect(() => {
+    if (!crushAnimation) return;
+    const { stage, result } = crushAnimation;
+    const timer = window.setTimeout(() => {
+      if (stage === 'swap') setCrushAnimation({ ...crushAnimation, stage: result.crush ? 'clear' : 'return' });
+      else if (stage === 'clear') setCrushAnimation({ ...crushAnimation, stage: 'fall' });
+      else {
+        setSession(prev => acceptResult(prev, result));
+        setCrushAnimation(null);
+      }
+    }, crushTiming[stage]);
+    return () => window.clearTimeout(timer);
+  }, [crushAnimation]);
+  const startCrushSwap = (a: number, b: number) => {
+    if (busy || state.won) return;
+    setSelected(null);
+    setCrushDrag(null);
+    const result = applyLab(state, { type: 'swap', a, b });
+    if (!adjacent(a, b) || state.board[b] === '.' || reducedMotion) {
+      setSession(prev => acceptResult(prev, result));
+      return;
+    }
+    setCrushAnimation({ a, b, stage: 'swap', result });
+  };
+  const animationFrame = crushAnimation?.result.crush;
+  const displayBoard = crushAnimation?.stage === 'clear' && animationFrame ? animationFrame.swapped
+    : crushAnimation?.stage === 'fall' ? crushAnimation.result.state.board : state.board;
+  const swapMotion = crushAnimation && (crushAnimation.stage === 'swap' || crushAnimation.stage === 'return')
+    ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
+    : crushDrag;
+  const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
   const reset = () => { setSession({ state: createLab(id), history: [], message: '' }); setSelected(null); };
   const undo = () => { setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), message: 'Undone.' } : prev; }); setSelected(null); };
   const choose = (cell: number) => {
-    if (state.won || state.board[cell] === '.') return;
+    if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
     else if (id === 'crush') {
       if (selected === null || selected === cell) setSelected(selected === cell ? null : cell);
-      else { dispatch({ type: 'swap', a: selected, b: cell }); setSelected(null); }
+      else startCrushSwap(selected, cell);
     } else if (id === 'assembly') {
       const read = readAt(cell);
       if (read >= 0) setSelected(read);
@@ -56,28 +114,43 @@ export function MechanicsPlay({ id, onBack, onNext }: { id: LabId; onBack: () =>
     return Number(hit.dataset.labCell);
   };
   const pointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (state.won || e.button !== 0 || gesture.current) return;
+    if (state.won || busy || e.button !== 0 || gesture.current) return;
     const cell = cellFromPoint(e);
     if (cell === null || state.board[cell] === '.') return;
     const pair = startAt(cell);
     const read = readAt(cell);
-    gesture.current = { pointer: e.pointerId, start: cell, last: cell, pair: pair >= 0 ? pair : selected ?? -1, read, swapped: id === 'crush' && selected !== null && selected !== cell };
+    const pitch = (e.currentTarget.getBoundingClientRect().width + 1) / 9;
+    gesture.current = { pointer: e.pointerId, start: cell, last: cell, pair: pair >= 0 ? pair : selected ?? -1, read, x: e.clientX, y: e.clientY, pitch };
     e.currentTarget.setPointerCapture(e.pointerId);
-    choose(cell);
+    if (id !== 'crush') choose(cell);
   };
   const pointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
-    if (!g || g.pointer !== e.pointerId || state.won) return;
+    if (!g || g.pointer !== e.pointerId || state.won || busy) return;
+    if (id === 'crush') {
+      setCrushDrag(crushDirection(g.start, e.clientX - g.x, e.clientY - g.y, g.pitch, state.board));
+      return;
+    }
     const cell = cellFromPoint(e);
     if (cell === null || cell === g.last || state.board[cell] === '.') return;
     g.last = cell;
     if (id === 'trace') dispatch({ type: 'trace', cell });
     else if (id === 'connections' && g.pair >= 0) dispatch({ type: 'route', pair: g.pair, cell });
-    else if (id === 'crush' && !g.swapped) { dispatch({ type: 'swap', a: g.start, b: cell }); setSelected(null); g.swapped = true; }
   };
   const pointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || g.pointer !== e.pointerId) return;
+    if (id === 'crush') {
+      const dx = e.clientX - g.x, dy = e.clientY - g.y;
+      const motion = crushDirection(g.start, dx, dy, g.pitch, state.board);
+      gesture.current = null;
+      if (motion && motion.fraction >= .35) startCrushSwap(motion.a, motion.b);
+      else {
+        setCrushDrag(null);
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) choose(g.start);
+      }
+      return;
+    }
     const cell = cellFromPoint(e);
     if (id === 'assembly' && g.read >= 0 && cell !== null && ASSEMBLY_CELLS.includes(cell)) dispatch({ type: 'place', read: g.read, offset: cell - ASSEMBLY_CELLS[0]! });
     gesture.current = null;
@@ -98,22 +171,26 @@ export function MechanicsPlay({ id, onBack, onNext }: { id: LabId; onBack: () =>
       <div className="row-between"><b className="small">{id === 'crush' ? 'Next codon' : 'Objective'}</b><span className="small muted" data-testid="lab-progress">{progress}</span></div>
       {id === 'trace' && <div className="lab-sequence">{[...target].map((b, i) => <span key={i} className={'b-' + b + (i < state.trace.length ? ' done' : '')}>{b}</span>)}</div>}
       {id === 'crush' && <div className="lab-codons">{CRUSH_TARGETS.map((c, i) => <span key={i} className={i < state.collected ? 'done' : i === state.collected ? 'current' : ''}>{c}</span>)}</div>}
-      {id === 'assembly' && <div className="small muted">Match overlaps · 9-base assembly row</div>}
+      {id === 'assembly' && <><div className="small muted">Reference sequence · 5′ → 3′</div><div className="lab-sequence assembly-reference" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={'b-' + b + (state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} aria-label={'Slot ' + (i + 1) + ': ' + b}>{b}<small>{i + 1}</small></span>)}</div></>}
       {id === 'mutation' && <div className="small muted">A ↔ T · C ↔ G</div>}
       {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
       {id === 'restriction' && <div className="mono small">{target}</div>}
     </div>
-    <div ref={boardRef} className={'mechanics-board mode-lab-' + id} data-testid="mechanics-board" onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; }} onLostPointerCapture={() => { gesture.current = null; }}>
-      {state.board.map((b, c) => {
+    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); }}>
+      {displayBoard.map((b, c) => {
         if (b === '.') return <div key={c} className="lab-hole" data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
         const chosen = id === 'assembly' ? selected === read && read >= 0 : id === 'connections' ? selected === pair && pair >= 0 : selected === c;
         const isTop = id === 'mutation' && MUTATION_ROWS.some(r => c >= r.top && c < r.top + r.seq.length);
-        const classes = ['lab-cell', /^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
+        const moving = !!swapMotion && (c === swapMotion.a || c === swapMotion.b);
+        const clear = crushAnimation?.stage === 'clear' && animationFrame?.matched.includes(c);
+        const fall = falling.get(c);
+        const classes = ['lab-cell', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', /^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) && b === ASSEMBLY_TARGET[c - ASSEMBLY_CELLS[0]!] ? 'assembly-correct' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
         const endpoint = id === 'connections' && pair >= 0;
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
         const badge = endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
-        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won} onClick={e => { if (e.detail === 0) choose(c); }} style={endpoint ? { borderColor: pathColors[pair], background: '#fff' } : undefined}>
+        const motionStyle: CSSProperties = { transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}) } as CSSProperties;
+        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won} onClick={e => { if (e.detail === 0) choose(c); }} style={endpoint ? { borderColor: pathColors[pair], background: '#fff' } : motionStyle}>
           <span>{b === '·' ? '' : b}</span>{badge && <small>{badge}</small>}
         </button>;
       })}
@@ -124,7 +201,7 @@ export function MechanicsPlay({ id, onBack, onNext }: { id: LabId; onBack: () =>
       </svg>
     </div>
     {id === 'mutation' && <div className="lab-base-picker" aria-label="Choose replacement base">{(['A','C','G','T'] as DNA[]).map(b => <button type="button" className={'b-' + b} key={b} disabled={selected === null || state.won} onClick={() => { if (selected !== null) dispatch({ type: 'edit', cell: selected, base: b }); }} data-testid={'lab-base-' + b}>{b}</button>)}</div>}
-    <div className="lab-controls"><button type="button" onClick={undo} disabled={!session.history.length}>Undo</button><button type="button" className={hint ? 'primary' : ''} aria-pressed={hint} onClick={() => setHint(v => !v)}>Hint</button><button type="button" onClick={reset}>Replay</button></div>
+    <div className="lab-controls"><button type="button" onClick={undo} disabled={busy || !session.history.length}>Undo</button><button type="button" className={hint ? 'primary' : ''} aria-pressed={hint} onClick={() => setHint(v => !v)}>Hint</button><button type="button" onClick={reset} disabled={busy}>Replay</button></div>
     {hint && !state.won && <p className="lab-hint small" role="status">{labHint(state)}</p>}
     <p className="lab-message small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</p>
     {state.won && <div className="lab-win panel" data-testid="lab-win"><h3>Challenge complete ✓</h3><p className="small">Practice complete — no campaign progress changed.</p><div className="lab-controls"><button type="button" onClick={onBack}>Lab menu</button>{next && <button type="button" className="primary" onClick={() => onNext(next)}>Next mechanic →</button>}</div></div>}

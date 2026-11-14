@@ -118,7 +118,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         />
       )}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
-      {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
+      {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && (
         <PlayScreen
           key={def.id}
