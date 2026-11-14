@@ -9,10 +9,11 @@
  *    entries are then refined for max-min separation and re-ordered so any prefix is a well-spread palette.
  * 3. A puzzle's distinct sequences (target pieces and decoys — symbols are already one-per-sequence) are
  *    sorted by sequence and given palette entries 0…n−1. The same sequence therefore has the same colour
- *    everywhere in that puzzle (board, target strip, inspector), and no two sequences share a colour.
+ *    everywhere in that puzzle (board and target strip), and no two sequences share a colour.
  * Every combo uses carbon ink text and a 1px edge in a deeper tone of its own hue. Single-base levels are untouched.
  */
 import type { LevelDefinition } from './types.ts';
+import { TOKEN_PALETTE } from './tokenPalette.generated.ts';
 
 export interface TokenColour {
   /** Tile / chip background. */
@@ -109,10 +110,13 @@ export const SURFACE_COLOURS = ['#f7f7f5', '#ffffff', '#efefea', '#e8e8e2', '#d4
 export const MIN_SURFACE_DELTA = 6;
 const SURFACES = SURFACE_COLOURS.map(hexToOklab);
 
-let palette: TokenColour[] | null = null;
-/** The ordered palette (farthest-point order over the pastel, ink-legible OKLCH grid). Computed once. */
-export function tokenPalette(): readonly TokenColour[] {
-  if (palette) return palette;
+let computed: TokenColour[] | null = null;
+/**
+ * Build the ordered palette (farthest-point order over the pastel, ink-legible OKLCH grid).
+ * Expensive (~seconds on a phone): used only by the generator. Runtime reads the pinned snapshot.
+ */
+export function computeTokenPalette(): readonly TokenColour[] {
+  if (computed) return computed;
   const cands: TokenColour[] = [];
   for (let L = PASTEL.minL; L <= PASTEL.maxL + 1e-9; L += 0.02) for (let C = PASTEL.minC; C <= PASTEL.maxC + 1e-9; C += 0.01) for (let h = 0; h < 360; h += 4) {
     // Soft, not neon: the colour must sit well inside the sRGB gamut at its hue and lightness.
@@ -168,8 +172,13 @@ export function tokenPalette(): readonly TokenColour[] {
     seed = 0;
     left.forEach((c, i) => { const d = Math.min(...coreOrder.map((o) => deltaE(c.lab, o.lab))); if (d > bd) { bd = d; seed = i; } });
   }
-  palette = [...coreOrder, ...order.filter((c) => !core.includes(c))];
-  return palette;
+  computed = [...coreOrder, ...order.filter((c) => !core.includes(c))];
+  return computed;
+}
+
+/** Pinned palette shipped with the build (D-M4-18). First token-level load must not compute this. */
+export function tokenPalette(): readonly TokenColour[] {
+  return TOKEN_PALETTE;
 }
 
 const cache = new WeakMap<LevelDefinition, Readonly<Record<string, TokenColour>>>();

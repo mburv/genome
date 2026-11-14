@@ -39,22 +39,6 @@ function Strip({ track, ok, testId }: { track: Track; ok: boolean[]; testId?: st
   );
 }
 
-/** The full coding sequence a token level spells, piece by piece (matched pieces highlighted). */
-function FullSequence({ def, custom, matches }: { def: LevelDefinition; custom: CustomTokens; matches: boolean[][] }) {
-  return (
-    <div className="full-seq mono tiny" data-testid="target-sequence" aria-label="Full target sequence">
-      {def.tracks.map((t, ti) => (
-        <span key={t.group} className="full-part">
-          {ti > 0 && <span className="muted"> + </span>}
-          {t.expected.split('').map((sym, i) => (
-            <span key={i} className={`full-piece ${matches[ti]?.[i] ? 'ok' : ''}`} style={tokenStyle(def, sym)}><SeqLetters seq={symbolSequence(def, custom, sym)} /></span>
-          ))}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /** Mode-specific target read-out with live per-cell matches. */
 export function TargetPanel({ custom = {}, ...p }: Props) {
   return (
@@ -67,7 +51,6 @@ export function TargetPanel({ custom = {}, ...p }: Props) {
 function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: CustomTokens }) {
   const t0 = def.tracks[0]!;
   const toks = !!def.tokens;
-  const full = toks ? <FullSequence def={def} custom={custom} matches={matches} /> : null;
   const range = `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}`;
   const label = (
     <div className="row-between small">
@@ -91,7 +74,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
             <span className="muted tiny">complement</span>
           </div>
         </div>
-        {full}
       </section>
     );
   }
@@ -107,7 +89,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
             : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot">{solved ? def.repair.expected : '?'}</span>}
           <Strip track={b} ok={matches[1]!} /><b className="badge">{b.group}</b>
         </div>
-        {full}
       </section>
     );
   }
@@ -125,7 +106,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
             </span>
           ))}
         </div>
-        {full}
       </section>
     );
   }
@@ -135,7 +115,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
       <div className="seq-row">
         <b className="badge">{t0.group}</b><Strip track={t0} ok={matches[0]!} testId="target-strip" />
       </div>
-      {full}
     </section>
   );
 }

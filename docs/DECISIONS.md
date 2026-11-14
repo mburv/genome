@@ -236,4 +236,9 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
 
 - D-UI-16 The six-icon row and energy bar stay inside the under-board inset, and an armed power’s panel replaces that whole block.
   - The row and energy meter share the under-board section’s left and right inset (the same `--pad` as other non-board chrome), and their left and right edges line up with each other. The row is a bordered grid of `minmax(0, 1fr)` columns so six (or three) buttons fit at 320, 375, 390 and 430 without spilling past the right edge — the earlier overflow was `width: 100%` plus `margin-inline` on the same element.
-  - While a power is armed, its preview panel replaces everything below the board (moves line, inspector, energy, icon row, hint bars). The target clue above the board stays put so the board does not jump. Cancel or confirm restores the under-board content.
+  - While a power is armed, its preview panel replaces everything below the board (moves line, energy, icon row, hint bars). The target clue above the board stays put so the board does not jump. Cancel or confirm restores the under-board content.
+
+- D-M4-18 The combo-tile colour palette is pinned at build time so the first multi-base chapter does not stall.
+  - `tokenPalette()` used to build a 5,000-colour OKLCH candidate set and farthest-point order on first use. That work is several seconds on a phone, and it first ran when the player opened INS 7/14 (the first token level after the 1-base intros). The same 66-colour core is now a generated snapshot (`tokenPalette.generated.ts`); `computeTokenPalette()` remains for regeneration only.
+- D-UI-17 The clue panel no longer has a full-sequence box, and the under-board tile inspector is gone.
+  - The grey `ATGGCC…` sequence readout under the clue strip is removed; the piece chips in the clue stay. The “tap a tile to inspect” box above the energy bar (decoy provenance, full sequence) is removed completely. Energy and icon-row alignment from D-UI-16 is unchanged.

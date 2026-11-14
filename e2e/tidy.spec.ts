@@ -215,3 +215,16 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await assertPlayScreenDecluttered(page, size.width);
   });
 }
+
+test('INS 7/14 has no full-sequence box or tile inspector under the board', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openChapter(page, 'ins-c01');
+  await expect(page.getByTestId('play-progress')).toHaveText('7/14');
+  await expect(page.getByTestId('target-panel')).toBeVisible();
+  await expect(page.getByTestId('target-sequence')).toHaveCount(0);
+  await expect(page.getByTestId('token-inspector')).toHaveCount(0);
+  await page.locator('.tile.tok').first().click();
+  await expect(page.getByTestId('token-inspector')).toHaveCount(0);
+  await expect(page.getByTestId('energy')).toBeVisible();
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-ins7-tidy-390x844.png' });
+});

@@ -8,7 +8,6 @@ import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/t
 import { CAMPAIGN_LEVELS, LAB_LEVELS, isDiscovered } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
-import { SeqLetters, tokenStyle } from './TokenFace.tsx';
 import { GENES } from '../genomics/genes.ts';
 import { recordAssembly, recordBest, recordCompletion, solvedDisplayState, type SaveData } from '../persistence/save.ts';
 import { Board, type MoveAnimation, type PowerPreview, type SlidePreview } from './Board.tsx';
@@ -384,8 +383,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         {best && <span className="muted" data-testid="best">Best {best.moves}</span>}
         <span className="muted">Selected R{Math.floor(selected / 9) + 1} · C{(selected % 9) + 1}</span>
       </div>
-      {def.tokens && puzzle.board[selected] !== '.' && <TokenInspector def={def} puzzle={puzzle} cell={selected} />}
-
       {!solvedView && (
         <PowerTray
           energy={energy}
@@ -441,27 +438,5 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         />
       )}
     </>
-  );
-}
-
-/** Tap-to-inspect: the full sequence and provenance of the selected multi-base tile. */
-function TokenInspector({ def, puzzle, cell }: { def: LevelDefinition; puzzle: PuzzleState; cell: Cell }) {
-  const sym = puzzle.board[cell]!;
-  const seq = symbolSequence(def, puzzle.custom, sym);
-  const t = def.tokens?.[sym];
-  const track = def.tracks.find((x) => x.cells.includes(cell));
-  const want = track ? symbolSequence(def, puzzle.custom, track.expected[track.cells.indexOf(cell)]!) : null;
-  const where = t?.kind === 'decoy' && t.source
-    ? `decoy — real ${def.symbol} CDS ${t.source.start + 1}–${t.source.end}, not part of this target`
-    : t?.kind === 'target' ? (t.strand === 'complement' ? 'target piece (aligned complement)' : `target piece — ${def.symbol} CDS ${t.source!.start + 1}–${t.source!.end}`)
-      : 'edited by CRISPR (not reference sequence)';
-  return (
-    <div className="inspector small" data-testid="token-inspector" aria-live="polite">
-      <span className="insp-head">
-        <span className={`tok-chip insp-chip ${t ? '' : 'edited'}`} style={tokenStyle(def, sym)} data-testid="inspector-chip" data-seq={seq}>{symbolLabel(def, puzzle.custom, sym)}</span>
-        <span className="mono seq"><SeqLetters seq={seq} group={3} /></span>
-      </span>
-      <span className="muted">{seq.length} bases · {where}{want ? ` · target here: ${want === seq ? '✓ match' : want}` : ''}</span>
-    </div>
   );
 }

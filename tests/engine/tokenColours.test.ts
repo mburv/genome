@@ -29,7 +29,7 @@ describe('combo palette', () => {
   it('is large enough for every puzzle and every entry is legible (ink ≥ 7:1, badges ≥ 4.5:1)', () => {
     const maxDistinct = Math.max(...CHAPTER_LEVELS.map((l) => Object.keys(l.tokens!).length));
     expect(CORE_SIZE).toBeGreaterThanOrEqual(maxDistinct);
-    expect(pal.length).toBeGreaterThan(maxDistinct * 4);
+    expect(pal.length).toBe(CORE_SIZE);
     for (const c of pal) {
       expect(c.bg).toMatch(HEX);
       expect(c.border).toMatch(HEX);

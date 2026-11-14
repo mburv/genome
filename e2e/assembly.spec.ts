@@ -28,7 +28,7 @@ test('map shows the gene catalogue with its count from the manifest, chapter nod
   await expect(page.locator('.node.lab')).toHaveCount(3);
 });
 
-test('long-token level: readable tiles, tap-to-inspect, drag-solve with hints; finishing the chapter assembles INS', async ({ page }) => {
+test('long-token level: readable tiles, drag-solve with hints; finishing the chapter assembles INS', async ({ page }) => {
   const ins = chapterOf('INS');
   const last = ins.at(-1)!;
   expect(last.tier).toBe(12);
@@ -42,8 +42,8 @@ test('long-token level: readable tiles, tap-to-inspect, drag-solve with hints; f
   const seq = (await tile.getAttribute('data-seq'))!;
   expect(seq).toMatch(/^[ACGT]+$/);
   await tile.click();
-  await expect(page.getByTestId('token-inspector')).toContainText(`${seq.length} bases`);
-  await expect(page.getByTestId('target-sequence')).toBeVisible();
+  await expect(page.getByTestId('token-inspector')).toHaveCount(0);
+  await expect(page.getByTestId('target-sequence')).toHaveCount(0);
   await solveWithHints(page);
   await expect(page.getByTestId('win-meta')).toContainText('INS 14/14');
   await expect(page.getByTestId('assembled')).toContainText('INS assembled');
@@ -121,7 +121,7 @@ test('an M3 (v3) save upgrades to v6, keeps intro completions and lab credit, wi
   await expect(page.getByTestId('cat-progress-INS')).toContainText('33 / 333');
 });
 
-test('each multi-base combo has its own colour, identical on the board, in the target strip and in the inspector', async ({ page }) => {
+test('each multi-base combo has its own colour, identical on the board and in the target strip', async ({ page }) => {
   const def = CHAPTERS.find((l) => l.tier === 6 && l.mode === 'sequence')!;
   await fresh(page);
   await openMap(page);
@@ -137,10 +137,5 @@ test('each multi-base combo has its own colour, identical on the board, in the t
   expect(new Set(bySeq.values()).size).toBe(bySeq.size);
   const chips = await page.locator('[data-testid="target-panel"] .tok-chip').evaluateAll((els) => els.map((e) => ({ seq: e.getAttribute('data-seq')!, bg: getComputedStyle(e).backgroundColor })));
   for (const c of chips) if (bySeq.has(c.seq)) expect(c.bg).toBe(bySeq.get(c.seq));
-  const tile = page.locator('.tile.tok').first();
-  const seq = (await tile.getAttribute('data-seq'))!;
-  await tile.click();
-  const chip = page.getByTestId('inspector-chip');
-  await expect(chip).toHaveAttribute('data-seq', seq);
-  expect(await chip.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(bySeq.get(seq));
+  await expect(page.getByTestId('token-inspector')).toHaveCount(0);
 });
