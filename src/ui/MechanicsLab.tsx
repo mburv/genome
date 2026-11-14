@@ -167,14 +167,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
     : state.cuts.length + '/2 cuts';
   return <section className="mechanics-play" data-testid="mechanics-play">
     <div className="mechanic-heading"><button type="button" onClick={onBack} aria-label="Back to Mechanics Lab">← Lab</button><div><h2 className="gene">{meta.title}</h2><span className="muted tiny">CHALLENGE {index + 1}/6 · INS</span></div></div>
-    <p className="mechanic-instructions">{meta.instructions}</p>
+    {id !== 'mutation' && <p className="mechanic-instructions">{meta.instructions}</p>}
     <div className="mechanic-target">
       <div className="row-between"><b className="small">{id === 'crush' ? 'Next codon' : 'Objective'}</b><span className="small muted" data-testid="lab-progress">{progress}</span></div>
       {id === 'trace' && <div className="lab-sequence">{[...target].map((b, i) => <span key={i} className={'b-' + b + (i < state.trace.length ? ' done' : '')}>{b}</span>)}</div>}
       {id === 'crush' && <div className="lab-codons">{CRUSH_TARGETS.map((c, i) => <span key={i} className={i < state.collected ? 'done' : i === state.collected ? 'current' : ''}>{c}</span>)}</div>}
       {id === 'assembly' && <><div className="small muted">Reference sequence · 5′ → 3′</div><div className="lab-sequence assembly-reference" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={'b-' + b + (state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} aria-label={'Slot ' + (i + 1) + ': ' + b}>{b}<small>{i + 1}</small></span>)}</div></>}
-      {id === 'mutation' && <div className="mutation-reference" data-testid="mutation-reference">
-        <div className="small muted">Target complementary strands · 3′ → 5′</div>
+      {id === 'mutation' && <div className="mutation-reference" data-testid="mutation-reference" role="group" aria-label="Target complementary strands, 3 prime to 5 prime">
         {MUTATION_ROWS.map(({ bottom, seq }) => {
           const row = Math.floor(bottom / 9) + 1;
           return <div className="mutation-reference-row" key={bottom}>
@@ -186,7 +185,6 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
             })}
           </div>;
         })}
-        <div className="tiny muted">Green underline = correct · Red outline = needs repair</div>
       </div>}
       {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i], background: pathFills[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
       {id === 'restriction' && <div className="mono small restriction-target" data-testid="restriction-target" aria-label={'Target sequence: ' + target}>{[...target].map((b, i) => <span key={i} className={'restriction-target-base b-' + b} data-base={b}>{b}</span>)}</div>}
