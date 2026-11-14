@@ -62,18 +62,56 @@ test('Genome Assembly aligns overlapping reads on the board', async ({ page }) =
 
 test('Mutation Detective repairs each complementary mismatch', async ({ page }) => {
   await openLab(page, 'mutation');
+  const target = page.getByTestId('mutation-reference');
+  await expect(target).toBeVisible();
+  await expect(target.locator('.mutation-reference-row')).toHaveCount(3);
+  await expect(target.locator('.mutation-target-base')).toHaveCount(21);
+  await expect(target.locator('.mismatch')).toHaveCount(5);
+  await expect(page.locator('.lab-cell.mutation-mismatch')).toHaveCount(5);
+  // Compare every displayed target with the fixed reference strand directly above it.
+  for (const c of [19,20,21,22,23,24,25,46,47,48,49,50,51,52,73,74,75,76,77,78,79]) {
+    const ref = await tile(page,c-9).getAttribute('data-base');
+    const want = ({ A:'T',T:'A',C:'G',G:'C' } as Record<string,string>)[ref!]!;
+    await expect(page.getByTestId('mutation-target-' + c)).toHaveText(want);
+  }
   for (const c of [20,23,48,74,78]) {
     const b = await tile(page,c-9).getAttribute('data-base');
     const comp = ({ A:'T',T:'A',C:'G',G:'C' } as Record<string,string>)[b!]!;
-    await tap(page,c); await page.getByTestId('lab-base-' + comp).tap();
+    await tap(page,c);
+    await expect(page.getByTestId('mutation-selection')).toContainText('Target ' + comp);
+    await page.getByTestId('lab-base-' + comp).tap();
+    await expect(page.getByTestId('mutation-target-' + c)).toHaveClass(/matched/);
   }
   await won(page);
+  await expect(target.locator('.matched')).toHaveCount(21);
+  await expect(target.locator('.mismatch')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(target.locator('.mismatch')).toHaveCount(1);
 });
 
 test('DNA Connections draws three noncrossing touch paths', async ({ page }) => {
   await openLab(page, 'connections');
-  for (const path of [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]]) await trace(page,path);
+  const paths = [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]];
+  const color = (c: number) => tile(page,c).evaluate(el => getComputedStyle(el).backgroundColor);
+  const colors = await Promise.all(paths.map(p => color(p[0]!)));
+  expect(new Set(colors).size).toBe(3);
+  for (let i = 0; i < paths.length; i++) {
+    const path = paths[i]!;
+    const start = path[0]!, end = path.at(-1)!, middle = path[1]!;
+    await expect(tile(page,start)).toHaveAttribute('data-connection-pair', String(i + 1));
+    expect(await color(end)).toBe(colors[i]);
+    expect(await color(middle)).not.toBe(colors[i]);
+    await trace(page,path);
+    await expect(tile(page,middle)).toHaveAttribute('data-connection-pair', String(i + 1));
+    expect(await color(middle)).toBe(colors[i]);
+  }
   await won(page);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/3 pairs');
+  // Re-start the third route: old path squares immediately lose their colour.
+  await tap(page,55);
+  await expect(tile(page,64)).not.toHaveAttribute('data-connection-pair', '3');
+  expect(await color(64)).not.toBe(colors[2]);
 });
 
 test('Restriction Enzyme isolates the fragment, and replay clears the cuts', async ({ page }) => {
