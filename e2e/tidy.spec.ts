@@ -1,7 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { completedLevelSave, expectSampleHeading, fresh, openCompleted, openLevel } from './helpers';
+import { completedLevelSave, expectSampleHeading, fresh, openCompleted, openLevel, openMap } from './helpers';
 
 const def = (pack.levels as LevelDefinition[])[0]!;
 
@@ -98,5 +98,70 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     if (size.width === 390) {
       await page.screenshot({ path: '/workspace/game/screenshots/genome-tidy-solved-390x844.png' });
     }
+  });
+}
+
+const NOTE_FRAGMENTS = [
+  'illustrative',
+  'exon boundaries',
+  'Pieces join in order',
+  'Tiles match by sequence',
+  'Aligned complement',
+  'reference assembly gap',
+  'Only strand 1 counts',
+  'Read left',
+  'Read top',
+];
+
+async function assertCluePanelClean(page: Page, width: number) {
+  const panel = page.getByTestId('target-panel');
+  await expect(panel).toBeVisible();
+  for (const text of NOTE_FRAGMENTS) await expect(panel).not.toContainText(text);
+  const metrics = await page.evaluate(() => {
+    const target = document.querySelector('[data-testid="target-panel"]') as HTMLElement;
+    const header = document.querySelector('.top') as HTMLElement;
+    const board = document.querySelector('[data-testid="board"]') as HTMLElement;
+    const cs = getComputedStyle(target);
+    const t = target.getBoundingClientRect();
+    const h = header.getBoundingClientRect();
+    const b = board.getBoundingClientRect();
+    return {
+      borderTopWidth: cs.borderTopWidth,
+      overflow: target.scrollWidth - target.clientWidth,
+      target: { x: t.x, y: t.y, width: t.width, bottom: t.bottom },
+      headerBottom: h.bottom,
+      boardTop: b.y,
+      boardWidth: b.width,
+      pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+    };
+  });
+  expect(metrics.borderTopWidth).toBe('0px');
+  expect(metrics.overflow).toBeLessThanOrEqual(0);
+  expect(metrics.pageOverflow).toBeLessThanOrEqual(0);
+  expect(metrics.target.x).toBeGreaterThanOrEqual(0);
+  expect(metrics.target.x + metrics.target.width).toBeLessThanOrEqual(width);
+  const gap = metrics.target.y - metrics.headerBottom;
+  expect(gap).toBeGreaterThanOrEqual(6);
+  expect(gap).toBeLessThanOrEqual(16);
+  expect(metrics.boardTop).toBeGreaterThan(metrics.target.y + 8);
+  expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
+}
+
+for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
+  test(`clue panel has no footer note or top divider at ${size.width}x${size.height}`, async ({ page }) => {
+    await page.setViewportSize(size);
+    // Sample modes: sequence, splice, replicate, repair.
+    for (const n of [1, 2, 3, 4]) {
+      await openLevel(page, n);
+      await assertCluePanelClean(page, size.width);
+      if (size.width === 390 && n === 2) {
+        await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-390x844.png' });
+      }
+    }
+    // An assembly chapter uses the same panel (the token sequencing note would have lived here).
+    await openMap(page);
+    await page.getByTestId('cnode-ins-c01').click();
+    await page.getByTestId('target-panel').waitFor();
+    await assertCluePanelClean(page, size.width);
   });
 }

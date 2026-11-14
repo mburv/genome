@@ -61,7 +61,8 @@ test('splicing level: three numbered pieces; replication: dashed complement stra
   await openLevel(page, 2);
   await expectSampleHeading(page, 2);
   await expect(page.locator('.track-outline')).toHaveCount(LEVELS[1]!.tracks.length);
-  await expect(page.getByTestId('target-panel')).toContainText('illustrative');
+  await expect(page.getByTestId('target-panel')).not.toContainText('illustrative');
+  await expect(page.getByTestId('target-panel')).not.toContainText('Pieces join in order');
   await openMap(page);
   await page.getByRole('button', { name: /^Level 3: / }).click();
   await expectSampleHeading(page, 3);

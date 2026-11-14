@@ -55,8 +55,6 @@ function FullSequence({ def, custom, matches }: { def: LevelDefinition; custom: 
   );
 }
 
-const readLabel = (t: Track): string => (t.orientation === 'horizontal' ? 'left → right' : 'top → bottom');
-
 /** Mode-specific target read-out with live per-cell matches. */
 export function TargetPanel({ custom = {}, ...p }: Props) {
   return (
@@ -94,7 +92,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
           </div>
         </div>
         {full}
-        <p className="muted tiny">Aligned complement (A–T, C–G), read {readLabel(a)} on the board. Only strand 1 counts toward coverage.</p>
       </section>
     );
   }
@@ -111,7 +108,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
           <Strip track={b} ok={matches[1]!} /><b className="badge">{b.group}</b>
         </div>
         {full}
-        <p className="muted tiny">Read {readLabel(t0)}. The missing {toks ? 'piece' : 'base'} is a reference assembly gap (not a mutation); it is restored when both sides match.</p>
       </section>
     );
   }
@@ -130,7 +126,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
           ))}
         </div>
         {full}
-        <p className="muted tiny">Pieces join in order when all match. The split is illustrative, not real exon boundaries.</p>
       </section>
     );
   }
@@ -141,7 +136,6 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
         <b className="badge">{t0.group}</b><Strip track={t0} ok={matches[0]!} testId="target-strip" />
       </div>
       {full}
-      <p className="muted tiny">Read {readLabel(t0)}.{toks ? ' Tiles match by sequence, not by label.' : ''}</p>
     </section>
   );
 }
