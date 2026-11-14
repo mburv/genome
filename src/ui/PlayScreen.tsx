@@ -376,6 +376,9 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       )}
       </div>
 
+      <div className="under-board" data-testid="under-board">
+      {panel ?? (
+        <>
       <div className="row-between small meta">
         <span data-testid="moves">{puzzle.moves} {puzzle.moves === 1 ? 'move' : 'moves'}</span>
         {best && <span className="muted" data-testid="best">Best {best.moves}</span>}
@@ -404,7 +407,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         />
       )}
 
-      {!solvedView && panel}
       {activeHint?.kind === 'undo' && !solvedView && (
         <div className="solved-bar">
           <button type="button" className="primary" onClick={() => rewind(activeHint.count)} data-testid="rewind">Undo ×{activeHint.count}</button>
@@ -416,6 +418,9 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           <button type="button" className="primary" onClick={() => dispatch({ type: 'restart' })} data-testid="restart-hint">Restart (free)</button>
         </div>
       )}
+        </>
+      )}
+      </div>
 
 
       {celebrate && (

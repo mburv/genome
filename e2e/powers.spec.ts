@@ -22,31 +22,53 @@ test('opening puzzle hides powers; later puzzles show ⚡2 and unaffordable powe
   await expect(page.getByTestId('energy')).toContainText('2');
 });
 
-test('energy bar spans the tray and six equal icon buttons fit at 320 and 390', async ({ page }) => {
-  for (const width of [320, 390] as const) {
+function underBoardMetrics() {
+  const app = document.querySelector('.app') as HTMLElement;
+  const under = document.querySelector('[data-testid="under-board"]') as HTMLElement;
+  const energy = document.querySelector('[data-testid="energy"]') as HTMLElement;
+  const pips = energy.querySelector('.pips') as HTMLElement;
+  const row = document.querySelector('[data-testid="icon-row"]') as HTMLElement;
+  const buttons = [...row.querySelectorAll('button')];
+  const a = app.getBoundingClientRect();
+  const u = under.getBoundingClientRect();
+  const e = energy.getBoundingClientRect();
+  const p = pips.getBoundingClientRect();
+  const r = row.getBoundingClientRect();
+  return {
+    appLeft: a.left,
+    appRight: a.right,
+    underLeft: u.left,
+    underRight: u.right,
+    energyLeft: e.left,
+    energyRight: e.right,
+    energyW: e.width,
+    pipsW: p.width,
+    rowLeft: r.left,
+    rowRight: r.right,
+    rowW: r.width,
+    ids: buttons.map((b) => b.getAttribute('data-testid')),
+    buttons: buttons.map((b) => {
+      const box = b.getBoundingClientRect();
+      return { w: box.width, h: box.height };
+    }),
+  };
+}
+
+test('energy bar and six icon buttons fit inside the under-board section at 320, 375, 390 and 430', async ({ page }) => {
+  for (const width of [320, 375, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
     await openChapter(page, 'ins-02');
-    const metrics = await page.evaluate(() => {
-      const tray = document.querySelector('[data-testid="power-tray"]') as HTMLElement;
-      const energy = document.querySelector('[data-testid="energy"]') as HTMLElement;
-      const pips = energy.querySelector('.pips') as HTMLElement;
-      const row = document.querySelector('[data-testid="icon-row"]') as HTMLElement;
-      const buttons = [...row.querySelectorAll('button')];
-      const t = tray.getBoundingClientRect();
-      const e = energy.getBoundingClientRect();
-      const p = pips.getBoundingClientRect();
-      return {
-        trayW: t.width,
-        energyW: e.width,
-        pipsW: p.width,
-        ids: buttons.map((b) => b.getAttribute('data-testid')),
-        buttons: buttons.map((b) => {
-          const box = b.getBoundingClientRect();
-          return { w: box.width, h: box.height };
-        }),
-      };
-    });
-    expect(Math.abs(metrics.energyW - metrics.trayW)).toBeLessThan(2);
+    const metrics = await page.evaluate(underBoardMetrics);
+    expect(metrics.rowRight, `row overflows at ${width}`).toBeLessThanOrEqual(metrics.underRight + 0.5);
+    expect(metrics.energyRight, `energy overflows at ${width}`).toBeLessThanOrEqual(metrics.underRight + 0.5);
+    expect(Math.abs(metrics.rowLeft - metrics.underLeft), `row left inset at ${width}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(metrics.underRight - metrics.rowRight), `row right inset at ${width}`).toBeLessThanOrEqual(1);
+    expect(Math.abs((metrics.rowLeft - metrics.appLeft) - (metrics.appRight - metrics.rowRight)), `row left/right insets differ at ${width}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(metrics.energyLeft - metrics.rowLeft), `energy/row left edges differ at ${width}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(metrics.energyRight - metrics.rowRight), `energy/row right edges differ at ${width}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(metrics.energyLeft - metrics.underLeft), `energy left inset at ${width}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(metrics.underRight - metrics.energyRight), `energy right inset at ${width}`).toBeLessThanOrEqual(1);
+    expect(Math.abs((metrics.energyLeft - metrics.appLeft) - (metrics.appRight - metrics.energyRight)), `energy left/right insets differ at ${width}`).toBeLessThanOrEqual(1);
     expect(metrics.pipsW).toBeGreaterThan(metrics.energyW * 0.6);
     expect(metrics.ids).toEqual(['power-crispr', 'power-ligase', 'power-scaffold', 'action-undo', 'action-hint', 'action-restart']);
     expect(metrics.buttons).toHaveLength(6);
@@ -54,9 +76,53 @@ test('energy bar spans the tray and six equal icon buttons fit at 320 and 390', 
     expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
     for (const b of metrics.buttons) expect(b.h).toBeGreaterThanOrEqual(44);
     if (width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-icon-row-390x844.png' });
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-icon-row-fit-390x844.png' });
     }
   }
+});
+
+test('arming a power replaces all under-board content with the panel; cancel and confirm restore it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openLab(page, 1);
+  const boardY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
+  await expect(page.getByTestId('icon-row')).toBeVisible();
+  await expect(page.getByTestId('energy')).toBeVisible();
+  await expect(page.getByTestId('moves')).toBeVisible();
+  await page.getByTestId('power-crispr').click();
+  await expect(page.getByTestId('power-panel')).toBeVisible();
+  await expect(page.getByTestId('icon-row')).toHaveCount(0);
+  await expect(page.getByTestId('energy')).toHaveCount(0);
+  await expect(page.getByTestId('moves')).toHaveCount(0);
+  await expect(page.getByTestId('power-tray')).toHaveCount(0);
+  const afterArmY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
+  expect(Math.abs(afterArmY - boardY)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-power-panel-390x844.png' });
+  await page.getByTestId('power-cancel').click();
+  await expect(page.getByTestId('power-panel')).toHaveCount(0);
+  await expect(page.getByTestId('icon-row')).toBeVisible();
+  await expect(page.getByTestId('energy')).toBeVisible();
+  await expect(page.getByTestId('moves')).toBeVisible();
+  const afterCancelY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
+  expect(Math.abs(afterCancelY - boardY)).toBeLessThanOrEqual(1);
+
+  const target = Number(await page.locator('.tile.goal.off').first().getAttribute('data-cell'));
+  await page.getByTestId('power-crispr').click();
+  await page.locator(`[data-cell="${target}"]`).click();
+  await expect(page.getByTestId('power-panel')).toBeVisible();
+  await expect(page.getByTestId('icon-row')).toHaveCount(0);
+  await page.getByTestId('power-cancel').click();
+  await expect(page.getByTestId('icon-row')).toBeVisible();
+
+  const before = await baseAt(page, target);
+  const other = ['A', 'C', 'G', 'T'].find((b) => b !== before)!;
+  await page.getByTestId('power-crispr').click();
+  await page.locator(`[data-cell="${target}"]`).click();
+  await page.getByTestId(`base-${other}`).click();
+  await page.getByTestId('power-confirm').click();
+  await expect(page.getByTestId('power-panel')).toHaveCount(0);
+  await expect(page.getByTestId('icon-row')).toBeVisible();
+  await expect(page.getByTestId('energy')).toBeVisible();
+  await expect(page.getByTestId('moves')).toBeVisible();
 });
 
 test('map has an optional Enzyme lab with three powers', async ({ page }) => {

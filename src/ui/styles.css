@@ -330,17 +330,20 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .card-meta dd { margin: 0; overflow-wrap: anywhere; }
 .seq-wrap { white-space: pre; overflow-x: auto; }
 
-/* ---------- Enzyme tray + action icons (D-UI-15) ---------- */
-.tray { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-.energy { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 13px; color: var(--ink); font-weight: 700; }
+/* ---------- Under-board tray + action icons (D-UI-15, D-UI-16) ---------- */
+/* Do not set width: 100% on a direct .app child — it already has margin-inline: var(--pad),
+   and 100% + those margins overflow the right edge (visible on iPhone Safari). */
+.under-board { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tray { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.energy { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; font-size: 13px; color: var(--ink); font-weight: 700; }
 .energy .bolt { display: grid; place-items: center; flex: none; color: var(--amber); }
 .energy b { font-size: 15px; min-width: 1.1em; flex: none; }
 .pips { display: flex; flex: 1; gap: 2px; min-width: 0; }
-.pips i { flex: 1; height: 8px; background: var(--stone); border: 1px solid var(--rule); }
+.pips i { flex: 1; min-width: 0; height: 8px; box-sizing: border-box; background: var(--stone); border: 1px solid var(--rule); }
 .pips i.on { background: var(--butter); border-color: var(--butter-edge); }
-.icon-row { display: flex; width: 100%; gap: 0; }
-.icon-row .icon-btn { flex: 1 1 0; min-width: 0; min-height: 44px; height: 48px; padding: 4px 0 3px; border-radius: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-.icon-row .icon-btn + .icon-btn { border-left: 0; }
+.icon-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--ink); }
+.icon-row .icon-btn { min-width: 0; min-height: 44px; height: 48px; padding: 4px 0 3px; border: 0; border-right: 1px solid var(--ink); border-radius: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.icon-row .icon-btn:last-child { border-right: 0; }
 .icon-row .icon-btn svg { display: block; flex: none; }
 .icon-row .p-cost { font-size: 9px; line-height: 1; color: var(--amber); font-weight: 700; letter-spacing: 0.02em; }
 .icon-row .p-cost.free { color: var(--green); letter-spacing: 0.04em; }
