@@ -297,3 +297,8 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
 ### D-UI-31 — Persistent hint toggle
 
 Owner playtest request (14 Nov 2026): Hint is an on/off toggle, not a one-shot action. Enabled mode persists across moves, undo, restart, power actions, and level navigation in the current app session; power targeting temporarily suppresses the cue. New app launches default to off (initial tutorial cue preserved until explicit choice). Guidance is recomputed from the committed board, with certified recovery or existing bounded-search/recovery fallbacks. No saved-progress format changes.
+
+
+### D-LAB-01 — Six-mechanic experimental lab
+
+Owner approved all six new mechanics (14 Nov 2026): DNA Tracing, Codon Crush, Genome Assembly, Mutation Detective, DNA Connections and Restriction Enzyme. Each is a standalone, fixed 9×9 introductory challenge with reference INS data and deterministic solution fixtures. Gravity/refill is allowed only in Codon Crush. No campaign credit, no existing level replacement, no saved-progress migration; practice attempts are session-local and reset on navigation. Lab controls provide undo, replay and hints; they do not consume the campaign power economy. Full campaign integration, procedural generation, difficulty calibration and mechanic-specific powers require playtest feedback.

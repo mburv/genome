@@ -727,3 +727,49 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* Tiny strand dots (gene cards, win card): the pastel edge tones read better than fills at 5px. */
 .dot.b-A, .dot.b-C, .dot.b-G, .dot.b-T { border: 0; }
 .dot.b-A { background: var(--A-edge); } .dot.b-C { background: var(--C-edge); } .dot.b-G { background: var(--G-edge); } .dot.b-T { background: var(--T-edge); }
+
+/* Mechanics Lab — independent 9×9 practice challenges. */
+.mechanics-menu, .mechanics-play { display: flex; flex-direction: column; gap: 8px; }
+.mechanics-menu p, .mechanics-play p { margin: 0; }
+.mechanic-entry { display: grid; grid-template-columns: 36px 1fr 20px; align-items: center; gap: 8px; text-align: left; min-height: 64px; border-color: var(--rule); }
+.mechanic-entry small { display: block; font-size: 11px; color: var(--graphite); }
+.mechanic-icon { background: var(--mint); border: 1px solid var(--mint-edge); display: grid; place-items: center; width: 34px; height: 34px; font-size: 22px; }
+.mechanic-heading { display: flex; align-items: center; gap: 10px; }
+.mechanic-heading button { padding: 6px 9px; }
+.mechanic-instructions { font-size: 12px; line-height: 1.35; }
+.mechanic-target { background: var(--white); border: 1px solid var(--rule); padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+.lab-sequence, .lab-codons { display: flex; flex-wrap: wrap; gap: 3px; font: 700 12px var(--mono); }
+.lab-sequence span, .lab-codons span { padding: 4px 5px; border: 1px solid var(--rule); }
+.lab-sequence .done, .lab-codons .done { opacity: .48; text-decoration: line-through; }
+.lab-codons .current { border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--mint-edge); }
+.mechanics-board { position: relative; align-self: center; width: min(100%, 420px, calc(100svh - 300px)); min-width: min(100%, 270px); aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); gap: 1px; background: var(--rule); touch-action: none; user-select: none; }
+.lab-cell, .lab-hole { min-width: 0; min-height: 0; border-radius: 0; }
+.lab-hole { background: var(--hole); }
+.lab-cell { position: relative; padding: 0; display: grid; place-items: center; background: var(--white); border: 1px solid var(--rule); font: 700 clamp(10px, 3.4vw, 16px) var(--mono); touch-action: none; }
+.lab-cell.b-A { background: var(--A); border-color: var(--A-edge); }
+.lab-cell.b-C { background: var(--C); border-color: var(--C-edge); }
+.lab-cell.b-G { background: var(--G); border-color: var(--G-edge); }
+.lab-cell.b-T { background: var(--T); border-color: var(--T-edge); }
+.lab-cell span { position: relative; z-index: 2; }
+.lab-cell small { position: absolute; z-index: 3; top: 1px; right: 1px; font-size: 8px; line-height: 1; color: var(--ink); background: var(--paper); }
+.lab-cell.selected { box-shadow: inset 0 0 0 2px var(--ink); }
+.lab-cell.traced { box-shadow: inset 0 0 0 2px var(--blue); }
+.lab-cell.reference { opacity: .72; }
+.lab-cell.assembly-slot { border: 1px dashed var(--ink); }
+.lab-cell.cut { border: 2px dashed var(--red); }
+.lab-cell.fresh { animation: lab-refill .25s ease-out both; }
+@keyframes lab-refill { from { transform: translateY(-6px); opacity: .5; } to { transform: none; opacity: 1; } }
+.app.reduced-motion .lab-cell.fresh { animation: none; }
+@media (prefers-reduced-motion: reduce) { .lab-cell.fresh { animation: none; } }
+.lab-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.lab-lines polyline { fill: none; stroke-width: .26; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.lab-lines .cut-line { stroke-width: .09; opacity: .7; }
+.mode-lab-connections .lab-cell { font-size: clamp(8px, 2.4vw, 12px); }
+.mode-lab-connections .lab-cell.routed { background: var(--stone); }
+.lab-base-picker, .lab-controls { display: flex; gap: 5px; }
+.lab-base-picker button, .lab-controls button { flex: 1; min-height: 40px; padding: 5px 4px; }
+.lab-base-picker button { font-weight: 700; }
+.lab-message { min-height: 17px; }
+.lab-hint { padding: 5px 8px; border-left: 3px solid var(--sky-edge); background: var(--sky); }
+.lab-win h3 { margin: 0 0 4px; font-size: 17px; }
+.lab-win .lab-controls { margin-top: 8px; }
