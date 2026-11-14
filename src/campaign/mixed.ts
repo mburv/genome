@@ -20,7 +20,7 @@ export function mixedStage(def: LevelDefinition): MixedStage | null {
   const start = def.sourceIntervals[0]!.start, end = def.sourceIntervals.at(-1)!.end;
   const sequence = INS.sequence.slice(start, end);
   const spec: LabSpec = { ...DEFAULT_LAB_SPEC };
-  let certificate: LabAction[] = [];
+  let certificate: LabAction[];
   if (mechanic === 'trace') {
     spec.TRACE_TARGET = sequence;
     spec.TRACE_PATH = sequence.length === 9 ? DEFAULT_LAB_SPEC.TRACE_PATH : snake(sequence.length, sequence.length === 27 ? 1 : 0);

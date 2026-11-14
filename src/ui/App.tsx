@@ -4,7 +4,7 @@ import { GENES } from '../genomics/genes.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { mixedStage, verifiedMixed, type Mechanic } from '../campaign/mixed.ts';
 import { MechanicTutorial } from './MechanicTutorial.tsx';
-import { recordAssembly, recordBest, recordCompletion, clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
+import { recordAssembly, recordCompletion, clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
 import { MapScreen } from './MapScreen.tsx';
 import { PlayScreen } from './PlayScreen.tsx';
@@ -63,7 +63,6 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     if (JSON.stringify(prior) !== JSON.stringify(actions)) next = { ...next, mixedAttempts: { ...next.mixedAttempts, [stage.id]: [...actions] } };
     if (verifiedMixed(stage, state)) {
       next = recordCompletion(next, stage.id);
-      next = recordBest(next, stage.id, { moves: state.moves, powersUsed: 0 });
       if (isDiscovered(next.completed, 'INS') && !next.discovered.includes('INS')) next = { ...next, discovered: [...next.discovered, 'INS'] };
       next = recordAssembly(next, 'INS');
     }

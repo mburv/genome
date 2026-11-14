@@ -5,7 +5,7 @@ import { type MixedStage } from '../campaign/mixed.ts';
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">
     <div className="row-between"><h2 className="gene">Mechanics Lab</h2><button type="button" onClick={onBack}>Map</button></div>
-    <p className="muted small">Six experimental puzzle types. All use a 9×9 board and reference DNA. Practice only; your gene campaign is unchanged.</p>
+    <p className="muted small">Six practice puzzle types. All use a 9×9 board and reference DNA. Practice here without changing your gene progress.</p>
     {LAB_IDS.map((id, i) => <button type="button" key={id} className="mechanic-entry" onClick={() => onPlay(id)} data-testid={'mechanic-' + id}>
       <span className="mechanic-icon">{LAB_META[id].icon}</span><span><b>{i + 1}. {LAB_META[id].title}</b><small>{LAB_META[id].short}</small></span><span aria-hidden="true">→</span>
     </button>)}
