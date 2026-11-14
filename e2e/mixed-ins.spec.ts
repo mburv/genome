@@ -216,3 +216,43 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   await expect(win).toHaveCount(0);
   await expect(page.getByTestId('solved-banner')).toBeVisible();
 });
+
+
+test('every new mechanic shares sliding layout, targets and toolbar on both phone sizes',async({page})=>{
+  await fresh(page,true);await openMap(page);
+  const stages=[['ins-02','trace'],['ins-03','connections'],['ins-04','assembly'],['ins-05','crush'],['ins-06','mutation'],['ins-c07','restriction']];
+  for(const size of [{width:390,height:844},{width:320,height:568}]){
+    await page.setViewportSize(size);await page.getByTestId('cnode-ins-01').click();
+    if(await page.getByTestId('mechanic-tutorial').isVisible())await page.getByTestId('tutorial-skip').click();
+    const classic=(await page.getByTestId('board').boundingBox())!;
+    await openMap(page);
+    for(const [id,kind] of stages){
+      await page.getByTestId('cnode-'+id).click();
+      if(await page.getByTestId('mechanic-tutorial').isVisible())await page.getByTestId('tutorial-skip').click();
+      await expect(page.getByTestId('play-title')).toHaveText('INS');
+      await expect(page.locator('.mechanic-heading,.mechanic-instructions,.mechanic-target')).toHaveCount(0);
+      const target=page.getByTestId('target-panel'), board=page.getByTestId('mechanics-board');
+      await expect(target).toBeVisible();
+      await expect(board.locator('[data-lab-cell]')).toHaveCount(81);
+      const bounds=(await board.boundingBox())!;
+      expect(Math.abs(bounds.width-classic.width)).toBeLessThan(1);
+      expect(Math.abs(bounds.x-classic.x)).toBeLessThan(1);
+      expect(Math.abs(bounds.width-bounds.height)).toBeLessThan(1);
+      expect(await target.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+      await expect(page.getByTestId('under-board').getByTestId('icon-row')).toBeVisible();
+      await expect(page.getByTestId('action-undo')).toBeDisabled();
+      await expect(page.getByTestId('action-restart')).toBeDisabled();
+      await expect(page.getByTestId('power-crispr')).toHaveCount(0);
+      if(kind==='connections'){
+        await expect(page.getByTestId('connection-target').locator('.connection-clue')).toHaveCount(3);
+        await tile(page,1).tap();await tile(page,2).tap();
+        await expect(page.getByTestId('action-undo')).toBeEnabled();
+        await page.getByTestId('action-undo').click();
+        await page.getByTestId('action-restart').click();
+        await expect(page.getByTestId('moves')).toHaveText('0 moves');
+      }
+      if(kind==='mutation')await expect(page.getByTestId('lab-base-A')).toBeVisible();
+      await openMap(page);
+    }
+  }
+});

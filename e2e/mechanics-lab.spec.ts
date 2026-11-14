@@ -9,6 +9,10 @@ async function openLab(page: Page, id: string) {
   await page.getByTestId('mechanic-' + id).click();
   await expect(page.getByTestId('mechanics-board')).toBeVisible();
   await expect(page.locator('[data-lab-cell]')).toHaveCount(81);
+  await expect(page.getByTestId('play-title')).toHaveText('INS');
+  await expect(page.getByTestId('play-progress')).toHaveText('PRACTICE');
+  await expect(page.getByTestId('target-panel')).toBeVisible();
+  await expect(page.getByTestId('icon-row')).toBeVisible();
 }
 const tile = (page: Page, c: number) => page.getByTestId('lab-cell-' + c);
 async function tap(page: Page, c: number) { await tile(page, c).tap(); }

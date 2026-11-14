@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, labHint, LAB_IDS, LAB_META, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
 import { TargetShell } from './TargetPanel.tsx';
 import { PowerTray } from './PowerTray.tsx';
 import { WinCard } from './WinCard.tsx';
@@ -70,8 +70,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   });
   const [selected, setSelected] = useState<number | null>(null);
   const [localHint, setHint] = useState(false);
-  const hint = id === 'trace' && campaign ? hintMode === true : localHint;
-  const toggleHint = () => { if (id === 'trace' && campaign && onHintModeChange) onHintModeChange(!hint); else setHint(v => !v); };
+  const hint = campaign ? hintMode === true : localHint;
+  const toggleHint = () => { if (campaign && onHintModeChange) onHintModeChange(!hint); else setHint(v => !v); };
   const gesture = useRef<{ pointer: number; start: number; last: number; pair: number; read: number; x: number; y: number; pitch: number } | null>(null);
   const [crushDrag, setCrushDrag] = useState<CrushDrag | null>(null);
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
@@ -202,7 +202,6 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   };
   const index = LAB_IDS.indexOf(id);
   const next = LAB_IDS[index + 1];
-  const target = id === 'crush' ? CRUSH_TARGETS.join(' ') : id === 'restriction' ? CUT_TARGET : '';
   const progress = id === 'trace' ? state.trace.length + '/' + TRACE_TARGET.length + ' bases'
     : id === 'crush' ? state.collected + '/' + CRUSH_TARGETS.length + ' codons'
     : id === 'assembly' ? state.placements.filter(p => p >= 0).length + '/3 reads'
@@ -210,7 +209,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     : id === 'connections' ? state.routes.filter((p, i) => p.at(-1) === CONNECTION_PAIRS[i]!.end).length + '/3 pairs'
     : state.cuts.length + '/2 cuts';
   const board = (
-    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (id === 'trace' ? ' board trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
+    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
         if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
@@ -259,45 +258,29 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const solved = state.won && winReady && !session.celebration &&
     <SolvedBanner def={winDef} moves={state.moves} unranked pulse={false} hasNext={hasNext}
       nextLabel={nextLabel} mapLabel={campaign?'Level map':'Lab menu'} onReplay={reset} onNext={advance} onMap={onBack} />;
-  // Tracing uses exactly the same screen chrome as a classic sliding level.
-  // Only the board interaction and the reference-progress feedback differ.
-  if (id === 'trace') return <>
-    <TargetShell reserveHeight defId={campaign?.stage.id ?? 'lab-trace'} label="Target sequence" solved={state.won} committedKey={String(state.trace.length)}>
+  // All mechanics use the same play-screen chrome as the traditional sliding puzzle.
+  // The target content, game board and mechanic-specific inputs remain independent.
+  const targetLength = campaign?.stage.sequence.length ?? (
+    id==='trace'?TRACE_TARGET.length : id==='crush'?CRUSH_TARGETS.join('').length :
+    id==='assembly'?ASSEMBLY_TARGET.length : id==='mutation'?MUTATION_ROWS.map(r=>r.seq).join('').length :
+    id==='connections'?CONNECTION_PAIRS.map(p=>p.seq).join('').length : CUT_TARGET.length);
+  return <>
+    <TargetShell reserveHeight defId={campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={String(state.moves)}>
       <div className="row-between small">
-        <span className="target-title">DNA Tracing</span>
-        <span className="muted" data-testid="mixed-range">{campaign ? 'INS CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + TRACE_TARGET.length + ' bp' : 'INS · practice'}</span>
+        <span className="target-title">{meta.title}</span>
+        <span className="muted" data-testid="mixed-range">{campaign ? 'INS CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp' : 'INS · practice'}</span>
       </div>
-      <div className="clue-stack mode-sequence">
+      {id==='trace' && <div className="clue-stack mode-sequence">
         <div className="clue-part"><b className="badge">1</b><div className="clue-tokens">
           {[...TRACE_TARGET].map((b,i)=><span key={i} className={'strip-cell b-'+b+(i<state.trace.length?' ok':'')} data-clue-unit="" data-clue-done={String(i<state.trace.length)} data-clue-index={i+1} data-testid={i===0?'target-strip':undefined}>{b}</span>)}
         </div></div>
-      </div>
-    </TargetShell>
-    <div className="board-stage">
-      {board}
-      {solved}
-    </div>
-    <div className="under-board" data-testid="under-board">
-      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/333 bp assembled</span>}</div>
-      {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={false} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
-      {hint&&!state.won&&<p className="lab-hint small" role="status">{labHint(state)}</p>}
-      <span className="trace-status muted small" role="status" data-testid="lab-message">{session.message || 'Trace the reference in order.'}</span>
-      {!campaign && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
-    </div>
-    {popup}
-  </>;
-  return <><section className="mechanics-play" data-testid="mechanics-play">
-    <div className="mechanic-heading"><button type="button" onClick={onBack} aria-label={campaign ? "Back to level map" : "Back to Mechanics Lab"}>{campaign ? "← Map" : "← Lab"}</button><div><h2 className="gene">{meta.title}</h2><span className="muted tiny">{campaign ? 'CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end : 'CHALLENGE ' + (index + 1) + '/6 · INS'}</span></div></div>
-    {id !== 'mutation' && <p className="mechanic-instructions">{campaign && id === 'restriction' ? 'BsaI cuts at the marked bonds outside its recognition sites. Isolate the reference fragment; synthetic adapters and the decoy do not count.' : meta.instructions}</p>}
-    {campaign && <div className="mixed-coverage"><span data-testid="mixed-range">INS CDS {campaign.stage.start + 1}–{campaign.stage.end} · {campaign.stage.sequence.length} bp</span><span data-testid="mixed-coverage">{campaign.covered}/333 bp assembled</span></div>}
-    <div className="mechanic-target">
-      <div className="row-between"><b className="small">{id === 'crush' ? 'Next codon' : 'Objective'}</b><span className="small muted" data-testid="lab-progress">{progress}</span></div>
-      {id === 'crush' && <div className="lab-codons">{CRUSH_TARGETS.map((c, i) => <span key={i} className={i < state.collected ? 'done' : i === state.collected ? 'current' : ''}>{c}</span>)}</div>}
-      {id === 'assembly' && <><div className="small muted">Reference sequence · 5′ → 3′</div><div className="lab-sequence assembly-reference" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={'b-' + b + (state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} aria-label={'Slot ' + (i + 1) + ': ' + b}>{b}<small>{i + 1}</small></span>)}</div></>}
-      {id === 'mutation' && <div className="mutation-reference" data-testid="mutation-reference" role="group" aria-label="Target complementary strands, 3 prime to 5 prime">
+      </div>}
+      {id === 'crush' && <div className="clue-stack mode-sequence mixed-codon-clues">{CRUSH_TARGETS.map((c, i) => <div key={i} className="clue-part" data-clue-unit="" data-clue-done={String(i<state.collected)}><b className="badge">{i+1}</b><div className="clue-tokens">{[...c].map((b,j)=><span key={j} className={'strip-cell b-'+b+(i<state.collected?' ok':'')+(i===state.collected?' current-codon':'')}>{b}</span>)}</div></div>)}</div>}
+      {id === 'assembly' && <><div className="lab-sequence assembly-reference mixed-clues" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={'b-' + b + (state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} data-clue-unit="" data-clue-done={String(state.board[ASSEMBLY_CELLS[i]!] === b)} aria-label={'Slot ' + (i + 1) + ': ' + b}>{b}<small>{i + 1}</small></span>)}</div></>}
+      {id === 'mutation' && <div className="mutation-reference mixed-clues" data-testid="mutation-reference" role="group" aria-label="Target complementary strands, 3 prime to 5 prime">
         {MUTATION_ROWS.map(({ bottom, seq }) => {
           const row = Math.floor(bottom / 9) + 1;
-          return <div className="mutation-reference-row" key={bottom}>
+          return <div className="mutation-reference-row" key={bottom} data-clue-unit="" data-clue-done={String([...seq].every((_,i)=>state.board[bottom+i]===mutationExpected(bottom+i)))}>
             <span className="mutation-row-label">Row {row}</span>
             {[...seq].map((_, i) => {
               const cell = bottom + i, want = mutationExpected(cell)!;
@@ -307,18 +290,30 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
           </div>;
         })}
       </div>}
-      {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i], background: pathFills[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
-      {id === 'restriction' && <div className="mono small restriction-target" data-testid="restriction-target" aria-label={'Target sequence: ' + target}>{[...target].map((b, i) => <span key={i} className={'restriction-target-base b-' + b} data-base={b}>{b}</span>)}</div>}
+      {id === 'connections' && <div className="clue-stack mixed-connection-clues" data-testid="connection-target">{CONNECTION_PAIRS.map((p,i)=>{
+        const done=state.routes[i]!.at(-1)===p.end;
+        return <div key={i} className="clue-part connection-clue" data-clue-unit="" data-clue-done={String(done)}>
+          <b className="badge" style={{background:pathColors[i]}}>{i+1}</b>
+          <span className={'connection-pair'+(done?' ok':'')} style={{borderColor:pathColors[i],background:pathFills[i]}}>{p.seq} ↔ {reverseComplement(p.seq)}</span>
+        </div>;
+      })}</div>}
+      {id === 'restriction' && <div className="mono small restriction-target mixed-clues" data-testid="restriction-target" aria-label={'Target sequence: ' + CUT_TARGET}>{[...CUT_TARGET].map((b, i) => <span key={i} className={'restriction-target-base b-' + b} data-base={b} data-clue-unit="" data-clue-done={String(state.won)}>{b}</span>)}</div>}
+    </TargetShell>
+    <div className="board-stage">
+      {board}
+      {solved}
     </div>
-    <div className="lab-board-stage">{board}{solved}</div>
-    {id === 'mutation' && selected !== null && <p className="small mutation-selection" data-testid="mutation-selection">Row {Math.floor(selected / 9) + 1}, column {selected % 9 + 1} · Current {state.board[selected]} → Target {mutationExpected(selected)}</p>}
-    {id === 'mutation' && <div className="lab-base-picker" aria-label="Choose replacement base">{(['A','C','G','T'] as DNA[]).map(b => <button type="button" className={'b-' + b} key={b} disabled={selected === null || state.won} onClick={() => { if (selected !== null) dispatch({ type: 'edit', cell: selected, base: b }); }} data-testid={'lab-base-' + b}>{b}</button>)}</div>}
-    {!state.won && <div className="lab-controls"><button type="button" onClick={undo} disabled={busy || !session.history.length}>Undo</button><button type="button" className={hint ? 'primary' : ''} aria-pressed={hint} onClick={toggleHint}>Hint</button><button type="button" onClick={reset} disabled={busy}>Replay</button></div>}
-    {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
-    {hint && !state.won && <p className="lab-hint small" role="status">{labHint(state)}</p>}
-    <p className="lab-message small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</p>
-    <p className="muted tiny">{campaign && id === 'restriction' ? 'BsaI recognizes GGTCTC and cuts outside that motif; the synthetic adapters are not credited.' : meta.biology} Reference: {LAB_REFERENCE.symbol} · {LAB_REFERENCE.transcript}.</p>
-  </section>
+    <div className="under-board mixed-under-board" data-testid="under-board">
+      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/333 bp assembled</span>}</div>
+      {id==='mutation' && !state.won && <div className="base-picker lab-base-picker" aria-label="Choose replacement base">{(['A','C','G','T'] as DNA[]).map(b=><button type="button" className={'b-'+b} key={b} disabled={selected===null} onClick={()=>{if(selected!==null) dispatch({type:'edit',cell:selected,base:b});}} data-testid={'lab-base-'+b}>{b}</button>)}</div>}
+      {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
+      {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
+      {hint&&!state.won&&<p className="lab-hint small" role="status">{labHint(state)}</p>}
+      {id==='mutation' && selected!==null && !state.won
+        ? <span className="small mutation-selection" data-testid="mutation-selection">Row {Math.floor(selected/9)+1}, column {selected%9+1} · Current {state.board[selected]} → Target {mutationExpected(selected)}</span>
+        : <span className="trace-status muted small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</span>}
+      {!campaign && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
+    </div>
     {popup}
   </>;
 }
