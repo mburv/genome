@@ -496,7 +496,12 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 }
 .tile.tok .tok-row i { color: inherit; }
 .tile.tok .tok-face .ell, .tile.tok .tok-len { color: var(--tok-soft); }
-.tile.tok .barcode { box-shadow: 0 0 0 1px var(--tok-fg); }
+/* Same edge as the tile (colour, width, style). Not inherit: the barcode's parent is .tok-face, which has no border. content-box keeps the 3px bars from shrinking under the global border-box rule. */
+.tile.tok .barcode {
+  box-shadow: none;
+  box-sizing: content-box;
+  border: 1px solid var(--tok-border);
+}
 .tile.tok.goal.ok { box-shadow: inset 0 -4px 0 var(--tok-fg); }
 .tile.tok.selected { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); }
 .tile.tok.locked { box-shadow: inset 0 0 0 4px var(--amber), inset 0 0 0 5px var(--white); }
@@ -515,7 +520,13 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tok-strip { flex-wrap: wrap; gap: 2px; }
 .tok-chip { --tok-bg: #e8e8e2; --tok-fg: #111111; --tok-border: #8a8a84; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 30px; height: 26px; padding: 0 4px; border-radius: 0; background: var(--tok-bg); color: var(--tok-fg); font: 700 10.5px/1 var(--mono); border: 1px solid var(--tok-border); }
 .tok-chip i { font-style: normal; color: inherit; }
-.tok-chip .barcode { width: 100%; box-shadow: 0 0 0 1px var(--tok-fg); }
+.tok-chip .barcode {
+  width: 100%;
+  box-shadow: none;
+  box-sizing: content-box;
+  border: 1px solid var(--tok-border);
+}
+.tok-chip.edited .barcode { border: 1px dashed var(--ink); }
 .tok-chip.ok { box-shadow: inset 0 -3px 0 var(--tok-fg); outline: 2px solid var(--ink); outline-offset: 1px; }
 .tok-chip.edited { background: repeating-linear-gradient(135deg, #ffffff 0 4px, #e3e3dc 4px 8px); color: var(--ink); border: 1px dashed var(--ink); }
 .tok-chip.gap { background: var(--white); color: var(--red); border: 1.5px dashed var(--red); }

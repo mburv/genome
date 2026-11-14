@@ -4,7 +4,7 @@ import manifest from '../src/genomics/manifest.generated.json' with { type: 'jso
 import type { LevelDefinition } from '../src/engine/types.ts';
 import { createInitialState } from '../src/engine/engine.ts';
 import { CAMPAIGN_GENES, CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
-import { fresh, openMap, solveWithHints } from './helpers';
+import { fresh, goToChapter, openChapter, openMap, solveWithHints } from './helpers';
 
 const CHAPTERS = chapterPack.levels as unknown as LevelDefinition[];
 const chapterOf = (s: string) => CHAPTERS.filter((l) => l.symbol === s);
@@ -153,4 +153,46 @@ test('each multi-base combo has its own colour, identical on the board and in th
   const chips = await page.locator('[data-testid="target-panel"] .tok-chip').evaluateAll((els) => els.map((e) => ({ seq: e.getAttribute('data-seq')!, bg: getComputedStyle(e).backgroundColor })));
   for (const c of chips) if (bySeq.has(c.seq)) expect(c.bg).toBe(bySeq.get(c.seq));
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
+});
+
+test('hexamer and longer barcode frames use the tile border colour, width and style', async ({ page }) => {
+  const def = CHAPTERS.find((l) => l.tier === 6 && l.mode === 'sequence')!;
+  expect(def.id).toBeTruthy();
+  await openChapter(page, def.id);
+  const readFrames = async (sel: string) => page.locator(sel).evaluateAll((els) => els.map((el) => {
+    const host = el.closest('.tile, .tok-chip') as HTMLElement;
+    const hs = getComputedStyle(host);
+    const cs = getComputedStyle(el);
+    return {
+      border: hs.borderTopColor,
+      width: hs.borderTopWidth,
+      style: hs.borderTopStyle,
+      colour: cs.borderTopColor,
+      frameWidth: cs.borderTopWidth,
+      frameStyle: cs.borderTopStyle,
+      shadow: cs.boxShadow,
+    };
+  }));
+  const assertMatched = async (sel: string) => {
+    const frames = await readFrames(sel);
+    expect(frames.length).toBeGreaterThan(0);
+    for (const f of frames) {
+      expect(f.colour).not.toBe('rgb(17, 17, 17)');
+      expect(f.colour).toBe(f.border);
+      expect(f.frameWidth).toBe(f.width);
+      expect(f.frameStyle).toBe(f.style);
+      expect(f.shadow === 'none' || f.shadow === '').toBeTruthy();
+    }
+  };
+  await assertMatched('.board .tile.tok .barcode');
+  await assertMatched('[data-testid="target-panel"] .tok-chip .barcode');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-hexamer-border-390x844.png', animations: 'disabled' });
+  await page.locator('.board .tile.tok').first().click();
+  await assertMatched('.board .tile.tok.selected .barcode');
+
+  const longer = CHAPTERS.find((l) => (l.tier ?? 0) >= 12 && l.mode === 'sequence')!;
+  expect(longer.id).toBeTruthy();
+  await goToChapter(page, longer.id);
+  await assertMatched('.board .tile.tok .barcode');
 });
