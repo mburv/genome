@@ -39,7 +39,7 @@ test('mechanics menu exposes six separate games and leaves campaign save untouch
   await trace(page, [10,11,12,21,30,31,40,49,50]);
   await won(page);
   await page.getByRole('button', { name: 'Next mechanic' }).click();
-  await expect(page.getByRole('heading', { name: 'Codon Crush' })).toBeVisible();
+  await expect(page.getByTestId('target-panel').locator('.target-title')).toHaveText('Codon Crush');
   expect(await page.evaluate(() => localStorage.getItem('genome-save'))).toBe(before);
 });
 
