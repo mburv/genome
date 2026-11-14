@@ -52,7 +52,24 @@ button { font: inherit; color: var(--ink); background: var(--white); border: 1px
 button:disabled { opacity: 0.35; cursor: default; }
 button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 a { color: var(--blue); }
-.app { --app-gap: 10px; max-width: var(--app-max); overflow-x: clip; margin: 0 auto; padding: max(0px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: var(--app-gap); background: var(--paper); }
+.app {
+  --app-gap: 10px;
+  /* Play chrome reserved so the clue cap leaves room for the board + energy + action row (D-UI-30). */
+  --play-header: 70px;
+  --play-under: 104px;
+  --clue-floor: 108px;
+  --board: min(100vw, var(--app-max), calc(100svh - var(--play-header) - var(--play-under) - (3 * var(--app-gap)) - var(--clue-floor)));
+  --play-reserved: calc(var(--play-header) + var(--play-under) + var(--board) + (3 * var(--app-gap)));
+  --clue-max: min(30svh, calc(100svh - var(--play-reserved)));
+  max-width: var(--app-max);
+  overflow-x: clip;
+  margin: 0 auto;
+  padding: max(0px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-gap);
+  background: var(--paper);
+}
 /* Everything except the board keeps a clean inner margin; the board is full-bleed. */
 .app > :not(.board):not(.board-stage):not(.overlay):not(.top) { margin-inline: var(--pad); }
 .app > .top { margin-inline: 0; padding: 12px var(--pad) 10px; border-bottom: 1px solid var(--ink); background: var(--white); }
@@ -68,6 +85,9 @@ a { color: var(--blue); }
 }
 @media (min-width: 641px) {
   .app { border-inline: 1px solid var(--rule); min-height: 100vh; }
+}
+@media (max-height: 700px) {
+  .app { --app-gap: 6px; }
 }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color: var(--ink); }
@@ -188,8 +208,45 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .progress.thin i { background: var(--mint-edge); }
 
 /* ---------- Target panel ---------- */
-.target { padding: 0; border-top: 0; }
-.target .row-between { flex-wrap: wrap; gap: 2px 8px; }
+.target {
+  padding: 0;
+  border-top: 0;
+  position: relative;
+  /* Cap at 30svh, but never so large that the board, energy bar and action row leave the viewport. */
+  max-height: min(30vh, calc(100vh - var(--play-reserved)));
+  max-height: var(--clue-max);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+.target.scrollable::before,
+.target.scrollable::after {
+  content: '';
+  pointer-events: none;
+  position: sticky;
+  left: 0;
+  right: 0;
+  display: block;
+  height: 10px;
+  z-index: 1;
+}
+.target.scrollable::before {
+  top: 0;
+  margin-bottom: -10px;
+  background: linear-gradient(to bottom, var(--paper), transparent);
+  opacity: 0;
+}
+.target.scrollable.scroll-top::before { opacity: 1; }
+.target.scrollable::after {
+  bottom: 0;
+  margin-top: -10px;
+  background: linear-gradient(to top, var(--paper), transparent);
+}
+.target.scrollable.scroll-end::after { opacity: 0; }
+
+.target .row-between { flex-wrap: wrap; gap: 2px 8px; position: sticky; top: 0; z-index: 2; background: var(--paper); }
+
 .target .row-between > span { min-width: 0; }
 .target-title { font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; }
 .badge { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 0; background: var(--ink); color: var(--white); font-size: 11px; font-weight: 700; }
@@ -206,7 +263,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .mini-strip .strip-cell, .strip-cell.gap { width: clamp(18px, 5.4vw, 26px); height: 26px; font-size: 13px; }
 .strip-cell.gap { display: inline-grid; place-items: center; background: var(--white); color: var(--red); border: 1.5px dashed var(--red); font-weight: 700; }
 .strip-cell.gap.restored { border-style: solid; animation: restore 0.5s ease both; }
-/* Pieces flow inline and wrap only when the row is full (D-UI-29). Replication stays a stacked pair. */
+/* Pieces flow inline and wrap only when the row is full (D-UI-29). */
 .clue-stack {
   display: flex;
   flex-wrap: wrap;
@@ -214,8 +271,12 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   align-items: flex-start;
   gap: 4px 8px;
   margin-top: 6px;
+  font: 700 10.5px/1 var(--mono);
   --chip-min: clamp(18px, 5.4vw, 26px);
 }
+.clue-stack.tier-3 { --chip-min: calc(3ch + 12px); }
+.clue-stack.tier-6 { --chip-min: calc(6ch + 14px); }
+.clue-stack.tier-12, .clue-stack.tier-24 { --chip-min: calc(9ch + 14px); }
 .clue-part {
   display: flex;
   flex-wrap: nowrap;
@@ -225,14 +286,31 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   max-width: 100%;
   min-width: 0;
 }
+/* Replication: each pair-column is template / bond / complement, wrapping in matched chunks (D-UI-30). */
 .clue-stack.mode-replicate {
-  display: grid;
-  grid-template-columns: 18px 14px minmax(0, 1fr) 14px auto;
-  column-gap: 3px;
-  row-gap: 4px;
+  --rep-gutter: calc(18px + 3px + 14px + 3px);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: var(--rep-gutter);
+  gap: 2px 3px;
   align-items: start;
 }
-.clue-stack.mode-replicate .clue-part {
+.rep-start {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  grid-template-columns: 18px 14px;
+  grid-template-rows: auto 6px auto;
+  column-gap: 3px;
+  row-gap: 2px;
+  align-items: center;
+  width: var(--rep-gutter);
+  box-sizing: border-box;
+  padding-right: 3px;
+}
+.rep-start .clue-part {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
@@ -240,6 +318,34 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   max-width: none;
   min-width: 0;
   gap: 0;
+  align-items: center;
+}
+.rep-bond-spacer { grid-column: 1 / -1; height: 6px; }
+.rep-pair {
+  display: grid;
+  grid-template-rows: auto 6px auto;
+  row-gap: 2px;
+  justify-items: stretch;
+  align-items: center;
+  flex: 0 0 var(--chip-min);
+  width: var(--chip-min);
+  min-width: 0;
+}
+.rep-bond {
+  display: block;
+  width: 1px;
+  height: 6px;
+  justify-self: center;
+  background: var(--ink);
+}
+.rep-end {
+  display: grid;
+  grid-template-columns: 14px auto;
+  grid-template-rows: auto 6px auto;
+  column-gap: 3px;
+  row-gap: 2px;
+  align-items: center;
+  flex: none;
 }
 /* Chips size to their letters and wrap in columns instead of shrinking to one row (D-UI-28). */
 .clue-tokens {
@@ -251,17 +357,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   width: max-content;
   max-width: 100%;
   min-width: 0;
-  font: 700 10.5px/1 var(--mono);
 }
-.clue-stack.mode-replicate .clue-tokens {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, var(--chip-min, calc(3ch + 12px)));
-  width: auto;
-  max-width: 100%;
-}
-.clue-stack.tier-3 .clue-tokens { --chip-min: calc(3ch + 12px); }
-.clue-stack.tier-6 .clue-tokens { --chip-min: calc(6ch + 14px); }
-.clue-stack.tier-12 .clue-tokens, .clue-stack.tier-24 .clue-tokens { --chip-min: calc(9ch + 14px); }
 .clue-stack .tok-chip, .clue-stack .strip-cell {
   box-sizing: border-box;
   height: auto;
@@ -287,13 +383,11 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .pair { margin-top: 4px; }
 .pair-row, .seq-row, .repair-row, .splice-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 .pair-row .end, .clue-stack .end, .win-line .end { font-size: 11px; color: var(--graphite); width: 14px; text-align: center; font-family: var(--mono); }
-.clue-part.pair-bonds { height: auto; min-height: 6px; align-self: start; }
-.clue-part.pair-bonds i { width: 100%; display: flex; justify-content: center; height: 6px; }
-.clue-part.pair-bonds i::before { content: ''; width: 1px; height: 6px; background: var(--ink); }
+.clue-stack .badge { font-family: var(--sans); }
 
 /* ---------- Board: full-bleed, 1px hairline gutters, square tiles ---------- */
-.board-stage { position: relative; width: 100%; max-width: var(--app-max); margin: 1px 0; }
-.board { position: relative; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); gap: var(--gap); width: 100%; max-width: var(--app-max); aspect-ratio: 1 / 1; height: auto; margin: 0; padding: 0; background: var(--rule); border: 0; box-shadow: 0 -1px 0 var(--ink), 0 1px 0 var(--ink); box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.board-stage { position: relative; width: var(--board); max-width: 100%; margin: 1px auto; }
+.board { position: relative; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); gap: var(--gap); width: 100%; max-width: var(--board); aspect-ratio: 1 / 1; height: auto; margin: 0; padding: 0; background: var(--rule); border: 0; box-shadow: 0 -1px 0 var(--ink), 0 1px 0 var(--ink); box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .cell { min-width: 0; min-height: 0; border-radius: 0; }
 .hole { background: repeating-linear-gradient(135deg, #d9d9d2 0 1px, transparent 1px 6px), var(--hole); }
 .tile { position: relative; display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; font-family: var(--sans); font-weight: 700; font-size: calc(var(--board) / 15); will-change: transform; }

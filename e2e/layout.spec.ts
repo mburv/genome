@@ -11,14 +11,22 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { wi
       const t = document.querySelector('.board > .cell')!.getBoundingClientRect();
       return { left: b.left, right: b.right, width: b.width, height: b.height, tile: t.width, tileH: t.height, scroll: document.documentElement.scrollWidth, inner: window.innerWidth };
     });
-    expect(m.left).toBe(0);
-    expect(m.right).toBe(vp.width);
     expect(m.scroll).toBeLessThanOrEqual(vp.width);
-    // 9 tiles + 8 one-pixel gutters fill the width (tiles are square).
-    expect(m.tile).toBeGreaterThanOrEqual((vp.width - 8) / 9 - 0.5);
     expect(Math.abs(m.tile - m.tileH)).toBeLessThan(0.5);
-    // Clearly larger than the M4 inset board (37.5 px at 390, 27.5 px at 320).
-    expect(m.tile).toBeGreaterThan(vp.width === 320 ? 34 : 41);
+    expect(Math.abs(m.width - m.height)).toBeLessThan(1);
+    expect(m.left).toBeGreaterThanOrEqual(-0.5);
+    expect(m.right).toBeLessThanOrEqual(vp.width + 0.5);
+    // On short viewports the board may shrink so the clue cap can stay readable (D-UI-30);
+    // it stays square, centred, and larger than the old M4 inset tiles (27.5 px at 320, 37.5 px at 390).
+    if (vp.height >= 700) {
+      expect(m.left).toBe(0);
+      expect(m.right).toBe(vp.width);
+      expect(m.tile).toBeGreaterThanOrEqual((vp.width - 8) / 9 - 0.5);
+      expect(m.tile).toBeGreaterThan(41);
+    } else {
+      expect(Math.abs(m.left - (vp.width - m.right))).toBeLessThanOrEqual(1);
+      expect(m.tile).toBeGreaterThan(27.5);
+    }
   });
 }
 
@@ -35,7 +43,9 @@ test('a long-token chapter board is also full-bleed at 320px with no overflow', 
   await page.setViewportSize({ width: 320, height: 568 });
   await openChapter(page, 'hbb-c08');
   const r = await page.locator('.board').boundingBox();
-  expect(r!.x).toBe(0);
-  expect(Math.round(r!.width)).toBe(320);
+  expect(r!.x).toBeGreaterThanOrEqual(0);
+  expect(r!.x + r!.width).toBeLessThanOrEqual(320.5);
+  expect(Math.abs(r!.width - r!.height)).toBeLessThan(1);
+  expect(Math.abs(r!.x - (320 - (r!.x + r!.width)))).toBeLessThanOrEqual(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });

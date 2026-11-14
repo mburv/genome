@@ -1,7 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/chapters.generated.json' with { type: 'json' };
+import m2Pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
 import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted, openMap } from './helpers';
+
+const ALL_LEVEL_IDS = [
+  ...(m2Pack.levels as LevelDefinition[]).map((l) => l.id),
+  ...(pack.levels as LevelDefinition[]).map((l) => l.id),
+];
 
 const def = (pack.levels as LevelDefinition[])[0]!;
 
@@ -91,13 +97,64 @@ async function expectClueAlignment(page: Page): Promise<void> {
     }
   }
 
-  // Replication keeps template over complement, so chips still share vertical columns.
-  if (replicate && parts.length >= 2) {
-    const n = Math.min(parts[0]!.chips.length, parts[1]!.chips.length);
-    expect(n).toBeGreaterThan(0);
-    for (let i = 0; i < n; i++) {
-      expect(Math.abs(parts[0]!.chips[i]!.x - parts[1]!.chips[i]!.x)).toBeLessThanOrEqual(1);
-      expect(Math.abs(parts[0]!.chips[i]!.width - parts[1]!.chips[i]!.width)).toBeLessThanOrEqual(1);
+  if (replicate) await expectReplicatePairs(page);
+}
+
+/** Template / complement chips share a column; wrapped pair-chunks left-align with the first chip column. */
+async function expectReplicatePairs(page: Page): Promise<void> {
+  const data = await page.locator('[data-testid="target-panel"]').evaluate((panel) => {
+    const box = (e: Element) => {
+      const r = e.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
+    };
+    const pairs = [...panel.querySelectorAll('.rep-pair')].map((p) => {
+      const chips = [...p.querySelectorAll('.tok-chip, .strip-cell')].map(box);
+      const bond = p.querySelector('.rep-bond');
+      const r = p.getBoundingClientRect();
+      return { x: r.x, y: r.y, right: r.right, template: chips[0] ?? null, complement: chips[1] ?? null, bond: bond ? box(bond) : null };
+    });
+    const badge1 = panel.querySelector('[data-testid="clue-badge-1"]');
+    const badge2 = panel.querySelector('[data-testid="clue-badge-2"]');
+    const ends = [...panel.querySelectorAll('.rep-start .end, .rep-end .end')].map((e) => ({ text: (e.textContent ?? '').trim(), ...box(e) }));
+    return {
+      pairs,
+      badge1: badge1 ? box(badge1) : null,
+      badge2: badge2 ? box(badge2) : null,
+      ends,
+    };
+  });
+  expect(data.pairs.length).toBeGreaterThan(0);
+  for (const p of data.pairs) {
+    expect(p.template).toBeTruthy();
+    expect(p.complement).toBeTruthy();
+    expect(Math.abs(p.template!.x - p.complement!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(p.template!.width - p.complement!.width)).toBeLessThanOrEqual(1);
+    expect(p.complement!.y).toBeGreaterThan(p.template!.bottom - 1);
+    if (p.bond) {
+      expect(p.bond.y).toBeGreaterThanOrEqual(p.template!.bottom - 2);
+      expect(p.bond.bottom).toBeLessThanOrEqual(p.complement!.y + 2);
+      expect(p.bond.x).toBeGreaterThanOrEqual(p.template!.x - 1);
+      expect(p.bond.right).toBeLessThanOrEqual(p.template!.right + 1);
+    }
+  }
+  if (data.badge1 && data.pairs[0]!.template) {
+    expect(data.badge1.x).toBeLessThan(data.pairs[0]!.template.x);
+    expect(Math.abs(data.badge1.y - data.pairs[0]!.template.y)).toBeLessThanOrEqual(8);
+  }
+  if (data.badge2 && data.pairs[0]!.complement) {
+    expect(data.badge2.x).toBeLessThan(data.pairs[0]!.complement.x);
+    expect(Math.abs(data.badge2.y - data.pairs[0]!.complement.y)).toBeLessThanOrEqual(8);
+  }
+  const rows: typeof data.pairs[] = [];
+  for (const p of data.pairs) {
+    const row = rows.find((r) => Math.abs(r[0]!.y - p.y) <= 8);
+    if (row) row.push(p);
+    else rows.push([p]);
+  }
+  if (rows.length >= 2) {
+    const firstX = rows[0]![0]!.x;
+    for (const row of rows.slice(1)) {
+      expect(Math.abs(row[0]!.x - firstX)).toBeLessThanOrEqual(2);
     }
   }
 }
@@ -198,7 +255,7 @@ const NOTE_FRAGMENTS = [
   'Read top',
 ];
 
-async function assertCluePanelClean(page: Page, width: number) {
+async function assertCluePanelClean(page: Page, width: number, height: number) {
   const panel = page.getByTestId('target-panel');
   await expect(panel).toBeVisible();
   for (const text of NOTE_FRAGMENTS) await expect(panel).not.toContainText(text);
@@ -229,7 +286,8 @@ async function assertCluePanelClean(page: Page, width: number) {
   expect(gap).toBeGreaterThanOrEqual(6);
   expect(gap).toBeLessThanOrEqual(16);
   expect(metrics.boardTop).toBeGreaterThan(metrics.target.y + 8);
-  expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
+  if (height >= 700) expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
+  else expect(metrics.boardWidth).toBeGreaterThan(27.5 * 9);
 }
 
 for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
@@ -240,16 +298,16 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await fresh(page);
     for (const id of ['ins-c01', 'ins-c02', 'ins-c03', 'ins-c04'] as const) {
       await goToChapter(page, id);
-      await assertCluePanelClean(page, size.width);
+      await assertCluePanelClean(page, size.width, size.height);
       if (size.width === 390 && id === 'ins-c02') {
         await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-390x844.png' });
       }
     }
-    await assertCluePanelClean(page, size.width);
+    await assertCluePanelClean(page, size.width, size.height);
   });
 }
 
-async function assertPlayScreenDecluttered(page: Page, width: number) {
+async function assertPlayScreenDecluttered(page: Page, width: number, height: number) {
   await expect(page.locator('.dpad')).toHaveCount(0);
   await expect(page.getByTestId('status')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Slide (row|column)/ })).toHaveCount(0);
@@ -269,7 +327,11 @@ async function assertPlayScreenDecluttered(page: Page, width: number) {
   expect(metrics.x).toBeGreaterThanOrEqual(0);
   expect(metrics.x + metrics.boardWidth).toBeLessThanOrEqual(width);
   expect(Math.abs(metrics.boardWidth - metrics.boardHeight)).toBeLessThan(2);
-  expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
+  if (height >= 700) expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
+  else {
+    expect(Math.abs(metrics.x - (width - (metrics.x + metrics.boardWidth)))).toBeLessThanOrEqual(1);
+    expect(metrics.boardWidth).toBeGreaterThan(27.5 * 9);
+  }
   expect(metrics.pageOverflow).toBeLessThanOrEqual(0);
 }
 
@@ -277,7 +339,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
   test(`puzzle screen has no pad, status or help links at ${size.width}x${size.height}; help lives in Settings`, async ({ page }) => {
     await page.setViewportSize(size);
     await openChapter(page, 'ins-01');
-    await assertPlayScreenDecluttered(page, size.width);
+    await assertPlayScreenDecluttered(page, size.width, size.height);
     if (size.width === 390) {
       await page.screenshot({ path: '/workspace/game/screenshots/genome-declutter-390x844.png' });
     }
@@ -297,7 +359,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await page.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByTestId('board')).toBeVisible();
     await expect(page.getByTestId('settings')).toHaveCount(0);
-    await assertPlayScreenDecluttered(page, size.width);
+    await assertPlayScreenDecluttered(page, size.width, size.height);
   });
 }
 
@@ -421,13 +483,36 @@ test('repair clue keeps the gap at the end of piece 1 and lays pieces inline at 
   }
 });
 
-test('replication and sequencing clues keep labels with their pieces at 320–430', async ({ page }) => {
+test('replication clues pair template over complement and wrap in matched chunks at 320–430', async ({ page }) => {
+  test.setTimeout(90_000);
+  const levels = ['ins-c03', 'hbb-c07', 'rho-c07'] as const; // 3-, 6- and 12-base
   for (const width of [320, 375, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
-    await openChapter(page, 'ins-c03');
-    await expect(page.getByTestId('target-panel')).toBeVisible();
-    await expectClueAlignment(page);
-    await expectClueChipsFit(page);
+    for (const id of levels) {
+      await openChapter(page, id);
+      await expect(page.getByTestId('target-panel')).toBeVisible();
+      await expect(page.getByTestId('clue-badge-1')).toBeVisible();
+      await expect(page.getByTestId('clue-badge-2')).toBeVisible();
+      await expectClueAlignment(page);
+      await expectClueChipsFit(page);
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openChapter(page, 'hbb-c07');
+  await expect(page.locator('.target-title')).toHaveText(/hexamers · replication/i);
+  await expect(page.getByTestId('play-progress')).toHaveText('13/15');
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-hbb13-replication-390x844.png', animations: 'disabled' });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await expect(page.getByTestId('target-panel')).toBeVisible();
+  await expectClueAlignment(page);
+  await expectClueChipsFit(page);
+  await expectActionRowInView(page);
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-hbb13-replication-320x568.png', animations: 'disabled' });
+});
+
+test('sequencing clues keep labels with their pieces at 320–430', async ({ page }) => {
+  for (const width of [320, 375, 390, 430] as const) {
+    await page.setViewportSize({ width, height: 844 });
     await openChapter(page, 'ins-c05');
     await expect(page.getByTestId('clue-badge-1')).toBeVisible();
     await expectClueAlignment(page);
@@ -511,3 +596,59 @@ test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 
   }
 });
 
+/** The action row is fully on screen at scroll 0, with no horizontal page overflow. */
+async function expectActionRowInView(page: Page): Promise<void> {
+  const row = page.getByTestId('icon-row');
+  await expect(row).toBeVisible();
+  const report = await page.evaluate(() => {
+    const row = document.querySelector('[data-testid="icon-row"]') as HTMLElement;
+    const r = row.getBoundingClientRect();
+    return {
+      top: r.top,
+      bottom: r.bottom,
+      left: r.left,
+      right: r.right,
+      vw: window.innerWidth,
+      vh: window.innerHeight,
+      pageOverflowX: document.documentElement.scrollWidth - window.innerWidth,
+      scrollY: window.scrollY,
+    };
+  });
+  expect(report.scrollY, 'page should not need a vertical scroll to reach the action row').toBe(0);
+  expect(report.top).toBeGreaterThanOrEqual(0);
+  expect(report.bottom).toBeLessThanOrEqual(report.vh + 0.5);
+  expect(report.left).toBeGreaterThanOrEqual(-0.5);
+  expect(report.right).toBeLessThanOrEqual(report.vw + 0.5);
+  expect(report.pageOverflowX).toBeLessThanOrEqual(0);
+}
+
+const LAB_INDEX: Record<string, number> = { 'lab-crispr': 1, 'lab-ligase': 2, 'lab-scaffold': 3 };
+
+async function openAnyLevel(page: Page, id: string): Promise<void> {
+  const lab = LAB_INDEX[id];
+  if (lab != null) {
+    await openMap(page);
+    await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${lab}: `) }).click();
+    await page.getByTestId('board').waitFor();
+    return;
+  }
+  await goToChapter(page, id);
+}
+
+test('action row stays in the viewport on every level at 320×568 and 390×844', async ({ page }) => {
+  test.setTimeout(240_000);
+  expect(ALL_LEVEL_IDS.length).toBeGreaterThan(100);
+  for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }] as const) {
+    await page.setViewportSize(viewport);
+    await fresh(page);
+    for (const id of ALL_LEVEL_IDS) {
+      await openAnyLevel(page, id);
+      await expect(page.getByTestId('board')).toBeVisible();
+      try {
+        await expectActionRowInView(page);
+      } catch (err) {
+        throw new Error(`action row out of view on ${id} at ${viewport.width}×${viewport.height}`, { cause: err });
+      }
+    }
+  }
+});
