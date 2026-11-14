@@ -83,3 +83,45 @@ test('every mixed INS stage can be solved through the real game controls and rea
     else await page.getByRole('button',{name:'Next level →'}).click();
   }
 });
+
+test('sliding tutorial keeps stationary cells opaque and rotates the entire column with wrap',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
+  const board=page.getByTestId('tutorial-board');
+  await expect(board.locator('.tutorial-before,.tutorial-after')).toHaveCount(0);
+  await expect(board.locator('.tutorial-slide-static').first()).toHaveCSS('animation-name','none');
+  const initial=await board.locator('[data-demo-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')).join(''));
+  await page.getByTestId('tutorial-next').click();
+  const clip=page.getByTestId('tutorial-slide-column'),strip=page.getByTestId('tutorial-slide-strip');
+  await expect(clip).toHaveAttribute('data-segment','10,19,28,37,46,55,64,73');
+  await expect(clip.locator('[data-wrap="false"]')).toHaveCount(8);
+  await expect(clip.locator('[data-wrap="true"]')).toHaveCount(2);
+  const first=clip.locator('[data-wrap="false"]').first();
+  const wrap=clip.locator('[data-wrap="true"]').last();
+  await expect(wrap).toHaveText(await first.textContent() ?? '');
+  const sample=await strip.evaluate(el=>{
+    const a=el.getAnimations()[0]!;
+    a.pause();a.currentTime=0;
+    const before=el.getBoundingClientRect();
+    const tiles=Array.from(el.children);
+    const y0=tiles.map(t=>t.getBoundingClientRect().y);
+    const pitch=y0[2]!-y0[1]!;
+    a.currentTime=1400;
+    const after=el.getBoundingClientRect();
+    const y1=tiles.map(t=>t.getBoundingClientRect().y);
+    return {pitch,delta:after.y-before.y,deltas:y1.map((y,i)=>y-y0[i]!),wrapY:y1.at(-1),lastY:y0.at(-2),x:after.x-before.x};
+  });
+  expect(Math.abs(sample.delta+sample.pitch)).toBeLessThan(1);
+  expect(Math.abs(sample.x)).toBeLessThan(1);
+  expect(sample.deltas.every(d=>Math.abs(d+sample.pitch)<1)).toBe(true);
+  expect(Math.abs(sample.wrapY!-sample.lastY!)).toBeLessThan(1);
+  await expect(board.locator('[data-demo-cell]')).toHaveCount(81);
+  expect(await board.locator('[data-demo-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')).join(''))).toBe(initial);
+  await expect(board.locator('.tutorial-slide-static').first()).toHaveCSS('opacity','1');
+  await page.getByRole('button',{name:'Replay animation'}).click();
+  await expect(strip).toHaveCSS('animation-iteration-count','1');
+  await page.getByTestId('tutorial-next').click();
+  await expect(clip).toHaveCount(0);
+  await expect(board.locator('.tutorial-slide-static').first()).toHaveCSS('animation-name','none');
+  const solved=await board.locator('[data-demo-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')).join(''));
+  expect(solved.slice(36,45)).toBe('ATGGCCCTG');
+});

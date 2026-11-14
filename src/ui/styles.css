@@ -864,3 +864,15 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-board.static .tutorial-after { opacity:1; animation:none; }
 .tutorial-board.static .tutorial-finger,.tutorial-board.static .tutorial-path polyline,.tutorial-board.static .tutorial-cut { animation:none; }
 @media(prefers-reduced-motion:reduce){.tutorial-before{opacity:0;animation:none}.tutorial-after{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut{animation:none}}
+
+/* Sliding guide: one opaque strip, clipped to the exact playable segment. No board crossfade. */
+.slide-demo .tutorial-slide-static { opacity:1; animation:none; }
+.tutorial-slide-clip { position:absolute; inset:0; overflow:hidden; background:var(--rule); z-index:4; outline:2px solid var(--blue); outline-offset:-2px; pointer-events:none; }
+.tutorial-slide-strip { position:absolute; inset:0; animation:tutorial-slide-up 1.4s ease-in-out both; }
+.tutorial-slide-clip.row .tutorial-slide-strip { animation-name:tutorial-slide-across; }
+.tutorial-slide-tile { position:absolute; display:grid; place-items:center; font:700 11px var(--mono); }
+@keyframes tutorial-slide-up { 0%,25% { transform:translateY(0); } 75%,100% { transform:translateY(var(--slide-demo-shift)); } }
+@keyframes tutorial-slide-across { 0%,25% { transform:translateX(0); } 75%,100% { transform:translateX(var(--slide-demo-shift)); } }
+.tutorial-slide-finger { position:absolute; z-index:8; left:var(--fx); top:var(--fy); transform:translate(-25%,-20%); font-size:24px; pointer-events:none; animation:tutorial-slide-finger 1.4s ease-in-out both; }
+@keyframes tutorial-slide-finger { 0%,25%{left:var(--fx);top:var(--fy);opacity:1} 75%{left:var(--tx);top:var(--ty);opacity:1} 100%{left:var(--tx);top:var(--ty);opacity:0} }
+@media(prefers-reduced-motion:reduce){.tutorial-slide-strip,.tutorial-slide-finger{animation:none}}
