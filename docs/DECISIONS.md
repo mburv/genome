@@ -251,3 +251,10 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
 - D-UI-19 The level map is a single square grid per gene, with no catalogue intro block.
   - The “· full assembly / 12 verified genes” header line and the paragraph about 1-base intros, discovery and SHA-256 are removed. “Intro · 1-base tiles” and “Assembly · multi-base tiles” labels are gone; a gene’s 1-base intros and later chapters sit in one continuous run of squares (INS 1–13, then the play square).
   - The red play square is the same 30×30 cell as every other level square, in the same grid, with no extra margin. When the run wraps, the squares sit on `repeat(auto-fill, 30px)` columns so each wrapped square’s left and right edges line up with the square above. Checked at 320, 390 and 430.
+
+- D-UI-20 Adjacent map squares share a single 1px ink line, including wrapped rows, the outer edge and the play square.
+  - After D-UI-19 each square kept its own 1px border, so seams between neighbours read as 2px. Squares are now 31×31 in a 30px column grid and overlap by 1px, so every shared edge is one line and column alignment is unchanged. Checked at 320, 390 and 430.
+  - The six-icon row, win-dialog / card actions and the Enzyme lab node grid already used a collapsed single line and were left as they were. Clue chips stay slightly gapped (not flush). Settings rows are only top rules with a 10px gap, not boxed cells. The CRISPR position picker, which can wrap, was switched to the same shared-line treatment (top+left on the group, right+bottom on each button).
+
+- D-UI-21 Clue pieces share a left-aligned label column and a vertical chip grid, in every mode.
+  - Repair (and splice, replication, sequencing) now stacks each piece as a subgrid row: the piece number on the left, then the chips in shared columns so chip 1 of every piece starts at the same x and later chips line up in columns. The repair `?×n` gap sits at the end of piece 1’s row, in a reserved last column, so piece 2’s chips stay aligned with piece 1. A zero-length gap count is not shown (it used to appear as a stray “0”). Checked at 320 and 390.
