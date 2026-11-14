@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Settings } from '../persistence/save.ts';
 import { hapticsSupported, playCue } from './feedback.ts';
 import { HelpSections } from './HelpSections.tsx';
@@ -14,6 +15,12 @@ interface Props {
 export function SettingsScreen({ settings, systemReducedMotion, onChange, onReset, onMap, onBack }: Props) {
   const set = (patch: Partial<Settings>) => onChange({ ...settings, ...patch });
   const haptics = hapticsSupported();
+  const [confirming, setConfirming] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (confirming) cancelRef.current?.focus();
+  }, [confirming]);
+
   return (
     <section className="panel settings" aria-labelledby="settings-title" data-testid="settings">
       <div className="row-between">
@@ -44,7 +51,29 @@ export function SettingsScreen({ settings, systemReducedMotion, onChange, onRese
       </label>
       <HelpSections />
       <p className="muted small">Settings are saved on this device. No timers, accounts or tracking.</p>
-      <button type="button" className="link" onClick={onReset}>Reset all progress…</button>
+      {!confirming ? (
+        <button type="button" className="reset-trigger" onClick={() => setConfirming(true)} aria-expanded={false} aria-controls="reset-confirm" data-testid="reset-progress">
+          Reset progress
+        </button>
+      ) : (
+        <div
+          className="reset-confirm"
+          id="reset-confirm"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="reset-title"
+          aria-describedby="reset-copy"
+          data-testid="reset-confirm"
+          onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setConfirming(false); } }}
+        >
+          <p id="reset-title" className="reset-title">Reset all progress?</p>
+          <p id="reset-copy">This erases all level progress, stars, best scores and unlocks on this device. This cannot be undone. Your sound, haptics and reduced-motion settings are kept.</p>
+          <div className="reset-actions">
+            <button type="button" className="reset-cancel" ref={cancelRef} onClick={() => setConfirming(false)} data-testid="reset-cancel">Cancel</button>
+            <button type="button" className="reset-go" onClick={onReset} data-testid="reset-confirm-btn">Reset</button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

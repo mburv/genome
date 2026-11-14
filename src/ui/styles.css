@@ -231,6 +231,13 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .tray-note { margin: 8px 0 0; font-size: 12px; color: var(--ink); }
 .toggle { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: 6px 0; }
 .link { background: none; border: 0; color: var(--red); padding: 4px 0; font-size: 13px; text-decoration: underline; }
+.reset-trigger { display: block; width: 100%; background: none; border: 0; border-top: 1px solid var(--rule); margin-top: 8px; padding: 12px 0 0; color: var(--red); font-size: 13px; letter-spacing: 0.04em; text-align: left; }
+.reset-confirm { margin-top: 10px; padding: 12px; border: 1px solid var(--ink); background: var(--white); }
+.reset-title { margin: 0 0 6px; font-weight: 700; font-size: 15px; }
+.reset-confirm p { margin: 0; font-size: 13px; color: var(--ink); }
+.reset-actions { display: flex; gap: 8px; margin-top: 12px; }
+.reset-actions button { flex: 1; }
+.reset-go { background: var(--white); color: var(--red); border-color: var(--red); }
 footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); }
 .map-button { padding: 8px 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; }
 .top-buttons { display: flex; gap: 0; }

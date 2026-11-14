@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, LEVELS } from '../campaign/campaign.ts';
 import { GENES } from '../genomics/genes.ts';
-import { createLocalStorageAdapter, loadSave, newSave, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
+import { clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
 import { MapScreen } from './MapScreen.tsx';
 import { PlayScreen } from './PlayScreen.tsx';
@@ -45,11 +45,12 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     persist({ ...save, currentLevelId: levelId });
     go({ kind: 'play' });
   };
-  const resetProgress = () => {
-    if (!confirm('Erase all GENOME progress on this device?')) return;
-    storage.backup(serializeSave(save));
-    persist(newSave(LEVEL_PACK));
-    go({ kind: 'map' });
+  const applyReset = () => {
+    const settings = save.settings;
+    if (typeof localStorage !== 'undefined') clearProgressStorage(localStorage);
+    persist(resetProgress(LEVEL_PACK, settings));
+    setNotices([]);
+    go({ kind: 'play' });
   };
 
   return (
@@ -117,7 +118,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           settings={save.settings}
           systemReducedMotion={systemReducedMotion}
           onChange={(settings) => persist({ ...save, settings })}
-          onReset={resetProgress}
+          onReset={applyReset}
           onMap={() => go({ kind: 'map' })}
           onBack={() => go(settingsFrom.current)}
         />

@@ -204,5 +204,10 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - **Help.** “How to play” and “About the DNA” move from every screen into Settings as expandable entries. Settings Done returns to the screen Settings was opened from.
   - **Board.** The board stays full-bleed and as large as the viewport width allows; the freed space shortens the page so more of the remaining controls sit on-screen at 320×568.
 
+- D-UI-12 Settings has a Reset progress action with an in-panel confirmation.
+  - The control sits at the bottom of Settings, styled as a quiet destructive action (muted red text, no fill). Tapping it reveals an inline confirmation: all level progress, stars, best scores and unlocks will be erased and this cannot be undone. Cancel is the default (focused, ink outline). Reset confirms.
+  - Confirm writes a fresh campaign save that keeps sound, haptics and reduced-motion settings, clears `genome-save` and every `genome-save-backup` slot (including labelled migration backups), resets in-memory state, dismisses any save-migration notices, and lands on the first puzzle as a new player would (the tutorial board, not the map). Under D-M2-14 every sample level remains open; the map shows a fresh campaign (no completions, locked discovery cards, no stars or bests).
+
+
 
 

@@ -113,6 +113,31 @@ export function newSave(pack: LevelPack): SaveData {
 
 export const serializeSave = (s: SaveData): string => JSON.stringify(s);
 
+/** Live save plus every backup slot the game writes (`genome-save-backup`, `-m1`, `-m2`, `-m3`, …). */
+export function isGameProgressKey(name: string, key = SAVE_KEY): boolean {
+  return name === key || name === `${key}-backup` || name.startsWith(`${key}-backup-`);
+}
+
+/** Drop the live save and all backup keys from a Storage-like object. Returns the names removed. */
+export function clearProgressStorage(
+  storage: { length: number; key(i: number): string | null; removeItem(name: string): void },
+  key = SAVE_KEY,
+): string[] {
+  const names: string[] = [];
+  for (let i = 0; i < storage.length; i++) {
+    const n = storage.key(i);
+    if (n) names.push(n);
+  }
+  const removed = names.filter((n) => isGameProgressKey(n, key)).sort();
+  for (const n of removed) storage.removeItem(n);
+  return removed;
+}
+
+/** A fresh campaign save that keeps the player's sound, haptics and reduced-motion settings. */
+export function resetProgress(pack: LevelPack, settings: Settings): SaveData {
+  return { ...newSave(pack), settings: { ...settings } };
+}
+
 const isMove = (m: unknown): m is Move => {
   if (typeof m !== 'object' || m === null) return false;
   const o = m as Record<string, unknown>;
