@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react';
-import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, TRACE_TARGET, CRUSH_TARGETS, READS, READ_CELLS, ASSEMBLY_CELLS, MUTATION_ROWS, mutationExpected, mutationCount, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET, reverseComplement, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, MUTATION_ROWS, mutationExpected, mutationCount, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET, reverseComplement, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">

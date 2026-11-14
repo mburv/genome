@@ -94,7 +94,7 @@ export function createLab(id: LabId): LabState {
     MUTATIONS.forEach(c => { board[c] = BASES[(BASES.indexOf(board[c]!) + 1) % 4]!; });
   } else if (id === 'connections') {
     board = Array.from({ length: 81 }, (_, i) => [0, 9, 10, 11, 12, 13, 14, 20, 21, 22, 23, 30, 31, 32, 33, 45, 46, 47, 48, 49, 50, 60, 61, 62, 70, 71, 79, 80].includes(i) ? '.' : '·');
-    CONNECTION_PAIRS.forEach((p, i) => { board[p.start] = p.seq; board[p.end] = reverseComplement(p.seq); void i; });
+    CONNECTION_PAIRS.forEach(p => { board[p.start] = p.seq; board[p.end] = reverseComplement(p.seq); });
   } else {
     CUT_STRANDS.forEach((strand, i) => strand.forEach((c, j) => { board[c] = CUT_SEQUENCES[i]![j]!; }));
   }
