@@ -253,3 +253,49 @@ test('level map lists the re-planned INS run without overlapping chapters', asyn
   await expect(page.getByTestId('cat-progress-INS')).toContainText('6 intro + 7 assembly');
   await page.screenshot({ path: '/workspace/game/screenshots/genome-progression-map-390x844.png' });
 });
+
+test('map run squares form one fixed-column grid, including the play square, at 320, 390 and 430', async ({ page }) => {
+  for (const width of [320, 390, 430] as const) {
+    await page.setViewportSize({ width, height: 844 });
+    await fresh(page);
+    await openMap(page);
+    await expect(page.getByTestId('run-nodes-INS')).toBeVisible();
+    await expect(page.getByTestId('catalogue-count')).toHaveCount(0);
+    await expect(page.getByText('Intro · 1-base tiles')).toHaveCount(0);
+    await expect(page.getByText('Assembly · multi-base tiles')).toHaveCount(0);
+    const boxes = await page.getByTestId('run-nodes-INS').locator('.cnode').evaluateAll((els) => els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { x: r.x, y: r.y, w: r.width, h: r.height, right: r.right, play: e.classList.contains('play') };
+    }));
+    expect(boxes.length).toBe(14); // 13 INS puzzles + play square
+    const w0 = boxes[0]!.w;
+    const h0 = boxes[0]!.h;
+    expect(Math.abs(w0 - h0)).toBeLessThanOrEqual(1);
+    for (const b of boxes) {
+      expect(Math.abs(b.w - w0)).toBeLessThanOrEqual(1);
+      expect(Math.abs(b.h - h0)).toBeLessThanOrEqual(1);
+    }
+    const play = boxes.find((b) => b.play);
+    expect(play).toBeDefined();
+    const rows: typeof boxes[] = [];
+    for (const b of boxes) {
+      const row = rows.find((r) => Math.abs(r[0]!.y - b.y) <= 1);
+      if (row) row.push(b);
+      else rows.push([b]);
+    }
+    expect(rows.length).toBeGreaterThan(1); // INS run wraps at these widths
+    const colX = rows[0]!.map((b) => b.x);
+    const colRight = rows[0]!.map((b) => b.right);
+    if (colX.length >= 3) {
+      const gaps = colX.slice(1).map((x, i) => x - colX[i]!);
+      for (const g of gaps) expect(Math.abs(g - gaps[0]!)).toBeLessThanOrEqual(1);
+    }
+    for (const b of boxes) {
+      expect(colX.some((x) => Math.abs(b.x - x) <= 1)).toBe(true);
+      expect(colRight.some((r) => Math.abs(b.right - r) <= 1)).toBe(true);
+    }
+    if (width === 390) {
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-map-tidy-390x844.png' });
+    }
+  }
+});

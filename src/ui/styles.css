@@ -303,15 +303,14 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .cat-name:hover:not(:disabled) { text-decoration: underline; filter: none; }
 .cat-state { font-size: 10.5px; color: var(--graphite); text-transform: uppercase; letter-spacing: 0.08em; }
 .cat-state.ok { color: var(--green); font-weight: 700; }
-.chapter-nodes { list-style: none; display: flex; flex-wrap: wrap; gap: 0; padding: 0; margin: 6px 0 0; }
-.chapter-nodes li + li .cnode { border-left: 0; }
-.cnode { width: 30px; height: 30px; padding: 0; border-radius: 0; font-size: 12px; font-weight: 700; }
+.chapter-nodes { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, 30px); justify-content: start; gap: 0; padding: 0; margin: 6px 0 0; }
+.chapter-nodes li { width: 30px; height: 30px; }
+.cnode { width: 100%; height: 100%; margin: 0; padding: 0; border-radius: 0; font-size: 12px; font-weight: 700; }
 .cnode.done { background: var(--mint); color: var(--ink); }
 .cnode.current { box-shadow: inset 0 -4px 0 var(--coral-edge); }
 .cnode.started { box-shadow: inset 0 -4px 0 var(--butter-edge); }
-.cnode.play { background: var(--coral); color: var(--ink); border-color: var(--ink); margin-left: 6px; }
+.cnode.play { background: var(--coral); color: var(--ink); border-color: var(--ink); }
 .cnode.intro { font-weight: 600; }
-.run-label { margin: 8px 0 2px; letter-spacing: 0.02em; }
 
 .excluded ul { padding-left: 18px; margin: 4px 0; }
 

@@ -17,11 +17,13 @@ async function patchSave(page: Page, patch: (s: Record<string, unknown>) => Reco
   await page.reload();
 }
 
-test('map shows the gene catalogue with its count from the manifest, chapter nodes and exclusions', async ({ page }) => {
+test('map shows the gene catalogue, chapter nodes and exclusions', async ({ page }) => {
   await fresh(page);
   await openMap(page);
-  await expect(page.getByTestId('catalogue-count')).toHaveText(`${manifest.included.length} verified genes`);
+  await expect(page.getByTestId('catalogue')).toBeVisible();
+  await expect(page.getByTestId('catalogue-count')).toHaveCount(0);
   for (const g of manifest.included) await expect(page.getByTestId(`cat-${g.symbol}`)).toBeVisible();
+  await expect(page.getByTestId('run-nodes-INS')).toBeVisible();
   await expect(page.locator('.cnode:not(.play)')).toHaveCount(CHAPTERS.length + 12);
   await expect(page.getByTestId('catalogue-excluded')).toContainText(manifest.excluded[0]!.symbol);
   await expect(page.locator('.node:not(.lab)')).toHaveCount(0);

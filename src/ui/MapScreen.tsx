@@ -1,5 +1,5 @@
 import type { LevelDefinition } from '../engine/types.ts';
-import { CATALOGUE_SIZE, GENES, MANIFEST } from '../genomics/genes.ts';
+import { GENES, MANIFEST } from '../genomics/genes.ts';
 import { CAMPAIGN_LEVELS, introOf, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { tierName } from '../campaign/chapters.ts';
@@ -28,11 +28,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
         {completed.length === 0 ? 'Start' : !nextUnfinished ? 'Replay' : 'Continue'} · {next.symbol} {nextRun.part}/{nextRun.of}
       </button>
       <div className="panel catalogue" data-testid="catalogue">
-        <div className="row-between">
-          <h2 className="gene">Gene catalogue <span>· full assembly</span></h2>
-          <span className="muted small" data-testid="catalogue-count">{CATALOGUE_SIZE} verified genes</span>
-        </div>
-        <p className="muted small lab-note">INS and HBB open with short 1-base intro puzzles, then every gene is rebuilt from multi-base tiles (MANE Select RefSeq). A gene is discovered by solving its first puzzle, and assembled only when every base is placed and the SHA-256 matches.</p>
+        <h2 className="gene">Gene catalogue</h2>
         {themes.map((theme) => (
           <div key={theme} className="theme">
             <h3 className="theme-title">{theme}</h3>
@@ -82,17 +78,8 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
                   <div className="row-between muted tiny">
                     <span data-testid={`cat-progress-${m.symbol}`}>{st.covered} / {m.cdsLength} bp · chr {m.chromosome} · {countLabel} · {tiers.join(', ')}</span>
                   </div>
-                  {intros.length > 0 && (
-                    <>
-                      <p className="muted tiny run-label">Intro · 1-base tiles</p>
-                      <ol className="chapter-nodes" aria-label={`${m.symbol} intro puzzles`} data-testid={`intro-nodes-${m.symbol}`}>
-                        {intros.map(node)}
-                      </ol>
-                      <p className="muted tiny run-label">Assembly · multi-base tiles</p>
-                    </>
-                  )}
-                  <ol className="chapter-nodes" aria-label={`${m.symbol} assembly puzzles`}>
-                    {chapters.map(node)}
+                  <ol className="chapter-nodes" aria-label={`${m.symbol} puzzles`} data-testid={`run-nodes-${m.symbol}`}>
+                    {run.map(node)}
                     <li><button type="button" className="cnode play" onClick={() => onPlay(nextPart.id)} aria-label={`Play ${m.symbol}`}>▶</button></li>
                   </ol>
                 </div>
