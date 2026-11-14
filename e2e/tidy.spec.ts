@@ -19,24 +19,86 @@ function assertCentred(banner: { x: number; y: number; width: number; height: nu
 }
 
 
-/** Badges share a left x; corresponding chips share a column x and width (within 1px). */
+type ClueBox = { x: number; y: number; width: number; height: number; right: number; bottom: number };
+type CluePartBox = {
+  x: number; y: number; width: number; right: number; bottom: number;
+  badge: ClueBox | null; chips: ClueBox[]; dir: ClueBox | null; plus: ClueBox | null;
+};
+
+/** Labels and arrows stay with their piece; pieces sit inline and left-align when they wrap. */
 async function expectClueAlignment(page: Page): Promise<void> {
-  const badges = page.locator('[data-testid^="clue-badge-"]');
-  const xs = await badges.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().x));
-  expect(xs.length).toBeGreaterThanOrEqual(1);
-  for (const x of xs) expect(Math.abs(x - xs[0]!)).toBeLessThanOrEqual(1);
-  const parts = await page.locator('[data-testid^="clue-part-"]').evaluateAll((els) => els
-    .filter((p) => !p.classList.contains('pair-bonds'))
-    .map((p) => [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].map((e) => {
+  const { parts, replicate } = await page.locator('[data-testid="target-panel"]').evaluate((panel) => {
+    const box = (e: Element): ClueBox => {
       const r = e.getBoundingClientRect();
-      return { x: r.x, y: r.y, w: r.width };
-    })));
-  if (parts.length < 2) return;
-  const n = Math.min(parts[0]!.length, parts[1]!.length);
-  expect(n).toBeGreaterThan(0);
-  for (let i = 0; i < n; i++) {
-    expect(Math.abs(parts[0]![i]!.x - parts[1]![i]!.x)).toBeLessThanOrEqual(1);
-    expect(Math.abs(parts[0]![i]!.w - parts[1]![i]!.w)).toBeLessThanOrEqual(1);
+      return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
+    };
+    const parts = [...panel.querySelectorAll('[data-testid^="clue-part-"]')]
+      .filter((p) => !p.classList.contains('pair-bonds'))
+      .map((p) => {
+        const r = p.getBoundingClientRect();
+        return {
+          x: r.x, y: r.y, width: r.width, right: r.right, bottom: r.bottom,
+          badge: p.querySelector('[data-testid^="clue-badge-"]') ? box(p.querySelector('[data-testid^="clue-badge-"]')!) : null,
+          chips: [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].map(box),
+          dir: p.querySelector('.clue-dir') ? box(p.querySelector('.clue-dir')!) : null,
+          plus: p.querySelector('.plus') ? box(p.querySelector('.plus')!) : null,
+        };
+      });
+    return { parts, replicate: !!panel.querySelector('.clue-stack.mode-replicate') };
+  });
+  expect(parts.length).toBeGreaterThanOrEqual(1);
+
+  for (const p of parts) {
+    if (p.badge && p.chips[0]) {
+      const first = p.chips[0];
+      expect(p.badge.x).toBeLessThan(first.x);
+      expect(Math.abs(p.badge.y - first.y)).toBeLessThanOrEqual(8);
+      // Replication keeps a 5′ mark between the badge and the first chip.
+      if (!replicate) expect(first.x - p.badge.right).toBeLessThanOrEqual(8);
+    }
+    const last = p.chips[p.chips.length - 1];
+    if (p.dir && last) {
+      if (Math.abs(p.dir.y - last.y) <= 8) expect(p.dir.x).toBeGreaterThan(last.right - 1);
+      else expect(p.dir.y).toBeGreaterThan(last.y);
+    }
+    if (p.plus) {
+      const after = p.dir ?? last;
+      if (after && Math.abs(p.plus.y - after.y) <= 8) expect(p.plus.x).toBeGreaterThan(after.x);
+      else if (after) expect(p.plus.y).toBeGreaterThan(after.y);
+    }
+  }
+
+  const rows: CluePartBox[][] = [];
+  for (const p of parts) {
+    const row = rows.find((r) => Math.abs(r[0]!.y - p.y) <= 8);
+    if (row) row.push(p);
+    else rows.push([p]);
+  }
+  for (const row of rows) {
+    for (let i = 1; i < row.length; i++) {
+      expect(row[i]!.x).toBeGreaterThan(row[i - 1]!.right - 2);
+      if (row[i - 1]!.plus) expect(row[i]!.x).toBeGreaterThan(row[i - 1]!.plus!.x);
+    }
+  }
+  if (rows.length >= 2) {
+    const firstX = rows[0]![0]!.x;
+    for (const row of rows.slice(1)) {
+      expect(Math.abs(row[0]!.x - firstX)).toBeLessThanOrEqual(2);
+    }
+    for (let r = 0; r < rows.length - 1; r++) {
+      const prevLast = rows[r]![rows[r]!.length - 1]!;
+      if (prevLast.plus) expect(prevLast.plus.y).toBeLessThan(rows[r + 1]![0]!.y + 2);
+    }
+  }
+
+  // Replication keeps template over complement, so chips still share vertical columns.
+  if (replicate && parts.length >= 2) {
+    const n = Math.min(parts[0]!.chips.length, parts[1]!.chips.length);
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      expect(Math.abs(parts[0]!.chips[i]!.x - parts[1]!.chips[i]!.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(parts[0]!.chips[i]!.width - parts[1]!.chips[i]!.width)).toBeLessThanOrEqual(1);
+    }
   }
 }
 
@@ -252,16 +314,21 @@ test('INS 7/13 has no full-sequence box or tile inspector under the board', asyn
   await page.screenshot({ path: '/workspace/game/screenshots/genome-ins7-tidy-390x844.png' });
 });
 
-test('splice clue keeps + on piece 1’s line and aligns piece numbers at 320 and 390', async ({ page }) => {
-  for (const width of [320, 390] as const) {
+test('splice clue lays pieces inline, keeps + on the previous piece, and wraps cleanly at 320–430', async ({ page }) => {
+  test.setTimeout(60_000);
+  for (const width of [320, 375, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
-    await openChapter(page, 'ins-c02');
-    await expect(page.getByTestId('target-panel')).toBeVisible();
-    await expect(page.getByTestId('clue-part-1').locator('.plus')).toHaveCount(1);
-    await expect(page.getByTestId('clue-part-2').locator('.plus')).toHaveCount(0);
-    await expectClueAlignment(page);
-    if (width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-align-390x844.png' });
+    for (const id of ['hbb-06', 'ins-c02'] as const) {
+      await openChapter(page, id);
+      await expect(page.getByTestId('target-panel')).toBeVisible();
+      await expect(page.getByTestId('clue-part-1').locator('.plus')).toHaveCount(1);
+      await expect(page.locator('[data-testid^="clue-part-"]').last().locator('.plus')).toHaveCount(0);
+      await expectClueAlignment(page);
+      await expectClueChipsFit(page);
+      if (width === 390 && id === 'hbb-06') {
+        await expect(page.locator('.target-title')).toHaveText(/grand splice/i);
+        await page.screenshot({ path: '/workspace/game/screenshots/genome-grand-splice-390x844.png', animations: 'disabled' });
+      }
     }
   }
 });
@@ -328,8 +395,8 @@ test('map run squares form one fixed-column grid, including the play square, at 
   }
 });
 
-test('repair clue keeps labels in one column, chips lined up, and the gap at the end of piece 1 at 320 and 390', async ({ page }) => {
-  for (const width of [320, 390] as const) {
+test('repair clue keeps the gap at the end of piece 1 and lays pieces inline at 320–430', async ({ page }) => {
+  for (const width of [320, 375, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
     await openChapter(page, 'ins-c04');
     await expect(page.getByTestId('target-panel')).toBeVisible();
@@ -338,6 +405,7 @@ test('repair clue keeps labels in one column, chips lined up, and the gap at the
     await expect(page.getByTestId('repair-slot')).toContainText('?×');
     await expect(page.getByTestId('target-panel').getByText(/^0$/)).toHaveCount(0);
     await expectClueAlignment(page);
+    await expectClueChipsFit(page);
     const slot = page.getByTestId('repair-slot');
     const chips = page.getByTestId('clue-part-1').locator('.tok-chip:not(.gap), .strip-cell:not(.gap)');
     const slotBox = (await slot.boundingBox())!;
@@ -353,15 +421,17 @@ test('repair clue keeps labels in one column, chips lined up, and the gap at the
   }
 });
 
-test('replication and sequencing clues use the same left-aligned piece labels at 320 and 390', async ({ page }) => {
-  for (const width of [320, 390] as const) {
+test('replication and sequencing clues keep labels with their pieces at 320–430', async ({ page }) => {
+  for (const width of [320, 375, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
     await openChapter(page, 'ins-c03');
     await expect(page.getByTestId('target-panel')).toBeVisible();
     await expectClueAlignment(page);
+    await expectClueChipsFit(page);
     await openChapter(page, 'ins-c05');
     await expect(page.getByTestId('clue-badge-1')).toBeVisible();
     await expectClueAlignment(page);
+    await expectClueChipsFit(page);
   }
 });
 
@@ -435,6 +505,7 @@ test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 
       await expectClueWrapColumns(page);
       if (width === 390 && level.id === 'ins-c05') {
         await page.screenshot({ path: '/workspace/game/screenshots/genome-ins11-clue-390x844.png', animations: 'disabled' });
+        await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-inline-ins11-390x844.png', animations: 'disabled' });
       }
     }
   }

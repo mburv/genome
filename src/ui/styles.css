@@ -206,33 +206,83 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .mini-strip .strip-cell, .strip-cell.gap { width: clamp(18px, 5.4vw, 26px); height: 26px; font-size: 13px; }
 .strip-cell.gap { display: inline-grid; place-items: center; background: var(--white); color: var(--red); border: 1.5px dashed var(--red); font-weight: 700; }
 .strip-cell.gap.restored { border-style: solid; animation: restore 0.5s ease both; }
-.clue-stack { display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 3px; row-gap: 4px; align-items: start; margin-top: 6px; }
-.clue-stack.mode-replicate { grid-template-columns: 18px 14px minmax(0, 1fr) 14px auto; }
-.clue-part { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: start; }
-/* Chips size to their letters and wrap in shared columns instead of shrinking to one row (D-UI-28). */
-.clue-tokens {
-  display: grid;
-  /* Fixed tracks so auto-fill never packs more columns than fit (max-content was overflowing by a few px). */
-  grid-template-columns: repeat(auto-fill, var(--chip-min, calc(3ch + 12px)));
+/* Pieces flow inline and wrap only when the row is full (D-UI-29). Replication stays a stacked pair. */
+.clue-stack {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 4px 8px;
+  margin-top: 6px;
+  --chip-min: clamp(18px, 5.4vw, 26px);
+}
+.clue-part {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 3px;
-  justify-content: start;
-  align-items: center;
-  min-width: 0;
+  width: max-content;
   max-width: 100%;
+  min-width: 0;
+}
+.clue-stack.mode-replicate {
+  display: grid;
+  grid-template-columns: 18px 14px minmax(0, 1fr) 14px auto;
+  column-gap: 3px;
+  row-gap: 4px;
+  align-items: start;
+}
+.clue-stack.mode-replicate .clue-part {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  gap: 0;
+}
+/* Chips size to their letters and wrap in columns instead of shrinking to one row (D-UI-28). */
+.clue-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: flex-start;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
   font: 700 10.5px/1 var(--mono);
 }
+.clue-stack.mode-replicate .clue-tokens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--chip-min, calc(3ch + 12px)));
+  width: auto;
+  max-width: 100%;
+}
+.clue-stack.tier-3 .clue-tokens { --chip-min: calc(3ch + 12px); }
 .clue-stack.tier-6 .clue-tokens { --chip-min: calc(6ch + 14px); }
 .clue-stack.tier-12 .clue-tokens, .clue-stack.tier-24 .clue-tokens { --chip-min: calc(9ch + 14px); }
 .clue-stack .tok-chip, .clue-stack .strip-cell {
   box-sizing: border-box;
+  height: auto;
+  min-height: 26px;
+}
+.clue-stack:not(.mode-replicate) .tok-chip,
+.clue-stack:not(.mode-replicate) .strip-cell {
+  flex: 0 0 var(--chip-min);
+  width: var(--chip-min);
+  max-width: 100%;
+}
+.clue-stack.mode-replicate .tok-chip,
+.clue-stack.mode-replicate .strip-cell {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  height: auto;
-  min-height: 26px;
   justify-self: stretch;
 }
 .chip-label { display: block; white-space: nowrap; overflow: visible; }
+.clue-affix { display: inline-flex; align-items: center; gap: 2px; flex: none; }
+.clue-dir { flex: none; }
 .plus { color: var(--graphite); font-weight: 700; padding: 0 3px; flex: none; }
 .pair { margin-top: 4px; }
 .pair-row, .seq-row, .repair-row, .splice-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }

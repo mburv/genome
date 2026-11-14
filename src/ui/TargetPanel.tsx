@@ -159,8 +159,10 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
             <CluePart key={t.group} group={t.group} testId={`clue-part-${t.group}`} badgeTestId={`clue-badge-${t.group}`}>
               <TokenRow>
                 <Strip track={t} ok={matches[i]!} testId={i === 0 ? 'target-strip' : undefined} />
-                <span className="muted tiny">{t.orientation === 'horizontal' ? '→' : '↓'}</span>
-                {i < def.tracks.length - 1 ? <span className="plus" aria-hidden="true">+</span> : null}
+                <span className="clue-affix">
+                  <span className="clue-dir muted tiny">{t.orientation === 'horizontal' ? '→' : '↓'}</span>
+                  {i < def.tracks.length - 1 ? <span className="plus" aria-hidden="true">+</span> : null}
+                </span>
               </TokenRow>
             </CluePart>
           ))}
