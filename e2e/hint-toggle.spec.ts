@@ -1,0 +1,43 @@
+import { expect, test } from '@playwright/test';
+import { dragBy, goToChapter, openChapter, readHint } from './helpers';
+
+test('Hint stays on across consecutive moves, undo and restart, then turns off', async ({ page }) => {
+  await openChapter(page, 'hbb-c07');
+  const toggle = page.getByRole('button', { name: 'Hint' });
+  const cue = page.getByTestId('hint-cue');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(cue).toHaveCount(0);
+  const first = await readHint(page);
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await dragBy(page, first.cell, first.dir, first.k);
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(cue).toBeVisible();
+  const second = await readHint(page);
+  expect(second).not.toEqual(first);
+  await dragBy(page, second.cell, second.dir, second.k);
+  await expect(cue).toBeVisible();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(cue).toBeVisible();
+  await page.getByRole('button', { name: 'Restart', exact: true }).click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(cue).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(cue).toHaveCount(0);
+  await dragBy(page, first.cell, first.dir, first.k);
+  await expect(cue).toHaveCount(0);
+});
+
+test('Hint mode carries across puzzles and pauses during power targeting', async ({ page }) => {
+  await openChapter(page, 'hbb-c07');
+  await readHint(page);
+  await goToChapter(page, 'hbb-c08');
+  const toggle = page.getByRole('button', { name: 'Hint' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('hint-cue')).toBeVisible();
+  await goToChapter(page, 'hbb-c07');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await toggle.click();
+  await expect(page.getByTestId('hint-cue')).toHaveCount(0);
+});

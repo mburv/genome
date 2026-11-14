@@ -208,7 +208,8 @@ test('CRISPR recovery: after a bad edit, hint guidance still reaches the win', a
   await page.getByTestId(`base-${wrong[wrong.length - 1]}`).click();
   await page.getByTestId('power-confirm').click();
   for (let i = 0; i < 20 && !(await page.getByTestId('win').isVisible()); i++) {
-    await page.getByRole('button', { name: 'Hint' }).click();
+    const hintButton = page.getByRole('button', { name: 'Hint' });
+    if (await hintButton.getAttribute('aria-pressed') !== 'true') await hintButton.click();
     await page.waitForFunction(() => !!(
       document.querySelector('[data-testid="hint-cue"]')
       || document.querySelector('[data-testid="rewind"]')

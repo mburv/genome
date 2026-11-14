@@ -23,14 +23,14 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      - run: mkdir -p /workspace/game/screenshots || true
-      - run: npm run test:e2e -- e2e/compact-clues.spec.ts e2e/layout.spec.ts
+      - run: npm run test:e2e -- e2e/compact-clues.spec.ts e2e/layout.spec.ts e2e/hint-toggle.spec.ts
       - run: npm run test:e2e -- e2e/tidy.spec.ts --grep 'replication clues pair|clue chips size'
+      - run: npm run test:e2e -- e2e/powers.spec.ts --grep 'CRISPR recovery|CRISPR.*preview'
       - run: npm run build
       # Stage only this verified change; the owner-facing Pages branch is untouched.
       # The connector fast-forwards gh-pages after inspecting the build and test results.
       - name: Stage verified Pages build
-        if: github.ref == 'refs/heads/fix/compact-clues'
+        if: startsWith(github.ref, 'refs/heads/fix/') && github.event_name == 'push'
         shell: bash
         run: |
           git fetch origin gh-pages
@@ -41,8 +41,8 @@ jobs:
           git -C "$RUNNER_TEMP/genome-site" config user.name "github-actions[bot]"
           git -C "$RUNNER_TEMP/genome-site" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C "$RUNNER_TEMP/genome-site" add -A
-          git -C "$RUNNER_TEMP/genome-site" commit -m "Deploy ${GITHUB_SHA}: compact clues"
-          git -C "$RUNNER_TEMP/genome-site" push origin "HEAD:refs/heads/build/compact-clues-${GITHUB_SHA}"
+          git -C "$RUNNER_TEMP/genome-site" commit --allow-empty -m "Deploy ${GITHUB_SHA}"
+          git -C "$RUNNER_TEMP/genome-site" push origin "HEAD:refs/heads/build/${GITHUB_SHA}"
       - uses: actions/upload-artifact@v4
         with:
           name: genome-web

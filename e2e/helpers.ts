@@ -133,7 +133,8 @@ export async function openChapter(page: Page, id: string): Promise<void> {
 
 /** Ask for a hint; returns the cued tile and the drag (direction + cells) from the board cue. */
 export async function readHint(page: Page): Promise<{ cell: number; dir: Dir; k: number }> {
-  await page.getByRole('button', { name: 'Hint' }).click();
+  const button = page.getByRole('button', { name: 'Hint' });
+  if (await button.getAttribute('aria-pressed') !== 'true') await button.click();
   const cue = page.getByTestId('hint-cue');
   await cue.waitFor();
   const dir = (await cue.getAttribute('data-hint-dir')) as Dir;

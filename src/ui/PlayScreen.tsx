@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   applyCommand, certifiedHint, createInitialState, energyOf, fullHint, levelCodons, segmentIn, trackMatches,
-  type Command, type CommandResult, type Hint, type PuzzleState,
+  type Command, type CommandResult, type PuzzleState,
 } from '../engine/engine.ts';
 import { codonComplete, OPENING_LEVEL_ID, POWER_COST, powersEnabled, SCAFFOLD_TURNS, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
@@ -32,18 +32,18 @@ interface Props {
   onMap: () => void;
   onCard: (symbol: string) => void;
   onPowerArmed?: (armed: boolean) => void;
+  hintMode: boolean | null;
+  onHintModeChange: (enabled: boolean) => void;
 }
 
-const stateKey = (s: PuzzleState): string => `${s.board}|${s.moves}|${s.history.length}|${s.locks.join()}|${s.scaffold?.remaining ?? 0}|${s.edits}|${Object.keys(s.custom).length}`;
-
-export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, onCard, onPowerArmed }: Props) {
+export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, onCard, onPowerArmed, hintMode, onHintModeChange }: Props) {
   const attempt = save.attempts[def.id];
   const alreadyCompleted = save.completed.includes(def.id);
-  const puzzle = attempt ?? (alreadyCompleted ? solvedDisplayState(def, save.best[def.id]) : createInitialState(def));
+  const bestForLevel = save.best[def.id];
+  const puzzle = useMemo(() => attempt ?? (alreadyCompleted ? solvedDisplayState(def, bestForLevel) : createInitialState(def)), [attempt, alreadyCompleted, def, bestForLevel]);
   const gene = GENES[def.symbol]!;
   const powers = powersEnabled(def);
   const [selected, setSelected] = useState<Cell>(() => defaultSelection(def, puzzle));
-  const [hintRes, setHintRes] = useState<{ key: string; hint: Hint } | null>(null);
   const [animation, setAnimation] = useState<MoveAnimation | null>(null);
   const [celebrate, setCelebrate] = useState<{ newBases: number; discovered: boolean; assembled: boolean; replayed: boolean } | null>(null);
   const [preview, setPreview] = useState<SlidePreview | null>(null);
@@ -72,9 +72,15 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const solvedView = puzzle.status === 'solved';
   const energy = energyOf(puzzle);
 
-  const autoHint = (def.tutorial || def.id === OPENING_LEVEL_ID) && puzzle.moves === 0 && !solvedView ? certifiedHint(def, puzzle) : null;
-  const showGestureCue = autoHint?.kind === 'drag';
-  const activeHint = hintRes && hintRes.key === stateKey(puzzle) ? hintRes.hint : autoHint;
+  // Derive guidance from the committed state. Memoisation avoids rerunning the bounded
+  // solver for each pointer preview or render; power targeting temporarily hides hints.
+  const activeHint = useMemo(() => {
+    if (puzzle.status === 'solved' || targeting) return null;
+    if (hintMode === true) return fullHint(def, puzzle);
+    if (hintMode === null && (def.tutorial || def.id === OPENING_LEVEL_ID) && puzzle.moves === 0) return certifiedHint(def, puzzle);
+    return null;
+  }, [def, puzzle, hintMode, targeting]);
+  const showGestureCue = activeHint?.kind === 'drag' && (def.tutorial || def.id === OPENING_LEVEL_ID) && puzzle.moves === 0;
   const dragHint = activeHint?.kind === 'drag' && !solvedView ? activeHint : null;
   const hintCell = dragHint ? hintDisplayCell(def, puzzle.board, dragHint.slide, dragHint.segment) : null;
 
@@ -158,7 +164,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         }
       }
       if (sound) cue(sound);
-      setHintRes(null);
       persist(next);
       return true;
     },
@@ -182,24 +187,19 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     commit({ state: s, events: [{ type: 'undone' }], accepted: true });
   };
 
-  const presentHint = (h: Hint | null) => {
-    if (!h) return;
-    setHintRes({ key: stateKey(puzzle), hint: h });
-    if (h.kind === 'drag') setSelected(hintDisplayCell(def, puzzle.board, h.slide, h.segment));
-  };
-
-  const showHint = () => {
+  const toggleHint = () => {
     clearPower();
-    // The certified path is instant; only after powers change the board is a bounded search needed.
-    const quick = certifiedHint(def, puzzle);
-    if (quick) return presentHint(quick);
-    presentHint(fullHint(def, puzzle));
+    const enabled = hintMode !== true;
+    onHintModeChange(enabled);
+    if (enabled) {
+      const quick = certifiedHint(def, puzzle);
+      if (quick?.kind === 'drag') setSelected(hintDisplayCell(def, puzzle.board, quick.slide, quick.segment));
+    }
   };
 
   // ---- power targeting ------------------------------------------------------------------
   const pickPower = (p: Power) => {
     if (targeting === p) return clearPower();
-    setHintRes(null);
     const free = puzzle.freeUses.includes(p);
     if (!free && energy < POWER_COST[p]) {
       cue('reject');
@@ -377,7 +377,8 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           canUndo={puzzle.history.length > 0}
           canRestart={puzzle.moves > 0 || puzzle.history.length > 0}
           onUndo={() => dispatch({ type: 'undo' })}
-          onHint={showHint}
+          hintEnabled={hintMode === true}
+          onHint={toggleHint}
           onRestart={() => dispatch({ type: 'restart' })}
         />
       )}

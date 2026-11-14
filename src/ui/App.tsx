@@ -23,6 +23,8 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const [screen, setScreen] = useState<Screen>({ kind: 'title' });
   const systemReducedMotion = prefersReducedMotion();
   const reducedMotion = save.settings.reducedMotion || systemReducedMotion;
+  // null preserves the introductory tutorial cue until the player explicitly chooses a mode.
+  const [hintMode, setHintMode] = useState<boolean | null>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const onPowerArmed = useCallback((armed: boolean) => setHeaderCollapsed(armed), []);
 
@@ -52,6 +54,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     if (typeof localStorage !== 'undefined') clearProgressStorage(localStorage);
     persist(resetProgress(LEVEL_PACK, settings));
     setNotices([]);
+    setHintMode(null);
     go({ kind: 'title' });
   };
 
@@ -122,6 +125,8 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           onMap={() => go({ kind: 'map' })}
           onCard={(symbol) => go({ kind: 'card', symbol })}
           onPowerArmed={onPowerArmed}
+          hintMode={hintMode}
+          onHintModeChange={setHintMode}
         />
       )}
       {screen.kind === 'settings' && (
