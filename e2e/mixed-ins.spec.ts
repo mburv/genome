@@ -256,3 +256,15 @@ test('every new mechanic shares sliding layout, targets and toolbar on both phon
     }
   }
 });
+
+
+test('INS Genome Assembly restores grey placed reads after a reload',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-04').click();await page.getByTestId('tutorial-skip').click();
+  await tile(page,1).tap();await tile(page,67).tap();
+  await expect(page.locator('.assembly-placed')).toHaveCount(5);
+  await page.reload();await openMap(page);await page.getByTestId('cnode-ins-04').click();
+  await expect(page.locator('.assembly-placed')).toHaveCount(5);
+  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 reads');
+  await page.getByTestId('action-undo').click();
+  await expect(page.locator('.assembly-placed')).toHaveCount(0);
+});

@@ -206,3 +206,37 @@ test('Mutation Detective reclaims board space on a short phone', async ({ page }
   await tap(page, 20);
   await expect(page.getByTestId('mutation-selection')).toBeVisible();
 });
+
+
+test('Genome Assembly greys only placed source reads and restores them on undo or restart', async ({ page }) => {
+  await openLab(page, 'assembly');
+  const board=page.getByTestId('mechanics-board');
+  const placed=board.locator('.assembly-placed');
+  const source=tile(page,1);
+  const original=await source.evaluate(el=>getComputedStyle(el).backgroundColor);
+  await expect(placed).toHaveCount(0);
+  await tap(page,1);
+  await expect(placed).toHaveCount(0);
+  await tap(page,71); // five-base read cannot fit at slot nine
+  await expect(placed).toHaveCount(0);
+  await trace(page,[1,67]);
+  await expect(placed).toHaveCount(5);
+  for(const c of [1,2,3,4,5]){
+    await expect(tile(page,c)).toHaveAttribute('data-read-placed','true');
+    await expect(tile(page,c)).toHaveCSS('background-color','rgb(232, 232, 228)');
+  }
+  await expect(source).toHaveAttribute('aria-label',/placed at slot 5/);
+  await expect(tile(page,19)).toHaveAttribute('data-read-placed','false');
+  await expect(board.locator('.assembly-slot.assembly-placed')).toHaveCount(0);
+  await expect(tile(page,67)).toHaveAttribute('data-base','C');
+  await expect(tile(page,67)).toHaveCSS('background-color','rgb(207, 225, 243)');
+  await page.getByTestId('action-undo').click();
+  await expect(placed).toHaveCount(0);
+  await expect(source).toHaveCSS('background-color',original);
+  await tap(page,1);await tap(page,67);
+  await tap(page,19);await tap(page,63);
+  await expect(placed).toHaveCount(10);
+  await page.getByTestId('action-restart').click();
+  await expect(placed).toHaveCount(0);
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/3 reads');
+});

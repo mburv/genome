@@ -907,3 +907,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mixed-under-board .lab-base-picker { display:grid; gap:1px; }
 .mixed-under-board .lab-base-picker button { min-height:36px; padding:5px 0; }
 .mixed-under-board .lab-hint { margin:0; }
+
+/* Placed assembly reads remain editable, but the numbered destination row retains its DNA colours. */
+.mode-lab-assembly .lab-cell.assembly-placed { background:#e8e8e4; border-color:#b8b8b2; color:var(--graphite); }
+.mode-lab-assembly .lab-cell.assembly-placed small { background:transparent; color:var(--graphite); }
