@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, MUTATION_ROWS, mutationExpected, mutationCount, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATION_ROWS, mutationExpected, mutationCount, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">
@@ -171,7 +171,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
       <div className="row-between"><b className="small">{id === 'crush' ? 'Next codon' : 'Objective'}</b><span className="small muted" data-testid="lab-progress">{progress}</span></div>
       {id === 'trace' && <div className="lab-sequence">{[...target].map((b, i) => <span key={i} className={'b-' + b + (i < state.trace.length ? ' done' : '')}>{b}</span>)}</div>}
       {id === 'crush' && <div className="lab-codons">{CRUSH_TARGETS.map((c, i) => <span key={i} className={i < state.collected ? 'done' : i === state.collected ? 'current' : ''}>{c}</span>)}</div>}
-      {id === 'assembly' && <div className="small muted">Match overlaps · 9-base assembly row</div>}
+      {id === 'assembly' && <><div className="small muted">Reference sequence · 5′ → 3′</div><div className="lab-sequence assembly-reference" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={'b-' + b + (state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} aria-label={'Slot ' + (i + 1) + ': ' + b}>{b}<small>{i + 1}</small></span>)}</div></>}
       {id === 'mutation' && <div className="small muted">A ↔ T · C ↔ G</div>}
       {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
       {id === 'restriction' && <div className="mono small">{target}</div>}
@@ -185,7 +185,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
         const moving = !!swapMotion && (c === swapMotion.a || c === swapMotion.b);
         const clear = crushAnimation?.stage === 'clear' && animationFrame?.matched.includes(c);
         const fall = falling.get(c);
-        const classes = ['lab-cell', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', /^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
+        const classes = ['lab-cell', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', /^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) && b === ASSEMBLY_TARGET[c - ASSEMBLY_CELLS[0]!] ? 'assembly-correct' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
         const endpoint = id === 'connections' && pair >= 0;
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
         const badge = endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
