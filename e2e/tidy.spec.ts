@@ -39,13 +39,13 @@ async function expectClueAlignment(page: Page): Promise<void> {
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
     };
     const parts = [...panel.querySelectorAll('[data-testid^="clue-part-"]')]
-      .filter((p) => !p.classList.contains('pair-bonds'))
+      .filter((p) => !p.classList.contains('pair-bonds') && p.getClientRects().length > 0)
       .map((p) => {
         const r = p.getBoundingClientRect();
         return {
           x: r.x, y: r.y, width: r.width, right: r.right, bottom: r.bottom,
           badge: p.querySelector('[data-testid^="clue-badge-"]') ? box(p.querySelector('[data-testid^="clue-badge-"]')!) : null,
-          chips: [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].map(box),
+          chips: [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].filter(e => e.getClientRects().length > 0).map(box),
           dir: p.querySelector('.clue-dir') ? box(p.querySelector('.clue-dir')!) : null,
           plus: p.querySelector('.plus') ? box(p.querySelector('.plus')!) : null,
         };
@@ -107,7 +107,7 @@ async function expectReplicatePairs(page: Page): Promise<void> {
       const r = e.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
     };
-    const pairs = [...panel.querySelectorAll('.rep-pair')].map((p) => {
+    const pairs = [...panel.querySelectorAll('.rep-pair')].filter(p => p.getClientRects().length > 0).map((p) => {
       const chips = [...p.querySelectorAll('.tok-chip, .strip-cell')].map(box);
       const bond = p.querySelector('.rep-bond');
       const r = p.getBoundingClientRect();
@@ -506,6 +506,7 @@ test('replication clues pair template over complement and wrap in matched chunks
   await expect(page.getByTestId('target-panel')).toBeVisible();
   await expectClueAlignment(page);
   await expectClueChipsFit(page);
+  expect(await page.getByTestId('target-panel').evaluate(el => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
   await expectActionRowInView(page);
   await page.screenshot({ path: '/workspace/game/screenshots/genome-hbb13-replication-320x568.png', animations: 'disabled' });
 });
@@ -534,6 +535,7 @@ async function expectClueChipsFit(page: Page): Promise<void> {
       }
     };
     for (const chip of panel.querySelectorAll('.tok-chip, .strip-cell')) {
+      if (!chip.getClientRects().length) continue;
       check(chip, chip.className);
       const label = chip.querySelector('.chip-label');
       if (label) check(label, 'chip-label');
@@ -550,8 +552,8 @@ async function expectClueChipsFit(page: Page): Promise<void> {
 /** Wrapped chips share x with the chip/column above. */
 async function expectClueWrapColumns(page: Page): Promise<void> {
   const parts = await page.locator('[data-testid^="clue-part-"]').evaluateAll((els) => els
-    .filter((p) => !p.classList.contains('pair-bonds'))
-    .map((p) => [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].map((e) => {
+    .filter((p) => !p.classList.contains('pair-bonds') && p.getClientRects().length > 0)
+    .map((p) => [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].filter(e => e.getClientRects().length > 0).map((e) => {
       const r = e.getBoundingClientRect();
       return { x: r.x, y: r.y };
     })));
