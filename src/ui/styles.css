@@ -10,6 +10,8 @@
   --stone: #efefea;
   --rule: #d4d4ce;
   --ink: #111111;
+  /* Board tile letters in play: ink composited at the solved board's 0.78 opacity over paper (D-UI-26). */
+  --tile-ink: #444443;
   --graphite: #52524e;
   /* deep accent inks — text, rules and small marks only (all ≥ 4.5:1 on white and paper) */
   --red: #b23a35;
@@ -114,11 +116,14 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 }
 .title-tag {
   margin: 8px 0 0;
-  font-size: 11px;
+  max-width: 100%;
+  padding-inline: 2px;
+  font-size: clamp(9px, 3vw, 11px);
   font-weight: 400;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--graphite);
+  line-height: 1.35;
 }
 .title-motif {
   display: flex;
@@ -386,7 +391,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .card-button.unlocked { background: var(--ink); color: var(--white); font-weight: 700; }
 .legacy { margin: 0 4px; }
 .lab-note { margin: 4px 0 0; }
-.theme-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--graphite); margin: 16px 0 0; padding-bottom: 4px; border-bottom: 1px solid var(--ink); }
 .cat-gene { border-bottom: 1px solid var(--rule); padding: 8px 0; }
 .cat-gene.assembled .cat-name b { color: var(--green); }
 .cat-name { background: none; border: 0; padding: 0; text-align: left; color: inherit; }
@@ -473,6 +477,23 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tile.tok { --tok-bg: #e8e8e2; --tok-fg: #111111; --tok-soft: #3d3d3a; --tok-border: #8a8a84; background: var(--tok-bg); color: var(--tok-fg); border: 1px solid var(--tok-border); }
 /* CRISPR-created (non-reference) sequences: neutral hatching + dashed rule, never a palette colour. */
 .tile.tok.tok-custom { background: repeating-linear-gradient(135deg, #ffffff 0 4px, #e3e3dc 4px 8px); color: var(--ink); outline: 2px dashed var(--ink); outline-offset: -4px; }
+/* In-play board letters match the softer solved-state ink. Clue chips stay carbon ink. */
+.tile,
+.tile.b-A, .tile.b-C, .tile.b-G, .tile.b-T,
+.tile.tok,
+.tile.tok.tok-custom {
+  color: var(--tile-ink);
+}
+/* Under the solved board's 0.78 opacity, restore carbon ink so letters still read as --tile-ink. */
+.board.solved .tile,
+.board.solved .tile.b-A,
+.board.solved .tile.b-C,
+.board.solved .tile.b-G,
+.board.solved .tile.b-T,
+.board.solved .tile.tok,
+.board.solved .tile.tok.tok-custom {
+  color: var(--ink);
+}
 .tile.tok .tok-row i { color: inherit; }
 .tile.tok .tok-face .ell, .tile.tok .tok-len { color: var(--tok-soft); }
 .tile.tok .barcode { box-shadow: 0 0 0 1px var(--tok-fg); }

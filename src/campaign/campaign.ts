@@ -1,5 +1,5 @@
-import pack from './levels.generated.json';
-import chapterPack from './chapters.generated.json';
+import pack from './levels.generated.json' with { type: 'json' };
+import chapterPack from './chapters.generated.json' with { type: 'json' };
 import type { Interval, LevelDefinition } from '../engine/types.ts';
 
 export interface LevelPack {
@@ -53,6 +53,8 @@ export const LEVEL_PACK: LevelPack = {
 export const ALL_LEVELS: readonly LevelDefinition[] = LEVEL_PACK.levels;
 /** Non-lab campaign puzzles in play order (intros then chapters, per gene). */
 export const CAMPAIGN_LEVELS: readonly LevelDefinition[] = ALL_LEVELS.filter((l) => !l.lab);
+/** Catalogue genes in campaign play order. The map and next-level flow both use this list. */
+export const CAMPAIGN_GENES: readonly string[] = [...new Set(CAMPAIGN_LEVELS.map((l) => l.symbol))];
 /** M4 assembly chapter puzzles, grouped per gene in chapter order. */
 export const CHAPTER_LEVELS: readonly LevelDefinition[] = ALL_LEVELS.filter((l) => l.chapter);
 export const chapterOf = (symbol: string): LevelDefinition[] => CHAPTER_LEVELS.filter((l) => l.symbol === symbol);

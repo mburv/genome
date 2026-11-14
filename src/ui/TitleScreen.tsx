@@ -15,7 +15,7 @@ export function TitleScreen({ onPlay, onSettings }: Props) {
       </div>
       <div className="title-center">
         <h1 className="title-wordmark" data-testid="title-wordmark">GENOME</h1>
-        <p className="title-tag" data-testid="title-tag">Gene assembly</p>
+        <p className="title-tag" data-testid="title-tag">ASSEMBLE THE HUMAN GENOME</p>
         <div className="title-motif" aria-hidden="true" data-testid="title-motif">
           <div className="title-strand">
             {SENSE.map((b, i) => <span key={`s${i}`} className={`title-base b-${b}`}>{b}</span>)}

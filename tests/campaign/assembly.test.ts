@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LEVELS, CAMPAIGN_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS, LAB_LEVELS, chapterOf, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CAMPAIGN_GENES, CAMPAIGN_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS, LAB_LEVELS, chapterOf, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
 import { assemblyStatus, levelContribution } from '../../src/campaign/assembly.ts';
 import { MAX_ASSEMBLY_CDS, MAX_CHAPTER, MIN_CHAPTER, geneRunCoverageErrors, planChapter } from '../../src/campaign/chapters.ts';
 import { CATALOGUE_ORDER, CATALOGUE_SIZE, GENES, MANIFEST } from '../../src/genomics/genes.ts';
@@ -135,5 +135,23 @@ describe('full assembly', () => {
     const prior = [...INTRO_LEVELS, ...LAB_LEVELS];
     const rebuilt = { ...buildLevel(specs[0]!, GENES.INS!, prior), generatorVersion: first.generatorVersion };
     expect(rebuilt).toEqual(first);
+  });
+});
+
+describe('campaign progression order', () => {
+  it('lists genes in CAMPAIGN_LEVELS order, so the map and next-level cannot diverge', () => {
+    expect(CAMPAIGN_GENES).toEqual(['INS', 'HBB', 'HBA1', 'HBD', 'MB', 'GCG', 'LEP', 'PTH', 'NPY', 'TTR', 'B2M', 'RHO']);
+    expect(CAMPAIGN_GENES).toEqual([...new Set(CAMPAIGN_LEVELS.map((l) => l.symbol))]);
+    expect([...CAMPAIGN_GENES].sort()).toEqual([...CATALOGUE_ORDER].sort());
+  });
+
+  it('Next level after a gene’s final puzzle is the first puzzle of the next gene on the map', () => {
+    for (let i = 0; i < CAMPAIGN_GENES.length - 1; i++) {
+      const last = runOf(CAMPAIGN_GENES[i]!).at(-1)!;
+      const firstOfNext = runOf(CAMPAIGN_GENES[i + 1]!)[0]!;
+      const idx = CAMPAIGN_LEVELS.findIndex((l) => l.id === last.id);
+      expect(CAMPAIGN_LEVELS[idx + 1]!.id).toBe(firstOfNext.id);
+      expect(CAMPAIGN_LEVELS[idx + 1]!.symbol).toBe(CAMPAIGN_GENES[i + 1]);
+    }
   });
 });

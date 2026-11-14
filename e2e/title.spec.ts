@@ -10,7 +10,7 @@ test('launch shows the title screen; Play goes to the map', async ({ page }) => 
   await fresh(page);
   await expect(page.getByTestId('title-screen')).toBeVisible();
   await expect(page.getByTestId('title-wordmark')).toHaveText('GENOME');
-  await expect(page.getByTestId('title-tag')).toHaveText('Gene assembly');
+  await expect(page.getByTestId('title-tag')).toHaveText('ASSEMBLE THE HUMAN GENOME');
   await expect(page.getByTestId('title-motif')).toBeVisible();
   await expect(page.getByTestId('board')).toHaveCount(0);
   await expect(page.getByTestId('level-map')).toHaveCount(0);
@@ -31,12 +31,16 @@ for (const vp of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { wi
     await fresh(page);
     await expect(page.getByTestId('title-screen')).toBeVisible();
     await expect(page.getByTestId('title-play')).toBeVisible();
+    await expect(page.getByTestId('title-tag')).toHaveText('ASSEMBLE THE HUMAN GENOME');
     const overflow = await page.evaluate(() => ({
       x: document.documentElement.scrollWidth - window.innerWidth,
       y: document.documentElement.scrollHeight - window.innerHeight,
     }));
     expect(overflow.x).toBeLessThanOrEqual(0);
     expect(overflow.y).toBeLessThanOrEqual(1);
+    const tag = (await page.getByTestId('title-tag').boundingBox())!;
+    expect(tag.x).toBeGreaterThanOrEqual(0);
+    expect(tag.x + tag.width).toBeLessThanOrEqual(vp.width);
     const play = (await page.getByTestId('title-play').boundingBox())!;
     expect(play.height).toBeGreaterThanOrEqual(44);
     expect(play.width).toBeGreaterThanOrEqual(44);

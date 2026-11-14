@@ -1,6 +1,6 @@
 import type { LevelDefinition } from '../engine/types.ts';
 import { GENES, MANIFEST } from '../genomics/genes.ts';
-import { CAMPAIGN_LEVELS, introOf, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
+import { CAMPAIGN_GENES, CAMPAIGN_LEVELS, introOf, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { tierName } from '../campaign/chapters.ts';
 import { MODE_LABEL } from './modes.ts';
@@ -21,7 +21,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
   const nextUnfinished = CAMPAIGN_LEVELS.find((l) => !completed.includes(l.id));
   const next = nextUnfinished ?? CAMPAIGN_LEVELS[0]!;
   const nextRun = runProgress(next)!;
-  const themes = [...new Set(MANIFEST.included.map((g) => g.theme))];
+  const catalogue = CAMPAIGN_GENES.map((symbol) => MANIFEST.included.find((g) => g.symbol === symbol)!);
   return (
     <section className="map" aria-label="Level map" data-testid="level-map">
       <button type="button" className="primary big" onClick={() => onPlay(next.id)} data-testid="continue">
@@ -29,10 +29,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
       </button>
       <div className="panel catalogue" data-testid="catalogue">
         <h2 className="gene">Gene catalogue</h2>
-        {themes.map((theme) => (
-          <div key={theme} className="theme">
-            <h3 className="theme-title">{theme}</h3>
-            {MANIFEST.included.filter((g) => g.theme === theme).map((m) => {
+        {catalogue.map((m) => {
               const gene = GENES[m.symbol]!;
               const intros = introOf(m.symbol);
               const run = runOf(m.symbol);
@@ -84,9 +81,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
                   </ol>
                 </div>
               );
-            })}
-          </div>
-        ))}
+        })}
         {MANIFEST.excluded.length > 0 && (
           <details className="excluded small" data-testid="catalogue-excluded">
             <summary>{MANIFEST.excluded.length} candidate{MANIFEST.excluded.length > 1 ? 's' : ''} not included</summary>

@@ -40,7 +40,10 @@ test('first-run: title Play opens the map; the first puzzle is the 1-base INS in
   // Opening board is single-letter tiles, not 3-base codon pieces.
   await expect(page.locator('.tile.tok')).toHaveCount(0);
   await expect(page.locator('.board .tile .letter').first()).toHaveText(/^[ACGT]$/);
+  const playLetter = page.locator('.board .tile .letter').first();
+  expect(await playLetter.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(68, 68, 67)');
   await page.screenshot({ path: '/workspace/game/screenshots/genome-basics-level1-390x844.png', animations: 'disabled' });
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-tile-text-390x844.png', animations: 'disabled' });
   const drags = await solveWithHints(page);
   expect(drags).toBe(1);
   await expect(page.getByTestId('win')).toBeVisible();
@@ -56,6 +59,8 @@ test('first-run: title Play opens the map; the first puzzle is the 1-base INS in
   await expect(page.getByRole('button', { name: 'Level map' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'View card' })).toHaveCount(0);
+  expect(await playLetter.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(17, 17, 17)');
+  expect(await page.locator('.board').evaluate((el) => getComputedStyle(el).opacity)).toBe('0.78');
   await page.screenshot({ path: '/workspace/game/screenshots/genome-discovery-win-390x844.png', animations: 'disabled' });
 });
 

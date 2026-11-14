@@ -3,6 +3,7 @@ import chapterPack from '../src/campaign/chapters.generated.json' with { type: '
 import manifest from '../src/genomics/manifest.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
 import { createInitialState } from '../src/engine/engine.ts';
+import { CAMPAIGN_GENES, CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
 import { fresh, openMap, solveWithHints } from './helpers';
 
 const CHAPTERS = chapterPack.levels as unknown as LevelDefinition[];
@@ -24,7 +25,14 @@ test('map shows the gene catalogue, chapter nodes and exclusions', async ({ page
   await expect(page.getByTestId('catalogue')).toBeVisible();
   await expect(page.getByTestId('catalogue-count')).toHaveCount(0);
   for (const g of manifest.included) await expect(page.getByTestId(`cat-${g.symbol}`)).toBeVisible();
+  const mapOrder = await page.locator('.catalogue .cat-gene').evaluateAll((els) => els.map((el) => el.getAttribute('data-testid')!.replace(/^cat-/, '')));
+  expect(mapOrder).toEqual([...CAMPAIGN_GENES]);
+  expect(mapOrder).toEqual([...new Set(CAMPAIGN_LEVELS.map((l) => l.symbol))]);
+  expect(mapOrder.slice(0, 2)).toEqual(['INS', 'HBB']);
+  await expect(page.getByText('Hormones', { exact: true })).toHaveCount(0);
   await expect(page.getByTestId('run-nodes-INS')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-map-order-390x844.png', animations: 'disabled' });
   await expect(page.locator('.cnode:not(.play)')).toHaveCount(CHAPTERS.length + 12);
   await expect(page.getByTestId('catalogue-excluded')).toContainText(manifest.excluded[0]!.symbol);
   await expect(page.locator('.node:not(.lab)')).toHaveCount(0);
