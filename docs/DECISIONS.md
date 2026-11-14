@@ -312,3 +312,8 @@ Owner playtest: immediate swaps/refill are hard to follow. Drag previews move bo
 ### D-LAB-03 — Explicit mutation targets and coloured connections
 
 Owner playtest: Mutation Detective shows all 21 exact complementary targets by board row with live correct/mismatch feedback and selected-base guidance. DNA Connections uses matching mint, sky and butter fills for each numbered endpoint pair, its clue and occupied path cells. Empty cells remain white and holes remain grey. Undo and redraw derive the visual state from the existing board/routes; rules and saves are unchanged.
+
+
+### D-LAB-04 — Restriction target colour chips
+
+Owner playtest: render the Restriction Enzyme objective as individual base-coloured blocks using the exact board palette and border colours. Preserve sequence order and the existing 12px monospace font; wrap at narrow widths. Presentation only; the recognition sites, target and cut rules do not change.

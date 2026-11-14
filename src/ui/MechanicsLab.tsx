@@ -189,7 +189,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
         <div className="tiny muted">Green underline = correct · Red outline = needs repair</div>
       </div>}
       {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i], background: pathFills[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
-      {id === 'restriction' && <div className="mono small">{target}</div>}
+      {id === 'restriction' && <div className="mono small restriction-target" data-testid="restriction-target" aria-label={'Target sequence: ' + target}>{[...target].map((b, i) => <span key={i} className={'restriction-target-base b-' + b} data-base={b}>{b}</span>)}</div>}
     </div>
     <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); }}>
       {displayBoard.map((b, c) => {

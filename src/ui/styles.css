@@ -821,3 +821,11 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mode-lab-connections .lab-cell[data-connection-pair] { border-width: 1px; }
 .mode-lab-connections .lab-cell[data-connection-pair] small { background: transparent; }
 .mode-lab-connections .lab-lines polyline { stroke-width: .20; opacity: .85; }
+
+/* Restriction objective: board-colour base chips, retaining the original 12px monospace text. */
+.restriction-target { display: flex; flex-wrap: wrap; gap: 2px; font-size: 12px; line-height: 1.4; }
+.restriction-target-base { display: inline-grid; place-items: center; flex: 0 0 16px; min-height: 20px; border: 1px solid var(--rule); color: var(--ink); }
+.restriction-target-base.b-A { background: var(--A); border-color: var(--A-edge); }
+.restriction-target-base.b-C { background: var(--C); border-color: var(--C-edge); }
+.restriction-target-base.b-G { background: var(--G); border-color: var(--G-edge); }
+.restriction-target-base.b-T { background: var(--T); border-color: var(--T-edge); }
