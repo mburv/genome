@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATION_ROWS, mutationExpected, mutationCount, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, labHint, LAB_IDS, LAB_META, LAB_REFERENCE, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
+import { type MixedStage } from '../campaign/mixed.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">
@@ -15,16 +16,13 @@ const cellPoint = (c: number): [number, number] => [c % 9 + .5, Math.floor(c / 9
 const pathPoints = (path: readonly number[]): string => path.map(c => cellPoint(c).join(',')).join(' ');
 const pathColors = ['#2a6e4f', '#2b5f9e', '#8c5a10'];
 const pathFills = ['var(--mint)', 'var(--sky)', 'var(--butter)'];
-const readAt = (c: number) => READ_CELLS.findIndex(row => row.includes(c));
-const endAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c || p.end === c);
-const startAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c);
-type Session = { state: LabState; history: LabState[]; message: string };
+type Session = { state: LabState; history: LabState[]; actions: LabAction[]; message: string };
 type CrushDrag = { a: number; b: number; fraction: number };
-type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; result: LabResult };
+type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; result: LabResult; action: LabAction };
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
-function acceptResult(prev: Session, result: LabResult): Session {
-  return { state: result.state, history: result.state === prev.state ? prev.history : [...prev.history, prev.state], message: result.message || prev.message };
+function acceptResult(prev: Session, result: LabResult, action: LabAction): Session {
+  return { state: result.state, history: result.state === prev.state ? prev.history : [...prev.history, prev.state], actions: result.state === prev.state ? prev.actions : [...prev.actions, action], message: result.message || prev.message };
 }
 function crushDirection(a: number, dx: number, dy: number, pitch: number, board: readonly string[]): CrushDrag | null {
   const horizontal = Math.abs(dx) >= Math.abs(dy);
@@ -43,9 +41,23 @@ function swapTransform(cell: number, motion: CrushDrag): string | undefined {
   return 'translate(calc(' + (dx * 100) + '% + ' + dx + 'px), calc(' + (dy * 100) + '% + ' + dy + 'px))';
 }
 
-export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean }) {
+interface CampaignPlay {
+  stage: MixedStage; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
+  assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
+}
+export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; campaign?: CampaignPlay }) {
   const meta = LAB_META[id];
-  const [session, setSession] = useState<Session>(() => ({ state: createLab(id), history: [], message: '' }));
+  const spec = campaign?.stage.spec ?? DEFAULT_LAB_SPEC;
+  const { TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATION_ROWS, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET } = spec;
+  const readAt = (c: number) => READ_CELLS.findIndex(row => row.includes(c));
+  const endAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c || p.end === c);
+  const startAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c);
+  const mutationExpected = (c: number) => expectedMutation(c, spec);
+  const mutationCount = (board: readonly string[]) => countMutations(board, spec);
+  const [session, setSession] = useState<Session>(() => {
+    const initial: Session = { state: createLab(id, spec), history: [], actions: [], message: '' };
+    return (campaign?.initialActions ?? []).reduce((prev, action) => acceptResult(prev, applyLab(prev.state, action), action), initial);
+  });
   const [selected, setSelected] = useState<number | null>(null);
   const [hint, setHint] = useState(false);
   const gesture = useRef<{ pointer: number; start: number; last: number; pair: number; read: number; x: number; y: number; pitch: number } | null>(null);
@@ -53,20 +65,22 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
   const busy = crushAnimation !== null;
   const { state } = session;
+  const onProgress = campaign?.onProgress;
+  useEffect(() => { onProgress?.(session.actions, state); }, [onProgress, session.actions, state]);
   const boardRef = useRef<HTMLDivElement>(null);
   const dispatch = (action: LabAction) => setSession(prev => {
     const result = applyLab(prev.state, action);
-    return acceptResult(prev, result);
+    return acceptResult(prev, result, action);
   });
   // Only presentation is delayed. Commit the exact engine result once, after the final frame.
   useEffect(() => {
     if (!crushAnimation) return;
-    const { stage, result } = crushAnimation;
+    const { stage, result, action } = crushAnimation;
     const timer = window.setTimeout(() => {
       if (stage === 'swap') setCrushAnimation({ ...crushAnimation, stage: result.crush ? 'clear' : 'return' });
       else if (stage === 'clear') setCrushAnimation({ ...crushAnimation, stage: 'fall' });
       else {
-        setSession(prev => acceptResult(prev, result));
+        setSession(prev => acceptResult(prev, result, action));
         setCrushAnimation(null);
       }
     }, crushTiming[stage]);
@@ -76,12 +90,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
     if (busy || state.won) return;
     setSelected(null);
     setCrushDrag(null);
-    const result = applyLab(state, { type: 'swap', a, b });
+    const action: LabAction = { type: 'swap', a, b };
+    const result = applyLab(state, action);
     if (!adjacent(a, b) || state.board[b] === '.' || reducedMotion) {
       setSession(prev => acceptResult(prev, result));
       return;
     }
-    setCrushAnimation({ a, b, stage: 'swap', result });
+    setCrushAnimation({ a, b, stage: 'swap', result, action });
   };
   const animationFrame = crushAnimation?.result.crush;
   const displayBoard = crushAnimation?.stage === 'clear' && animationFrame ? animationFrame.swapped
@@ -90,8 +105,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { setSession({ state: createLab(id), history: [], message: '' }); setSelected(null); };
-  const undo = () => { setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), message: 'Undone.' } : prev; }); setSelected(null); };
+  const reset = () => { setSession({ state: createLab(id, spec), history: [], actions: [], message: '' }); setSelected(null); };
+  const undo = () => { setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.' } : prev; }); setSelected(null); };
   const choose = (cell: number) => {
     if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
@@ -166,8 +181,9 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
     : id === 'connections' ? state.routes.filter((p, i) => p.at(-1) === CONNECTION_PAIRS[i]!.end).length + '/3 pairs'
     : state.cuts.length + '/2 cuts';
   return <section className="mechanics-play" data-testid="mechanics-play">
-    <div className="mechanic-heading"><button type="button" onClick={onBack} aria-label="Back to Mechanics Lab">← Lab</button><div><h2 className="gene">{meta.title}</h2><span className="muted tiny">CHALLENGE {index + 1}/6 · INS</span></div></div>
-    {id !== 'mutation' && <p className="mechanic-instructions">{meta.instructions}</p>}
+    <div className="mechanic-heading"><button type="button" onClick={onBack} aria-label={campaign ? "Back to level map" : "Back to Mechanics Lab"}>{campaign ? "← Map" : "← Lab"}</button><div><h2 className="gene">{meta.title}</h2><span className="muted tiny">{campaign ? 'CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end : 'CHALLENGE ' + (index + 1) + '/6 · INS'}</span></div></div>
+    {id !== 'mutation' && <p className="mechanic-instructions">{campaign && id === 'restriction' ? 'BsaI cuts at the marked bonds outside its recognition sites. Isolate the reference fragment; synthetic adapters and the decoy do not count.' : meta.instructions}</p>}
+    {campaign && <div className="mixed-coverage"><span data-testid="mixed-range">INS CDS {campaign.stage.start + 1}–{campaign.stage.end} · {campaign.stage.sequence.length} bp</span><span data-testid="mixed-coverage">{campaign.covered}/333 bp assembled</span></div>}
     <div className="mechanic-target">
       <div className="row-between"><b className="small">{id === 'crush' ? 'Next codon' : 'Objective'}</b><span className="small muted" data-testid="lab-progress">{progress}</span></div>
       {id === 'trace' && <div className="lab-sequence">{[...target].map((b, i) => <span key={i} className={'b-' + b + (i < state.trace.length ? ' done' : '')}>{b}</span>)}</div>}
@@ -220,7 +236,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
     <div className="lab-controls"><button type="button" onClick={undo} disabled={busy || !session.history.length}>Undo</button><button type="button" className={hint ? 'primary' : ''} aria-pressed={hint} onClick={() => setHint(v => !v)}>Hint</button><button type="button" onClick={reset} disabled={busy}>Replay</button></div>
     {hint && !state.won && <p className="lab-hint small" role="status">{labHint(state)}</p>}
     <p className="lab-message small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</p>
-    {state.won && <div className="lab-win panel" data-testid="lab-win"><h3>Challenge complete ✓</h3><p className="small">Practice complete — no campaign progress changed.</p><div className="lab-controls"><button type="button" onClick={onBack}>Lab menu</button>{next && <button type="button" className="primary" onClick={() => onNext(next)}>Next mechanic →</button>}</div></div>}
-    <p className="muted tiny">{meta.biology} Reference: {LAB_REFERENCE.symbol} · {LAB_REFERENCE.transcript}.</p>
+    {state.won && <div className="lab-win panel" data-testid="lab-win"><h3>{campaign ? 'Stage complete ✓' : 'Challenge complete ✓'}</h3><p className="small">{campaign ? 'Exact INS fragment verified · ' + campaign.stage.sequence.length + ' bp. ' + campaign.covered + '/333 bp assembled.' : 'Practice complete — no campaign progress changed.'}</p>{campaign && <><div className="mono small seq-wrap" data-testid="mixed-extracted">{campaign.stage.sequence}</div>{campaign.assembled && <p className="small" data-testid="mixed-assembled">INS fully assembled — exact reference and SHA-256 verified.</p>}</>}<div className="lab-controls"><button type="button" onClick={onBack}>{campaign ? 'Level map' : 'Lab menu'}</button>{campaign ? <button type="button" className="primary" onClick={campaign.onNext}>Next level →</button> : next && <button type="button" className="primary" onClick={() => onNext(next)}>Next mechanic →</button>}</div></div>}
+    <p className="muted tiny">{campaign && id === 'restriction' ? 'BsaI recognizes GGTCTC and cuts outside that motif; the synthetic adapters are not credited.' : meta.biology} Reference: {LAB_REFERENCE.symbol} · {LAB_REFERENCE.transcript}.</p>
   </section>;
 }

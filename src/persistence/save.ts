@@ -5,6 +5,8 @@ import type { LevelDefinition, Move } from '../engine/types.ts';
 import { INTRO_IDS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES } from '../genomics/genes.ts';
+import { mixedStage, replayMixed } from '../campaign/mixed.ts';
+import { LAB_IDS, type LabAction } from '../engine/mechanicsLab.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
 
 export const SAVE_KEY = 'genome-save';
@@ -28,6 +30,9 @@ export interface SaveData {
   /** M4: gene symbols whose full CDS was assembled and verified (exact match + SHA-256). Separate from discovery. */
   assembled: string[];
   attempts: Record<string, PuzzleState>;
+  /** Optional additive v7 fields: verified replay logs and first-use tutorial acknowledgements. */
+  mixedAttempts?: Record<string, LabAction[]>;
+  tutorialsSeen?: string[];
   /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
   legacy: { m1Completed: string[] };
   settings: Settings;
@@ -466,8 +471,20 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : nextCampaignId(completed);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
+  const mixedAttempts: Record<string, LabAction[]> = {};
+  if (sameContent && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
+    for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
+      const def = pack.levels.find(l => l.id === id);
+      const stage = def && mixedStage(def);
+      if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
+      // Replay from pinned definitions; only accepted commands can enter the log.
+      const state = replayMixed(stage, rawLog);
+      if (state.moves === rawLog.length) mixedAttempts[id] = rawLog;
+    }
+  }
+  const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => id === 'slide' || LAB_IDS.some(m => m === id)))];
   return {
-    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best },
+    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}) },
     notices,
     recovered: notices.length > 0,
   };
@@ -541,4 +558,18 @@ export function solvedDisplayState(def: LevelDefinition, best?: LevelBest): Puzz
     moves: best?.moves ?? 0,
     recovery: [],
   };
+}
+
+function validMixedAction(value: unknown): value is LabAction {
+  if (typeof value !== 'object' || value === null) return false;
+  const a = value as Record<string, unknown>;
+  const cell = (v: unknown) => Number.isInteger(v) && Number(v) >= 0 && Number(v) < 81;
+  switch (a.type) {
+    case 'trace': case 'cut': return cell(a.cell);
+    case 'swap': return cell(a.a) && cell(a.b);
+    case 'route': return cell(a.cell) && Number.isInteger(a.pair) && Number(a.pair) >= 0 && Number(a.pair) < 3;
+    case 'place': return Number.isInteger(a.read) && Number(a.read) >= 0 && Number(a.read) < 3 && Number.isInteger(a.offset) && Number(a.offset) >= 0 && Number(a.offset) < 9;
+    case 'edit': return cell(a.cell) && typeof a.base === 'string' && ['A','C','G','T'].includes(a.base);
+    default: return false;
+  }
 }
