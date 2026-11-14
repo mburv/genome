@@ -383,9 +383,10 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       </div>
       {def.tokens && puzzle.board[selected] !== '.' && <TokenInspector def={def} puzzle={puzzle} cell={selected} />}
 
-      {powers && !solvedView && (
+      {!solvedView && (
         <PowerTray
           energy={energy}
+          powersEnabled={powers}
           freeUses={puzzle.freeUses}
           locks={puzzle.locks}
           scaffold={puzzle.scaffold}
@@ -394,17 +395,16 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           highlightRelease={activeHint?.kind === 'release'}
           onPick={pickPower}
           onRelease={() => dispatch({ type: 'release' })}
+          canUndo={puzzle.history.length > 0}
+          canRestart={puzzle.moves > 0 || puzzle.history.length > 0}
+          onUndo={() => dispatch({ type: 'undo' })}
+          onHint={showHint}
+          onRestart={() => dispatch({ type: 'restart' })}
           notice={trayNote ?? undefined}
         />
       )}
 
-      {!solvedView && (panel ?? (
-        <div className="actions">
-          <button type="button" onClick={() => dispatch({ type: 'undo' })} disabled={puzzle.history.length === 0}>Undo</button>
-          <button type="button" onClick={showHint}>Hint</button>
-          <button type="button" onClick={() => dispatch({ type: 'restart' })} disabled={puzzle.moves === 0 && puzzle.history.length === 0}>Restart</button>
-        </div>
-      ))}
+      {!solvedView && panel}
       {activeHint?.kind === 'undo' && !solvedView && (
         <div className="solved-bar">
           <button type="button" className="primary" onClick={() => rewind(activeHint.count)} data-testid="rewind">Undo ×{activeHint.count}</button>

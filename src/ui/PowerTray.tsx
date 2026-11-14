@@ -1,5 +1,6 @@
 import { ENERGY_CAP, POWER_COST, POWERS, type Scaffold } from '../engine/powers.ts';
 import type { Base, Power } from '../engine/types.ts';
+import { IconBolt, IconCrispr, IconHint, IconLigase, IconRestart, IconScaffold, IconUndo } from './icons.tsx';
 
 export const POWER_LABEL: Record<Power, string> = { crispr: 'CRISPR', ligase: 'Ligase', scaffold: 'Scaffold' };
 export const POWER_ICON: Record<Power, string> = { crispr: '✂︎', ligase: '🔗', scaffold: '⌒' };
@@ -9,8 +10,15 @@ export const POWER_BLURB: Record<Power, string> = {
   scaffold: 'Bridge a 1–2 cell gap for 3 rotations',
 };
 
+const POWER_GLYPH: Record<Power, typeof IconCrispr> = {
+  crispr: IconCrispr,
+  ligase: IconLigase,
+  scaffold: IconScaffold,
+};
+
 interface TrayProps {
   energy: number;
+  powersEnabled: boolean;
   freeUses: readonly Power[];
   locks: readonly number[];
   scaffold: Scaffold | null;
@@ -19,42 +27,62 @@ interface TrayProps {
   highlightRelease: boolean;
   onPick: (p: Power) => void;
   onRelease: () => void;
+  canUndo: boolean;
+  canRestart: boolean;
+  onUndo: () => void;
+  onHint: () => void;
+  onRestart: () => void;
   notice?: string | undefined;
 }
 
-/** Energy meter + the three powers. Tapping an unaffordable power explains why (costs nothing). */
-export function PowerTray({ energy, freeUses, locks, scaffold, active, disabled, highlightRelease, onPick, onRelease, notice }: TrayProps) {
+/** Full-width energy meter + a six-icon action row (powers hidden on the opening puzzle). */
+export function PowerTray({
+  energy, powersEnabled, freeUses, locks, scaffold, active, disabled, highlightRelease,
+  onPick, onRelease, canUndo, canRestart, onUndo, onHint, onRestart, notice,
+}: TrayProps) {
   return (
-    <section className="tray" aria-label="Enzyme power-ups" data-testid="power-tray">
-      <div className="energy" data-testid="energy" aria-label={`Energy ${energy} of ${ENERGY_CAP}`} title="Energy: +1 for each reference codon you first complete with a normal move. Level-local; resets on restart.">
-        <span className="bolt" aria-hidden="true">⚡</span>
-        <b>{energy}</b>
-        <span className="pips" aria-hidden="true">{Array.from({ length: ENERGY_CAP }, (_, i) => <i key={i} className={i < energy ? 'on' : ''} />)}</span>
-      </div>
-      <div className="powers">
-        {POWERS.map((p) => {
+    <section className="tray" aria-label={powersEnabled ? 'Enzyme power-ups' : 'Puzzle controls'} data-testid="power-tray">
+      {powersEnabled && (
+        <div className="energy" data-testid="energy" aria-label={`Energy ${energy} of ${ENERGY_CAP}`} title="Energy: +1 for each reference codon you first complete with a normal move. Level-local; resets on restart.">
+          <span className="bolt" aria-hidden="true"><IconBolt /></span>
+          <b>{energy}</b>
+          <span className="pips" aria-hidden="true">{Array.from({ length: ENERGY_CAP }, (_, i) => <i key={i} className={i < energy ? 'on' : ''} />)}</span>
+        </div>
+      )}
+      <div className="icon-row" data-testid="icon-row" role="toolbar" aria-label="Puzzle actions">
+        {powersEnabled && POWERS.map((p) => {
           const free = freeUses.includes(p);
           const affordable = free || energy >= POWER_COST[p];
+          const Glyph = POWER_GLYPH[p];
           return (
             <button
               key={p}
               type="button"
-              className={`power p-${p} ${active === p ? 'active' : ''} ${affordable ? '' : 'poor'}`}
+              className={`icon-btn power p-${p} ${active === p ? 'active' : ''} ${affordable ? '' : 'poor'}`}
               onClick={() => onPick(p)}
               disabled={disabled}
               aria-pressed={active === p}
               aria-label={`${POWER_LABEL[p]}: ${POWER_BLURB[p]}. ${free ? 'Free tutorial use' : `Costs ${POWER_COST[p]} energy`}`}
+              title={`${POWER_LABEL[p]} — ${free ? 'Free tutorial use' : `⚡${POWER_COST[p]}`}`}
               data-testid={`power-${p}`}
             >
-              <span className="p-icon" aria-hidden="true">{POWER_ICON[p]}</span>
-              <span className="p-name">{POWER_LABEL[p]}</span>
+              <Glyph />
               <span className={`p-cost ${free ? 'free' : ''}`}>{free ? 'FREE' : `⚡${POWER_COST[p]}`}</span>
             </button>
           );
         })}
+        <button type="button" className="icon-btn" onClick={onUndo} disabled={disabled || !canUndo} aria-label="Undo" title="Undo last move" data-testid="action-undo">
+          <IconUndo />
+        </button>
+        <button type="button" className="icon-btn" onClick={onHint} disabled={disabled} aria-label="Hint" title="Show a recovery drag" data-testid="action-hint">
+          <IconHint />
+        </button>
+        <button type="button" className="icon-btn" onClick={onRestart} disabled={disabled || !canRestart} aria-label="Restart" title="Restart this level" data-testid="action-restart">
+          <IconRestart />
+        </button>
       </div>
       {notice && <p className="tray-note" data-testid="tray-note">{notice}</p>}
-      {(locks.length > 0 || scaffold) && (
+      {powersEnabled && (locks.length > 0 || scaffold) && (
         <div className="power-status">
           {locks.length > 0 && (
             <button type="button" className={`release ${highlightRelease ? 'pulse' : ''}`} onClick={onRelease} disabled={disabled} data-testid="release">

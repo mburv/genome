@@ -4,16 +4,59 @@ import { dragBy, fresh, openChapter, openLab, openMap, readHint, solveWithHints,
 const boardText = (page: import('@playwright/test').Page) => page.locator('.board').innerText();
 const baseAt = (page: import('@playwright/test').Page, c: number) => page.locator(`[data-cell="${c}"]`).getAttribute('data-base');
 
-test('no power tray on the opening puzzle; later puzzles show ⚡2 and unaffordable powers explain why (nothing spent)', async ({ page }) => {
+test('opening puzzle hides powers; later puzzles show ⚡2 and unaffordable powers explain why (nothing spent)', async ({ page }) => {
   await openChapter(page, 'ins-01');
-  await expect(page.getByTestId('power-tray')).toHaveCount(0);
+  await expect(page.getByTestId('energy')).toHaveCount(0);
+  await expect(page.getByTestId('power-crispr')).toHaveCount(0);
+  await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Hint' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Restart' })).toBeVisible();
   await openChapter(page, 'ins-02');
   await expect(page.getByTestId('power-tray')).toBeVisible();
   await expect(page.getByTestId('energy')).toContainText('2');
+  await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(6);
   await page.getByTestId('power-crispr').click();
   await expect(page.getByTestId('tray-note')).toContainText('needs ⚡4');
   await expect(page.getByTestId('power-panel')).toHaveCount(0);
   await expect(page.getByTestId('energy')).toContainText('2');
+});
+
+test('energy bar spans the tray and six equal icon buttons fit at 320 and 390', async ({ page }) => {
+  for (const width of [320, 390] as const) {
+    await page.setViewportSize({ width, height: 844 });
+    await openChapter(page, 'ins-02');
+    const metrics = await page.evaluate(() => {
+      const tray = document.querySelector('[data-testid="power-tray"]') as HTMLElement;
+      const energy = document.querySelector('[data-testid="energy"]') as HTMLElement;
+      const pips = energy.querySelector('.pips') as HTMLElement;
+      const row = document.querySelector('[data-testid="icon-row"]') as HTMLElement;
+      const buttons = [...row.querySelectorAll('button')];
+      const t = tray.getBoundingClientRect();
+      const e = energy.getBoundingClientRect();
+      const p = pips.getBoundingClientRect();
+      return {
+        trayW: t.width,
+        energyW: e.width,
+        pipsW: p.width,
+        ids: buttons.map((b) => b.getAttribute('data-testid')),
+        buttons: buttons.map((b) => {
+          const box = b.getBoundingClientRect();
+          return { w: box.width, h: box.height };
+        }),
+      };
+    });
+    expect(Math.abs(metrics.energyW - metrics.trayW)).toBeLessThan(2);
+    expect(metrics.pipsW).toBeGreaterThan(metrics.energyW * 0.6);
+    expect(metrics.ids).toEqual(['power-crispr', 'power-ligase', 'power-scaffold', 'action-undo', 'action-hint', 'action-restart']);
+    expect(metrics.buttons).toHaveLength(6);
+    const widths = metrics.buttons.map((b) => b.w);
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
+    for (const b of metrics.buttons) expect(b.h).toBeGreaterThanOrEqual(44);
+    if (width === 390) {
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-icon-row-390x844.png' });
+    }
+  }
 });
 
 test('map has an optional Enzyme lab with three powers', async ({ page }) => {
