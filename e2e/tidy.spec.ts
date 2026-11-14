@@ -39,13 +39,13 @@ async function expectClueAlignment(page: Page): Promise<void> {
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
     };
     const parts = [...panel.querySelectorAll('[data-testid^="clue-part-"]')]
-      .filter((p) => !p.classList.contains('pair-bonds'))
+      .filter((p) => !p.classList.contains('pair-bonds') && p.getClientRects().length > 0)
       .map((p) => {
         const r = p.getBoundingClientRect();
         return {
           x: r.x, y: r.y, width: r.width, right: r.right, bottom: r.bottom,
           badge: p.querySelector('[data-testid^="clue-badge-"]') ? box(p.querySelector('[data-testid^="clue-badge-"]')!) : null,
-          chips: [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].map(box),
+          chips: [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].filter(e => e.getClientRects().length > 0).map(box),
           dir: p.querySelector('.clue-dir') ? box(p.querySelector('.clue-dir')!) : null,
           plus: p.querySelector('.plus') ? box(p.querySelector('.plus')!) : null,
         };
@@ -107,7 +107,7 @@ async function expectReplicatePairs(page: Page): Promise<void> {
       const r = e.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
     };
-    const pairs = [...panel.querySelectorAll('.rep-pair')].map((p) => {
+    const pairs = [...panel.querySelectorAll('.rep-pair')].filter(p => p.getClientRects().length > 0).map((p) => {
       const chips = [...p.querySelectorAll('.tok-chip, .strip-cell')].map(box);
       const bond = p.querySelector('.rep-bond');
       const r = p.getBoundingClientRect();
@@ -175,7 +175,7 @@ test('play header shows the current gene and locus; the info card is gone; Map l
   expect(typography.progress).toEqual(typography.locus);
   expect(typography.fullName).toEqual(typography.locus);
   expect(typography.detail.fontSize).toBe(typography.locus.fontSize);
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-header-390x844.png' });
+  await page.screenshot({ path: 'test-results/screenshots/genome-header-390x844.png' });
   await expect(page.getByRole('heading', { name: 'GENOME' })).toHaveCount(0);
   await expect(page.getByText('Build what makes you human')).toHaveCount(0);
   await expect(page.locator('.panel.info')).toHaveCount(0);
@@ -186,7 +186,7 @@ test('play header shows the current gene and locus; the info card is gone; Map l
   const mark = await page.locator('h1').evaluate((el) => getComputedStyle(el, '::before').content);
   expect(mark === 'none' || mark === 'normal').toBe(true);
   // Heading and locus must fit the 320px-wide header area too; check after a resize later.
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-tidy-board-390x844.png' });
+  await page.screenshot({ path: 'test-results/screenshots/genome-tidy-board-390x844.png' });
 
   await page.getByTestId('open-settings').click();
   await expect(page.getByTestId('settings')).toBeVisible();
@@ -238,7 +238,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     const board = (await page.getByTestId('board').boundingBox())!;
     assertCentred(b, board);
     if (size.width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-tidy-solved-390x844.png' });
+      await page.screenshot({ path: 'test-results/screenshots/genome-tidy-solved-390x844.png' });
     }
   });
 }
@@ -300,7 +300,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
       await goToChapter(page, id);
       await assertCluePanelClean(page, size.width, size.height);
       if (size.width === 390 && id === 'ins-c02') {
-        await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-390x844.png' });
+        await page.screenshot({ path: 'test-results/screenshots/genome-clue-390x844.png' });
       }
     }
     await assertCluePanelClean(page, size.width, size.height);
@@ -341,7 +341,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await openChapter(page, 'ins-01');
     await assertPlayScreenDecluttered(page, size.width, size.height);
     if (size.width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-declutter-390x844.png' });
+      await page.screenshot({ path: 'test-results/screenshots/genome-declutter-390x844.png' });
     }
     await page.getByTestId('open-settings').click();
     await expect(page.getByTestId('settings')).toBeVisible();
@@ -349,7 +349,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await expect(page.getByTestId('help-about-dna')).toBeVisible();
     if (size.width === 390) {
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-settings-390x844.png' });
+      await page.screenshot({ path: 'test-results/screenshots/genome-settings-390x844.png' });
     }
     await page.getByTestId('help-how-to-play').locator('summary').click();
     await expect(page.getByTestId('help-how-to-play')).toContainText('Drag a tile left/right');
@@ -373,7 +373,7 @@ test('INS 7/13 has no full-sequence box or tile inspector under the board', asyn
   await page.locator('.tile.tok').first().click();
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
   await expect(page.getByTestId('energy')).toBeVisible();
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-ins7-tidy-390x844.png' });
+  await page.screenshot({ path: 'test-results/screenshots/genome-ins7-tidy-390x844.png' });
 });
 
 test('splice clue lays pieces inline, keeps + on the previous piece, and wraps cleanly at 320–430', async ({ page }) => {
@@ -389,7 +389,7 @@ test('splice clue lays pieces inline, keeps + on the previous piece, and wraps c
       await expectClueChipsFit(page);
       if (width === 390 && id === 'hbb-06') {
         await expect(page.locator('.target-title')).toHaveText(/grand splice/i);
-        await page.screenshot({ path: '/workspace/game/screenshots/genome-grand-splice-390x844.png', animations: 'disabled' });
+        await page.screenshot({ path: 'test-results/screenshots/genome-grand-splice-390x844.png', animations: 'disabled' });
       }
     }
   }
@@ -401,7 +401,7 @@ test('level map lists the re-planned INS run without overlapping chapters', asyn
   await openMap(page);
   await expect(page.getByTestId('cat-progress-INS')).toContainText('13 puzzles');
   await expect(page.getByTestId('cat-progress-INS')).toContainText('6 intro + 7 assembly');
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-progression-map-390x844.png' });
+  await page.screenshot({ path: 'test-results/screenshots/genome-progression-map-390x844.png' });
 });
 
 test('map run squares form one fixed-column grid, including the play square, at 320, 390 and 430', async ({ page }) => {
@@ -451,8 +451,8 @@ test('map run squares form one fixed-column grid, including the play square, at 
     }
     expect(Math.abs(rows[1]![0]!.y - (rows[0]![0]!.y + rows[0]![0]!.h) + 1)).toBeLessThanOrEqual(1);
     if (width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-map-tidy-390x844.png' });
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-map-single-lines-390x844.png' });
+      await page.screenshot({ path: 'test-results/screenshots/genome-map-tidy-390x844.png' });
+      await page.screenshot({ path: 'test-results/screenshots/genome-map-single-lines-390x844.png' });
     }
   }
 });
@@ -478,7 +478,7 @@ test('repair clue keeps the gap at the end of piece 1 and lays pieces inline at 
     if (Math.abs(slotBox.y - lastBox.y) <= 8) expect(slotBox.x).toBeGreaterThan(lastBox.x);
     else expect(slotBox.y).toBeGreaterThan(lastBox.y);
     if (width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-repair-clue-390x844.png' });
+      await page.screenshot({ path: 'test-results/screenshots/genome-repair-clue-390x844.png' });
     }
   }
 });
@@ -501,13 +501,14 @@ test('replication clues pair template over complement and wrap in matched chunks
   await openChapter(page, 'hbb-c07');
   await expect(page.locator('.target-title')).toHaveText(/hexamers · replication/i);
   await expect(page.getByTestId('play-progress')).toHaveText('13/15');
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-hbb13-replication-390x844.png', animations: 'disabled' });
+  await page.screenshot({ path: 'test-results/screenshots/genome-hbb13-replication-390x844.png', animations: 'disabled' });
   await page.setViewportSize({ width: 320, height: 568 });
   await expect(page.getByTestId('target-panel')).toBeVisible();
   await expectClueAlignment(page);
   await expectClueChipsFit(page);
+  expect(await page.getByTestId('target-panel').evaluate(el => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
   await expectActionRowInView(page);
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-hbb13-replication-320x568.png', animations: 'disabled' });
+  await page.screenshot({ path: 'test-results/screenshots/genome-hbb13-replication-320x568.png', animations: 'disabled' });
 });
 
 test('sequencing clues keep labels with their pieces at 320–430', async ({ page }) => {
@@ -534,6 +535,7 @@ async function expectClueChipsFit(page: Page): Promise<void> {
       }
     };
     for (const chip of panel.querySelectorAll('.tok-chip, .strip-cell')) {
+      if (!chip.getClientRects().length) continue;
       check(chip, chip.className);
       const label = chip.querySelector('.chip-label');
       if (label) check(label, 'chip-label');
@@ -550,8 +552,8 @@ async function expectClueChipsFit(page: Page): Promise<void> {
 /** Wrapped chips share x with the chip/column above. */
 async function expectClueWrapColumns(page: Page): Promise<void> {
   const parts = await page.locator('[data-testid^="clue-part-"]').evaluateAll((els) => els
-    .filter((p) => !p.classList.contains('pair-bonds'))
-    .map((p) => [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].map((e) => {
+    .filter((p) => !p.classList.contains('pair-bonds') && p.getClientRects().length > 0)
+    .map((p) => [...p.querySelectorAll('.tok-chip:not(.gap), .strip-cell:not(.gap)')].filter(e => e.getClientRects().length > 0).map((e) => {
       const r = e.getBoundingClientRect();
       return { x: r.x, y: r.y };
     })));
@@ -589,8 +591,8 @@ test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 
       await expectClueAlignment(page);
       await expectClueWrapColumns(page);
       if (width === 390 && level.id === 'ins-c05') {
-        await page.screenshot({ path: '/workspace/game/screenshots/genome-ins11-clue-390x844.png', animations: 'disabled' });
-        await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-inline-ins11-390x844.png', animations: 'disabled' });
+        await page.screenshot({ path: 'test-results/screenshots/genome-ins11-clue-390x844.png', animations: 'disabled' });
+        await page.screenshot({ path: 'test-results/screenshots/genome-clue-inline-ins11-390x844.png', animations: 'disabled' });
       }
     }
   }

@@ -310,7 +310,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
 
   return (
     <>
-      <TargetPanel def={def} matches={matches} solved={solvedView} custom={puzzle.custom} />
+      <TargetPanel def={def} matches={matches} committedMatches={trackMatches(def, puzzle.board)} solved={solvedView} custom={puzzle.custom} />
 
       <div className="board-stage">
       <Board
