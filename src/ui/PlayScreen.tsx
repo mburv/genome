@@ -424,7 +424,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           moves={puzzle.moves}
           powersUsed={powersUsed}
           newBases={celebrate.newBases}
-          discovered={celebrate.discovered}
           assembled={celebrate.assembled}
           assembledBases={assembly.covered}
           cdsLength={gene.cdsLength}

@@ -9,7 +9,6 @@ interface Props {
   moves: number;
   powersUsed: number;
   newBases: number;
-  discovered: boolean;
   /** M4: this solve completed an exact, checksum-verified assembly of the gene. */
   assembled?: boolean;
   assembledBases?: number;
@@ -93,18 +92,14 @@ export function WinCard(p: Props) {
         <p className="muted small" data-testid="win-assembly">{p.assembledBases ?? 0} / {p.cdsLength} {def.symbol} coding bases assembled.{p.newBases > 0 ? '' : ' Replays never add duplicate bases.'}</p>
         </>
         )}
-        {p.assembled ? (
+        {p.assembled && (
           <div className="discovered assembled" data-testid="assembled">
             <b>🧬 {def.symbol} assembled!</b> All {p.cdsLength} coding bases rebuilt from the pieces you placed — exact match, SHA-256 verified.
-          </div>
-        ) : p.discovered && (
-          <div className="discovered" data-testid="discovered">
-            <b>🧬 {def.symbol} discovered!</b> First puzzle solved — {p.assembledBases ?? 0} of {p.cdsLength} coding bases placed. Not yet fully assembled.
           </div>
         )}
         <div className="card-actions">
           <button type="button" onClick={p.onMap} data-testid="win-map">Level map</button>
-          {p.discovered || p.assembled ? (
+          {p.assembled && !p.hasNext ? (
             <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
           ) : (
             <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? 'Next level →' : 'Map'}</button>

@@ -48,7 +48,10 @@ test('long-token level: readable tiles, tap-to-inspect, drag-solve with hints; f
   await expect(page.getByTestId('win-meta')).toContainText('INS 14/14');
   await expect(page.getByTestId('assembled')).toContainText('INS assembled');
   await expect(page.getByTestId('assembled')).toContainText('SHA-256 verified');
-  await page.getByRole('button', { name: 'View card' }).click();
+  await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'View card' })).toHaveCount(0);
+  await page.getByTestId('win-map').click();
+  await page.getByTestId('cat-card-INS').click();
   await expect(page.getByTestId('card-state')).toContainText('Assembled');
   await expect(page.getByTestId('card-coverage')).toContainText('333 of 333');
   await expect(page.getByTestId('card-checksum')).toContainText('matches your assembly');
@@ -70,9 +73,12 @@ test('HBB 1-base intro discovers HBB but does not assemble it; its chapter opene
   await page.getByTestId('cnode-hbb-01').click();
   await expect(page.locator('.tile.tok')).toHaveCount(0);
   await solveWithHints(page);
-  await expect(page.getByTestId('discovered')).toContainText('HBB discovered');
+  await expect(page.getByTestId('discovered')).toHaveCount(0);
   await expect(page.getByTestId('assembled')).toHaveCount(0);
-  await page.getByRole('button', { name: 'View card' }).click();
+  await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
+  await page.getByTestId('win-map').click();
+  await expect(page.getByTestId('cat-HBB')).toContainText('Discovered');
+  await page.getByTestId('cat-card-HBB').click();
   await expect(page.getByTestId('card-state')).toContainText('Discovered');
   await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
 });

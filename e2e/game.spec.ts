@@ -46,10 +46,12 @@ test('first-run: players start on the 1-base INS intro 1/14; hinted drags comple
   await expect(page.getByTestId('win-bases')).toContainText('+9 INS coding bases');
   await expect(page.getByTestId('win-bases')).toContainText('CDS 1–9');
   await expect(page.getByTestId('win-assembly')).toContainText('9 / 333 INS coding bases assembled');
-  await expect(page.getByTestId('discovered')).toContainText('INS discovered');
-  await expect(page.getByTestId('discovered')).toContainText('First puzzle solved');
+  await expect(page.getByTestId('discovered')).toHaveCount(0);
+  await expect(page.getByTestId('win')).not.toContainText('discovered');
   await expect(page.getByRole('button', { name: 'Level map' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'View card' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'View card' })).toHaveCount(0);
+  await page.screenshot({ path: '/workspace/game/screenshots/genome-discovery-win-390x844.png', animations: 'disabled' });
 });
 
 test('level map lists the gene catalogue and labs; cards stay locked until the first puzzle', async ({ page }) => {
@@ -136,9 +138,11 @@ test('opening puzzles discover a gene; a replay never adds duplicate bases and d
   test.setTimeout(60_000);
   await fresh(page);
   await solveWithHints(page);
-  await expect(page.getByTestId('discovered')).toContainText('INS discovered');
-  await expect(page.getByTestId('discovered')).toContainText('Not yet fully assembled');
-  await page.getByRole('button', { name: 'View card' }).click();
+  await expect(page.getByTestId('discovered')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
+  await page.getByTestId('win-map').click();
+  await expect(page.getByTestId('cat-INS')).toContainText('Discovered');
+  await page.getByTestId('cat-card-INS').click();
   const card = page.getByTestId('gene-card');
   await expect(card).toContainText('INS');
   await expect(page.getByTestId('card-coverage')).toContainText('9 of 333');
