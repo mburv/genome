@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import pack from '../src/campaign/chapters.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { aNonWinningSlide, completedLevelSave, dirOf, fresh, openCompleted, solveWithHints, touchSwipe } from './helpers';
+import { aNonWinningSlide, completedLevelSave, dirOf, openChapter, openCompleted, solveWithHints, touchSwipe } from './helpers';
 
 const LEVELS = pack.levels as LevelDefinition[];
 const def = LEVELS[0]!;
@@ -63,7 +63,7 @@ function boxesOverlap(a: { x: number; y: number; width: number; height: number }
 for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
   test(`after solving, close reveals the Solved banner at ${size.width}x${size.height}; Replay then plays again`, async ({ page }) => {
     await page.setViewportSize(size);
-    await fresh(page);
+    await openChapter(page, 'ins-01');
     await solveOpening(page);
     await expect(page.getByTestId('win')).not.toContainText('View board');
     await expect(page.getByRole('button', { name: 'View board', exact: true })).toHaveCount(0);
@@ -91,7 +91,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
 
 test('after solving, Level map navigates to the map', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await fresh(page);
+  await openChapter(page, 'ins-01');
   await solveOpening(page);
   await expect(page.getByRole('button', { name: 'View board', exact: true })).toHaveCount(0);
   await page.getByTestId('win-map').click();

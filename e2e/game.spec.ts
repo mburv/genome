@@ -28,8 +28,13 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
   });
 }
 
-test('first-run: players start on the 1-base INS intro 1/13; hinted drags complete it and discover the gene', async ({ page }) => {
+test('first-run: title Play opens the map; the first puzzle is the 1-base INS intro 1/13', async ({ page }) => {
   await fresh(page);
+  await expect(page.getByTestId('title-screen')).toBeVisible();
+  await expect(page.getByTestId('title-play')).toBeVisible();
+  await page.getByTestId('title-play').click();
+  await expect(page.getByTestId('level-map')).toBeVisible();
+  await page.getByTestId('continue').click();
   await expectOpeningHeading(page);
   await expect(page.getByTestId('hint-cue')).toBeVisible();
   // Opening board is single-letter tiles, not 3-base codon pieces.
@@ -139,7 +144,7 @@ test('hint describes a whole drag and following it with touch reaches the win in
 
 test('opening puzzles discover a gene; a replay never adds duplicate bases and does not assemble it', async ({ page }) => {
   test.setTimeout(60_000);
-  await fresh(page);
+  await openChapter(page, 'ins-01');
   await solveWithHints(page);
   await expect(page.getByTestId('discovered')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
@@ -162,8 +167,8 @@ test('opening puzzles discover a gene; a replay never adds duplicate bases and d
   await expect(page.getByTestId('assembled')).toHaveCount(0);
 });
 
-test('progress and the board in play survive a reload; returning players see the map', async ({ page }) => {
-  await fresh(page);
+test('progress and the board in play survive a reload; returning players come back through the title screen', async ({ page }) => {
+  await openChapter(page, 'ins-01');
   await solveWithHints(page);
   await page.getByTestId('win-map').click();
   await expect(page.getByTestId('level-map')).toBeVisible();
@@ -177,7 +182,8 @@ test('progress and the board in play survive a reload; returning players see the
   await page.waitForTimeout(250);
   const board = await page.locator('.board').innerText();
   await page.reload();
-  await expect(page.getByTestId('level-map')).toBeVisible();
+  await expect(page.getByTestId('title-screen')).toBeVisible();
+  await openMap(page);
   await expect(page.getByTestId('cat-progress-INS')).toContainText('9 / 333');
   await expect(page.getByTestId('cnode-ins-01')).toHaveClass(/done/);
   await page.getByTestId('continue').click();
@@ -192,7 +198,9 @@ test('an M1 save migrates: prototype history kept, no campaign credit, with a no
   const m1 = { schemaVersion: 1, campaignId: 'genome-m1-ins-sample', generatorVersion: 'm1-gen-1', datasetId: 'refseq-NM_000207.3', currentLevelId: 'm1-ins-03', completed: ['m1-ins-01', 'm1-ins-02', 'm1-ins-03'], attempts: {}, settings: { reducedMotion: false } };
   await page.evaluate((raw) => { localStorage.clear(); localStorage.setItem('genome-save', raw); }, JSON.stringify(m1));
   await page.reload();
+  await expect(page.getByTestId('title-screen')).toBeVisible();
   await expect(page.getByTestId('notice')).toContainText('retired');
+  await openMap(page);
   await expect(page.getByTestId('level-map')).toBeVisible();
   await expect(page.getByTestId('cat-progress-INS')).toContainText('0 / 333');
   await expect(page.getByTestId('legacy-m1')).toContainText('1, 2, 3');

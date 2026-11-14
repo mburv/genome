@@ -84,12 +84,12 @@ export function rotated(s: string, k: number): string {
   return out.join('');
 }
 
-/** Fresh device: clear storage; first-time players land on the opening 1-base puzzle. */
+/** Fresh device: clear storage; every launch lands on the title screen. */
 export async function fresh(page: Page): Promise<void> {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await page.getByTestId('board').waitFor();
+  await page.getByTestId('title-screen').waitFor();
 }
 
 export async function expectChapterHeading(page: Page, symbol: string, part: number, of: number, fullName: string): Promise<void> {
@@ -102,9 +102,14 @@ export async function expectOpeningHeading(page: Page): Promise<void> {
   await expectChapterHeading(page, 'INS', 1, 13, 'INSULIN');
 }
 
-/** Open the level map, via Settings when the header Map button is absent. */
+/** Open the level map: Play on the title screen, or Settings → Map otherwise. */
 export async function openMap(page: Page): Promise<void> {
   if (await page.getByTestId('level-map').isVisible({ timeout: 500 }).catch(() => false)) return;
+  if (await page.getByTestId('title-screen').isVisible({ timeout: 500 }).catch(() => false)) {
+    await page.getByTestId('title-play').click();
+    await page.getByTestId('level-map').waitFor();
+    return;
+  }
   if (!(await page.getByTestId('settings').isVisible())) {
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings').waitFor();
@@ -120,10 +125,9 @@ export async function goToChapter(page: Page, id: string): Promise<void> {
   await page.getByTestId('board').waitFor();
 }
 
-/** Open a campaign puzzle through the level map. The opening 1-base puzzle is already on screen after fresh(). */
+/** Open a campaign puzzle through the title screen and the level map. */
 export async function openChapter(page: Page, id: string): Promise<void> {
   await fresh(page);
-  if (id === 'ins-01') return;
   await goToChapter(page, id);
 }
 
@@ -203,10 +207,12 @@ export function aNonWinningSlide(def: LevelDefinition): { origin: number; axis: 
   throw new Error(`no non-winning slide on ${def.id}`);
 }
 
-/** Seed localStorage with a completed level and open it (returning players land on the map). */
+/** Seed localStorage with a completed level, launch (title), then Play to the map. */
 export async function openCompleted(page: Page, raw: string): Promise<void> {
   await page.goto('/');
   await page.evaluate((value) => { localStorage.clear(); localStorage.setItem('genome-save', value); }, raw);
   await page.reload();
+  await page.getByTestId('title-screen').waitFor();
+  await page.getByTestId('title-play').click();
   await page.getByTestId('level-map').waitFor();
 }

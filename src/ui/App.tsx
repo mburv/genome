@@ -7,10 +7,11 @@ import { MapScreen } from './MapScreen.tsx';
 import { PlayScreen } from './PlayScreen.tsx';
 import { playHeading } from './playHeading.ts';
 import { SettingsScreen } from './SettingsScreen.tsx';
+import { TitleScreen } from './TitleScreen.tsx';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-type Screen = { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string } | { kind: 'settings' };
+type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string } | { kind: 'settings' };
 
 export function App({ storage = createLocalStorageAdapter() }: { storage?: StorageAdapter }) {
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
@@ -18,10 +19,8 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const [notices, setNotices] = useState<string[]>(initial.notices);
   // Write once on load (idempotent) so a fresh/migrated save is stored in the current format.
   const [saveOk, setSaveOk] = useState(() => storage.save(serializeSave(initial.save)));
-  // First-time players go straight into the opening puzzle; returning players see the map. Reset lands on the map.
-  const [screen, setScreen] = useState<Screen>(() =>
-    initial.save.completed.length === 0 && Object.keys(initial.save.attempts).length === 0 && initial.notices.length === 0 ? { kind: 'play' } : { kind: 'map' },
-  );
+  // Every launch (fresh or returning) opens on the title screen. Play goes to the map.
+  const [screen, setScreen] = useState<Screen>({ kind: 'title' });
   const systemReducedMotion = prefersReducedMotion();
   const reducedMotion = save.settings.reducedMotion || systemReducedMotion;
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
@@ -37,12 +36,12 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
   const def = ALL_LEVELS.find((l) => l.id === save.currentLevelId) ?? ALL_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
   const heading = playHeading(def);
-  const settingsFrom = useRef<Screen>({ kind: 'map' });
+  const settingsFrom = useRef<Screen>({ kind: 'title' });
   const go = (next: Screen) => {
     if (next.kind === 'settings' && screen.kind !== 'settings') settingsFrom.current = screen;
     if (next.kind !== 'play') setHeaderCollapsed(false);
     setScreen(next);
-    if (next.kind === 'play' || next.kind === 'map') window.scrollTo?.(0, 0);
+    if (next.kind === 'play' || next.kind === 'map' || next.kind === 'title') window.scrollTo?.(0, 0);
   };
   const play = (levelId: string) => {
     persist({ ...save, currentLevelId: levelId });
@@ -53,11 +52,12 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     if (typeof localStorage !== 'undefined') clearProgressStorage(localStorage);
     persist(resetProgress(LEVEL_PACK, settings));
     setNotices([]);
-    go({ kind: 'map' });
+    go({ kind: 'title' });
   };
 
   return (
-    <main className={`app${reducedMotion ? ' reduced-motion' : ''}`}>
+    <main className={`app${reducedMotion ? ' reduced-motion' : ''}${screen.kind === 'title' ? ' on-title' : ''}`}>
+      {screen.kind !== 'title' && (
       <header className={`top${screen.kind === 'play' ? ' play-top' : ''}${headerCollapsed ? ' collapsed' : ''}`} data-testid={screen.kind === 'play' ? 'play-top' : 'app-top'}>
         <div className="top-collapse">
           <div className="top-collapse-inner" aria-hidden={headerCollapsed || undefined} inert={headerCollapsed || undefined}>
@@ -88,6 +88,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           </div>
         </div>
       </header>
+      )}
 
       {notices.length > 0 && (
         <div className="notice" role="alert" data-testid="notice">
@@ -96,6 +97,9 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         </div>
       )}
 
+      {screen.kind === 'title' && (
+        <TitleScreen onPlay={() => go({ kind: 'map' })} onSettings={() => go({ kind: 'settings' })} />
+      )}
       {screen.kind === 'map' && (
         <MapScreen
           labs={LAB_LEVELS}
@@ -134,7 +138,9 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} onPlay={play} onBack={() => go({ kind: 'map' })} />
       )}
 
-      <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · M4 gene assembly</footer>
+      {screen.kind !== 'title' && (
+        <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · M4 gene assembly</footer>
+      )}
     </main>
   );
 }

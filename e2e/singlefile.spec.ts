@@ -13,6 +13,10 @@ test('self-contained single HTML loads and plays from file://', async ({ page })
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(pathToFileURL(file).href);
+  await expect(page.getByTestId('title-screen')).toBeVisible();
+  await page.getByTestId('title-play').click();
+  await expect(page.getByTestId('level-map')).toBeVisible();
+  await page.getByTestId('continue').click();
   await expect(page.getByTestId('board')).toBeVisible();
   await expect(page.locator('.board > .cell')).toHaveCount(81);
   await solveWithHints(page);

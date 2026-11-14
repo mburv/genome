@@ -15,6 +15,7 @@ async function patchSave(page: Page, patch: (s: Record<string, unknown>) => Reco
   const next = JSON.stringify(patch(JSON.parse(raw) as Record<string, unknown>));
   await page.evaluate((v) => localStorage.setItem('genome-save', v), next);
   await page.reload();
+  await openMap(page);
 }
 
 test('map shows the gene catalogue, chapter nodes and exclusions', async ({ page }) => {
@@ -62,6 +63,7 @@ test('long-token level: readable tiles, drag-solve with hints; finishing the cha
   expect(saved.assembled).toEqual(['INS']);
   // Reload keeps the verified assembly.
   await page.reload();
+  await openMap(page);
   await expect(page.getByTestId('cat-INS')).toContainText('Assembled');
   await expect(page.getByTestId('cat-progress-INS')).toContainText('333 / 333');
 });
@@ -116,11 +118,13 @@ test('an M3 (v3) save upgrades to v7, keeps intro completions and lab credit, wi
   const m3 = { schemaVersion: 3, campaignId: 'genome-m3-lab', generatorVersion: 'm2-gen-1', datasets: { INS: 'refseq-NM_000207.3-2026-11-13', HBB: 'refseq-NM_000518.5-2026-11-13' }, currentLevelId: 'ins-05', completed: ids, discovered: [], attempts: {}, legacy: { m1Completed: [] }, settings: { reducedMotion: false, sound: false, haptics: true } };
   await page.evaluate((raw) => { localStorage.clear(); localStorage.setItem('genome-save', raw); }, JSON.stringify(m3));
   await page.reload();
+  await expect(page.getByTestId('title-screen')).toBeVisible();
   await expect(page.getByTestId('notice')).toContainText('full gene assembly');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m3'))).toContain('"schemaVersion":3');
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!);
   expect(saved.schemaVersion).toBe(7);
   expect(saved.completed).toEqual(ids);
+  await openMap(page);
   await expect(page.getByTestId('cat-progress-INS')).toContainText('33 / 333');
 });
 

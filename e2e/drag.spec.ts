@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import { segmentCells } from '../src/engine/grid.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { cellPitch, fresh, lettersAt, openLab, rotated, touchDrag } from './helpers';
+import { cellPitch, lettersAt, openChapter, openLab, rotated, touchDrag } from './helpers';
 
 const LABS = (pack.levels as LevelDefinition[]).filter((l) => l.lab);
 const scaffold = LABS.find((l) => l.lab === 'scaffold')!;
@@ -129,7 +129,7 @@ test('a single-cell segment cannot be dragged on that axis', async ({ page }) =>
 });
 
 test('target outline lights up live mid-drag before release (opening puzzle)', async ({ page }) => {
-  await fresh(page);
+  await openChapter(page, 'ins-01');
   const cue = page.getByTestId('hint-cue');
   const cell = Number(await cue.getAttribute('data-hint-cell'));
   const dir = (await cue.getAttribute('data-hint-dir'))!;

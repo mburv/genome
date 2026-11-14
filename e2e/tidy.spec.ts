@@ -43,7 +43,7 @@ async function expectClueAlignment(page: Page): Promise<void> {
 
 test('play header shows the current gene and locus; the info card is gone; Map lives in Settings', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await fresh(page);
+  await openChapter(page, 'ins-01');
   await expectOpeningHeading(page);
   await expect(page.getByTestId('play-locus')).toHaveText('CHROMOSOME 11 · NM_000207.3');
   const typography = await page.evaluate(() => {
@@ -214,7 +214,7 @@ async function assertPlayScreenDecluttered(page: Page, width: number) {
 for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
   test(`puzzle screen has no pad, status or help links at ${size.width}x${size.height}; help lives in Settings`, async ({ page }) => {
     await page.setViewportSize(size);
-    await fresh(page);
+    await openChapter(page, 'ins-01');
     await assertPlayScreenDecluttered(page, size.width);
     if (size.width === 390) {
       await page.screenshot({ path: '/workspace/game/screenshots/genome-declutter-390x844.png' });

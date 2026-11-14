@@ -325,11 +325,13 @@ test('an M2 save upgrades to v7, keeps intro completions, with a notice and a ba
   const m2 = { schemaVersion: 2, campaignId: 'genome-m2-ins-hbb', generatorVersion: 'm2-gen-1', datasets: { INS: 'refseq-NM_000207.3-2026-11-13', HBB: 'refseq-NM_000518.5-2026-11-13' }, currentLevelId: 'hbb-02', completed: ids, discovered: ['INS'], attempts: {}, legacy: { m1Completed: [] }, settings: { reducedMotion: false } };
   await page.evaluate((raw) => { localStorage.clear(); localStorage.setItem('genome-save', raw); }, JSON.stringify(m2));
   await page.reload();
+  await expect(page.getByTestId('title-screen')).toBeVisible();
   await expect(page.getByTestId('notice')).toContainText('full gene assembly');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m2'))).toContain('"schemaVersion":2');
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!);
   expect(saved.schemaVersion).toBe(7);
   expect(saved.completed).toEqual(ids);
   expect(saved.discovered).toEqual(['INS', 'HBB']);
+  await openMap(page);
   await expect(page.getByTestId('cat-progress-INS')).toContainText('51 / 333');
 });

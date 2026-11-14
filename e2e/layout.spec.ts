@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { fresh, openMap } from './helpers';
+import { openChapter } from './helpers';
 
 // Swiss redesign (D-UI-01): the board is full-bleed on phones, with 1px hairline gutters.
 for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 430, height: 932 }]) {
   test(`board runs edge to edge at ${vp.width}×${vp.height} with no horizontal overflow and maximal tiles`, async ({ page }) => {
     await page.setViewportSize(vp);
-    await fresh(page);
+    await openChapter(page, 'ins-01');
     const m = await page.evaluate(() => {
       const b = document.querySelector('.board')!.getBoundingClientRect();
       const t = document.querySelector('.board > .cell')!.getBoundingClientRect();
@@ -23,7 +23,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { wi
 }
 
 test('clinical light theme: paper canvas, light theme-color, flat square tiles', async ({ page }) => {
-  await fresh(page);
+  await openChapter(page, 'ins-01');
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe('rgb(247, 247, 245)');
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f7f7f5');
@@ -33,9 +33,7 @@ test('clinical light theme: paper canvas, light theme-color, flat square tiles',
 
 test('a long-token chapter board is also full-bleed at 320px with no overflow', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await fresh(page);
-  await openMap(page);
-  await page.getByTestId('cnode-hbb-c08').click();
+  await openChapter(page, 'hbb-c08');
   const r = await page.locator('.board').boundingBox();
   expect(r!.x).toBe(0);
   expect(Math.round(r!.width)).toBe(320);

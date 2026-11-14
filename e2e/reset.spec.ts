@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/chapters.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { completedLevelSave, expectOpeningHeading, openCompleted } from './helpers';
+import { completedLevelSave, openCompleted } from './helpers';
 
 const LEVELS = pack.levels as LevelDefinition[];
 
@@ -72,10 +72,14 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await page.getByTestId('reset-progress').click();
     await page.getByTestId('reset-confirm-btn').click();
 
-    await expect(page.getByTestId('level-map')).toBeVisible();
+    await expect(page.getByTestId('title-screen')).toBeVisible();
+    await expect(page.getByTestId('title-play')).toBeVisible();
+    await expect(page.getByTestId('level-map')).toHaveCount(0);
     await expect(page.getByTestId('board')).toHaveCount(0);
     await expect(page.getByTestId('settings')).toHaveCount(0);
     await expect(page.getByTestId('reset-confirm')).toHaveCount(0);
+    await page.getByTestId('title-play').click();
+    await expect(page.getByTestId('level-map')).toBeVisible();
     await expect(page.getByTestId('continue')).toHaveText(/Start · INS 1\/13/);
     if (size.width === 390) {
       await page.screenshot({ path: '/workspace/game/screenshots/genome-basics-map-390x844.png', animations: 'disabled' });
@@ -107,9 +111,8 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     expect(saved.settings).toEqual({ reducedMotion: false, sound: true, haptics: false });
 
     await page.reload();
-    await expect(page.getByTestId('board')).toBeVisible();
-    await expectOpeningHeading(page);
-    await expect(page.getByTestId('hint-cue')).toBeVisible();
+    await expect(page.getByTestId('title-screen')).toBeVisible();
+    await expect(page.getByTestId('board')).toHaveCount(0);
     await page.getByTestId('open-settings').click();
     await expect(page.getByTestId('toggle-sound')).toBeChecked();
     await expect(page.getByTestId('toggle-haptics')).not.toBeChecked();
