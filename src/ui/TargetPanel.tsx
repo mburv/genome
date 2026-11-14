@@ -80,7 +80,7 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
  * explicit pages rather than a scrolling box. DOM visibility is recalculated after
  * committed-match change; a drag preview never changes the committed completion flags.
  */
-export function TargetShell({ defId, label, solved, committedKey, children }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode }) {
+export function TargetShell({ defId, label, solved, committedKey, children, reserveHeight = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; reserveHeight?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const page = useRef(0);
   const previous = useRef('');
@@ -102,6 +102,10 @@ export function TargetShell({ defId, label, solved, committedKey, children }: { 
       el.classList.remove('clues-compact');
       units.forEach(unit => setHidden(unit, false));
       el.scrollTop = 0;
+      // Tracing commits while the finger is still on the board. Keep its board position
+      // steady even when completed clues disappear; measure again after a resize.
+      el.style.minHeight = '';
+      if (reserveHeight) el.style.minHeight = el.clientHeight + 'px';
       if (fits()) { page.current = 0; return; }
       el.classList.add('clues-compact');
       const remaining = units.filter(unit => solved || unit.dataset.clueDone !== 'true');
@@ -138,7 +142,7 @@ export function TargetShell({ defId, label, solved, committedKey, children }: { 
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [defId, solved, committedKey]);
+  }, [defId, solved, committedKey, reserveHeight]);
   return (
     <section ref={ref} className="target" aria-label={label} data-testid="target-panel">
       <div className="clue-pagination" hidden>

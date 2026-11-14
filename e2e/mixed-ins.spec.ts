@@ -172,4 +172,11 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   const cap=await page.getByTestId('target-panel').evaluate(el=>el.scrollHeight-el.clientHeight);
   expect(cap).toBeLessThanOrEqual(1);
   await expect(page.getByTestId('icon-row')).toBeVisible();
+  const startY=(await page.getByTestId('mechanics-board').boundingBox())!.y;
+  for(let i=0;i<40;i++){
+    const r=Math.floor(i/9), c=r%2?8-i%9:i%9;
+    await tile(page,r*9+c).tap();
+  }
+  expect(Math.abs((await page.getByTestId('mechanics-board').boundingBox())!.y-startY)).toBeLessThan(1);
+  await expect(page.getByTestId('lab-progress')).toHaveText('40/54 bases');
 });

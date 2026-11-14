@@ -215,7 +215,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   // Tracing uses exactly the same screen chrome as a classic sliding level.
   // Only the board interaction and the reference-progress feedback differ.
   if (id === 'trace') return <>
-    <TargetShell defId={campaign?.stage.id ?? 'lab-trace'} label="Target sequence" solved={state.won} committedKey={String(state.trace.length)}>
+    <TargetShell reserveHeight defId={campaign?.stage.id ?? 'lab-trace'} label="Target sequence" solved={state.won} committedKey={String(state.trace.length)}>
       <div className="row-between small">
         <span className="target-title">DNA Tracing</span>
         <span className="muted" data-testid="mixed-range">{campaign ? 'INS CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + TRACE_TARGET.length + ' bp' : 'INS · practice'}</span>
