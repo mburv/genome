@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { fresh, openLevel, solveWithHints, touchSwipe, type Dir } from './helpers';
+import { fresh, openLevel, openMap, sampleTitle, solveWithHints, touchSwipe, type Dir } from './helpers';
 
 const LEVELS = pack.levels as LevelDefinition[];
 
@@ -21,14 +21,14 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
       expect(tile.width).toBeGreaterThanOrEqual(26);
       expect(await board.evaluate((el) => getComputedStyle(el).touchAction)).toBe('none');
     }
-    await page.getByTestId('open-map').click();
+    await openMap(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   });
 }
 
 test('tutorial: first-time players start in level 1; one swipe on the cued tile completes it', async ({ page }) => {
   await fresh(page);
-  await expect(page.getByTestId('level-label')).toHaveText('Level 1 / 12');
+  await expect(page.getByTestId('play-title')).toHaveText('INS · 1/6');
   await expect(page.getByTestId('hint-cue')).toBeVisible();
   await expect(page.getByTestId('status')).toContainText('Drag the glowing tile');
   const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
@@ -38,13 +38,12 @@ test('tutorial: first-time players start in level 1; one swipe on the cued tile 
   await expect(page.getByTestId('win')).toContainText('Fragment sequenced');
   await expect(page.getByTestId('win-bases')).toContainText('+9 INS coding bases');
   await expect(page.getByTestId('win-bases')).toContainText('CDS 1–9');
-  await expect(page.getByTestId('progress-text')).toContainText('9 / 51 INS sample bases');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
 });
 
 test('level map lists 12 levels across INS and HBB with modes; cards are locked', async ({ page }) => {
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await expect(page.getByTestId('level-map')).toBeVisible();
   await expect(page.locator('.node:not(.lab)')).toHaveCount(12);
   await expect(page.locator('.node.lab')).toHaveCount(3);
@@ -60,24 +59,24 @@ test('level map lists 12 levels across INS and HBB with modes; cards are locked'
 
 test('splicing level: three numbered pieces; replication: dashed complement strand; repair: gap cell', async ({ page }) => {
   await openLevel(page, 2);
-  await expect(page.getByTestId('mode-label')).toContainText('Splicing');
+  await expect(page.getByTestId('play-title')).toHaveText('INS · 2/6');
   await expect(page.locator('.track-outline')).toHaveCount(LEVELS[1]!.tracks.length);
   await expect(page.getByTestId('target-panel')).toContainText('illustrative');
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.getByRole('button', { name: /^Level 3: / }).click();
-  await expect(page.getByTestId('mode-label')).toContainText('Replication');
+  await expect(page.getByTestId('play-title')).toHaveText('INS · 3/6');
   await expect(page.locator('.track-outline.strand-complement')).toHaveCount(1);
   await expect(page.getByTestId('target-panel')).toContainText('complement');
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.getByRole('button', { name: /^Level 4: / }).click();
-  await expect(page.getByTestId('mode-label')).toContainText('Repair');
+  await expect(page.getByTestId('play-title')).toHaveText('INS · 4/6');
   await expect(page.getByTestId('repair-cell')).toHaveText('?');
   await expect(page.getByTestId('repair-slot')).toHaveText('?');
 });
 
 test('swiping a hole does nothing; tap + arrow buttons and undo work', async ({ page }) => {
   await openLevel(page, 2);
-  await expect(page.getByTestId('level-label')).toHaveText('Level 2 / 12');
+  await expect(page.getByTestId('play-title')).toHaveText('INS · 2/6');
   const hb = (await page.locator('.board > .hole').first().boundingBox())!;
   await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
   await page.mouse.down();
@@ -119,7 +118,7 @@ test('full campaign: all 12 levels solvable by touch drags + hints; genes discov
   test.setTimeout(240_000);
   await fresh(page);
   for (let level = 1; level <= 12; level++) {
-    await expect(page.getByTestId('level-label')).toHaveText(`Level ${level} / 12`);
+    await expect(page.getByTestId('play-title')).toHaveText(sampleTitle(level));
     await solveWithHints(page);
     const def = LEVELS[level - 1]!;
     const iv = def.sourceIntervals[0]!;
@@ -170,7 +169,7 @@ test('progress and the board in play survive a reload; returning players see the
   await expect(page.getByTestId('progress-INS')).toHaveText('9 / 51 sample bases');
   await expect(page.getByRole('button', { name: /^Level 1: First drag, .*complete/ })).toBeVisible();
   await page.getByTestId('continue').click();
-  await expect(page.getByTestId('level-label')).toHaveText('Level 2 / 12');
+  await expect(page.getByTestId('play-title')).toHaveText('INS · 2/6');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   expect(await page.locator('.board').innerText()).toBe(board);
   await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
@@ -198,7 +197,7 @@ test('no runtime network requests beyond the local bundle', async ({ page }) => 
   const external: string[] = [];
   page.on('request', (r) => { if (!r.url().startsWith('http://127.0.0.1:4173') && !r.url().startsWith('data:')) external.push(r.url()); });
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.waitForTimeout(300);
   expect(external).toEqual([]);
 });

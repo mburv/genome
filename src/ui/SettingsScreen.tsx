@@ -6,10 +6,11 @@ interface Props {
   systemReducedMotion: boolean;
   onChange: (s: Settings) => void;
   onReset: () => void;
+  onMap: () => void;
   onBack: () => void;
 }
 
-export function SettingsScreen({ settings, systemReducedMotion, onChange, onReset, onBack }: Props) {
+export function SettingsScreen({ settings, systemReducedMotion, onChange, onReset, onMap, onBack }: Props) {
   const set = (patch: Partial<Settings>) => onChange({ ...settings, ...patch });
   const haptics = hapticsSupported();
   return (
@@ -18,6 +19,7 @@ export function SettingsScreen({ settings, systemReducedMotion, onChange, onRese
         <h2 id="settings-title" className="gene">Settings</h2>
         <button type="button" onClick={onBack}>Done</button>
       </div>
+      <button type="button" className="settings-map" onClick={onMap} data-testid="open-map">Map</button>
       <label className="setting">
         <span>
           <b>Reduce motion</b>

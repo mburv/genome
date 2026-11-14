@@ -180,3 +180,11 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
   - **Stars.** Informational only. Par is the proven optimum when the solver found one, otherwise the certificate length in drags. 3 stars at or under par, 2 within +2 or 1.5× par (whichever is looser), 1 otherwise.
   - **Locked-drag hint.** Trying to drag a locked solved board pulses the Replay button and sets the status to "This level is already solved. Tap Replay to play it again." (no pulse when reduced motion is on). Mid-replay of a completed level plays normally and still shows "Best N" above the pad.
   - **Engine.** Unchanged and still pure. Restart already started a fresh attempt; the UI now records `best` next to `recordCompletion`.
+
+## UI tidy of the play header (14 Nov 2026, owner request)
+
+- D-UI-08 Play-screen chrome is reduced to the gene, the board and the controls.
+  - **Header.** The coral logo mark and the "Build what makes you human" tagline are removed on every screen. On the puzzle screen the GENOME wordmark is replaced by the current gene from the campaign and the pinned RefSeq record, e.g. `INS · 1/6` over `CHROMOSOME 11 · NM_000207.3`. Sample levels use the gene's own 1–6 index (not 1–12); assembly chapters use `symbol · part/of`; enzyme labs use `CRISPR · practice` (and the same for Ligase and Scaffold). The heading truncates with an ellipsis and is tested at 320 px. Map, settings and gene-card screens keep the GENOME wordmark (without the mark or tagline).
+  - **Map.** The header Map button is gone. Settings has a Map action that opens the level map. Done returns to the screen Settings was opened from.
+  - **Info card.** The whole level-information panel (chromosome/accession, LEVEL x/y, gene · n/m, mode badge, sample/assembly progress, par and rating) is removed and not relocated. The move counter under the board stays. The board remains full-bleed and maximal; the freed space shortens the page rather than shrinking tiles.
+  - **Solved.** The D-UI-07 banner is an overlay, centred horizontally and vertically on the board, with the solved arrangement visible around it. Replay (coral), Next, last/best moves, stars and the locked-drag pulse are unchanged.

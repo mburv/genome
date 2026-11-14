@@ -3,7 +3,7 @@ import chapterPack from '../src/campaign/chapters.generated.json' with { type: '
 import manifest from '../src/genomics/manifest.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
 import { createInitialState } from '../src/engine/engine.ts';
-import { fresh, solveWithHints } from './helpers';
+import { fresh, openMap, solveWithHints } from './helpers';
 
 const CHAPTERS = chapterPack.levels as unknown as LevelDefinition[];
 const chapterOf = (s: string) => CHAPTERS.filter((l) => l.symbol === s);
@@ -19,7 +19,7 @@ async function patchSave(page: Page, patch: (s: Record<string, unknown>) => Reco
 
 test('map shows the gene catalogue with its count from the manifest, chapter nodes and exclusions', async ({ page }) => {
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await expect(page.getByTestId('catalogue-count')).toHaveText(`${manifest.included.length} verified genes`);
   for (const g of manifest.included) await expect(page.getByTestId(`cat-${g.symbol}`)).toBeVisible();
   await expect(page.locator('.cnode:not(.play)')).toHaveCount(CHAPTERS.length);
@@ -34,8 +34,8 @@ test('long-token level: readable tiles, tap-to-inspect, drag-solve with hints; f
   expect(last.tier).toBe(12);
   await patchSave(page, (s) => ({ ...s, completed: ins.slice(0, -1).map((l) => l.id) }));
   await page.getByTestId(`cnode-${last.id}`).click();
-  await expect(page.getByTestId('level-label')).toHaveText(`INS assembly ${ins.length} / ${ins.length}`);
-  await expect(page.getByTestId('progress-text')).toContainText(`/ 333 INS CDS bases assembled`);
+  await expect(page.getByTestId('play-title')).toHaveText(`INS · ${ins.length}/${ins.length}`);
+  await expect(page.getByTestId('play-locus')).toContainText('NM_000207.3');
   const tile = page.locator('.tile.tok').first();
   const seq = (await tile.getAttribute('data-seq'))!;
   expect(seq).toMatch(/^[ACGT]+$/);
@@ -61,7 +61,7 @@ test('long-token level: readable tiles, tap-to-inspect, drag-solve with hints; f
 test('HBB chapter opener (codon tiles) discovers HBB but does not assemble it', async ({ page }) => {
   const hbb = chapterOf('HBB');
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.getByTestId(`cnode-${hbb[0]!.id}`).click();
   await expect(page.locator('.tile.tok.tier-3').first()).toBeVisible();
   await solveWithHints(page);
@@ -115,7 +115,7 @@ test('an M3 (v3) save upgrades to v4 with every completion kept, a notice and an
 test('each multi-base combo has its own colour, identical on the board, in the target strip and in the inspector', async ({ page }) => {
   const def = CHAPTERS.find((l) => l.tier === 6 && l.mode === 'sequence')!;
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.getByTestId(`cnode-${def.id}`).click();
   await page.getByTestId('board').waitFor();
   const tiles = await page.locator('.tile.tok').evaluateAll((els) => els.map((e) => ({ seq: e.getAttribute('data-seq')!, bg: getComputedStyle(e).backgroundColor })));

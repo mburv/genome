@@ -94,12 +94,12 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
       await openLevel(page, 2);
       const h = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
       test.skip(h < 40, 'page does not scroll at this size');
-      const label = (await page.getByTestId('level-label').boundingBox())!;
+      const panel = (await page.getByTestId('target-panel').boundingBox())!;
       const board = (await page.getByTestId('board').boundingBox())!;
-      expect(label.y + label.height).toBeLessThan(board.y);
+      expect(panel.y + panel.height).toBeLessThan(board.y);
       const cdp = await page.context().newCDPSession(page);
-      const x = label.x + 5;
-      const y = label.y + label.height / 2;
+      const x = panel.x + 5;
+      const y = panel.y + panel.height / 2;
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
       for (let i = 1; i <= 10; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - i * Math.min(15, (y - 4) / 10) }] }); await page.waitForTimeout(16); }
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });

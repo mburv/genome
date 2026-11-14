@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import { segmentCells } from '../src/engine/grid.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { cellPitch, lettersAt, openLevel as open, rotated, touchDrag } from './helpers';
+import { cellPitch, lettersAt, openLevel as open, rotated, sampleTitle, touchDrag } from './helpers';
 
 const LEVELS = pack.levels as LevelDefinition[];
 
@@ -18,7 +18,7 @@ function segmentWith(def: LevelDefinition, axis: 'row' | 'col', min: number): nu
 
 async function openLevel(page: Page, n: number) {
   await open(page, n);
-  await expect(page.getByTestId('level-label')).toHaveText(`Level ${n} / 12`);
+  await expect(page.getByTestId('play-title')).toHaveText(sampleTitle(n));
 }
 
 test('horizontal touch drag across three cells commits one 3-step rotation (one move)', async ({ page }) => {

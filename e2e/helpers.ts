@@ -92,11 +92,25 @@ export async function fresh(page: Page): Promise<void> {
   await page.getByTestId('board').waitFor();
 }
 
+/** 1-based sample-campaign heading, e.g. level 1 → "INS · 1/6", level 7 → "HBB · 1/6". */
+export const sampleTitle = (n: number): string => (n <= 6 ? `INS · ${n}/6` : `HBB · ${n - 6}/6`);
+
+/** Open the level map, via Settings when the header Map button is absent. */
+export async function openMap(page: Page): Promise<void> {
+  if (await page.getByTestId('level-map').isVisible()) return;
+  if (!(await page.getByTestId('settings').isVisible())) {
+    await page.getByTestId('open-settings').click();
+    await page.getByTestId('settings').waitFor();
+  }
+  await page.getByTestId('open-map').click();
+  await page.getByTestId('level-map').waitFor();
+}
+
 /** Open level n (1-based) through the level map. */
 export async function openLevel(page: Page, n: number): Promise<void> {
   await fresh(page);
   if (n === 1) return;
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.getByRole('button', { name: new RegExp(`^Level ${n}: `) }).click();
   await page.getByTestId('board').waitFor();
 }
@@ -134,7 +148,7 @@ export async function solveWithHints(page: Page): Promise<number> {
 /** Open Enzyme lab n (1-based) through the level map. */
 export async function openLab(page: Page, n: number): Promise<void> {
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${n}: `) }).click();
   await page.getByTestId('board').waitFor();
 }

@@ -52,14 +52,16 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 a { color: var(--blue); }
 .app { max-width: var(--app-max); overflow-x: clip; margin: 0 auto; padding: max(0px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
 /* Everything except the board keeps a clean inner margin; the board is full-bleed. */
-.app > :not(.board):not(.overlay):not(.top) { margin-inline: var(--pad); }
+.app > :not(.board):not(.board-stage):not(.overlay):not(.top) { margin-inline: var(--pad); }
 .app > .top { margin-inline: 0; padding: 12px var(--pad) 10px; border-bottom: 1px solid var(--ink); background: var(--white); }
 @media (min-width: 641px) {
   .app { border-inline: 1px solid var(--rule); min-height: 100vh; }
 }
-.top { display: flex; justify-content: space-between; align-items: center; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color: var(--ink); }
-h1::before { content: ''; display: inline-block; width: 12px; height: 12px; background: var(--coral); box-shadow: inset 0 0 0 1px var(--coral-edge); margin-right: 10px; vertical-align: 1px; }
+.play-heading { min-width: 0; flex: 1; }
+.play-heading h1 { letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.play-locus { margin: 2px 0 0; font-size: 10px; letter-spacing: 0.08em; color: var(--graphite); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tag { margin: 2px 0 0; font-size: 10px; letter-spacing: 0.12em; color: var(--graphite); text-transform: uppercase; }
 .levels { display: flex; gap: 6px; }
 .chip { width: 36px; height: 36px; padding: 0; font-weight: 700; font-size: 14px; }
@@ -116,7 +118,8 @@ h1::before { content: ''; display: inline-block; width: 12px; height: 12px; back
 .pair-bonds i::before { content: ''; width: 1px; height: 6px; background: var(--ink); }
 
 /* ---------- Board: full-bleed, 1px hairline gutters, square tiles ---------- */
-.board { position: relative; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); gap: var(--gap); width: 100%; max-width: var(--app-max); aspect-ratio: 1 / 1; height: auto; margin: 1px 0; padding: 0; background: var(--rule); border: 0; box-shadow: 0 -1px 0 var(--ink), 0 1px 0 var(--ink); box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.board-stage { position: relative; width: 100%; max-width: var(--app-max); margin: 1px 0; }
+.board { position: relative; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); gap: var(--gap); width: 100%; max-width: var(--app-max); aspect-ratio: 1 / 1; height: auto; margin: 0; padding: 0; background: var(--rule); border: 0; box-shadow: 0 -1px 0 var(--ink), 0 1px 0 var(--ink); box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .cell { min-width: 0; min-height: 0; border-radius: 0; }
 .hole { background: repeating-linear-gradient(135deg, #d9d9d2 0 1px, transparent 1px 6px), var(--hole); }
 .tile { position: relative; display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; font-family: var(--sans); font-weight: 700; font-size: calc(var(--board) / 15); will-change: transform; }
@@ -160,7 +163,8 @@ h1::before { content: ''; display: inline-block; width: 12px; height: 12px; back
 .board.solved .tile.goal.ok { animation: solvedpulse 0.6s ease both; animation-delay: calc(var(--i, 0) * 30ms); }
 @keyframes solvedpulse { 40% { transform: scale(0.9); } }
 
-/* ---------- Solved banner (completed level / after closing the win card) ---------- */
+/* ---------- Solved banner: centred overlay on the board (D-UI-07 / D-UI-08) ---------- */
+.board-stage .solved-banner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 30; width: min(calc(100% - 28px), 320px); box-sizing: border-box; }
 .solved-banner { background: var(--white); border: 1px solid var(--ink); border-left: 6px solid var(--mint-edge); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .solved-banner-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
 .solved-kicker { font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; font-size: 12px; color: var(--ink); }
@@ -339,6 +343,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* ---------- Settings ---------- */
 .settings { display: flex; flex-direction: column; gap: 10px; }
+.settings-map { width: 100%; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 12.5px; }
 .setting { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--rule); cursor: pointer; }
 .setting span { display: flex; flex-direction: column; gap: 2px; }
 .setting small { color: var(--graphite); font-size: 12px; }

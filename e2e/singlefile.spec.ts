@@ -20,7 +20,7 @@ test('self-contained single HTML loads and plays from file://', async ({ page })
   await touchSwipe(page, cell, dir);
   await expect(page.getByTestId('win')).toBeVisible();
   await page.getByRole('button', { name: 'Next level →' }).click();
-  await expect(page.getByTestId('level-label')).toHaveText('Level 2 / 12');
+  await expect(page.getByTestId('play-title')).toHaveText('INS · 2/6');
   expect(requests).toEqual([]);
   expect(errors).toEqual([]);
 });

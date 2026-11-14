@@ -26,10 +26,10 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
     await expect(page.getByTestId('win')).toHaveCount(0);
-
-    if (size.width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-solved-replay-390x844.png' });
-    }
+    const box = (await banner.boundingBox())!;
+    const board = (await page.getByTestId('board').boundingBox())!;
+    expect(Math.abs((box.x + box.width / 2) - (board.x + board.width / 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs((box.y + box.height / 2) - (board.y + board.height / 2))).toBeLessThanOrEqual(4);
 
     await page.getByRole('button', { name: 'Replay' }).click();
     await expect(banner).toHaveCount(0);

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { dragBy, fresh, openLab, openLevel, readHint, solveWithHints, touchDrag, cellPitch } from './helpers';
+import { dragBy, fresh, openLab, openLevel, openMap, readHint, solveWithHints, touchDrag, cellPitch } from './helpers';
 
 const boardText = (page: import('@playwright/test').Page) => page.locator('.board').innerText();
 const baseAt = (page: import('@playwright/test').Page, c: number) => page.locator(`[data-cell="${c}"]`).getAttribute('data-base');
@@ -20,7 +20,7 @@ test('no power tray on levels 1–3; from level 4 it shows ⚡2 and unaffordable
 
 test('map has an optional Enzyme lab with three powers', async ({ page }) => {
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await expect(page.getByTestId('lab-panel')).toContainText('no coverage');
   for (const n of [1, 2, 3]) await expect(page.getByRole('button', { name: new RegExp(`^Enzyme lab ${n}: `) })).toBeVisible();
 });

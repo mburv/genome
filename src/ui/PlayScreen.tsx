@@ -5,7 +5,7 @@ import {
 } from '../engine/engine.ts';
 import { codonComplete, POWER_COST, powersEnabled, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
-import { LAB_LEVELS, LEVELS, chapterOf, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../campaign/campaign.ts';
+import { LAB_LEVELS, LEVELS, chapterOf, coveredBases, isDiscovered, sampleBases } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
 import { SeqLetters, tokenStyle } from './TokenFace.tsx';
@@ -17,7 +17,7 @@ import { SolvedBanner } from './SolvedBanner.tsx';
 import { WinCard } from './WinCard.tsx';
 import { PowerPanel, PowerTray, POWER_LABEL } from './PowerTray.tsx';
 import { describeSlide, hintDisplayCell } from './hintCell.ts';
-import { MODE_BLURB, MODE_GLYPH, MODE_LABEL } from './modes.ts';
+import { MODE_BLURB } from './modes.ts';
 import { playCue, type Cue } from './feedback.ts';
 
 function defaultSelection(def: LevelDefinition, state: PuzzleState): Cell {
@@ -353,9 +353,6 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const chapter = def.chapter ? chapterOf(def.symbol) : [];
   const labIndex = LAB_LEVELS.findIndex((l) => l.id === def.id);
   const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : def.chapter ? chapter[def.chapter.part] : LEVELS[def.index + 1];
-  const own = levelsForGene(def.symbol);
-  const position = own.findIndex((l) => l.id === def.id) + 1;
-  const par = def.metrics.solver.status === 'optimal' ? `Par ${def.metrics.solver.optimal}` : `Par ≤ ${def.metrics.certificateDrags}`;
   const powerPreview: PowerPreview | null = pending;
 
   const defaultStatus = def.chapter && def.chapter.part === 1 && puzzle.moves === 0 && !solvedView
@@ -381,55 +378,9 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
 
   return (
     <>
-      <section className="panel info" aria-label="Level information">
-        <div className="row-between muted small">
-          <span>CHROMOSOME {gene.chromosome} · {gene.transcript}</span>
-          <span data-testid="level-label">{def.lab ? `Enzyme lab ${labIndex + 1} / ${LAB_LEVELS.length}` : def.chapter ? `${gene.symbol} assembly ${def.chapter.part} / ${def.chapter.of}` : `Level ${def.index + 1} / ${LEVELS.length}`}</span>
-        </div>
-        <div className="row-between">
-          <h2 className="gene">{def.lab ? <>{POWER_LABEL[def.lab]} <span>· practice</span></> : def.chapter ? <>{gene.symbol} <span>· {def.title}</span></> : <>{gene.symbol} <span>· {position}/{own.length}</span></>}</h2>
-          <span className={`mode mode-${def.mode}`} data-testid="mode-label">{MODE_GLYPH[def.mode]} {MODE_LABEL[def.mode]}</span>
-        </div>
-        {def.lab ? (
-          <p className="muted small lab-note">Practice level: uses {gene.symbol} bases already in the campaign; adds no coverage.</p>
-        ) : def.chapter ? (
-          <>
-            <div className="progress assembly" role="progressbar" aria-label={`${gene.symbol} coding bases assembled`} aria-valuemin={0} aria-valuemax={gene.cdsLength} aria-valuenow={assembly.covered}>
-              <i style={{ width: `${(100 * assembly.covered) / gene.cdsLength}%` }} />
-            </div>
-            <div className="row-between muted small">
-              <span data-testid="progress-text">{assembly.covered} / {gene.cdsLength} {gene.symbol} CDS bases assembled</span>
-              <span>{par} · {def.metrics.rating}</span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="progress" role="progressbar" aria-label={`${gene.symbol} sample bases sequenced`} aria-valuemin={0} aria-valuemax={sample} aria-valuenow={covered}>
-              <i style={{ width: `${(100 * covered) / sample}%` }} />
-            </div>
-            <div className="row-between muted small">
-              <span data-testid="progress-text">{covered} / {sample} {gene.symbol} sample bases</span>
-              <span>{par} · {def.metrics.rating}</span>
-            </div>
-          </>
-        )}
-      </section>
-
       <TargetPanel def={def} matches={matches} solved={solvedView} custom={puzzle.custom} />
 
-      {solvedView && !celebrate && (
-        <SolvedBanner
-          def={def}
-          moves={puzzle.moves}
-          best={best}
-          pulse={replayPulse}
-          hasNext={!!nextLevel}
-          onReplay={replay}
-          onNext={() => (nextLevel ? onPlay(nextLevel.id) : onMap())}
-          onMap={onMap}
-        />
-      )}
-
+      <div className="board-stage">
       <Board
         def={def}
         board={puzzle.board}
@@ -457,6 +408,19 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         custom={puzzle.custom}
         onLockedInteract={nudgeReplay}
       />
+      {solvedView && !celebrate && (
+        <SolvedBanner
+          def={def}
+          moves={puzzle.moves}
+          best={best}
+          pulse={replayPulse}
+          hasNext={!!nextLevel}
+          onReplay={replay}
+          onNext={() => (nextLevel ? onPlay(nextLevel.id) : onMap())}
+          onMap={onMap}
+        />
+      )}
+      </div>
 
       <div className="row-between small meta">
         <span data-testid="moves">{puzzle.moves} {puzzle.moves === 1 ? 'move' : 'moves'}</span>

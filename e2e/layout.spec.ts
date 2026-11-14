@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fresh } from './helpers';
+import { fresh, openMap } from './helpers';
 
 // Swiss redesign (D-UI-01): the board is full-bleed on phones, with 1px hairline gutters.
 for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 430, height: 932 }]) {
@@ -34,7 +34,7 @@ test('clinical light theme: paper canvas, light theme-color, flat square tiles',
 test('a long-token chapter board is also full-bleed at 320px with no overflow', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await fresh(page);
-  await page.getByTestId('open-map').click();
+  await openMap(page);
   await page.getByTestId('cnode-ins-c08').click();
   const r = await page.locator('.board').boundingBox();
   expect(r!.x).toBe(0);

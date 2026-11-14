@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, LEVELS } from '../campaign/campaign.ts';
 import { CATALOGUE_SIZE, GENES } from '../genomics/genes.ts';
 import { createLocalStorageAdapter, loadSave, newSave, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
 import { MapScreen } from './MapScreen.tsx';
 import { PlayScreen } from './PlayScreen.tsx';
+import { playHeading } from './playHeading.ts';
 import { SettingsScreen } from './SettingsScreen.tsx';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -33,31 +34,40 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   );
 
   const def = ALL_LEVELS.find((l) => l.id === save.currentLevelId) ?? LEVELS[0]!;
+  const heading = playHeading(def);
+  const settingsFrom = useRef<Screen>({ kind: 'map' });
+  const go = (next: Screen) => {
+    if (next.kind === 'settings' && screen.kind !== 'settings') settingsFrom.current = screen;
+    setScreen(next);
+    if (next.kind === 'play' || next.kind === 'map') window.scrollTo?.(0, 0);
+  };
   const play = (levelId: string) => {
     persist({ ...save, currentLevelId: levelId });
-    setScreen({ kind: 'play' });
-    window.scrollTo?.(0, 0);
+    go({ kind: 'play' });
   };
   const resetProgress = () => {
     if (!confirm('Erase all GENOME progress on this device?')) return;
     storage.backup(serializeSave(save));
     persist(newSave(LEVEL_PACK));
-    setScreen({ kind: 'map' });
+    go({ kind: 'map' });
   };
 
   return (
     <main className="app">
-      <header className="top">
-        <div>
-          <h1>GENOME</h1>
-          <p className="tag">Build what makes you human</p>
-        </div>
+      <header className={`top${screen.kind === 'play' ? ' play-top' : ''}`}>
+        {screen.kind === 'play' ? (
+          <div className="play-heading" data-testid="play-heading">
+            <h1 data-testid="play-title">{heading.title}</h1>
+            <p className="play-locus" data-testid="play-locus">{heading.locus}</p>
+          </div>
+        ) : (
+          <div>
+            <h1>GENOME</h1>
+          </div>
+        )}
         <div className="top-buttons">
-          {screen.kind !== 'map' && (
-            <button type="button" className="map-button" onClick={() => setScreen({ kind: 'map' })} data-testid="open-map">☰ Map</button>
-          )}
           {screen.kind !== 'settings' && (
-            <button type="button" className="map-button" onClick={() => setScreen({ kind: 'settings' })} aria-label="Settings" data-testid="open-settings">⚙</button>
+            <button type="button" className="map-button" onClick={() => go({ kind: 'settings' })} aria-label="Settings" data-testid="open-settings">⚙</button>
           )}
         </div>
       </header>
@@ -78,7 +88,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           currentLevelId={save.currentLevelId}
           legacyM1={save.legacy.m1Completed}
           onPlay={play}
-          onCard={(symbol) => setScreen({ kind: 'card', symbol })}
+          onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
       {screen.kind === 'play' && (
@@ -89,8 +99,8 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           persist={persist}
           reducedMotion={reducedMotion}
           onPlay={play}
-          onMap={() => setScreen({ kind: 'map' })}
-          onCard={(symbol) => setScreen({ kind: 'card', symbol })}
+          onMap={() => go({ kind: 'map' })}
+          onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
       {screen.kind === 'settings' && (
@@ -99,11 +109,12 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           systemReducedMotion={systemReducedMotion}
           onChange={(settings) => persist({ ...save, settings })}
           onReset={resetProgress}
-          onBack={() => setScreen({ kind: 'map' })}
+          onMap={() => go({ kind: 'map' })}
+          onBack={() => go(settingsFrom.current)}
         />
       )}
       {screen.kind === 'card' && (
-        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} levels={LEVELS} onPlay={play} onBack={() => setScreen({ kind: 'map' })} />
+        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} levels={LEVELS} onPlay={play} onBack={() => go({ kind: 'map' })} />
       )}
 
       <details className="panel help">
