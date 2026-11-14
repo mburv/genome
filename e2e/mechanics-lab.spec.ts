@@ -62,12 +62,31 @@ test('Genome Assembly aligns overlapping reads on the board', async ({ page }) =
 
 test('Mutation Detective repairs each complementary mismatch', async ({ page }) => {
   await openLab(page, 'mutation');
+  const target = page.getByTestId('mutation-reference');
+  await expect(target).toBeVisible();
+  await expect(target.locator('.mutation-reference-row')).toHaveCount(3);
+  await expect(target.locator('.mutation-target-base')).toHaveCount(21);
+  await expect(target.locator('.mismatch')).toHaveCount(5);
+  await expect(page.locator('.lab-cell.mutation-mismatch')).toHaveCount(5);
+  // Compare every displayed target with the fixed reference strand directly above it.
+  for (const c of [19,20,21,22,23,24,25,46,47,48,49,50,51,52,73,74,75,76,77,78,79]) {
+    const ref = await tile(page,c-9).getAttribute('data-base');
+    const want = ({ A:'T',T:'A',C:'G',G:'C' } as Record<string,string>)[ref!]!;
+    await expect(page.getByTestId('mutation-target-' + c)).toHaveText(want);
+  }
   for (const c of [20,23,48,74,78]) {
     const b = await tile(page,c-9).getAttribute('data-base');
     const comp = ({ A:'T',T:'A',C:'G',G:'C' } as Record<string,string>)[b!]!;
-    await tap(page,c); await page.getByTestId('lab-base-' + comp).tap();
+    await tap(page,c);
+    await expect(page.getByTestId('mutation-selection')).toContainText('Target ' + comp);
+    await page.getByTestId('lab-base-' + comp).tap();
+    await expect(page.getByTestId('mutation-target-' + c)).toHaveClass(/matched/);
   }
   await won(page);
+  await expect(target.locator('.matched')).toHaveCount(21);
+  await expect(target.locator('.mismatch')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(target.locator('.mismatch')).toHaveCount(1);
 });
 
 test('DNA Connections draws three noncrossing touch paths', async ({ page }) => {
