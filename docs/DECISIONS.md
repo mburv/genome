@@ -332,3 +332,8 @@ Owner playtest: remove the pulsing full-board crossfade in the sliding tutorial.
 ### D-TUTORIAL-03 — Steady boards throughout tutorials
 
 Owner reported pulsing in DNA Tracing too. Remove shared full-board crossfade from all non-sliding guides. Only changed cells receive a one-shot replacement overlay; tracing and connections keep every base opaque and draw paths once, holding the result. Gesture and cut cues also play once and replay explicitly. Reduced motion displays the final state.
+
+
+### D-UI-33 — Shared classic chrome for DNA Tracing
+
+Owner playtest: tracing uses the same compact gene header, capped TargetShell and coloured clue chips, full-width board-stage sizing, under-board status and standard icon toolbar as sliding. Only the interaction board and trace progress differ. Long clues use existing completed-chip compaction/paging; hint mode persists across campaign mechanics, with a next-base highlight on the certified path. Powers remain unavailable for tracing; the lab practice retains its navigation and separate progress.

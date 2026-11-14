@@ -143,3 +143,33 @@ test('DNA tracing tutorial keeps all bases static while drawing its path once',a
   await page.getByRole('button',{name:'Replay animation'}).click();
   await expect(board.locator('.tutorial-path polyline')).toHaveCSS('animation-iteration-count','1');
 });
+
+test('DNA tracing shares classic play chrome, board sizing, clues and action toolbar',async({page})=>{
+  await fresh(page,true);await openMap(page);
+  await page.setViewportSize({width:320,height:568});
+  await page.getByTestId('cnode-ins-01').click();await page.getByTestId('tutorial-skip').click();
+  const classic=await page.getByTestId('board').boundingBox();
+  await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
+  await expect(page.getByTestId('play-title')).toHaveText('INS');
+  await expect(page.getByTestId('play-progress')).toHaveText('2/13');
+  await expect(page.locator('.mechanic-heading,.mechanic-instructions,.mechanic-target')).toHaveCount(0);
+  const board=page.getByTestId('mechanics-board'), box=await board.boundingBox();
+  expect(Math.abs(box!.width-classic!.width)).toBeLessThan(1);
+  expect(Math.abs(box!.x-classic!.x)).toBeLessThan(1);
+  await expect(page.getByTestId('target-panel').locator('.strip-cell')).toHaveCount(9);
+  await expect(page.getByTestId('icon-row')).toBeVisible();
+  await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','false');
+  await page.getByTestId('action-hint').click();
+  await expect(tile(page,10)).toHaveClass(/hinted/);
+  await tile(page,10).tap();
+  await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
+  await expect(tile(page,11)).toHaveClass(/hinted/);
+  await expect(page.getByTestId('target-panel').locator('.strip-cell.ok')).toHaveCount(1);
+  await page.getByTestId('action-undo').click();
+  await expect(page.getByTestId('target-panel').locator('.strip-cell.ok')).toHaveCount(0);
+  await openMap(page);await page.getByTestId('cnode-ins-c06').click();
+  await expect(page.getByTestId('target-panel').locator('[data-clue-unit]')).toHaveCount(54);
+  const cap=await page.getByTestId('target-panel').evaluate(el=>el.scrollHeight-el.clientHeight);
+  expect(cap).toBeLessThanOrEqual(1);
+  await expect(page.getByTestId('icon-row')).toBeVisible();
+});

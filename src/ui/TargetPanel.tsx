@@ -80,7 +80,7 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
  * explicit pages rather than a scrolling box. DOM visibility is recalculated after
  * committed-match change; a drag preview never changes the committed completion flags.
  */
-function TargetShell({ defId, label, solved, committedKey, children }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode }) {
+export function TargetShell({ defId, label, solved, committedKey, children }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
   const page = useRef(0);
   const previous = useRef('');

@@ -852,7 +852,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-change.b-C { background:var(--C); }
 .tutorial-change.b-G { background:var(--G); }
 .tutorial-change.b-T { background:var(--T); }
-.tutorial-change.b-\\. { background:var(--hole); }
 @keyframes tutorial-change { 0%,55% { opacity:0; } 56%,100% { opacity:1; } }
 .tutorial-finger { position:absolute; z-index:8; left:var(--fx); top:var(--fy); transform:translate(-25%,-20%); font-size:24px; filter:drop-shadow(0 1px 1px #333); pointer-events:none; animation:tutorial-finger 1.8s ease-in-out both; }
 @keyframes tutorial-finger { 0%,20%{left:var(--fx);top:var(--fy);opacity:0} 30%{opacity:1} 65%,85%{left:var(--tx);top:var(--ty);opacity:1} 100%{left:var(--tx);top:var(--ty);opacity:0} }
@@ -877,3 +876,12 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-slide-finger { position:absolute; z-index:8; left:var(--fx); top:var(--fy); transform:translate(-25%,-20%); font-size:24px; pointer-events:none; animation:tutorial-slide-finger 1.4s ease-in-out both; }
 @keyframes tutorial-slide-finger { 0%,25%{left:var(--fx);top:var(--fy);opacity:1} 75%{left:var(--tx);top:var(--ty);opacity:1} 100%{left:var(--tx);top:var(--ty);opacity:0} }
 @media(prefers-reduced-motion:reduce){.tutorial-slide-strip,.tutorial-slide-finger{animation:none}}
+
+/* Tracing uses the existing classic play-screen dimensions and controls. */
+.mechanics-board.trace-board { width:100%; min-width:0; max-width:var(--board); aspect-ratio:1; margin:0; align-self:auto; gap:var(--gap); box-shadow:0 -1px 0 var(--ink),0 1px 0 var(--ink); }
+.trace-board .lab-cell { font-family:var(--sans); font-size:calc(var(--board) / 15); color:var(--tile-ink); font-weight:700; }
+.trace-board .lab-hole { background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole); }
+.trace-board .lab-cell:disabled { opacity:.78; }
+.trace-status { min-height:1.4em; }
+.trace-lab-back { padding:6px; }
+.trace-solved .seq-wrap { overflow-wrap:anywhere; }
