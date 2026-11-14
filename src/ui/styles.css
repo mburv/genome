@@ -216,34 +216,28 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   max-height: min(30vh, calc(100vh - var(--play-reserved)));
   max-height: var(--clue-max);
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   overscroll-behavior: contain;
   min-height: 0;
 }
-.target.scrollable::before,
-.target.scrollable::after {
-  content: '';
-  pointer-events: none;
-  position: sticky;
-  left: 0;
-  right: 0;
-  display: block;
-  height: 10px;
+/* Crowded clue panels omit committed matches and page any remaining overflow. */
+.target [data-clue-hidden], .target .clue-pagination[hidden] { display: none !important; }
+.target .clue-part:has([data-clue-unit]):not(:has([data-clue-unit]:not([data-clue-hidden]))) { display: none; }
+.target.clues-compact .rep-end { display: none; }
+.clue-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 6px; height: 24px; font-size: 11px; }
+.clue-pagination button { font-size: 16px; line-height: 1; padding: 2px 10px; }
+.clues-compact [data-clue-index] { position: relative; }
+.clues-compact [data-clue-index]::before {
+  content: attr(data-clue-index);
+  position: absolute;
+  right: 1px;
+  top: 0;
+  font: 700 8px/1 var(--sans);
+  color: var(--graphite);
+  background: var(--paper);
+  padding: 0 2px;
   z-index: 1;
 }
-.target.scrollable::before {
-  top: 0;
-  margin-bottom: -10px;
-  background: linear-gradient(to bottom, var(--paper), transparent);
-  opacity: 0;
-}
-.target.scrollable.scroll-top::before { opacity: 1; }
-.target.scrollable::after {
-  bottom: 0;
-  margin-top: -10px;
-  background: linear-gradient(to top, var(--paper), transparent);
-}
-.target.scrollable.scroll-end::after { opacity: 0; }
 
 .target .row-between { flex-wrap: wrap; gap: 2px 8px; position: sticky; top: 0; z-index: 2; background: var(--paper); }
 
