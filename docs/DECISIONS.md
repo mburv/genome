@@ -302,3 +302,8 @@ Owner playtest request (14 Nov 2026): Hint is an on/off toggle, not a one-shot a
 ### D-LAB-01 — Six-mechanic experimental lab
 
 Owner approved all six new mechanics (14 Nov 2026): DNA Tracing, Codon Crush, Genome Assembly, Mutation Detective, DNA Connections and Restriction Enzyme. Each is a standalone, fixed 9×9 introductory challenge with reference INS data and deterministic solution fixtures. Gravity/refill is allowed only in Codon Crush. No campaign credit, no existing level replacement, no saved-progress migration; practice attempts are session-local and reset on navigation. Lab controls provide undo, replay and hints; they do not consume the campaign power economy. Full campaign integration, procedural generation, difficulty calibration and mechanic-specific powers require playtest feedback.
+
+
+### D-LAB-02 — Codon Crush visual feedback
+
+Owner playtest: immediate swaps/refill are hard to follow. Drag previews move both tiles with the finger, constrained to one orthogonal neighbour. Release commits at 35% of a cell; invalid matches animate back. Accepted swaps show the swapped board, clear the matched codon, then animate actual gravity/refill using pure engine transition metadata. Undo and Replay are disabled during the short sequence; reduced-motion mode bypasses staged animation. Rules, deterministic refill, and campaign data are unchanged.
