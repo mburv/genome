@@ -1,0 +1,68 @@
+import { INS } from '../genomics/genes.ts';
+import { DEFAULT_LAB_SPEC, createLab, applyLab, labExtractedSequence, mutationExpected, reverseComplement, type LabSpec, type LabId, type LabAction, type LabState } from '../engine/mechanicsLab.ts';
+import type { LevelDefinition } from '../engine/types.ts';
+
+export type Mechanic = LabId | 'slide';
+/** Reuse existing stage ids and exact CDS intervals. Original sliding boards remain valid legacy alternatives. */
+const MECHANICS: Record<string, LabId> = {
+  'ins-02': 'trace', 'ins-03': 'connections', 'ins-04': 'assembly', 'ins-05': 'crush', 'ins-06': 'mutation',
+  'ins-c01': 'trace', 'ins-c03': 'mutation', 'ins-c06': 'trace', 'ins-c07': 'restriction',
+};
+export const mechanicOf = (def: LevelDefinition): Mechanic => MECHANICS[def.id] ?? 'slide';
+export interface MixedStage { id: string; mechanic: LabId; start: number; end: number; sequence: string; spec: LabSpec; certificate: LabAction[] }
+const snake = (n: number, startRow = 0): number[] => Array.from({ length: n }, (_, i) => {
+  const row = Math.floor(i / 9) + startRow, col = i % 9;
+  return row * 9 + (row % 2 ? 8 - col : col);
+});
+export function mixedStage(def: LevelDefinition): MixedStage | null {
+  const mechanic = mechanicOf(def);
+  if (mechanic === 'slide') return null;
+  const start = def.sourceIntervals[0]!.start, end = def.sourceIntervals.at(-1)!.end;
+  const sequence = INS.sequence.slice(start, end);
+  const spec: LabSpec = { ...DEFAULT_LAB_SPEC };
+  let certificate: LabAction[] = [];
+  if (mechanic === 'trace') {
+    spec.TRACE_TARGET = sequence;
+    spec.TRACE_PATH = sequence.length === 9 ? DEFAULT_LAB_SPEC.TRACE_PATH : snake(sequence.length, sequence.length === 27 ? 1 : 0);
+    spec.traceHoles = sequence.length === 9 ? [0,8,18,28,52,72,79,80] : sequence.length === 27 ? [0,4,8,37,44,54,63,71,80] : [55,62,65,70,72,78,80];
+    certificate = spec.TRACE_PATH.map(cell => ({ type: 'trace', cell }));
+  } else if (mechanic === 'connections') {
+    spec.CONNECTION_PAIRS = DEFAULT_LAB_SPEC.CONNECTION_PAIRS.map((p, i) => ({ ...p, seq: sequence.slice(i*2,i*2+2) }));
+    spec.connectionHoles = [...DEFAULT_LAB_SPEC.connectionHoles, 81-6].filter(c => !spec.CONNECTION_ROUTES.some(p => p.includes(c)));
+    certificate = spec.CONNECTION_ROUTES.flatMap((route, pair) => route.map(cell => ({ type: 'route', pair, cell })));
+  } else if (mechanic === 'assembly') {
+    spec.ASSEMBLY_TARGET = sequence;
+    spec.READS = spec.READ_STARTS.map(offset => sequence.slice(offset, offset + 5));
+    certificate = spec.READ_STARTS.map((offset, read) => ({ type: 'place', read, offset }));
+  } else if (mechanic === 'crush') {
+    spec.CRUSH_TARGETS = sequence.match(/.{3}/g)!;
+    spec.crushHoles = [...DEFAULT_LAB_SPEC.crushHoles, 54];
+    certificate = spec.CRUSH_SWAPS.map(([a,b]) => ({ type: 'swap', a,b }));
+  } else if (mechanic === 'mutation') {
+    const width = sequence.length / 3;
+    spec.MUTATION_ROWS = [1,4,7].map((r,i) => ({ top:r*9+1, bottom:(r+1)*9+1, seq:sequence.slice(i*width,(i+1)*width) }));
+    spec.MUTATIONS = spec.MUTATION_ROWS.flatMap((r,i) => i===1 ? [r.bottom+1] : [r.bottom, r.bottom+width-1]);
+    certificate = spec.MUTATIONS.map(cell => ({ type:'edit',cell,base:mutationExpected(cell,spec)! }));
+  } else {
+    // BsaI top-strand digest: 5' GGTCTC N| ... |NNNNN GAGACC 3'.
+    // Adapter flanks are synthetic, not human sequence; only the exact central INS CDS counts.
+    const left = 'GGTCTCA', right = 'AAAAAGAGACC';
+    const strand = snake(left.length + sequence.length + right.length);
+    const decoy = [72,73,74,75,76,77,78,79,80];
+    spec.enzyme = 'BsaI';
+    spec.CUT_STRANDS = [strand,decoy];
+    spec.CUT_SEQUENCES = [left+sequence+right,'GGTCTCAAC'];
+    spec.CUT_TARGET = sequence;
+    spec.CUT_SOLUTION = [strand[left.length-1]!,strand[left.length+sequence.length-1]!];
+    spec.CUT_SITES = [...spec.CUT_SOLUTION,decoy[6]!];
+    certificate = spec.CUT_SOLUTION.map(cell => ({ type:'cut',cell }));
+  }
+  return { id:def.id, mechanic, start,end,sequence,spec,certificate };
+}
+export function replayMixed(stage: MixedStage, actions: readonly LabAction[]): LabState {
+  return actions.reduce((state, action) => applyLab(state, action).state, createLab(stage.mechanic, stage.spec));
+}
+export function verifiedMixed(stage: MixedStage, state: LabState): boolean {
+  return state.id === stage.mechanic && labExtractedSequence(state) === stage.sequence && stage.sequence === INS.sequence.slice(stage.start,stage.end);
+}
+export function mixedPairLabel(seq: string): string { return seq + ' ↔ ' + reverseComplement(seq); }

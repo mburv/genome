@@ -52,7 +52,28 @@ const filler = (i: number, seed = 0): string => BASES[((Math.imul(i + 17 + seed 
 const blank = (): string[] => Array<string>(81).fill('.');
 const filled = (holes: readonly number[], seed: number): string[] => Array.from({ length: 81 }, (_, i) => holes.includes(i) ? '.' : filler(i, seed));
 
+export interface LabSpec {
+  TRACE_TARGET: string; TRACE_PATH: readonly number[]; traceHoles: readonly number[];
+  CRUSH_TARGETS: readonly string[]; CRUSH_SWAPS: readonly (readonly [number, number])[]; crushHoles: readonly number[];
+  ASSEMBLY_TARGET: string; READS: readonly string[]; READ_STARTS: readonly number[]; READ_CELLS: readonly (readonly number[])[]; ASSEMBLY_CELLS: readonly number[];
+  MUTATION_ROWS: readonly { top: number; bottom: number; seq: string }[]; MUTATIONS: readonly number[];
+  CONNECTION_ROUTES: readonly (readonly number[])[]; CONNECTION_PAIRS: readonly { start: number; end: number; seq: string }[];
+  connectionHoles: readonly number[];
+  CUT_STRANDS: readonly (readonly number[])[]; CUT_SEQUENCES: readonly string[]; CUT_TARGET: string; CUT_SITES: readonly number[]; CUT_SOLUTION: readonly number[];
+  enzyme: string;
+}
+export const DEFAULT_LAB_SPEC: LabSpec = {
+  TRACE_TARGET, TRACE_PATH, traceHoles: [0,8,18,28,52,72,80],
+  CRUSH_TARGETS, CRUSH_SWAPS, crushHoles: [0,8,26,27,44,53,72,80],
+  ASSEMBLY_TARGET, READS, READ_STARTS, READ_CELLS, ASSEMBLY_CELLS,
+  MUTATION_ROWS, MUTATIONS, CONNECTION_ROUTES, CONNECTION_PAIRS,
+  connectionHoles: [0,9,10,11,12,13,14,20,21,22,23,30,31,32,33,45,46,47,48,49,50,60,61,62,70,71,79,80],
+  CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, CUT_SITES, CUT_SOLUTION, enzyme: 'HaeIII',
+};
+
 export interface LabState {
+  spec: LabSpec;
+  collectedSeq: string;
   id: LabId;
   board: string[];
   trace: number[];
@@ -77,13 +98,14 @@ export interface CrushFall { from: number | null; to: number; rows: number }
 export interface CrushTransition { swapped: string[]; matched: number[]; falls: CrushFall[] }
 export interface LabResult { state: LabState; message: string; crush?: CrushTransition }
 
-export function createLab(id: LabId): LabState {
+export function createLab(id: LabId, spec: LabSpec = DEFAULT_LAB_SPEC): LabState {
+  const { TRACE_TARGET, TRACE_PATH, CRUSH_TARGETS, CRUSH_SWAPS, READ_CELLS, READS, ASSEMBLY_CELLS, MUTATION_ROWS, MUTATIONS, CONNECTION_PAIRS, CUT_STRANDS, CUT_SEQUENCES } = spec;
   let board = blank();
   if (id === 'trace') {
-    board = filled([0, 8, 18, 28, 52, 72, 80], 1);
+    board = filled(spec.traceHoles, 1);
     TRACE_PATH.forEach((p, i) => { board[p] = TRACE_TARGET[i]!; });
   } else if (id === 'crush') {
-    board = filled([0, 8, 26, 27, 44, 53, 72, 80], 2);
+    board = filled(spec.crushHoles, 2);
     CRUSH_SWAPS.forEach(([a, b], i) => {
       const seq = CRUSH_TARGETS[i]!;
       board[a - 2] = seq[0]!; board[a - 1] = seq[1]!;
@@ -96,20 +118,20 @@ export function createLab(id: LabId): LabState {
     MUTATION_ROWS.forEach(({ top, bottom, seq }) => [...seq].forEach((b, i) => { board[top + i] = b; board[bottom + i] = complement(b); }));
     MUTATIONS.forEach(c => { board[c] = BASES[(BASES.indexOf(board[c]!) + 1) % 4]!; });
   } else if (id === 'connections') {
-    board = Array.from({ length: 81 }, (_, i) => [0, 9, 10, 11, 12, 13, 14, 20, 21, 22, 23, 30, 31, 32, 33, 45, 46, 47, 48, 49, 50, 60, 61, 62, 70, 71, 79, 80].includes(i) ? '.' : '·');
+    board = Array.from({ length: 81 }, (_, i) => spec.connectionHoles.includes(i) ? '.' : '·');
     CONNECTION_PAIRS.forEach(p => { board[p.start] = p.seq; board[p.end] = reverseComplement(p.seq); });
   } else {
     CUT_STRANDS.forEach((strand, i) => strand.forEach((c, j) => { board[c] = CUT_SEQUENCES[i]![j]!; }));
   }
-  return { id, board, trace: [], routes: [[], [], []], placements: [-1, -1, -1], cuts: [], collected: 0, refill: 0, fresh: [], moves: 0, won: false };
+  return { id, spec, collectedSeq: '', board, trace: [], routes: CONNECTION_PAIRS.map(() => []), placements: READS.map(() => -1), cuts: [], collected: 0, refill: 0, fresh: [], moves: 0, won: false };
 }
 
-export function mutationExpected(cell: number): DNA | null {
-  for (const { bottom, seq } of MUTATION_ROWS) if (cell >= bottom && cell < bottom + seq.length) return complement(seq[cell - bottom]!);
+export function mutationExpected(cell: number, spec: LabSpec = DEFAULT_LAB_SPEC): DNA | null {
+  for (const { bottom, seq } of spec.MUTATION_ROWS) if (cell >= bottom && cell < bottom + seq.length) return complement(seq[cell - bottom]!);
   return null;
 }
-export function mutationCount(board: readonly string[]): number {
-  return MUTATION_ROWS.reduce((count, { bottom, seq }) => count + [...seq].filter((b, i) => board[bottom + i] !== complement(b)).length, 0);
+export function mutationCount(board: readonly string[], spec: LabSpec = DEFAULT_LAB_SPEC): number {
+  return spec.MUTATION_ROWS.reduce((count, { bottom, seq }) => count + [...seq].filter((b, i) => board[bottom + i] !== complement(b)).length, 0);
 }
 
 function matchingTriples(board: readonly string[], seq: string): number[][] {
@@ -155,7 +177,8 @@ function settle(board: string[], cells: readonly number[], refill: number): { bo
   return { board: out, refill, fresh, falls };
 }
 
-function assemblyRow(placements: readonly number[]): string[] | null {
+function assemblyRow(placements: readonly number[], spec: LabSpec): string[] | null {
+  const { READS } = spec;
   const row = Array<string>(9).fill('·');
   for (let i = 0; i < READS.length; i++) {
     const offset = placements[i]!;
@@ -171,6 +194,7 @@ function assemblyRow(placements: readonly number[]): string[] | null {
 }
 
 export function applyLab(state: LabState, action: LabAction): LabResult {
+  const { TRACE_TARGET, CRUSH_TARGETS, READS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, CONNECTION_PAIRS, CUT_SITES, CUT_SOLUTION } = state.spec;
   const no = (message: string): LabResult => ({ state, message });
   const yes = (patch: Partial<LabState>, message: string): LabResult => ({ state: { ...state, fresh: [], ...patch, moves: state.moves + 1 }, message });
   if (state.won) return no('Challenge complete. Replay to start again.');
@@ -196,23 +220,23 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
     if (!match) return no('That swap does not create the next codon.');
     const collected = state.collected + 1;
     const { falls, ...settled } = settle(board, match, state.refill);
-    return { ...yes({ ...settled, collected, won: collected === CRUSH_TARGETS.length }, 'Collected ' + target + ' — tiles refilled.'), crush: { swapped: board, matched: match, falls } };
+    return { ...yes({ ...settled, collected, collectedSeq: state.collectedSeq + match.map(c => board[c]).join(''), won: collected === CRUSH_TARGETS.length }, 'Collected ' + target + ' — tiles refilled.'), crush: { swapped: board, matched: match, falls } };
   }
   if (action.type === 'place' && state.id === 'assembly') {
     const { read, offset } = action;
     if (!Number.isInteger(read) || read < 0 || read >= READS.length || !Number.isInteger(offset) || offset < 0 || offset >= 9) return no('Choose a read and an assembly slot.');
     const placements = [...state.placements]; placements[read] = offset;
-    const row = assemblyRow(placements);
+    const row = assemblyRow(placements, state.spec);
     if (!row) return no('The read does not fit: overlaps must agree.');
     const board = [...state.board]; ASSEMBLY_CELLS.forEach((c, i) => { board[c] = row[i]!; });
     const won = placements.every(p => p >= 0) && row.join('') === ASSEMBLY_TARGET;
     return yes({ placements, board, won }, won ? 'Reference reconstructed.' : 'Read placed. Align all three.');
   }
   if (action.type === 'edit' && state.id === 'mutation') {
-    if (!validCell(action.cell) || !mutationExpected(action.cell) || !BASES.includes(action.base)) return no('Edit only the lower strand.');
+    if (!validCell(action.cell) || !mutationExpected(action.cell, state.spec) || !BASES.includes(action.base)) return no('Edit only the lower strand.');
     if (state.board[action.cell] === action.base) return no('That base is already present.');
     const board = [...state.board]; board[action.cell] = action.base;
-    const remaining = mutationCount(board);
+    const remaining = mutationCount(board, state.spec);
     return yes({ board, won: remaining === 0 }, remaining ? remaining + ' mismatches remain.' : 'All mismatches repaired.');
   }
   if (action.type === 'route' && state.id === 'connections') {
@@ -231,7 +255,7 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
     return yes({ routes, won }, won ? 'All complementary strands connected.' : cell === endpoints.end ? 'Pair connected. Start another.' : 'Keep routing.');
   }
   if (action.type === 'cut' && state.id === 'restriction') {
-    if (!CUT_SITES.includes(action.cell)) return no('HaeIII cuts only at GG|CC.');
+    if (!CUT_SITES.includes(action.cell)) return no('Cut only at the marked ' + state.spec.enzyme + ' sites.');
     if (state.cuts.includes(action.cell)) return no('That bond is already cut.');
     if (state.cuts.length >= 2) return no('No cuts left. Undo or replay.');
     const cuts = [...state.cuts, action.cell];
@@ -242,12 +266,46 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
 }
 
 export function labHint(state: LabState): string {
+  const { TRACE_PATH, CRUSH_SWAPS, READ_STARTS, CONNECTION_ROUTES, CUT_SOLUTION } = state.spec;
+  if (state.won) return 'Complete.';
   switch (state.id) {
     case 'trace': return state.trace.every((c, i) => c === TRACE_PATH[i]) ? 'Try row ' + (Math.floor(TRACE_PATH[state.trace.length]! / 9) + 1) + ', column ' + (TRACE_PATH[state.trace.length]! % 9 + 1) + '.' : 'Backtrack to the start of the highlighted sequence, or replay.';
-    case 'crush': return 'Try swapping the third and fourth tiles of the prepared codon in row ' + (2 + state.collected * 3) + '.';
-    case 'assembly': return 'Read 2 starts at slot 1, Read 3 at slot 3, Read 1 at slot 5.';
-    case 'mutation': { const c = state.board.findIndex((b, i) => mutationExpected(i) !== null && mutationExpected(i) !== b); return c < 0 ? 'All correct.' : 'Check row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
-    case 'connections': return 'Route pair 1 across the top, pair 2 across the middle, and pair 3 along the bottom.';
-    case 'restriction': return 'Cut the two GG|CC bonds on the long strand. Leave the short decoy intact.';
+    case 'crush': { const move = findCrushSwap(state) ?? CRUSH_SWAPS[state.collected]; return move ? 'Swap row ' + (Math.floor(move[0] / 9) + 1) + ', column ' + (move[0] % 9 + 1) + ' with row ' + (Math.floor(move[1] / 9) + 1) + ', column ' + (move[1] % 9 + 1) + '.' : 'Undo the last collection or replay.'; }
+    case 'assembly': return READ_STARTS.map((start, read) => 'Read ' + (read + 1) + ' → slot ' + (start + 1)).join(' · ');
+    case 'mutation': { const c = state.board.findIndex((b, i) => mutationExpected(i, state.spec) !== null && mutationExpected(i, state.spec) !== b); return c < 0 ? 'All correct.' : 'Check row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
+    case 'connections': { const i = state.routes.findIndex((p, n) => p.at(-1) !== CONNECTION_ROUTES[n]!.at(-1)); const path = CONNECTION_ROUTES[i]; const cell = path?.[state.routes[i]?.length ?? 0] ?? path?.[0]; return cell === undefined ? 'Redraw the unfinished path.' : 'Pair ' + (i + 1) + ': try row ' + (Math.floor(cell / 9) + 1) + ', column ' + (cell % 9 + 1) + '.'; }
+    case 'restriction': { const c = CUT_SOLUTION.find(x => !state.cuts.includes(x)); return c === undefined ? 'Both target cuts made.' : 'Cut row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + ' on the long strand.'; }
+  }
+}
+
+/** A hint uses the actual board, not a stale initial swap. */
+export function findCrushSwap(state: LabState): readonly [number, number] | null {
+  if (state.id !== 'crush' || state.won) return null;
+  const target = state.spec.CRUSH_TARGETS[state.collected]!;
+  const old = new Set(matchingTriples(state.board, target).map(c => c.join(',')));
+  for (let a = 0; a < 81; a++) for (const b of [a + 1, a + 9]) {
+    if (!validCell(b) || !adjacent(a, b) || state.board[a] === '.' || state.board[b] === '.' || state.board[a] === state.board[b]) continue;
+    const board = [...state.board]; [board[a], board[b]] = [board[b]!, board[a]!];
+    if (matchingTriples(board, target).some(c => (c.includes(a) || c.includes(b)) && !old.has(c.join(',')))) return [a,b];
+  }
+  return null;
+}
+
+/** Recover the actual coding strand from the solved puzzle, not from the requested target. */
+export function labExtractedSequence(state: LabState): string | null {
+  if (!state.won) return null;
+  const s = state.spec;
+  switch (state.id) {
+    case 'trace': return state.trace.map(c => state.board[c]).join('');
+    case 'crush': return state.collectedSeq;
+    case 'assembly': return s.ASSEMBLY_CELLS.map(c => state.board[c]).join('');
+    case 'mutation': return s.MUTATION_ROWS.map(r => [...r.seq].map((_, i) => complement(state.board[r.bottom+i]!)).join('')).join('');
+    case 'connections': return s.CONNECTION_PAIRS.map((p, i) => state.routes[i]!.at(-1) === p.end ? state.board[p.start] : '').join('');
+    case 'restriction': {
+      const strand = s.CUT_STRANDS[0]!;
+      const offsets = state.cuts.map(c => strand.indexOf(c)).sort((a,b) => a-b);
+      if (offsets.length !== 2 || offsets[0]! < 0) return null;
+      return strand.slice(offsets[0]!+1, offsets[1]!+1).map(c => state.board[c]).join('');
+    }
   }
 }
