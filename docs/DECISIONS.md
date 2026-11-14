@@ -317,3 +317,8 @@ Owner playtest: Mutation Detective shows all 21 exact complementary targets by b
 ### D-LAB-04 — Restriction target colour chips
 
 Owner playtest: render the Restriction Enzyme objective as individual base-coloured blocks using the exact board palette and border colours. Preserve sequence order and the existing 12px monospace font; wrap at narrow widths. Presentation only; the recognition sites, target and cut rules do not change.
+
+
+### D-CAMPAIGN-01 — Mixed INS playtest and first-use tutorials
+
+Owner approved integrating all six lab mechanics into INS, with sliding retained. The 13 original stage IDs and CDS intervals remain unchanged: 1 slide, 2 trace, 3 connections, 4 assembly, 5 crush, 6 mutation, 7 trace, 8 slide, 9 mutation, 10 slide, 11 slide, 12 trace, 13 restriction. Each new mechanic uses a deterministic definition and a replayable certificate; only a solved state whose extracted sequence exactly matches its pinned CDS interval grants the existing completion ID. The 333-base checksum and all other genes remain unchanged. Existing unfinished sliding attempts resume their original board; a Classic switch lets players replay original boards. Mixed action logs and tutorial acknowledgements are additive optional v7 fields. Restriction uses BsaI top-strand cuts with explicitly synthetic adapters, excluding adapters from coverage. First-use guides are three-step animated demonstrations, skippable/replayable, with reduced-motion snapshots; ? reopens the guide. Lab remains optional practice.

@@ -93,7 +93,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign }: {
     const action: LabAction = { type: 'swap', a, b };
     const result = applyLab(state, action);
     if (!adjacent(a, b) || state.board[b] === '.' || reducedMotion) {
-      setSession(prev => acceptResult(prev, result));
+      setSession(prev => acceptResult(prev, result, action));
       return;
     }
     setCrushAnimation({ a, b, stage: 'swap', result, action });

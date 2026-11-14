@@ -829,3 +829,38 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .restriction-target-base.b-C { background: var(--C); border-color: var(--C-edge); }
 .restriction-target-base.b-G { background: var(--G); border-color: var(--G-edge); }
 .restriction-target-base.b-T { background: var(--T); border-color: var(--T-edge); }
+
+/* Mixed INS progression and animated first-use demonstrations. */
+.mixed-coverage { display:flex; justify-content:space-between; gap:6px; font-size:10px; color:var(--graphite); }
+.node-mechanic { position:absolute; top:0; right:1px; font-size:8px; line-height:1; color:var(--blue); }
+.tutorial-overlay { z-index:70; overflow-y:auto; align-items:center; }
+.tutorial-card { max-height:calc(100svh - 24px); overflow-y:auto; padding:12px; border-top-color:var(--mint-edge); }
+.tutorial-card h3 { font-size:22px; margin:4px 0; }
+.tutorial-card h4 { margin:8px 0 0; font-size:15px; }
+.tutorial-card p { margin:4px 0 8px; }
+.tutorial-card .row-between button { padding:4px 9px; }
+.tutorial-target { display:flex; flex-wrap:wrap; gap:2px; margin:4px 0 8px; font:700 10px var(--mono); }
+.tutorial-target span { min-width:13px; padding:2px; text-align:center; border:1px solid var(--rule); }
+.tutorial-board { position:relative; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); grid-template-rows:repeat(9,minmax(0,1fr)); gap:1px; width:min(100%,300px,calc(100svh - 350px)); min-width:min(100%,175px); aspect-ratio:1; margin:0 auto 10px; background:var(--rule); overflow:hidden; }
+.tutorial-cell { position:relative; min-width:0; min-height:0; background:var(--white); font:700 11px var(--mono); }
+.tutorial-cell.hole { background:var(--hole); }
+.tutorial-cell span { position:absolute; inset:0; display:grid; place-items:center; }
+.tutorial-cell.highlighted { outline:2px solid var(--blue); outline-offset:-2px; z-index:2; }
+.tutorial-before { animation:tutorial-before 2.4s ease-in-out infinite; }
+.tutorial-after { animation:tutorial-after 2.4s ease-in-out infinite; }
+.tutorial-before[style] { z-index:4; }
+@keyframes tutorial-before { 0%,28%{opacity:1;transform:none} 58%{opacity:1;transform:translate(var(--demo-dx,0),var(--demo-dy,0))} 63%,90%{opacity:0;transform:translate(var(--demo-dx,0),var(--demo-dy,0))} 100%{opacity:1;transform:none} }
+@keyframes tutorial-after { 0%,55%{opacity:0} 65%,90%{opacity:1} 100%{opacity:0} }
+.tutorial-finger { position:absolute; z-index:8; left:var(--fx); top:var(--fy); transform:translate(-25%,-20%); font-size:24px; filter:drop-shadow(0 1px 1px #333); pointer-events:none; animation:tutorial-finger 2.4s ease-in-out infinite; }
+@keyframes tutorial-finger { 0%,20%{left:var(--fx);top:var(--fy);opacity:0} 30%{opacity:1} 65%,85%{left:var(--tx);top:var(--ty);opacity:1} 100%{left:var(--tx);top:var(--ty);opacity:0} }
+.tutorial-path { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5; }
+.tutorial-path polyline { fill:none; stroke:var(--blue); stroke-width:.18; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; animation:tutorial-path 2.4s ease-in-out infinite; }
+@keyframes tutorial-path { 0%,20%{stroke-dashoffset:1} 70%,100%{stroke-dashoffset:0} }
+.tutorial-cut { position:absolute; z-index:6; transform:translate(-50%,-50%); color:var(--red); font-size:17px; animation:tutorial-cut 2.4s ease-in-out infinite; }
+@keyframes tutorial-cut { 0%,35%{opacity:0} 65%,100%{opacity:1} }
+.tutorial-actions { display:flex; gap:4px; }
+.tutorial-actions button { flex:1; min-height:40px; font-size:12px; padding:5px; }
+.tutorial-board.static .tutorial-before { opacity:0; animation:none; }
+.tutorial-board.static .tutorial-after { opacity:1; animation:none; }
+.tutorial-board.static .tutorial-finger,.tutorial-board.static .tutorial-path polyline,.tutorial-board.static .tutorial-cut { animation:none; }
+@media(prefers-reduced-motion:reduce){.tutorial-before{opacity:0;animation:none}.tutorial-after{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut{animation:none}}
