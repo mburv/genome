@@ -2,13 +2,13 @@ import { isCompatibleBoard, levelCodons, type PuzzleState, type Snapshot, HISTOR
 import { codonComplete, ENERGY_CAP, POWERS, START_ENERGY, scaffoldTrack, SCAFFOLD_TURNS, type Power } from '../engine/powers.ts';
 import { applyMove } from '../engine/grid.ts';
 import type { LevelDefinition, Move } from '../engine/types.ts';
-import type { LevelPack } from '../campaign/campaign.ts';
+import { isDiscovered, nextChapterId, RETIRED_SAMPLE_IDS, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES } from '../genomics/genes.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
 
 export const SAVE_KEY = 'genome-save';
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export interface SaveData {
   schemaVersion: typeof SCHEMA_VERSION;
@@ -51,11 +51,8 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = { reducedMotion: false, sound: false, haptics: true };
 
-/**
- * M1 → M2 level equivalence. Only M1 level 1 is the same challenge in M2 (INS CDS [0,9), sequencing).
- * M1 levels 2–3 used intervals/modes that M2 redesigned, so they are kept as legacy history.
- */
-export const M1_TO_M2: Readonly<Record<string, string>> = { 'm1-ins-01': 'ins-01' };
+/** M1 prototype completions are kept as history only; the equivalent sample level has been retired. */
+export const M1_TO_M2: Readonly<Record<string, string>> = {};
 
 /** Injected persistence. The browser uses localStorage for the demo only. */
 export interface StorageAdapter {
@@ -249,16 +246,12 @@ const readSettings = (v: unknown): Settings => {
 /** Pure v1 (M1) → v2 (M2) migration. Never drops credit silently: unmapped completions become legacy history. */
 export function migrateV1(data: Record<string, unknown>, pack: LevelPack): { save: SaveData; notices: string[] } {
   const fresh = newSave(pack);
-  const ids = new Set(pack.levels.map((l) => l.id));
   const m1Completed = [...new Set(strings(data.completed).filter((id) => id.startsWith('m1-')))];
-  const carried = m1Completed.map((id) => M1_TO_M2[id]).filter((id): id is string => !!id && ids.has(id));
-  const legacy = m1Completed.filter((id) => !M1_TO_M2[id]);
-  const notices = ['GENOME updated to the 12-level INS + HBB sample campaign.'];
-  if (carried.length) notices.push('Your completed M1 level 1 carries over (same INS fragment, bases 1–9).');
-  if (legacy.length) notices.push(`M1 levels ${legacy.map((id) => Number(id.slice(-2))).join(' and ')} were redesigned as new challenges, so they need replaying for credit. They are kept as M1 history on the map.`);
+  const notices = ['GENOME updated: the short INS and HBB sample challenges have been retired. The game now starts with each gene’s full-sequence assembly chapter.'];
+  if (m1Completed.length) notices.push(`M1 prototype level${m1Completed.length > 1 ? 's' : ''} ${m1Completed.map((id) => Number(id.slice(-2))).join(' and ')} are kept as history on the map. They no longer grant campaign credit.`);
   if (Object.keys((data.attempts as object | undefined) ?? {}).length) notices.push('Boards in progress from M1 were restarted because the levels changed.');
   return {
-    save: { ...fresh, completed: carried, legacy: { m1Completed }, settings: readSettings(data.settings) },
+    save: { ...fresh, legacy: { m1Completed }, settings: readSettings(data.settings) },
     notices,
   };
 }
@@ -304,8 +297,14 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     const attempts = Object.fromEntries(Object.entries(rawAttemptsOf(data)).map(([id, a]) => [id, upgradeAttemptV3(a)]));
     const oldDatasets = typeof data.datasets === 'object' && data.datasets !== null ? (data.datasets as Record<string, unknown>) : {};
     const added = Object.fromEntries(Object.entries(pack.datasets).filter(([g]) => !(g in oldDatasets)));
-    data = { ...data, schemaVersion: SCHEMA_VERSION, attempts, datasets: { ...oldDatasets, ...added }, tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '', assembled: [] };
+    data = { ...data, schemaVersion: 4, attempts, datasets: { ...oldDatasets, ...added }, tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '', assembled: [] };
     upgradedV3 = true;
+  }
+  let upgradedV4 = false;
+  if (data.schemaVersion === 4) {
+    if (!upgradedV2 && !upgradedV3) adapter.backup(raw, 'm4');
+    data = { ...data, schemaVersion: SCHEMA_VERSION };
+    upgradedV4 = true;
   }
   if (data.schemaVersion !== SCHEMA_VERSION) {
     adapter.backup(raw);
@@ -313,8 +312,13 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   }
   const notices: string[] = [];
   const ids = new Set(pack.levels.map((l) => l.id));
-  const completed = [...new Set(strings(data.completed).filter((id) => ids.has(id)))];
-  const discovered = [...new Set(strings(data.discovered).filter((g) => g in pack.datasets))];
+  const retired = new Set(RETIRED_SAMPLE_IDS);
+  const rawCompleted = strings(data.completed);
+  const droppedSamples = rawCompleted.some((id) => retired.has(id));
+  const completed = [...new Set(rawCompleted.filter((id) => ids.has(id)))];
+  const discovered = [...new Set(
+    Object.keys(pack.datasets).filter((g) => isDiscovered(completed, g)),
+  )];
   const datasets = typeof data.datasets === 'object' && data.datasets !== null ? (data.datasets as Record<string, unknown>) : {};
   const sameContent = data.generatorVersion === pack.generatorVersion && (data.tokenGeneratorVersion ?? '') === (pack.tokenGeneratorVersion ?? '') && Object.entries(pack.datasets).every(([g, id]) => datasets[g] === id);
   const attempts: Record<string, PuzzleState> = {};
@@ -331,10 +335,11 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const claimed = [...new Set(strings(data.assembled))];
   const assembled = claimed.filter((g) => GENES[g] && g in pack.datasets && assemblyStatus(completed, GENES[g]!, pack.levels).verified);
   if (assembled.length < claimed.length) notices.push('An assembled-gene record could not be re-verified against the pinned reference and was cleared; your completed puzzles are kept.');
-  if (notices.length && !upgradedV2 && !upgradedV3) adapter.backup(raw);
+  if (notices.length && !upgradedV2 && !upgradedV3 && !upgradedV4) adapter.backup(raw);
   const kept = notices.length ? 'Completed levels were kept.' : 'All your progress was kept.';
-  if (upgradedV3) notices.unshift(`GENOME updated: full gene assembly — multi-base tiles (codons up to 24-base pieces) and an assembly chapter for each of ${Object.keys(pack.datasets).length} verified catalogue genes.${upgradedV2 ? ' Also new: enzyme power-ups (CRISPR, Ligase, Scaffold) from level 4, with three Enzyme lab tutorials on the map.' : ''} ${kept}`);
-  const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : fresh.currentLevelId;
+  if (upgradedV3) notices.unshift(`GENOME updated: full gene assembly — multi-base tiles (codons up to 24-base pieces) and an assembly chapter for each of ${Object.keys(pack.datasets).length} verified catalogue genes.${upgradedV2 ? ' Also new: enzyme power-ups (CRISPR, Ligase, Scaffold), with three optional Enzyme lab tutorials on the map.' : ''} ${kept}`);
+  if (upgradedV4) notices.unshift(`GENOME updated: the short INS and HBB sample challenges have been retired. Your assembly chapter progress, stars, best scores and preferences are kept. A gene is now discovered by solving its first assembly puzzle.${droppedSamples ? ' Sample-level completions no longer count toward coverage.' : ''} ${kept}`);
+  const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : nextChapterId(completed);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
   return {

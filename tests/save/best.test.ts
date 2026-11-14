@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState } from '../../src/engine/engine.ts';
-import { LEVEL_PACK, LEVELS } from '../../src/campaign/campaign.ts';
+import { CHAPTER_LEVELS, LEVEL_PACK } from '../../src/campaign/campaign.ts';
 import {
   createMemoryAdapter, isBetterResult, loadSave, newSave, recordBest, recordCompletion,
   serializeSave, solvedDisplayState,
 } from '../../src/persistence/save.ts';
 import { parMoves, starsFor } from '../../src/persistence/score.ts';
 
-const def = LEVELS[0]!;
+const def = CHAPTER_LEVELS[0]!;
 
 function solvedAttempt() {
   let s = createInitialState(def);
@@ -82,7 +82,7 @@ describe('best score', () => {
     const save = {
       ...newSave(LEVEL_PACK),
       completed: [def.id],
-      best: { [def.id]: { moves: 3, powersUsed: 0 }, bogus: { moves: 1 }, [LEVELS[1]!.id]: { moves: -1 } },
+      best: { [def.id]: { moves: 3, powersUsed: 0 }, bogus: { moves: 1 }, [CHAPTER_LEVELS[1]!.id]: { moves: -1 } },
     };
     const loaded = loadSave(createMemoryAdapter(JSON.stringify(save)), LEVEL_PACK).save;
     expect(loaded.best).toEqual({ [def.id]: { moves: 3, powersUsed: 0 } });

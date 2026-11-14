@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState, energyOf, fullHint, certifiedHint, isSolved, levelCodons, segmentIn, type Command, type PuzzleState } from '../../src/engine/engine.ts';
 import { ENERGY_CAP, POWER_COST, powersEnabled, scaffoldCandidates, scaffoldTrack, SCAFFOLD_TURNS, START_ENERGY } from '../../src/engine/powers.ts';
 import { searchSolution } from '../../src/engine/search.ts';
-import { ALL_LEVELS, LAB_LEVELS, LEVELS } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, LAB_LEVELS, RETIRED_SAMPLE_LEVELS as LEVELS, CHAPTER_LEVELS, OPENING_LEVEL_ID } from '../../src/campaign/campaign.ts';
 import { createRng } from '../../src/generator/rng.ts';
 import type { Base, LevelDefinition } from '../../src/engine/types.ts';
 import { syntheticLevel } from '../helpers.ts';
@@ -48,12 +48,13 @@ const rowLeft = { type: 'rotate', move: { origin: 27, axis: 'row', direction: -1
 
 describe('availability and costs', () => {
   it('powers are off for the first three campaign levels and on from level 4 and in the labs', () => {
-    expect(LEVELS.slice(0, 3).map(powersEnabled)).toEqual([false, false, false]);
-    expect(LEVELS.slice(3).every(powersEnabled)).toBe(true);
+    const opening = CHAPTER_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
+    expect(powersEnabled(opening)).toBe(false);
+    expect(CHAPTER_LEVELS.filter((l) => l.id !== OPENING_LEVEL_ID).every(powersEnabled)).toBe(true);
     expect(LAB_LEVELS.map((l) => l.lab)).toEqual(['crispr', 'ligase', 'scaffold']);
     expect(LAB_LEVELS.every(powersEnabled)).toBe(true);
-    const s = createInitialState(LEVELS[0]!);
-    rejected(LEVELS[0]!, s, { type: 'edit', cell: LEVELS[0]!.mask.indexOf('#'), base: 'A' }, 'powers-unavailable');
+    const s = createInitialState(opening);
+    rejected(opening, s, { type: 'edit', cell: opening.mask.indexOf('#'), base: 'A' }, 'powers-unavailable');
   });
   it('uses the GDD costs, start energy and cap', () => {
     expect(POWER_COST).toEqual({ crispr: 4, ligase: 2, scaffold: 3 });

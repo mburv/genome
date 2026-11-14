@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState, isCompatibleBoard, isSolved } from '../../src/engine/engine.ts';
 import { CHAPTER_LEVELS } from '../../src/campaign/campaign.ts';
+import { powersEnabled } from '../../src/engine/powers.ts';
 import { CUSTOM_SYMBOL_BASE, defaultLabel, isCustomSymbol, symbolFor, symbolLabel, symbolSequence, tokenSymbol } from '../../src/engine/tokens.ts';
 import type { LevelDefinition } from '../../src/engine/types.ts';
 import type { PuzzleState } from '../../src/engine/engine.ts';
@@ -15,7 +16,7 @@ function offTarget(def: LevelDefinition, board: string) {
 
 describe('token model', () => {
   it('one symbol per distinct sequence: symbol equality is sequence equality', () => {
-    for (const def of CHAPTER_LEVELS) {
+    for (const def of CHAPTER_LEVELS.filter(powersEnabled)) {
       const seqs = Object.values(def.tokens!).map((t) => t.seq);
       expect(new Set(seqs).size).toBe(seqs.length);
       for (const sym of Object.keys(def.tokens!)) expect(sym.codePointAt(0)!).toBeLessThan(CUSTOM_SYMBOL_BASE);
@@ -25,7 +26,7 @@ describe('token model', () => {
   it('labels: full bases up to 6, first…last codon beyond; colliding labels are disambiguated', () => {
     expect(defaultLabel('ATGGCC')).toBe('ATGGCC');
     expect(defaultLabel('ATGAAACCCGGC')).toBe('ATG…GGC');
-    for (const def of CHAPTER_LEVELS) {
+    for (const def of CHAPTER_LEVELS.filter(powersEnabled)) {
       const labels = Object.values(def.tokens!).map((t) => t.label);
       expect(new Set(labels).size).toBe(labels.length);
     }
@@ -57,7 +58,7 @@ describe('token model', () => {
   });
   it('an edit that spells a target sequence reuses that target symbol and counts by sequence', () => {
     // Find a wrong cell whose tile differs from the wanted piece in exactly one base.
-    for (const def of CHAPTER_LEVELS) {
+    for (const def of CHAPTER_LEVELS.filter(powersEnabled)) {
       const s0 = rich(createInitialState(def));
       for (const t of def.tracks) for (const [i, cell] of t.cells.entries()) {
         const want = symbolSequence(def, {}, t.expected[i]!);

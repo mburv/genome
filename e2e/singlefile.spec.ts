@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { touchSwipe, type Dir } from './helpers';
+import { solveWithHints } from './helpers';
 
 const file = resolve('dist-single/GENOME-M4.html');
 
@@ -15,13 +15,13 @@ test('self-contained single HTML loads and plays from file://', async ({ page })
   await page.goto(pathToFileURL(file).href);
   await expect(page.getByTestId('board')).toBeVisible();
   await expect(page.locator('.board > .cell')).toHaveCount(81);
-  const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
-  const dir = /dir-(\w+)/.exec((await page.getByTestId('hint-cue').getAttribute('class'))!)![1] as Dir;
-  await touchSwipe(page, cell, dir);
+  await solveWithHints(page);
   await expect(page.getByTestId('win')).toBeVisible();
-  await page.getByRole('button', { name: 'Next level →' }).click();
+  await page.getByTestId('win-map').click();
+  await expect(page.getByTestId('level-map')).toBeVisible();
+  await page.getByTestId('continue').click();
   await expect(page.getByTestId('play-title')).toHaveText('INS');
-  await expect(page.getByTestId('play-progress')).toHaveText('2/6');
+  await expect(page.getByTestId('play-progress')).toHaveText('2/8');
   await expect(page.getByTestId('play-fullname')).toHaveText('INSULIN');
   expect(requests).toEqual([]);
   expect(errors).toEqual([]);

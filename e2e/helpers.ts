@@ -84,7 +84,7 @@ export function rotated(s: string, k: number): string {
   return out.join('');
 }
 
-/** Fresh device: clear storage; first-time players land straight in level 1. */
+/** Fresh device: clear storage; first-time players land on the opening assembly puzzle. */
 export async function fresh(page: Page): Promise<void> {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
@@ -92,20 +92,19 @@ export async function fresh(page: Page): Promise<void> {
   await page.getByTestId('board').waitFor();
 }
 
-/** 1-based sample-campaign symbol and fraction, e.g. level 1 → INS / 1/6, level 7 → HBB / 1/6. */
-export const sampleSymbol = (n: number): string => (n <= 6 ? 'INS' : 'HBB');
-export const sampleProgress = (n: number): string => (n <= 6 ? `${n}/6` : `${n - 6}/6`);
-export const sampleFullName = (n: number): string => (n <= 6 ? 'INSULIN' : 'HEMOGLOBIN SUBUNIT BETA');
+export async function expectChapterHeading(page: Page, symbol: string, part: number, of: number, fullName: string): Promise<void> {
+  await expect(page.getByTestId('play-title')).toHaveText(symbol);
+  await expect(page.getByTestId('play-progress')).toHaveText(`${part}/${of}`);
+  await expect(page.getByTestId('play-fullname')).toHaveText(fullName);
+}
 
-export async function expectSampleHeading(page: Page, n: number): Promise<void> {
-  await expect(page.getByTestId('play-title')).toHaveText(sampleSymbol(n));
-  await expect(page.getByTestId('play-progress')).toHaveText(sampleProgress(n));
-  await expect(page.getByTestId('play-fullname')).toHaveText(sampleFullName(n));
+export async function expectOpeningHeading(page: Page): Promise<void> {
+  await expectChapterHeading(page, 'INS', 1, 8, 'INSULIN');
 }
 
 /** Open the level map, via Settings when the header Map button is absent. */
 export async function openMap(page: Page): Promise<void> {
-  if (await page.getByTestId('level-map').isVisible()) return;
+  if (await page.getByTestId('level-map').isVisible({ timeout: 500 }).catch(() => false)) return;
   if (!(await page.getByTestId('settings').isVisible())) {
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings').waitFor();
@@ -114,13 +113,18 @@ export async function openMap(page: Page): Promise<void> {
   await page.getByTestId('level-map').waitFor();
 }
 
-/** Open level n (1-based) through the level map. */
-export async function openLevel(page: Page, n: number): Promise<void> {
-  await fresh(page);
-  if (n === 1) return;
+/** Navigate to a chapter puzzle from an already-loaded session. */
+export async function goToChapter(page: Page, id: string): Promise<void> {
   await openMap(page);
-  await page.getByRole('button', { name: new RegExp(`^Level ${n}: `) }).click();
+  await page.getByTestId(`cnode-${id}`).click();
   await page.getByTestId('board').waitFor();
+}
+
+/** Open an assembly chapter puzzle through the level map. The opening puzzle is already on screen after fresh(). */
+export async function openChapter(page: Page, id: string): Promise<void> {
+  await fresh(page);
+  if (id === 'ins-c01') return;
+  await goToChapter(page, id);
 }
 
 /** Ask for a hint; returns the cued tile and the drag (direction + cells) from the board cue. */
@@ -170,7 +174,7 @@ export function completedLevelSave(def: LevelDefinition, opts: { lastMoves?: num
   const lastMoves = opts.lastMoves ?? s.moves;
   const bestMoves = opts.bestMoves ?? Math.min(lastMoves, s.moves);
   const save = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     ...PACK,
     currentLevelId: def.id,
     completed: [def.id],

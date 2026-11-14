@@ -24,8 +24,8 @@ test('map shows the gene catalogue with its count from the manifest, chapter nod
   for (const g of manifest.included) await expect(page.getByTestId(`cat-${g.symbol}`)).toBeVisible();
   await expect(page.locator('.cnode:not(.play)')).toHaveCount(CHAPTERS.length);
   await expect(page.getByTestId('catalogue-excluded')).toContainText(manifest.excluded[0]!.symbol);
-  // Sample campaign nodes are unchanged.
-  await expect(page.locator('.node:not(.lab)')).toHaveCount(12);
+  await expect(page.locator('.node:not(.lab)')).toHaveCount(0);
+  await expect(page.locator('.node.lab')).toHaveCount(3);
 });
 
 test('long-token level: readable tiles, tap-to-inspect, drag-solve with hints; finishing the chapter assembles INS', async ({ page }) => {
@@ -98,20 +98,18 @@ test('CRISPR on a multi-base tile: pick a base position, preview by sequence, co
   await expect(page.locator(`[data-cell="${cell}"]`)).toHaveAttribute('data-seq', before!);
 });
 
-test('an M3 (v3) save upgrades to v4 with every completion kept, a notice and an m3 backup', async ({ page }) => {
+test('an M3 (v3) save upgrades to v5, drops sample completions, keeps lab credit, with a notice and an m3 backup', async ({ page }) => {
   await page.goto('/');
   const ids = ['ins-01', 'ins-02', 'ins-03', 'ins-04', 'lab-crispr'];
   const m3 = { schemaVersion: 3, campaignId: 'genome-m3-lab', generatorVersion: 'm2-gen-1', datasets: { INS: 'refseq-NM_000207.3-2026-11-13', HBB: 'refseq-NM_000518.5-2026-11-13' }, currentLevelId: 'ins-05', completed: ids, discovered: [], attempts: {}, legacy: { m1Completed: [] }, settings: { reducedMotion: false, sound: false, haptics: true } };
   await page.evaluate((raw) => { localStorage.clear(); localStorage.setItem('genome-save', raw); }, JSON.stringify(m3));
   await page.reload();
-  await expect(page.getByTestId('notice')).toContainText('full gene assembly');
-  await expect(page.getByTestId('notice')).toContainText('All your progress was kept');
+  await expect(page.getByTestId('notice')).toContainText('retired');
   expect(await page.evaluate(() => localStorage.getItem('genome-save-backup-m3'))).toContain('"schemaVersion":3');
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('genome-save')))!);
-  expect(saved.schemaVersion).toBe(4);
-  expect(saved.completed).toEqual(ids.filter((id) => saved.completed.includes(id)));
-  expect(saved.completed).toHaveLength(ids.length);
-  await expect(page.getByTestId('progress-INS')).toHaveText('33 / 51 sample bases');
+  expect(saved.schemaVersion).toBe(5);
+  expect(saved.completed).toEqual(['lab-crispr']);
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('0 / 333');
 });
 
 test('each multi-base combo has its own colour, identical on the board, in the target strip and in the inspector', async ({ page }) => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState } from '../../src/engine/engine.ts';
-import { CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, LEVELS, chapterOf } from '../../src/campaign/campaign.ts';
+import { CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, RETIRED_SAMPLE_IDS, chapterOf } from '../../src/campaign/campaign.ts';
 import { createMemoryAdapter, loadSave, newSave, recordAssembly, recordCompletion, serializeSave } from '../../src/persistence/save.ts';
 
 /** An attempt exactly as M3 (schema v3) wrote it: no `custom` table. */
@@ -10,7 +10,7 @@ function asV3(a: ReturnType<typeof createInitialState>) {
 }
 
 function m3Save() {
-  const mid = LEVELS[5]!;
+  const mid = LAB_LEVELS[1]!;
   let s = createInitialState(mid);
   for (const sl of mid.certificateSlides.slice(0, 2)) s = applyCommand(mid, s, { type: 'slide', ...sl }).state;
   const v4 = newSave(LEVEL_PACK);
@@ -21,7 +21,7 @@ function m3Save() {
     schemaVersion: 3,
     campaignId: 'genome-m3-lab',
     datasets: { INS: LEVEL_PACK.datasets.INS, HBB: LEVEL_PACK.datasets.HBB },
-    completed: [...LEVELS.slice(0, 5).map((l) => l.id), LAB_LEVELS[0]!.id],
+    completed: [...RETIRED_SAMPLE_IDS.slice(0, 5), LAB_LEVELS[0]!.id],
     discovered: [],
     currentLevelId: mid.id,
     attempts: { [mid.id]: asV3(s) },
@@ -30,13 +30,13 @@ function m3Save() {
   return { mid, s, raw: JSON.stringify(raw) };
 }
 
-describe('M3 (v3) → M4 (v4) migration', () => {
+describe('M3 (v3) → current (v5) migration', () => {
   it('keeps every completion, lab credit, settings and the in-progress board; backs up as m3 with a notice', () => {
     const { mid, s, raw } = m3Save();
     const adapter = createMemoryAdapter(raw);
     const r = loadSave(adapter, LEVEL_PACK);
-    expect(r.save.schemaVersion).toBe(4);
-    expect(r.save.completed).toEqual([...LEVELS.slice(0, 5).map((l) => l.id), LAB_LEVELS[0]!.id]);
+    expect(r.save.schemaVersion).toBe(5);
+    expect(r.save.completed).toEqual([LAB_LEVELS[0]!.id]);
     expect(r.save.settings).toEqual({ reducedMotion: false, sound: true, haptics: false });
     const a = r.save.attempts[mid.id]!;
     expect(a.board).toBe(s.board);
@@ -47,10 +47,11 @@ describe('M3 (v3) → M4 (v4) migration', () => {
     expect(r.save.assembled).toEqual([]);
     expect(adapter.labels).toEqual(['m3']);
     expect(adapter.backups).toEqual([raw]);
-    expect(r.notices[0]).toMatch(/full gene assembly/);
+    expect(r.notices.join(' ')).toMatch(/full gene assembly/);
+    expect(r.notices.join(' ')).toMatch(/retired/);
     expect(r.notices[0]).toMatch(/All your progress was kept/);
   });
-  it('round-trips as v4 with no further notices', () => {
+  it('round-trips as v5 with no further notices', () => {
     const r = loadSave(createMemoryAdapter(m3Save().raw), LEVEL_PACK);
     const again = loadSave(createMemoryAdapter(serializeSave(r.save)), LEVEL_PACK);
     expect(again.notices).toEqual([]);
@@ -91,5 +92,38 @@ describe('assembly records', () => {
     const r = loadSave(createMemoryAdapter(serializeSave(save)), LEVEL_PACK);
     expect(r.notices).toEqual([]);
     expect(r.save.attempts[def.id]).toEqual(s);
+  });
+});
+
+describe('v4 → v5 sample-campaign retirement', () => {
+  it('drops sample progress, keeps chapters, labs, bests and settings, and retargets the current level', () => {
+    const opener = CHAPTER_LEVELS[0]!;
+    const lab = LAB_LEVELS[0]!;
+    const v5 = { ...newSave(LEVEL_PACK) };
+    const raw = JSON.stringify({
+      ...v5,
+      schemaVersion: 4,
+      currentLevelId: 'ins-06',
+      completed: ['ins-01', 'ins-02', opener.id, lab.id],
+      discovered: ['INS', 'HBB'],
+      assembled: [],
+      attempts: {},
+      best: { 'ins-01': { moves: 1, powersUsed: 0 }, [opener.id]: { moves: 2, powersUsed: 0 }, [lab.id]: { moves: 3, powersUsed: 0 } },
+      settings: { reducedMotion: true, sound: true, haptics: false },
+    });
+    const adapter = createMemoryAdapter(raw);
+    const r = loadSave(adapter, LEVEL_PACK);
+    expect(r.save.schemaVersion).toBe(5);
+    expect(r.save.completed).toEqual([opener.id, lab.id]);
+    expect(r.save.discovered).toEqual(['INS']);
+    expect(r.save.best).toEqual({ [opener.id]: { moves: 2, powersUsed: 0 }, [lab.id]: { moves: 3, powersUsed: 0 } });
+    expect(r.save.settings).toEqual({ reducedMotion: true, sound: true, haptics: false });
+    expect(r.save.currentLevelId).toBe(CHAPTER_LEVELS[1]!.id);
+    expect(r.notices.join(' ')).toMatch(/retired/);
+    expect(r.notices.join(' ')).toMatch(/Sample-level completions no longer count/);
+    expect(adapter.labels).toEqual(['m4']);
+    const again = loadSave(createMemoryAdapter(serializeSave(r.save)), LEVEL_PACK);
+    expect(again.notices).toEqual([]);
+    expect(again.save).toEqual(r.save);
   });
 });

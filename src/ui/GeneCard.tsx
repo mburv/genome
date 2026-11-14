@@ -1,26 +1,21 @@
 import type { GeneAsset } from '../genomics/genes.ts';
 import { MANIFEST } from '../genomics/genes.ts';
-import type { LevelDefinition } from '../engine/types.ts';
-import { chapterOf, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../campaign/campaign.ts';
+import { chapterOf, isDiscovered } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 
 interface Props {
   gene: GeneAsset;
   completed: readonly string[];
-  levels: readonly LevelDefinition[];
   onPlay: (levelId: string) => void;
   onBack: () => void;
 }
 
 /**
- * Gene card. Discovery (a sample or the chapter opener) and assembly (every coding base placed by the
+ * Gene card. Discovery (the chapter opener) and assembly (every coding base placed by the
  * player, exact and SHA-256 verified) are separate states.
  */
-export function GeneCard({ gene, completed, levels, onPlay, onBack }: Props) {
-  const own = levelsForGene(gene.symbol, levels);
-  const covered = coveredBases(completed, gene.symbol, levels);
-  const sample = sampleBases(gene.symbol, levels);
-  const discovered = isDiscovered(completed, gene.symbol, levels);
+export function GeneCard({ gene, completed, onPlay, onBack }: Props) {
+  const discovered = isDiscovered(completed, gene.symbol);
   const status = assemblyStatus(completed, gene);
   const chapter = chapterOf(gene.symbol);
   const nextPuzzle = chapter.find((l) => !completed.includes(l.id));
@@ -40,7 +35,7 @@ export function GeneCard({ gene, completed, levels, onPlay, onBack }: Props) {
           <p className="muted tiny">— {gene.functionSummaryCredit}</p>
         </>
       ) : (
-        <p>{own.length > 0 ? `Complete all ${own.length === 6 ? 'six' : own.length} ${gene.symbol} challenges (or the first assembly puzzle) to discover this gene. ${covered} / ${sample} sample bases so far.` : `Solve the first ${gene.symbol} assembly puzzle to discover this gene.`}</p>
+        <p>Solve the first {gene.symbol} assembly puzzle to discover this gene.</p>
       )}
       {(discovered || status.verified) && (<>
       <div className="card-strand" aria-label={`Player-assembled coding sequence: ${status.covered} of ${gene.cdsLength} bases`} data-testid="card-strand">

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, LEVELS } from '../campaign/campaign.ts';
+import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, OPENING_LEVEL_ID } from '../campaign/campaign.ts';
 import { GENES } from '../genomics/genes.ts';
 import { clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
@@ -33,7 +33,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     [storage],
   );
 
-  const def = ALL_LEVELS.find((l) => l.id === save.currentLevelId) ?? LEVELS[0]!;
+  const def = ALL_LEVELS.find((l) => l.id === save.currentLevelId) ?? ALL_LEVELS.find((l) => l.id === OPENING_LEVEL_ID)!;
   const heading = playHeading(def);
   const settingsFrom = useRef<Screen>({ kind: 'map' });
   const go = (next: Screen) => {
@@ -91,7 +91,6 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
       {screen.kind === 'map' && (
         <MapScreen
-          levels={LEVELS}
           labs={LAB_LEVELS}
           completed={save.completed}
           attempted={Object.keys(save.attempts)}
@@ -124,7 +123,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         />
       )}
       {screen.kind === 'card' && (
-        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} levels={LEVELS} onPlay={play} onBack={() => go({ kind: 'map' })} />
+        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} onPlay={play} onBack={() => go({ kind: 'map' })} />
       )}
 
       <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · M4 gene assembly</footer>

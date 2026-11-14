@@ -13,8 +13,8 @@ export const ENERGY_CAP = 9;
 /** Successful normal rotations a scaffold lasts. */
 export const SCAFFOLD_TURNS = 3;
 export const MAX_SCAFFOLD_GAP = 2;
-/** Powers appear from campaign level 4 (index 3) so players learn plain sliding first (GDD §8). */
-export const POWERS_FROM_INDEX = 3;
+/** The opening assembly puzzle has no powers so new players learn plain sliding first. Labs and every later puzzle do. */
+export const OPENING_LEVEL_ID = 'ins-c01';
 
 /** A temporary bridge: `cells` (segment A then segment B, skipping `gap`) rotate as one cyclic track. */
 export interface Scaffold {
@@ -34,7 +34,7 @@ export interface Codon {
   rewardable: boolean;
 }
 
-export const powersEnabled = (def: LevelDefinition): boolean => def.lab !== undefined || (!def.tutorial && def.index >= POWERS_FROM_INDEX);
+export const powersEnabled = (def: LevelDefinition): boolean => def.id !== OPENING_LEVEL_ID;
 
 /**
  * Reward units. Single-base levels: reference codons that lie wholly inside one track (in-frame

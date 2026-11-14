@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommand, createInitialState } from '../../src/engine/engine.ts';
-import { LEVEL_PACK, LEVELS } from '../../src/campaign/campaign.ts';
+import { CHAPTER_LEVELS, LEVEL_PACK } from '../../src/campaign/campaign.ts';
 import {
   SAVE_KEY,
   clearProgressStorage,
@@ -25,7 +25,7 @@ function memoryStore(init: Record<string, string> = {}) {
 
 describe('resetProgress', () => {
   it('clears campaign progress but keeps the player’s settings', () => {
-    const def = LEVELS[0]!;
+    const def = CHAPTER_LEVELS[0]!;
     let s = createInitialState(def);
     s = applyCommand(def, s, { type: 'slide', ...def.certificateSlides[0]! }).state;
     let save = newSave(LEVEL_PACK);
@@ -33,7 +33,7 @@ describe('resetProgress', () => {
     save = recordBest(save, def.id, { moves: 1, powersUsed: 0 });
     save = {
       ...save,
-      currentLevelId: LEVELS[2]!.id,
+      currentLevelId: CHAPTER_LEVELS[2]!.id,
       discovered: ['INS'],
       assembled: ['HBB'],
       attempts: { [def.id]: s },

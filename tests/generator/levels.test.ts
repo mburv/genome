@@ -4,7 +4,7 @@ import { canonicalMask, isConnected, isSelfSymmetric, maskMetrics, symmetricDist
 import { createRng } from '../../src/generator/rng.ts';
 import { solveBounded } from '../../src/generator/solver.ts';
 import { M2_SPECS, ALL_SPECS, LAB_SPECS, CAMPAIGN_ID } from '../../src/campaign/specs.ts';
-import { ALL_LEVELS, LAB_LEVELS, LEVEL_PACK, LEVELS, coveredBases, isDiscovered, levelsForGene, sampleBases } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, RETIRED_SAMPLE_LEVELS as LEVELS, chapterOf, coveredBases, isDiscovered } from '../../src/campaign/campaign.ts';
 import { CATALOGUE_ORDER, GENES, HBB, INS } from '../../src/genomics/genes.ts';
 import m2pack from '../../src/campaign/levels.generated.json';
 import { alignedComplement } from '../../src/genomics/dna.ts';
@@ -26,10 +26,11 @@ describe('rng', () => {
 
 describe('deterministic generation', () => {
   it('regenerating from specs reproduces the pinned level pack exactly', { timeout: 120_000 }, () => {
-    // The M2 campaign + Enzyme labs stay byte-identical to M3 (chapters are a separate pinned pack).
-    expect(buildCampaign(ALL_SPECS, GENES)).toEqual(ALL_LEVELS.filter((l) => !l.chapter));
-    expect(ALL_LEVELS.slice(0, 15)).toEqual(ALL_LEVELS.filter((l) => !l.chapter));
+    // Retired sample campaign + Enzyme labs stay byte-identical (chapter-generation context).
+    expect(buildCampaign(ALL_SPECS, GENES)).toEqual([...LEVELS, ...LAB_LEVELS]);
     expect(buildCampaign(M2_SPECS, GENES)).toEqual(LEVELS);
+    expect(ALL_LEVELS[0]!.id).toBe('ins-c01');
+    expect(ALL_LEVELS.filter((l) => !l.chapter)).toEqual(LAB_LEVELS);
     expect(LEVEL_PACK.generatorVersion).toBe(GENERATOR_VERSION);
     expect((m2pack as { campaignId: string }).campaignId).toBe(CAMPAIGN_ID);
     expect(LEVEL_PACK.campaignId).toBe('genome-m4-assembly');
@@ -47,15 +48,15 @@ describe('pinned M2 level pack', () => {
   it('has 12 levels: 6 INS then 6 HBB, with one one-move tutorial first', () => {
     expect(LEVELS).toHaveLength(12);
     expect(LEVELS.map((l) => l.index)).toEqual([...Array(12).keys()]);
-    expect(levelsForGene('INS')).toHaveLength(6);
-    expect(levelsForGene('HBB')).toHaveLength(6);
+    expect(LEVELS.filter((l) => l.symbol === 'INS')).toHaveLength(6);
+    expect(LEVELS.filter((l) => l.symbol === 'HBB')).toHaveLength(6);
     expect(LEVELS.slice(0, 6).every((l) => l.symbol === 'INS')).toBe(true);
     expect(LEVELS[0]!.tutorial).toBe(true);
     expect(LEVELS[0]!.certificate).toHaveLength(1);
     expect(LEVELS.slice(1).every((l) => !l.tutorial && l.certificateSlides.length >= 2)).toBe(true);
   });
   it('covers all four modes for both genes', () => {
-    for (const g of ['INS', 'HBB']) expect(new Set(levelsForGene(g).map((l) => l.mode))).toEqual(new Set(['sequence', 'splice', 'replicate', 'repair']));
+    for (const g of ['INS', 'HBB']) expect(new Set(LEVELS.filter((l) => l.symbol === g).map((l) => l.mode))).toEqual(new Set(['sequence', 'splice', 'replicate', 'repair']));
   });
   it('uses both horizontal and vertical targets', () => {
     expect(new Set(LEVELS.flatMap((l) => l.tracks.map((t) => t.orientation)))).toEqual(new Set(['horizontal', 'vertical']));
@@ -87,9 +88,9 @@ describe('pinned M2 level pack', () => {
       }
     }
     for (const g of ['INS', 'HBB']) {
-      expect(sampleBases(g)).toBe(51);
-      const ivs = levelsForGene(g).map((l) => l.sourceIntervals[0]!);
-      expect(ivs.map((iv) => [iv.start, iv.end])).toEqual([[0, 9], [9, 18], [18, 24], [24, 33], [33, 42], [42, 51]]);
+      const own = LEVELS.filter((l) => l.symbol === g);
+      expect(coveredBases(own.map((l) => l.id), g, LEVELS)).toBe(51);
+      expect(own.map((l) => [l.sourceIntervals[0]!.start, l.sourceIntervals[0]!.end])).toEqual([[0, 9], [9, 18], [18, 24], [24, 33], [33, 42], [42, 51]]);
     }
   });
   it('replication levels place the aligned complement beside the template, read 3′→5′', () => {
@@ -278,28 +279,31 @@ describe('generator candidates', () => {
 });
 
 describe('coverage & discovery', () => {
-  it('counts the union of completed intervals per gene; replays add nothing', () => {
-    const ins = levelsForGene('INS').map((l) => l.id);
+  it('counts the union of completed chapter intervals per gene; replays add nothing', () => {
+    const ins = chapterOf('INS');
+    const a = ins[0]!.sourceIntervals[0]!;
+    const c = ins[2]!.sourceIntervals[0]!;
     expect(coveredBases([], 'INS')).toBe(0);
-    expect(coveredBases([ins[0]!], 'INS')).toBe(9);
-    expect(coveredBases([ins[0]!, ins[0]!], 'INS')).toBe(9);
-    expect(coveredBases([ins[0]!, ins[2]!], 'INS')).toBe(15);
-    expect(coveredBases(ins, 'HBB')).toBe(0);
-    expect(coveredBases(ins, 'INS')).toBe(51);
+    expect(coveredBases([ins[0]!.id], 'INS')).toBe(a.end - a.start);
+    expect(coveredBases([ins[0]!.id, ins[0]!.id], 'INS')).toBe(a.end - a.start);
+    expect(coveredBases([ins[0]!.id, ins[2]!.id], 'INS')).toBe((a.end - a.start) + (c.end - c.start));
+    expect(coveredBases(ins.map((l) => l.id), 'HBB')).toBe(0);
+    expect(coveredBases(ins.map((l) => l.id), 'INS')).toBe(INS.cdsLength);
   });
-  it('a gene is discovered only when all six of its levels are complete — and is never 100% of the CDS', () => {
-    const ins = levelsForGene('INS').map((l) => l.id);
-    expect(isDiscovered(ins.slice(0, 5), 'INS')).toBe(false);
-    expect(isDiscovered(ins, 'INS')).toBe(true);
-    expect(isDiscovered(ins, 'HBB')).toBe(false);
-    expect(coveredBases(ins, 'INS')).toBeLessThan(INS.cdsLength);
+  it('a gene is discovered when its chapter opener is complete', () => {
+    const ins = chapterOf('INS');
+    expect(isDiscovered([], 'INS')).toBe(false);
+    expect(isDiscovered([ins[0]!.id], 'INS')).toBe(true);
+    expect(isDiscovered([ins[1]!.id], 'INS')).toBe(false);
+    expect(isDiscovered([ins[0]!.id], 'HBB')).toBe(false);
+    expect(coveredBases([ins[0]!.id], 'INS')).toBeLessThan(INS.cdsLength);
   });
 });
 
 describe('Enzyme lab levels (M3)', () => {
-  it('three labs, one per power, after the 12 campaign levels; the campaign is unchanged', () => {
-    expect(ALL_LEVELS.filter((l) => !l.chapter)).toHaveLength(15);
-    expect(ALL_LEVELS.slice(0, 12)).toEqual(LEVELS);
+  it('three optional labs, one per power; the live pack is chapters then labs', () => {
+    expect(ALL_LEVELS.filter((l) => !l.chapter)).toEqual(LAB_LEVELS);
+    expect(ALL_LEVELS.filter((l) => l.chapter)).toEqual(CHAPTER_LEVELS);
     expect(LAB_LEVELS.map((l) => l.lab)).toEqual(['crispr', 'ligase', 'scaffold']);
     expect(LAB_LEVELS.map((l) => l.index)).toEqual([12, 13, 14]);
     expect(LAB_SPECS).toHaveLength(3);

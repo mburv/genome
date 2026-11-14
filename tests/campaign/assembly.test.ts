@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LEVELS, CHAPTER_LEVELS, LEVELS, chapterOf, isDiscovered } from '../../src/campaign/campaign.ts';
+import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, RETIRED_SAMPLE_LEVELS, chapterOf, isDiscovered } from '../../src/campaign/campaign.ts';
 import { assemblyStatus, levelContribution } from '../../src/campaign/assembly.ts';
 import { MAX_ASSEMBLY_CDS, MAX_CHAPTER, MIN_CHAPTER, planChapter } from '../../src/campaign/chapters.ts';
 import { CATALOGUE_ORDER, CATALOGUE_SIZE, GENES, MANIFEST } from '../../src/genomics/genes.ts';
@@ -76,9 +76,9 @@ describe('full assembly', () => {
       }
     }
   });
-  it('sample levels count toward coverage but cannot replace chapter pieces they do not cover', () => {
-    const st = assemblyStatus(ids(LEVELS.filter((l) => l.symbol === 'INS')), GENES.INS!);
-    expect(st.covered).toBe(51);
+  it('retired sample completions do not count toward live assembly coverage', () => {
+    const st = assemblyStatus(ids(RETIRED_SAMPLE_LEVELS.filter((l) => l.symbol === 'INS')), GENES.INS!);
+    expect(st.covered).toBe(0);
     expect(st.verified).toBe(false);
   });
   it('replays and complementary strands are idempotent', () => {
@@ -114,7 +114,7 @@ describe('full assembly', () => {
     const gi = MANIFEST.included.findIndex((m) => m.symbol === 'INS');
     const first = chapterOf('INS')[0]!;
     const specs = chapterSpecs({ symbol: 'INS', cdsLength: 333 }, gi, first.index);
-    const prior = ALL_LEVELS.slice(0, ALL_LEVELS.indexOf(first));
+    const prior = [...RETIRED_SAMPLE_LEVELS, ...LAB_LEVELS];
     const rebuilt = { ...buildLevel(specs[0]!, GENES.INS!, prior), generatorVersion: first.generatorVersion };
     expect(rebuilt).toEqual(first);
   });

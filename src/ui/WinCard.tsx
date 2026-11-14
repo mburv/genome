@@ -12,10 +12,7 @@ interface Props {
   /** M4: this solve completed an exact, checksum-verified assembly of the gene. */
   assembled?: boolean;
   assembledBases?: number;
-  covered: number;
-  sample: number;
   cdsLength: number;
-  allDone: boolean;
   reducedMotion: boolean;
   hasNext: boolean;
   onNext: () => void;
@@ -84,7 +81,6 @@ export function WinCard(p: Props) {
         <div className={`win-strand ${skipped ? 'skip' : ''} ${def.tokens ? 'tok' : ''}`} onClick={() => setSkipped(true)} title="Tap to skip">{strand}</div>
         {def.mode === 'replicate' && <p className="muted tiny">Complementary pairs A–T and C–G. Only the template strand counts.</p>}
         {def.mode === 'repair' && def.repair && <p className="muted tiny">Restored {restored.length > 1 ? `${restored.length} bases` : restored} at CDS position {def.repair.sourceOffset + 1}{restored.length > 1 ? `–${def.repair.sourceOffset + restored.length}` : ''}.</p>}
-        {def.mode === 'splice' && <p className="muted tiny">Joined in order 1 → 2{def.tracks.length > 2 ? ' → 3' : ''} (illustrative split).</p>}
         {def.lab ? (
           <p data-testid="win-bases"><b>Lab complete</b> <span className="muted">— practice only, no coverage added.</span></p>
         ) : (
@@ -92,14 +88,7 @@ export function WinCard(p: Props) {
         <p data-testid="win-bases">
           {p.newBases > 0 ? <b>+{p.newBases} {def.symbol} coding bases</b> : <b>Already counted</b>} <span className="muted">(CDS {iv.start + 1}–{iv.end})</span>
         </p>
-        {def.chapter ? (
-          <p className="muted small" data-testid="win-assembly">{p.assembledBases ?? 0} / {p.cdsLength} {def.symbol} coding bases assembled.{p.newBases > 0 ? '' : ' Replays never add duplicate bases.'}</p>
-        ) : (
-        <p className="muted small">
-          {p.newBases > 0 ? `${p.covered} / ${p.sample} ${def.symbol} sample bases · ${p.covered} of ${p.cdsLength} coding bases.` : 'Replays never add duplicate bases.'}
-          {p.allDone ? ' Sample campaign complete — both genes discovered. Their assembly chapters are on the map.' : ''}
-        </p>
-        )}
+        <p className="muted small" data-testid="win-assembly">{p.assembledBases ?? 0} / {p.cdsLength} {def.symbol} coding bases assembled.{p.newBases > 0 ? '' : ' Replays never add duplicate bases.'}</p>
         </>
         )}
         {p.assembled ? (
@@ -108,7 +97,7 @@ export function WinCard(p: Props) {
           </div>
         ) : p.discovered && (
           <div className="discovered" data-testid="discovered">
-            <b>🧬 {def.symbol} discovered!</b> {def.chapter ? `First assembly puzzle solved — ${p.assembledBases ?? 0} of ${p.cdsLength} coding bases placed.` : `All six sample challenges complete — ${p.covered} of ${p.cdsLength} coding bases sampled.`} Not yet fully assembled.
+            <b>🧬 {def.symbol} discovered!</b> First assembly puzzle solved — {p.assembledBases ?? 0} of {p.cdsLength} coding bases placed. Not yet fully assembled.
           </div>
         )}
         <div className="card-actions">

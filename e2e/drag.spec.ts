@@ -2,9 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import { segmentCells } from '../src/engine/grid.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { cellPitch, expectSampleHeading, lettersAt, openLevel as open, rotated, touchDrag } from './helpers';
+import { cellPitch, fresh, lettersAt, openLab, rotated, touchDrag } from './helpers';
 
-const LEVELS = pack.levels as LevelDefinition[];
+const LABS = (pack.levels as LevelDefinition[]).filter((l) => l.lab);
+const scaffold = LABS.find((l) => l.lab === 'scaffold')!;
+const crispr = LABS.find((l) => l.lab === 'crispr')!;
 
 /** First segment on `axis` with at least `min` cells whose letters are not all identical. */
 function segmentWith(def: LevelDefinition, axis: 'row' | 'col', min: number): number[] {
@@ -16,14 +18,16 @@ function segmentWith(def: LevelDefinition, axis: 'row' | 'col', min: number): nu
   throw new Error('no such segment');
 }
 
-async function openLevel(page: Page, n: number) {
-  await open(page, n);
-  await expectSampleHeading(page, n);
+async function openScaffold(page: Page) {
+  await openLab(page, LABS.indexOf(scaffold) + 1);
+}
+async function openCrispr(page: Page) {
+  await openLab(page, LABS.indexOf(crispr) + 1);
 }
 
 test('horizontal touch drag across three cells commits one 3-step rotation (one move)', async ({ page }) => {
-  await openLevel(page, 2);
-  const def = LEVELS[1]!;
+  await openScaffold(page);
+  const def = scaffold;
   const seg = segmentWith(def, 'row', 9);
   expect(seg.length).toBe(9);
   const before = await lettersAt(page, seg);
@@ -37,12 +41,22 @@ test('horizontal touch drag across three cells commits one 3-step rotation (one 
   expect(await lettersAt(page, seg)).toBe(before);
 });
 
+async function openLabWithShortMixedRow(page: Page): Promise<{ def: LevelDefinition; seg: number[] }> {
+  for (const def of LABS) {
+    for (let c = 0; c < 81; c++) {
+      if (def.mask[c] !== '#') continue;
+      const seg = segmentCells(def.mask, c, 'row');
+      if (seg[0] !== c || seg.length < 2 || seg.length >= 9) continue;
+      if (new Set(seg.map((x) => def.initial[x])).size < 2) continue;
+      await openLab(page, LABS.indexOf(def) + 1);
+      return { def, seg };
+    }
+  }
+  throw new Error('no short mixed row in the labs');
+}
+
 test('segment follows the finger live, wraps, and is clipped to its own cells mid-drag', async ({ page }) => {
-  await openLevel(page, 2);
-  const def = LEVELS[1]!;
-  // a row segment bounded by holes (shorter than the row)
-  const origin = [...def.mask].findIndex((ch, c) => ch === '#' && segmentCells(def.mask, c, 'row').length >= 2 && segmentCells(def.mask, c, 'row').length < 9);
-  const seg = segmentCells(def.mask, origin, 'row');
+  const { def, seg } = await openLabWithShortMixedRow(page);
   const before = await lettersAt(page, seg);
   const outside = [...Array(81).keys()].filter((c) => def.mask[c] === '#' && !seg.includes(c));
   const outsideBefore = await lettersAt(page, outside);
@@ -66,8 +80,8 @@ test('segment follows the finger live, wraps, and is clipped to its own cells mi
 });
 
 test('dragging out and back to the origin in one gesture is a no-op (no move counted)', async ({ page }) => {
-  await openLevel(page, 2);
-  const def = LEVELS[1]!;
+  await openScaffold(page);
+  const def = scaffold;
   const seg = segmentWith(def, 'row', 9);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
@@ -78,8 +92,8 @@ test('dragging out and back to the origin in one gesture is a no-op (no move cou
 });
 
 test('releasing between cells snaps to the nearest cell', async ({ page }) => {
-  await openLevel(page, 2);
-  const def = LEVELS[1]!;
+  await openScaffold(page);
+  const def = scaffold;
   const seg = segmentWith(def, 'row', 9);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
@@ -88,8 +102,8 @@ test('releasing between cells snaps to the nearest cell', async ({ page }) => {
 });
 
 test('vertical touch drag rotates the column segment by two', async ({ page }) => {
-  await openLevel(page, 3);
-  const def = LEVELS[2]!;
+  await openCrispr(page);
+  const def = crispr;
   const seg = segmentWith(def, 'col', 6);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
@@ -99,10 +113,10 @@ test('vertical touch drag rotates the column segment by two', async ({ page }) =
 });
 
 test('a single-cell segment cannot be dragged on that axis', async ({ page }) => {
-  for (const [i, def] of LEVELS.entries()) {
+  for (const def of LABS) {
     const single = [...def.mask].findIndex((ch, c) => ch === '#' && segmentCells(def.mask, c, 'row').length === 1);
     if (single < 0) continue;
-    await openLevel(page, i + 1);
+    await openLab(page, LABS.indexOf(def) + 1);
     const board = await page.locator('.board').innerText();
     const p = await cellPitch(page);
     await touchDrag(page, single, [{ dx: 2 * p, dy: 0 }], { holdMs: 80 });
@@ -114,18 +128,20 @@ test('a single-cell segment cannot be dragged on that axis', async ({ page }) =>
   test.skip(true, 'no single-cell row segment in the pinned levels');
 });
 
-test('target outline lights up live mid-drag before release (tutorial)', async ({ page }) => {
-  await openLevel(page, 1);
-  const cell = Number(await page.locator('.tile.selected').getAttribute('data-cell'));
-  const dir = /dir-(\w+)/.exec((await page.getByTestId('hint-cue').getAttribute('class'))!)![1]!;
+test('target outline lights up live mid-drag before release (opening puzzle)', async ({ page }) => {
+  await fresh(page);
+  const cue = page.getByTestId('hint-cue');
+  const cell = Number(await cue.getAttribute('data-hint-cell'));
+  const dir = (await cue.getAttribute('data-hint-dir'))!;
+  const k = Number(await cue.getAttribute('data-hint-k'));
   const p = await cellPitch(page);
-  const d = { up: { dx: 0, dy: -p }, down: { dx: 0, dy: p }, left: { dx: -p, dy: 0 }, right: { dx: p, dy: 0 } }[dir]!;
+  const d = { up: { dx: 0, dy: -k * p }, down: { dx: 0, dy: k * p }, left: { dx: -k * p, dy: 0 }, right: { dx: k * p, dy: 0 } }[dir]!;
   await touchDrag(page, cell, [d], {
     holdMs: 100,
     beforeEnd: async () => {
-      await expect(page.locator('.track-outline.all-ok')).toHaveCount(1);
+      await expect(page.locator('.track-outline')).toHaveCount(1);
       await expect(page.getByTestId('moves')).toHaveText('0 moves');
     },
   });
-  await expect(page.getByTestId('win')).toBeVisible();
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
 });

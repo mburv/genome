@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
+import pack from '../src/campaign/chapters.generated.json' with { type: 'json' };
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { completedLevelSave, expectSampleHeading, fresh, openCompleted, openLevel, openMap } from './helpers';
+import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted } from './helpers';
 
 const def = (pack.levels as LevelDefinition[])[0]!;
 
@@ -21,7 +21,7 @@ function assertCentred(banner: { x: number; y: number; width: number; height: nu
 test('play header shows the current gene and locus; the info card is gone; Map lives in Settings', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await fresh(page);
-  await expectSampleHeading(page, 1);
+  await expectOpeningHeading(page);
   await expect(page.getByTestId('play-locus')).toHaveText('CHROMOSOME 11 · NM_000207.3');
   const typography = await page.evaluate(() => {
     const style = (id: string) => {
@@ -55,8 +55,8 @@ test('play header shows the current gene and locus; the info card is gone; Map l
 
 test('heading stays compact at 320px and updates on the next gene', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await openLevel(page, 7);
-  await expectSampleHeading(page, 7);
+  await openChapter(page, 'hbb-c01');
+  await expectChapterHeading(page, 'HBB', 1, 9, 'HEMOGLOBIN SUBUNIT BETA');
   await expect(page.getByTestId('play-locus')).toHaveText('CHROMOSOME 11 · NM_000518.5');
   const typography = await page.evaluate(() => {
     const sizeOf = (id: string) => getComputedStyle(document.querySelector(`[data-testid="${id}"]`)!).fontSize;
@@ -86,7 +86,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await page.setViewportSize(size);
     const { raw } = completedLevelSave(def, { lastMoves: 5, bestMoves: 2 });
     await openCompleted(page, raw);
-    await page.getByRole('button', { name: /^Level 1: / }).click();
+    await page.getByTestId('cnode-ins-c01').click();
     await page.getByTestId('board').waitFor();
     const banner = page.getByTestId('solved-banner');
     await expect(banner).toBeVisible();
@@ -150,18 +150,16 @@ async function assertCluePanelClean(page: Page, width: number) {
 for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
   test(`clue panel has no footer note or top divider at ${size.width}x${size.height}`, async ({ page }) => {
     await page.setViewportSize(size);
-    // Sample modes: sequence, splice, replicate, repair.
-    for (const n of [1, 2, 3, 4]) {
-      await openLevel(page, n);
+    // Chapter modes: sequence, splice, replicate, repair.
+    test.setTimeout(60_000);
+    await fresh(page);
+    for (const id of ['ins-c01', 'ins-c02', 'ins-c03', 'ins-c04'] as const) {
+      await goToChapter(page, id);
       await assertCluePanelClean(page, size.width);
-      if (size.width === 390 && n === 2) {
+      if (size.width === 390 && id === 'ins-c02') {
         await page.screenshot({ path: '/workspace/game/screenshots/genome-clue-390x844.png' });
       }
     }
-    // An assembly chapter uses the same panel (the token sequencing note would have lived here).
-    await openMap(page);
-    await page.getByTestId('cnode-ins-c01').click();
-    await page.getByTestId('target-panel').waitFor();
     await assertCluePanelClean(page, size.width);
   });
 }

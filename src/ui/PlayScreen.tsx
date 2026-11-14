@@ -3,9 +3,9 @@ import {
   applyCommand, certifiedHint, createInitialState, energyOf, fullHint, levelCodons, segmentIn, trackMatches,
   type Command, type CommandResult, type Hint, type PuzzleState, type RejectReason,
 } from '../engine/engine.ts';
-import { codonComplete, POWER_COST, powersEnabled, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
+import { codonComplete, OPENING_LEVEL_ID, POWER_COST, powersEnabled, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
-import { LAB_LEVELS, LEVELS, chapterOf, coveredBases, isDiscovered, sampleBases } from '../campaign/campaign.ts';
+import { LAB_LEVELS, chapterOf, isDiscovered } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
 import { SeqLetters, tokenStyle } from './TokenFace.tsx';
@@ -37,7 +37,7 @@ const REJECT_TEXT: Partial<Record<RejectReason, string>> = {
   'scaffold-active': 'Only one scaffold at a time — wait for it to expire or undo it.',
   'scaffold-conflict': 'A bond can’t sit on the scaffold track.',
   'invalid-target': 'That target isn’t valid for this power.',
-  'powers-unavailable': 'Powers unlock from level 4.',
+  'powers-unavailable': 'Powers are available after the first puzzle.',
 };
 
 interface Props {
@@ -90,7 +90,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const solvedView = puzzle.status === 'solved';
   const energy = energyOf(puzzle);
 
-  const autoHint = def.tutorial && puzzle.moves === 0 && !solvedView ? certifiedHint(def, puzzle) : null;
+  const autoHint = (def.tutorial || def.id === OPENING_LEVEL_ID) && puzzle.moves === 0 && !solvedView ? certifiedHint(def, puzzle) : null;
   const showGestureCue = autoHint?.kind === 'drag';
   const activeHint = hintRes && hintRes.key === stateKey(puzzle) ? hintRes.hint : autoHint;
   const dragHint = activeHint?.kind === 'drag' && !solvedView ? activeHint : null;
@@ -156,7 +156,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
               next = recordBest(next, def.id, { moves: result.state.moves, powersUsed: used });
               setCelebrate({ newBases: 0, discovered: false, assembled: false });
             } else {
-              // Bases are counted as a union over every completed puzzle of the gene (sample + chapter).
+              // Bases are counted as a union over every completed chapter puzzle of the gene.
               const before = assemblyStatus(next.completed, gene).covered;
               next = recordCompletion(next, def.id);
               next = recordBest(next, def.id, { moves: result.state.moves, powersUsed: used });
@@ -312,12 +312,10 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     );
   }
 
-  const covered = coveredBases(save.completed, def.symbol);
-  const sample = sampleBases(def.symbol);
   const assembly = assemblyStatus(save.completed, gene);
   const chapter = def.chapter ? chapterOf(def.symbol) : [];
   const labIndex = LAB_LEVELS.findIndex((l) => l.id === def.id);
-  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : def.chapter ? chapter[def.chapter.part] : LEVELS[def.index + 1];
+  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : def.chapter ? chapter[def.chapter.part] : undefined;
   const powerPreview: PowerPreview | null = pending;
 
   const best = save.best[def.id];
@@ -429,10 +427,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           discovered={celebrate.discovered}
           assembled={celebrate.assembled}
           assembledBases={assembly.covered}
-          covered={covered}
-          sample={sample}
           cdsLength={gene.cdsLength}
-          allDone={LEVELS.every((l) => save.completed.includes(l.id))}
           reducedMotion={reducedMotion}
           hasNext={!!nextLevel}
           onNext={() => (nextLevel ? onPlay(nextLevel.id) : onMap())}
