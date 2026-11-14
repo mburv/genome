@@ -27,6 +27,7 @@ test('first-use tutorials animate all seven mechanics, replay, and remember ackn
   await expect(page.getByTestId('mechanic-tutorial')).toHaveCount(0);
 });
 test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances to Connections',async({page})=>{
+  page.on('pageerror',error=>console.log('TRACE PAGE ERROR',error.message));
   await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
   await page.getByTestId('tutorial-skip').click();await solveWithHints(page);
   await page.getByRole('button',{name:'Next level →'}).click();
@@ -36,7 +37,11 @@ test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances 
   for(const c of [10,11,12])await tile(page,c).tap();
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('3/9 bases');
-  for(const c of [21,30,31,40,49,50])await tile(page,c).tap();
+  for(const [i,c] of [21,30,31,40,49,50].entries()){
+    await tile(page,c).tap();
+    await expect(page.getByTestId('lab-progress')).toHaveText((i+4)+'/9 bases');
+  }
+  console.log('TRACE completion',await page.locator('body').innerText(),await page.evaluate(()=>localStorage.getItem('genome-save')));
   await expect(page.getByTestId('mixed-extracted')).toHaveText('TGGATGCGC');
   await expect(page.getByTestId('mixed-coverage')).toHaveText('18/333 bp assembled');
   await page.getByRole('button',{name:'Next level →'}).click();
@@ -66,6 +71,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
   ];
   await page.getByTestId('cnode-ins-01').click();
   for(const s of stages){
+    console.log('INS stage',s.id);
     await skip();
     if(s.kind==='slide')await solveWithHints(page);
     else if(s.kind==='trace')for(const c of s.cells!)await tile(page,c).tap();
@@ -80,7 +86,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
     const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('genome-save')!));
     expect(saved.completed).toContain(s.id);
     if(s.end===333){await expect(page.getByTestId('mixed-assembled')).toBeVisible();expect(saved.assembled).toContain('INS');}
-    else await page.getByRole('button',{name:'Next level →'}).click();
+    else {const next=page.getByRole('button',{name:'Next level →'});await expect(next).toBeVisible();await next.click();}
   }
 });
 
