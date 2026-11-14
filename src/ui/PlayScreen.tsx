@@ -1,9 +1,9 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   applyCommand, certifiedHint, createInitialState, energyOf, fullHint, levelCodons, segmentIn, trackMatches,
   type Command, type CommandResult, type Hint, type PuzzleState, type RejectReason,
 } from '../engine/engine.ts';
-import { codonComplete, OPENING_LEVEL_ID, POWER_COST, powersEnabled, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
+import { codonComplete, OPENING_LEVEL_ID, POWER_COST, powersEnabled, SCAFFOLD_TURNS, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
 import { CAMPAIGN_LEVELS, LAB_LEVELS, isDiscovered } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
@@ -47,11 +47,12 @@ interface Props {
   onPlay: (levelId: string) => void;
   onMap: () => void;
   onCard: (symbol: string) => void;
+  onPowerArmed?: (armed: boolean) => void;
 }
 
 const stateKey = (s: PuzzleState): string => `${s.board}|${s.moves}|${s.history.length}|${s.locks.join()}|${s.scaffold?.remaining ?? 0}|${s.edits}|${Object.keys(s.custom).length}`;
 
-export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, onCard }: Props) {
+export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, onCard, onPowerArmed }: Props) {
   const attempt = save.attempts[def.id];
   const alreadyCompleted = save.completed.includes(def.id);
   const puzzle = attempt ?? (alreadyCompleted ? solvedDisplayState(def, save.best[def.id]) : createInitialState(def));
@@ -102,6 +103,10 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     setPending(null);
     setPanelError(null);
   };
+  useEffect(() => {
+    onPowerArmed?.(!!targeting);
+    return () => onPowerArmed?.(false);
+  }, [targeting, onPowerArmed]);
 
   const commit = useCallback(
     (result: CommandResult): boolean => {
@@ -291,8 +296,8 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         ? 'This piece will stop every row and column through it from rotating (both axes). Release any time for free; undo refunds.'
         : 'These three tiles will stop every row and column through them from rotating (both axes). Release any time for free; undo refunds.';
     } else if (pending?.power === 'scaffold') {
-      title = `Scaffold: join ${pending.candidate.cells.length} cells across the ${pending.candidate.axis === 'row' ? 'row' : 'column'} gap`;
-      detail = 'The two segments rotate as one cyclic track, skipping the gap, for the next 3 rotations (any rotation counts; powers don’t). Only one scaffold at a time.';
+      title = 'Scaffold: Join cells across the gap';
+      detail = `The two segments skip the gap for the next ${SCAFFOLD_TURNS} rotations`;
     }
     const err = previewResult && !previewResult.accepted ? REJECT_TEXT[previewResult.reason!] ?? 'Not possible.' : null;
     panel = (

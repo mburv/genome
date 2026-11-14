@@ -81,29 +81,51 @@ test('energy bar and six icon buttons fit inside the under-board section at 320,
   }
 });
 
-test('arming a power replaces all under-board content with the panel; cancel and confirm restore it', async ({ page }) => {
+test('arming a power replaces under-board content, collapses the header, and restores both on exit', async ({ page }) => {
+  for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
+    await page.setViewportSize(vp);
+    await openLab(page, 1);
+    const headerH = await page.getByTestId('play-top').evaluate((el) => el.getBoundingClientRect().height);
+    expect(headerH).toBeGreaterThan(20);
+    await expect(page.getByTestId('play-title')).toBeVisible();
+    const boardY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
+    const clueY = await page.getByTestId('target-panel').evaluate((el) => el.getBoundingClientRect().y);
+    await expect(page.getByTestId('icon-row')).toBeVisible();
+    await expect(page.getByTestId('energy')).toBeVisible();
+    await expect(page.getByTestId('moves')).toBeVisible();
+    await page.getByTestId('power-crispr').click();
+    await expect(page.getByTestId('power-panel')).toBeVisible();
+    await expect(page.getByTestId('icon-row')).toHaveCount(0);
+    await expect(page.getByTestId('energy')).toHaveCount(0);
+    await expect(page.getByTestId('moves')).toHaveCount(0);
+    await expect(page.getByTestId('power-tray')).toHaveCount(0);
+    await expect.poll(async () => page.getByTestId('play-top').evaluate((el) => el.getBoundingClientRect().height)).toBeLessThanOrEqual(2);
+    const afterArmBoardY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
+    const afterArmClueY = await page.getByTestId('target-panel').evaluate((el) => el.getBoundingClientRect().y);
+    const boardShift = boardY - afterArmBoardY;
+    const clueShift = clueY - afterArmClueY;
+    expect(boardShift).toBeGreaterThan(headerH - 2);
+    expect(boardShift).toBeLessThan(headerH + 20);
+    expect(Math.abs(boardShift - clueShift)).toBeLessThanOrEqual(2);
+    if (vp.width === 390) {
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-power-panel-390x844.png' });
+      await page.screenshot({ path: '/workspace/game/screenshots/genome-power-collapsed-390x844.png' });
+    }
+    await page.getByTestId('power-cancel').click();
+    await expect(page.getByTestId('power-panel')).toHaveCount(0);
+    await expect(page.getByTestId('icon-row')).toBeVisible();
+    await expect(page.getByTestId('energy')).toBeVisible();
+    await expect(page.getByTestId('moves')).toBeVisible();
+    await expect.poll(async () => page.getByTestId('play-top').evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(headerH - 2);
+    await expect(page.getByTestId('play-title')).toBeVisible();
+    await expect.poll(async () => {
+      const y = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
+      return Math.abs(y - boardY);
+    }).toBeLessThanOrEqual(2);
+  }
+
   await page.setViewportSize({ width: 390, height: 844 });
   await openLab(page, 1);
-  const boardY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
-  await expect(page.getByTestId('icon-row')).toBeVisible();
-  await expect(page.getByTestId('energy')).toBeVisible();
-  await expect(page.getByTestId('moves')).toBeVisible();
-  await page.getByTestId('power-crispr').click();
-  await expect(page.getByTestId('power-panel')).toBeVisible();
-  await expect(page.getByTestId('icon-row')).toHaveCount(0);
-  await expect(page.getByTestId('energy')).toHaveCount(0);
-  await expect(page.getByTestId('moves')).toHaveCount(0);
-  await expect(page.getByTestId('power-tray')).toHaveCount(0);
-  const afterArmY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
-  expect(Math.abs(afterArmY - boardY)).toBeLessThanOrEqual(1);
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-power-panel-390x844.png' });
-  await page.getByTestId('power-cancel').click();
-  await expect(page.getByTestId('power-panel')).toHaveCount(0);
-  await expect(page.getByTestId('icon-row')).toBeVisible();
-  await expect(page.getByTestId('energy')).toBeVisible();
-  await expect(page.getByTestId('moves')).toBeVisible();
-  const afterCancelY = await page.getByTestId('board').evaluate((el) => el.getBoundingClientRect().y);
-  expect(Math.abs(afterCancelY - boardY)).toBeLessThanOrEqual(1);
 
   const target = Number(await page.locator('.tile.goal.off').first().getAttribute('data-cell'));
   await page.getByTestId('power-crispr').click();
@@ -123,6 +145,8 @@ test('arming a power replaces all under-board content with the panel; cancel and
   await expect(page.getByTestId('icon-row')).toBeVisible();
   await expect(page.getByTestId('energy')).toBeVisible();
   await expect(page.getByTestId('moves')).toBeVisible();
+  await expect(page.getByTestId('play-title')).toBeVisible();
+  await expect.poll(async () => page.getByTestId('play-top').evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThan(20);
 });
 
 test('map has an optional Enzyme lab with three powers', async ({ page }) => {
@@ -239,6 +263,8 @@ test('Scaffold: bridge across a gap, rotations tick it, it expires after exactly
   expect(await gaps.count()).toBeGreaterThan(0);
   await gaps.first().click();
   await expect(page.getByTestId('scaffold-preview')).toBeVisible();
+  await expect(page.getByTestId('power-panel')).toContainText('Scaffold: Join cells across the gap');
+  await expect(page.getByTestId('power-preview')).toHaveText('The two segments skip the gap for the next 3 rotations');
   await page.getByTestId('power-confirm').click();
   await expect(page.getByTestId('scaffold-bridge')).toBeVisible();
   await expect(page.getByTestId('scaffold-remaining')).toContainText('3 rotations');

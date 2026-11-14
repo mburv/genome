@@ -258,3 +258,9 @@ Accepted ("Yeah seems to work great. Let's move onto M4"). The power costs and e
 
 - D-UI-21 Clue pieces share a left-aligned label column and a vertical chip grid, in every mode.
   - Repair (and splice, replication, sequencing) now stacks each piece as a subgrid row: the piece number on the left, then the chips in shared columns so chip 1 of every piece starts at the same x and later chips line up in columns. The repair `?×n` gap sits at the end of piece 1’s row, in a reserved last column, so piece 2’s chips stay aligned with piece 1. A zero-length gap count is not shown (it used to appear as a stray “0”). Checked at 320 and 390.
+
+- D-UI-22 While a power is armed, the play header collapses so the clue, board and power panel shift up into the freed space.
+  - Opening a power (CRISPR, Ligase or Scaffold) hides the gene title bar (`INS 12/13 · INSULIN` and the locus line) with a short height transition; the in-app reduced-motion setting and `prefers-reduced-motion` skip the animation. Cancel, confirm, or leaving the puzzle restores the header and the previous layout exactly. The board stays usable for targeting. Checked at 320×568 and 390×844.
+
+- D-UI-23 Scaffold’s power-panel title and description are shorter.
+  - After a gap is picked the title is “Scaffold: Join cells across the gap” (no cell count or row/column axis). The cost line is unchanged (`⚡3 → N left`). The description is “The two segments skip the gap for the next 3 rotations”, with the number taken from `SCAFFOLD_TURNS`. The earlier remarks about a cyclic track, what counts as a rotation, and “only one scaffold at a time” are dropped from the panel (the one-at-a-time rule still rejects a second scaffold).

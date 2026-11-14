@@ -24,6 +24,8 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   );
   const systemReducedMotion = prefersReducedMotion();
   const reducedMotion = save.settings.reducedMotion || systemReducedMotion;
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const onPowerArmed = useCallback((armed: boolean) => setHeaderCollapsed(armed), []);
 
   const persist = useCallback(
     (next: SaveData) => {
@@ -38,6 +40,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const settingsFrom = useRef<Screen>({ kind: 'map' });
   const go = (next: Screen) => {
     if (next.kind === 'settings' && screen.kind !== 'settings') settingsFrom.current = screen;
+    if (next.kind !== 'play') setHeaderCollapsed(false);
     setScreen(next);
     if (next.kind === 'play' || next.kind === 'map') window.scrollTo?.(0, 0);
   };
@@ -54,31 +57,35 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   };
 
   return (
-    <main className="app">
-      <header className={`top${screen.kind === 'play' ? ' play-top' : ''}`}>
-        {screen.kind === 'play' ? (
-          <div className="play-heading" data-testid="play-heading">
-            <div className="play-title-row">
-              <h1 data-testid="play-title">{heading.title}</h1>
-              {(heading.progress || heading.fullName) && (
-                <p className="play-detail" data-testid="play-detail">
-                  {heading.progress && <span data-testid="play-progress">{heading.progress}</span>}
-                  {heading.progress && heading.fullName && <span aria-hidden="true">{'\u00a0·\u00a0'}</span>}
-                  {heading.fullName && <span className="play-fullname" data-testid="play-fullname">{heading.fullName}</span>}
-                </p>
+    <main className={`app${reducedMotion ? ' reduced-motion' : ''}`}>
+      <header className={`top${screen.kind === 'play' ? ' play-top' : ''}${headerCollapsed ? ' collapsed' : ''}`} data-testid={screen.kind === 'play' ? 'play-top' : 'app-top'}>
+        <div className="top-collapse">
+          <div className="top-collapse-inner" aria-hidden={headerCollapsed || undefined} inert={headerCollapsed || undefined}>
+            {screen.kind === 'play' ? (
+              <div className="play-heading" data-testid="play-heading">
+                <div className="play-title-row">
+                  <h1 data-testid="play-title">{heading.title}</h1>
+                  {(heading.progress || heading.fullName) && (
+                    <p className="play-detail" data-testid="play-detail">
+                      {heading.progress && <span data-testid="play-progress">{heading.progress}</span>}
+                      {heading.progress && heading.fullName && <span aria-hidden="true">{'\u00a0·\u00a0'}</span>}
+                      {heading.fullName && <span className="play-fullname" data-testid="play-fullname">{heading.fullName}</span>}
+                    </p>
+                  )}
+                </div>
+                <p className="play-locus" data-testid="play-locus">{heading.locus}</p>
+              </div>
+            ) : (
+              <div>
+                <h1>GENOME</h1>
+              </div>
+            )}
+            <div className="top-buttons">
+              {screen.kind !== 'settings' && (
+                <button type="button" className="map-button" onClick={() => go({ kind: 'settings' })} aria-label="Settings" data-testid="open-settings">⚙</button>
               )}
             </div>
-            <p className="play-locus" data-testid="play-locus">{heading.locus}</p>
           </div>
-        ) : (
-          <div>
-            <h1>GENOME</h1>
-          </div>
-        )}
-        <div className="top-buttons">
-          {screen.kind !== 'settings' && (
-            <button type="button" className="map-button" onClick={() => go({ kind: 'settings' })} aria-label="Settings" data-testid="open-settings">⚙</button>
-          )}
         </div>
       </header>
 
@@ -110,6 +117,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           onPlay={play}
           onMap={() => go({ kind: 'map' })}
           onCard={(symbol) => go({ kind: 'card', symbol })}
+          onPowerArmed={onPowerArmed}
         />
       )}
       {screen.kind === 'settings' && (

@@ -50,10 +50,20 @@ button { font: inherit; color: var(--ink); background: var(--white); border: 1px
 button:disabled { opacity: 0.35; cursor: default; }
 button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 a { color: var(--blue); }
-.app { max-width: var(--app-max); overflow-x: clip; margin: 0 auto; padding: max(0px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
+.app { --app-gap: 10px; max-width: var(--app-max); overflow-x: clip; margin: 0 auto; padding: max(0px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: var(--app-gap); background: var(--paper); }
 /* Everything except the board keeps a clean inner margin; the board is full-bleed. */
 .app > :not(.board):not(.board-stage):not(.overlay):not(.top) { margin-inline: var(--pad); }
 .app > .top { margin-inline: 0; padding: 12px var(--pad) 10px; border-bottom: 1px solid var(--ink); background: var(--white); }
+.top-collapse { display: grid; grid-template-rows: 1fr; flex: 1; min-width: 0; transition: grid-template-rows 0.28s ease; }
+.top.collapsed .top-collapse { grid-template-rows: 0fr; }
+.top-collapse-inner { overflow: hidden; min-height: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.top.play-top { transition: padding 0.28s ease, border-width 0.28s ease, margin-bottom 0.28s ease; }
+.top.play-top.collapsed { padding-top: 0; padding-bottom: 0; border-bottom-width: 0; margin-bottom: calc(-1 * var(--app-gap)); }
+.app.reduced-motion .top-collapse,
+.app.reduced-motion .top.play-top { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .top-collapse, .top.play-top { transition: none; }
+}
 @media (min-width: 641px) {
   .app { border-inline: 1px solid var(--rule); min-height: 100vh; }
 }
@@ -432,7 +442,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 @media (max-width: 360px) {
   :root { --pad: 10px; }
-  .app { gap: 8px; }
+  .app { --app-gap: 8px; }
   h1 { font-size: 19px; letter-spacing: 0.18em; }
   .tag { display: none; }
   .small { font-size: 10.5px; }
