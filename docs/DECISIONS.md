@@ -307,3 +307,8 @@ Owner approved all six new mechanics (14 Nov 2026): DNA Tracing, Codon Crush, Ge
 ### D-LAB-02 — Codon Crush visual feedback
 
 Owner playtest: immediate swaps/refill are hard to follow. Drag previews move both tiles with the finger, constrained to one orthogonal neighbour. Release commits at 35% of a cell; invalid matches animate back. Accepted swaps show the swapped board, clear the matched codon, then animate actual gravity/refill using pure engine transition metadata. Undo and Replay are disabled during the short sequence; reduced-motion mode bypasses staged animation. Rules, deterministic refill, and campaign data are unchanged.
+
+
+### D-LAB-03 — Explicit mutation targets and coloured connections
+
+Owner playtest: Mutation Detective shows all 21 exact complementary targets by board row with live correct/mismatch feedback and selected-base guidance. DNA Connections uses matching mint, sky and butter fills for each numbered endpoint pair, its clue and occupied path cells. Empty cells remain white and holes remain grey. Undo and redraw derive the visual state from the existing board/routes; rules and saves are unchanged.

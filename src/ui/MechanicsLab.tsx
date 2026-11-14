@@ -14,6 +14,7 @@ export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void;
 const cellPoint = (c: number): [number, number] => [c % 9 + .5, Math.floor(c / 9) + .5];
 const pathPoints = (path: readonly number[]): string => path.map(c => cellPoint(c).join(',')).join(' ');
 const pathColors = ['#2a6e4f', '#2b5f9e', '#8c5a10'];
+const pathFills = ['var(--mint)', 'var(--sky)', 'var(--butter)'];
 const readAt = (c: number) => READ_CELLS.findIndex(row => row.includes(c));
 const endAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c || p.end === c);
 const startAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c);
@@ -187,7 +188,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
         })}
         <div className="tiny muted">Green underline = correct · Red outline = needs repair</div>
       </div>}
-      {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
+      {id === 'connections' && <div className="lab-codons">{CONNECTION_PAIRS.map((p, i) => <span key={i} style={{ borderColor: pathColors[i], background: pathFills[i] }}>{i + 1}: {p.seq} ↔ {reverseComplement(p.seq)}</span>)}</div>}
       {id === 'restriction' && <div className="mono small">{target}</div>}
     </div>
     <div ref={boardRef} className={'mechanics-board mode-lab-' + id + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); }}>
@@ -202,10 +203,11 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion }: { id: LabId
         const fall = falling.get(c);
         const classes = ['lab-cell', mutationTarget ? (b === mutationTarget ? 'mutation-correct' : 'mutation-mismatch') : '', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', /^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) && b === ASSEMBLY_TARGET[c - ASSEMBLY_CELLS[0]!] ? 'assembly-correct' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
         const endpoint = id === 'connections' && pair >= 0;
+        const connectionColor = id === 'connections' ? (endpoint ? pair : route) : -1;
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
         const badge = id === 'mutation' && c % 9 === 1 ? (isTop ? 'REF' : 'R' + (Math.floor(c / 9) + 1)) : endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
         const motionStyle: CSSProperties = { transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}) } as CSSProperties;
-        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won} onClick={e => { if (e.detail === 0) choose(c); }} style={endpoint ? { borderColor: pathColors[pair], background: '#fff' } : motionStyle}>
+        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '')} aria-pressed={chosen} disabled={state.won} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
           <span>{b === '·' ? '' : b}</span>{badge && <small>{badge}</small>}
         </button>;
       })}

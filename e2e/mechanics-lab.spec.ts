@@ -91,8 +91,26 @@ test('Mutation Detective repairs each complementary mismatch', async ({ page }) 
 
 test('DNA Connections draws three noncrossing touch paths', async ({ page }) => {
   await openLab(page, 'connections');
-  for (const path of [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]]) await trace(page,path);
+  const paths = [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]];
+  const color = (c: number) => tile(page,c).evaluate(el => getComputedStyle(el).backgroundColor);
+  const colors = await Promise.all(paths.map(p => color(p[0]!)));
+  expect(new Set(colors).size).toBe(3);
+  for (let i = 0; i < paths.length; i++) {
+    const path = paths[i]!;
+    const start = path[0]!, end = path.at(-1)!, middle = path[1]!;
+    expect(await color(end)).toBe(colors[i]);
+    expect(await color(middle)).not.toBe(colors[i]);
+    await trace(page,path);
+    await expect(tile(page,middle)).toHaveAttribute('data-connection-pair', String(i + 1));
+    expect(await color(middle)).toBe(colors[i]);
+  }
   await won(page);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/3 pairs');
+  // Re-start the third route: old path squares immediately lose their colour.
+  await tap(page,55);
+  await expect(tile(page,64)).not.toHaveAttribute('data-connection-pair', '3');
+  expect(await color(64)).not.toBe(colors[2]);
 });
 
 test('Restriction Enzyme isolates the fragment, and replay clears the cuts', async ({ page }) => {
