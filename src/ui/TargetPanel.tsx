@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { LevelDefinition, Track } from '../engine/types.ts';
 import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
 import { Barcode, SeqLetters, tierClass, tokenStyle } from './TokenFace.tsx';
@@ -6,32 +6,34 @@ import { Barcode, SeqLetters, tierClass, tokenStyle } from './TokenFace.tsx';
 interface Props {
   def: LevelDefinition;
   matches: boolean[][];
+  committedMatches: boolean[][];
   solved: boolean;
   custom?: CustomTokens;
 }
 
 const TokCtx = createContext<{ def: LevelDefinition; custom: CustomTokens } | null>(null);
 
-function Chip({ track, index, ok, testId }: { track: Track; index: number; ok: boolean; testId?: string | undefined }) {
+function Chip({ track, index, ok, testId, done }: { track: Track; index: number; ok: boolean; testId?: string | undefined; done?: boolean | undefined }) {
   const tok = useContext(TokCtx);
   const sym = track.expected[index]!;
+  const unit = done === undefined ? {} : { 'data-clue-unit': '', 'data-clue-done': String(done), 'data-clue-index': index + 1 };
   if (tok?.def.tokens) {
     const seq = symbolSequence(tok.def, tok.custom, sym);
     return (
-      <span className={`tok-chip ${tierClass(seq.length)} ${ok ? 'ok' : ''}`} data-seq={seq} title={seq} style={tokenStyle(tok.def, sym)} data-testid={testId}>
+      <span className={`tok-chip ${tierClass(seq.length)} ${ok ? 'ok' : ''}`} data-seq={seq} {...unit} title={seq} style={tokenStyle(tok.def, sym)} data-testid={testId}>
         <span className="chip-label">{seq.length <= 6 ? <SeqLetters seq={seq} /> : symbolLabel(tok.def, tok.custom, sym)}</span>
         {seq.length > 3 && <Barcode seq={seq} />}
       </span>
     );
   }
-  return <span className={`strip-cell b-${sym} ${ok ? 'ok' : ''}`} data-testid={testId}>{sym}</span>;
+  return <span className={`strip-cell b-${sym} ${ok ? 'ok' : ''}`} data-testid={testId} {...unit}>{sym}</span>;
 }
 
-function Strip({ track, ok, testId }: { track: Track; ok: boolean[]; testId?: string | undefined }) {
+function Strip({ track, ok, done, testId }: { track: Track; ok: boolean[]; done: boolean[]; testId?: string | undefined }) {
   return (
     <>
       {track.expected.split('').map((_, i) => (
-        <Chip key={i} track={track} index={i} ok={!!ok[i]} testId={i === 0 ? testId : undefined} />
+        <Chip key={i} track={track} index={i} ok={!!ok[i]} done={!!done[i]} testId={i === 0 ? testId : undefined} />
       ))}
     </>
   );
@@ -73,32 +75,77 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
   return n > 0 ? `?×${n}` : '?';
 }
 
-/** Subtle top/bottom fades only when the capped clue box can scroll (D-UI-30). */
-function useClueScroll(ref: RefObject<HTMLElement | null>, dep: string) {
+/** Measure the actual wrapped clues, not an assumed phone width.
+ * Only crowded panels hide committed matches. If unmatched clues still overflow, use
+ * explicit pages rather than a scrolling box. DOM visibility is recalculated after
+ * every React commit; a drag preview never changes the committed completion flags.
+ */
+function TargetShell({ defId, label, solved, children }: { defId: string; label: string; solved: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLElement>(null);
+  const page = useRef(0);
+  const previous = useRef('');
+  const refresh = useRef<((delta?: number) => void) | null>(null);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const update = () => {
-      const overflow = el.scrollHeight > el.clientHeight + 1;
-      const top = el.scrollTop > 1;
-      const end = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-      el.classList.toggle('scrollable', overflow);
-      el.classList.toggle('scroll-top', overflow && top);
-      el.classList.toggle('scroll-end', overflow && end);
-    };
-    update();
-    el.addEventListener('scroll', update, { passive: true });
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
-  }, [dep, ref]);
-}
+    if (previous.current !== defId) { previous.current = defId; page.current = 0; }
+    const nav = el.querySelector<HTMLElement>('.clue-pagination')!;
+    const status = nav.querySelector<HTMLElement>('.clue-page-count')!;
+    const back = nav.querySelector<HTMLButtonElement>('[data-clue-back]')!;
+    const next = nav.querySelector<HTMLButtonElement>('[data-clue-next]')!;
+    const units = Array.from(el.querySelectorAll<HTMLElement>('[data-clue-unit]'));
+    const setHidden = (unit: HTMLElement, hidden: boolean) => unit.toggleAttribute('data-clue-hidden', hidden);
+    const fits = () => el.scrollHeight <= el.clientHeight + 1;
+    const update = (delta = 0) => {
+      // Measure the complete layout first, even if a previous render hid a clue.
+      nav.hidden = true;
+      el.classList.remove('clues-compact');
+      units.forEach(unit => setHidden(unit, false));
+      el.scrollTop = 0;
+      if (fits()) { page.current = 0; return; }
+      el.classList.add('clues-compact');
+      const remaining = units.filter(unit => solved || unit.dataset.clueDone !== 'true');
+      units.forEach(unit => setHidden(unit, !remaining.includes(unit)));
+      if (fits()) { page.current = 0; return; }
 
-function TargetShell({ defId, label, children }: { defId: string; label: string; children: ReactNode }) {
-  const ref = useRef<HTMLElement>(null);
-  useClueScroll(ref, defId);
+      // Greedily fit whole chips/pairs on each page, retaining their original indices.
+      // Keep the page controls mounted while measuring so their height is reserved.
+      nav.hidden = false;
+      const pages: HTMLElement[][] = [];
+      const show = (visible: HTMLElement[]) => units.forEach(unit => setHidden(unit, !visible.includes(unit)));
+      let current: HTMLElement[] = [];
+      for (const unit of remaining) {
+        show([...current, unit]);
+        if (current.length && !fits()) { pages.push(current); current = [unit]; }
+        else current.push(unit);
+      }
+      if (current.length) pages.push(current);
+      page.current = Math.max(0, Math.min(page.current + delta, pages.length - 1));
+      show(pages[page.current] ?? []);
+      status.textContent = `${page.current + 1}/${pages.length}`;
+      back.disabled = page.current === 0;
+      next.disabled = page.current >= pages.length - 1;
+      el.scrollTop = 0;
+    };
+    refresh.current = update;
+    update();
+    // Resize the layout for orientation changes and mobile browser chrome changes.
+    const onResize = () => update();
+    window.addEventListener('resize', onResize);
+    window.visualViewport?.addEventListener('resize', onResize);
+    return () => {
+      refresh.current = null;
+      window.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
+    };
+  });
   return (
     <section ref={ref} className="target" aria-label={label} data-testid="target-panel">
+      <div className="clue-pagination" hidden>
+        <button type="button" data-clue-back aria-label="Previous clues" onClick={() => refresh.current?.(-1)}>‹</button>
+        <span className="clue-page-count" aria-live="polite" />
+        <button type="button" data-clue-next aria-label="Next clues" onClick={() => refresh.current?.(1)}>›</button>
+      </div>
       {children}
     </section>
   );
@@ -113,7 +160,7 @@ export function TargetPanel({ custom = {}, ...p }: Props) {
   );
 }
 
-function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: CustomTokens }) {
+function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Props & { custom: CustomTokens }) {
   const t0 = def.tracks[0]!;
   const toks = !!def.tokens;
   const range = `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}`;
@@ -127,7 +174,7 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
   if (def.mode === 'replicate') {
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} label="Target strands">
+      <TargetShell defId={def.id} solved={solved} label="Target strands">
         {heading}
         <div className={stackClass('replicate', tier)}>
           <div className="rep-start">
@@ -140,7 +187,7 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
             </CluePart>
           </div>
           {a.expected.split('').map((_, i) => (
-            <div className="rep-pair" key={i} data-testid={i === 0 ? 'clue-bonds' : undefined}>
+            <div className="rep-pair" key={i} data-clue-unit="" data-clue-done={String(!!committedMatches[0]?.[i] && !!committedMatches[1]?.[i])} data-clue-index={i + 1} data-testid={i === 0 ? 'clue-bonds' : undefined}>
               <Chip track={a} index={i} ok={!!matches[0]?.[i]} testId={i === 0 ? 'target-strip' : undefined} />
               <i className="rep-bond" aria-hidden="true" />
               <Chip track={b} index={i} ok={!!matches[1]?.[i]} />
@@ -160,20 +207,20 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
   if (def.mode === 'repair' && def.repair) {
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} label="Target sequence with a gap">
+      <TargetShell defId={def.id} solved={solved} label="Target sequence with a gap">
         {heading}
         <div className={stackClass('repair', tier)}>
           <CluePart group={a.group} testId="clue-part-1" badgeTestId="clue-badge-1">
             <TokenRow>
-              <Strip track={a} ok={matches[0]!} testId="target-strip" />
+              <Strip track={a} ok={matches[0]!} done={committedMatches[0]!} testId="target-strip" />
               {toks
-                ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" style={solved ? tokenStyle(def, def.repair.expected) : {}}>{gapLabel(def, custom, solved)}</span>
-                : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot">{gapLabel(def, custom, solved)}</span>}
+                ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false" style={solved ? tokenStyle(def, def.repair.expected) : {}}>{gapLabel(def, custom, solved)}</span>
+                : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false">{gapLabel(def, custom, solved)}</span>}
             </TokenRow>
           </CluePart>
           <CluePart group={b.group} testId="clue-part-2" badgeTestId="clue-badge-2">
             <TokenRow>
-              <Strip track={b} ok={matches[1]!} />
+              <Strip track={b} ok={matches[1]!} done={committedMatches[1]!} />
             </TokenRow>
           </CluePart>
         </div>
@@ -182,13 +229,13 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
   }
   if (def.mode === 'splice') {
     return (
-      <TargetShell defId={def.id} label="Target pieces">
+      <TargetShell defId={def.id} solved={solved} label="Target pieces">
         {heading}
         <div className={stackClass('splice', tier)}>
           {def.tracks.map((t, i) => (
             <CluePart key={t.group} group={t.group} testId={`clue-part-${t.group}`} badgeTestId={`clue-badge-${t.group}`}>
               <TokenRow>
-                <Strip track={t} ok={matches[i]!} testId={i === 0 ? 'target-strip' : undefined} />
+                <Strip track={t} ok={matches[i]!} done={committedMatches[i]!} testId={i === 0 ? 'target-strip' : undefined} />
                 <span className="clue-affix">
                   <span className="clue-dir muted tiny">{t.orientation === 'horizontal' ? '→' : '↓'}</span>
                   {i < def.tracks.length - 1 ? <span className="plus" aria-hidden="true">+</span> : null}
@@ -201,12 +248,12 @@ function TargetPanelInner({ def, matches, solved, custom }: Props & { custom: Cu
     );
   }
   return (
-    <TargetShell defId={def.id} label="Target sequence">
+    <TargetShell defId={def.id} solved={solved} label="Target sequence">
       {heading}
       <div className={stackClass('sequence', tier)}>
         <CluePart group={t0.group} testId="clue-part-1" badgeTestId="clue-badge-1">
           <TokenRow>
-            <Strip track={t0} ok={matches[0]!} testId="target-strip" />
+            <Strip track={t0} ok={matches[0]!} done={committedMatches[0]!} testId="target-strip" />
           </TokenRow>
         </CluePart>
       </div>
