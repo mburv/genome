@@ -1,5 +1,3 @@
-import { levelById } from '../src/campaign/campaign.ts';
-import { mixedStage } from '../src/campaign/mixed.ts';
 import { expect, test } from '@playwright/test';
 import { fresh, openMap, solveWithHints } from './helpers';
 const tile=(page:import('@playwright/test').Page,c:number)=>page.getByTestId('lab-cell-'+c);
@@ -63,21 +61,34 @@ test('every mixed INS stage can be solved through the real game controls and rea
   test.setTimeout(120_000);
   await fresh(page,true);await openMap(page);
   const skip=async()=>{const guide=page.getByTestId('mechanic-tutorial');if(await guide.isVisible())await page.getByTestId('tutorial-skip').click();};
-  const stages=['ins-01','ins-02','ins-03','ins-04','ins-05','ins-06','ins-c01','ins-c02','ins-c03','ins-c04','ins-c05','ins-c06','ins-c07'].map(id=>{
-    const def=levelById(id)!,stage=mixedStage(def);
-    return {id,kind:stage?.mechanic??'slide',end:def.sourceIntervals[0]!.end,stage};
-  });
+  const stages=[
+    {id:'ins-01',kind:'slide',end:9},
+    {id:'ins-02',kind:'trace',end:18,cells:[10,11,12,21,30,31,40,49,50]},
+    {id:'ins-03',kind:'connections',end:24},
+    {id:'ins-04',kind:'assembly',end:33},
+    {id:'ins-05',kind:'crush',end:42},
+    {id:'ins-06',kind:'mutation',end:51},
+    {id:'ins-c01',kind:'trace',end:78,cells:[17,16,15,14,13,12,11,10,9]},
+    {id:'ins-c02',kind:'crush',end:114},
+    {id:'ins-c03',kind:'mutation',end:132},
+    {id:'ins-c04',kind:'assembly',end:186},
+    {id:'ins-c05',kind:'connections',end:240},
+    {id:'ins-c06',kind:'trace',end:294,cells:[17,16,15,14,13,12,11,10,9]},
+    {id:'ins-c07',kind:'restriction',end:333},
+  ];
   await page.getByTestId('cnode-ins-01').click();
   for(const s of stages){
     console.log('INS stage',s.id);
     await skip();
-    if(!s.stage)await solveWithHints(page);
-    else for(const action of s.stage.certificate){
-      if(action.type==='trace'||action.type==='route'||action.type==='cut')await tile(page,action.cell).tap();
-      else if(action.type==='swap'){await tile(page,action.a).tap();await tile(page,action.b).tap();await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');}
-      else if(action.type==='edit'){await tile(page,action.cell).tap();await page.getByTestId('lab-base-'+action.base).tap();}
-      else if(action.type==='place'){await tile(page,s.stage.spec.READ_CELLS[action.read]![0]!).tap();await tile(page,s.stage.spec.ASSEMBLY_CELLS[action.offset]!).tap();}
-    }
+    if(s.kind==='slide')await solveWithHints(page);
+    else if(s.kind==='trace')for(const c of s.cells!.slice(2))await tile(page,c).tap();
+    else if(s.kind==='connections')for(const path of [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]])for(const c of path)await tile(page,c).tap();
+    else if(s.kind==='assembly')for(const [a,b] of (s.id==='ins-c04'?[[1,66],[19,63],[37,64]]:[[1,67],[19,63],[37,65]])){await tile(page,a!).tap();await tile(page,b!).tap();}
+    else if(s.kind==='crush')for(const [a,b] of (s.id==='ins-c02'?[[12,13],[48,49],[66,67]]:[[12,13],[66,67]])){await tile(page,a!).tap();await tile(page,b!).tap();await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');}
+    else if(s.kind==='mutation'){
+      const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('data-lab-cell'))));
+      for(const c of cells){const want=await page.getByTestId('mutation-target-'+c).getAttribute('data-symbol');await tile(page,c).tap();await page.getByTestId('lab-base-'+want).tap();}
+    }else if(s.kind==='restriction'){await tile(page,17).tap();await tile(page,10).tap();}
     if(s.kind!=='slide'){
       await expect(page.getByTestId('mixed-coverage')).toHaveText(s.end+'/333 bp assembled');
       const win=page.getByTestId('win');
@@ -187,7 +198,7 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   expect(cap).toBeLessThanOrEqual(1);
   await expect(page.getByTestId('icon-row')).toBeVisible();
   const startY=(await page.getByTestId('mechanics-board').boundingBox())!.y;
-  for(const c of mixedStage(levelById('ins-c06')!)!.spec.TRACE_PATH.slice(2,7))await tile(page,c).tap();
+  for(const c of [15,14,13,12,11])await tile(page,c).tap();
   expect(Math.abs((await page.getByTestId('mechanics-board').boundingBox())!.y-startY)).toBeLessThan(1);
   await expect(page.getByTestId('lab-progress')).toHaveText('7/9 blocks');
 });
