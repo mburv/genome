@@ -68,5 +68,7 @@ export function creditLegacyCompleted(p:BonusProgress,ids:readonly string[]):Bon
 }
 export function legacyBoardCompatible(id:string):boolean{
   const old=LEGACY_LEVELS.find(l=>l.id===id),next=ALL_LEVELS.find(l=>l.id===id);
-  return !!old&&!!next&&old.initial===next.initial&&old.solved===next.solved&&JSON.stringify(old.tracks)===JSON.stringify(next.tracks)&&JSON.stringify(old.tokens)===JSON.stringify(next.tokens);
+  if(!old||!next||old.initial!==next.initial||old.solved!==next.solved||old.mask!==next.mask||JSON.stringify(old.tracks)!==JSON.stringify(next.tracks)||JSON.stringify(old.repair)!==JSON.stringify(next.repair))return false;
+  const keys=Object.keys(old.tokens??{}),newKeys=Object.keys(next.tokens??{});
+  return keys.length===newKeys.length&&keys.every(k=>!!next.tokens?.[k]&&(old.tokens![k]!.kind==='decoy'||old.tokens![k]!.seq===next.tokens[k]!.seq));
 }
