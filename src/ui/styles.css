@@ -1027,3 +1027,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .block-lab-board .lab-token .barcode, .lab-token.tok .barcode { box-sizing: content-box; border: 1px solid var(--tok-border); }
 .tutorial-cell > .lab-token .tok-face { display: flex; }
 .tutorial-cell > .lab-token .tok-row { display: flex; }
+
+/* Genome Assembly: one actionable source/destination pair, without changing DNA colours. */
+.mode-lab-assembly .lab-cell.assembly-hint-source { outline: 2px dashed var(--green); outline-offset: -4px; z-index: 2; }
+.mode-lab-assembly .lab-cell.assembly-hint-destination { outline: 3px solid var(--green); outline-offset: -4px; z-index: 2; }

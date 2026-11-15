@@ -514,7 +514,7 @@ test('multi-base assembly clues read horizontally and share graphite and palette
     const ref=page.getByTestId('assembly-reference'), board=page.getByTestId('mechanics-board');
     const chips=ref.locator(':scope > .lab-token');
     await expect(chips).toHaveCount(stage.spec.ASSEMBLY_TARGET.length);
-    const geometry=await chips.evaluateAll(nodes=>nodes.map(el=>{
+    const geometry=await chips.evaluateAll(nodes=>nodes.filter(el=>!el.hasAttribute('data-clue-hidden')).map(el=>{
       const rect=el.getBoundingClientRect();
       const letters=Array.from(el.querySelectorAll('.chip-label i'));
       const positions=letters.map(l=>({x:l.getBoundingClientRect().x,y:l.getBoundingClientRect().y,colour:getComputedStyle(l).color}));
@@ -534,4 +534,28 @@ test('multi-base assembly clues read horizontally and share graphite and palette
     expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
     await openMap(page);
   }
+});
+
+
+test('multi-base Genome Assembly hints advance on the board and persist after reload',async({page})=>{
+  await fresh(page,true);await openMap(page);
+  const def=CAMPAIGN_LEVELS.find(def=>def.tier===6 && mechanicOf(def)==='assembly') ?? CAMPAIGN_LEVELS.find(def=>def.tier && mechanicOf(def)==='assembly')!;
+  const stage=mixedStage(def)!;
+  await page.getByTestId('cnode-'+def.id).click();
+  await page.getByTestId('tutorial-skip').click();
+  const hint=page.getByTestId('action-hint');
+  await hint.click();
+  const source=page.locator('.assembly-hint-source'), destination=page.locator('.assembly-hint-destination');
+  for(let read=0;read<stage.spec.READS.length;read++){
+    await expect(source).toHaveAttribute('data-lab-cell',String(stage.spec.READ_CELLS[read]![0]));
+    await expect(destination).toHaveAttribute('data-lab-cell',String(stage.spec.ASSEMBLY_CELLS[stage.spec.READ_STARTS[read]!]));
+    await expect(page.locator('.lab-hint')).toHaveCount(0);
+    await source.tap();await destination.tap();
+    if(read===0){
+      await page.reload();await openMap(page);await page.getByTestId('cnode-'+def.id).click();
+      await expect(hint).toHaveAttribute('aria-pressed','true');
+    }
+  }
+  await expect(page.getByTestId('win')).toBeVisible();
+  await expect(source).toHaveCount(0);await expect(destination).toHaveCount(0);
 });
