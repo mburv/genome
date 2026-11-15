@@ -13,10 +13,12 @@ import { SettingsScreen } from './SettingsScreen.tsx';
 import { MechanicsMenu, MechanicsPlay } from './MechanicsLab.tsx';
 import type { LabAction, LabId, LabState } from '../engine/mechanicsLab.ts';
 import { TitleScreen } from './TitleScreen.tsx';
+import { BonusScreen } from './BonusScreen.tsx';
+import { bonusUnlocked, type BonusProgress } from '../campaign/bonus.ts';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string } | { kind: 'settings' } | { kind: 'mechanics' } | { kind: 'mechanic'; id: LabId };
+type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string } | { kind: 'settings' } | { kind: 'mechanics' } | { kind: 'mechanic'; id: LabId } | {kind:'bonus'};
 
 export function App({ storage = createLocalStorageAdapter() }: { storage?: StorageAdapter }) {
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
@@ -75,6 +77,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     }
     if (next !== saveRef.current) persist(next);
   }, [stage, persist]);
+  const persistBonus=useCallback((bonusProgress:BonusProgress)=>{if(bonusUnlocked(saveRef.current.completed))persist({...saveRef.current,bonusProgress});},[persist]);
   const settingsFrom = useRef<Screen>({ kind: 'title' });
   const go = (next: Screen) => {
     setTutorial(null);
@@ -151,9 +154,11 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           legacyM1={save.legacy.m1Completed}
           onPlay={play}
           onMechanics={() => go({ kind: 'mechanics' })}
+          onBonus={() => {if(bonusUnlocked(saveRef.current.completed))go({kind:'bonus'});}}
           onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
+      {screen.kind==='bonus' && bonusUnlocked(save.completed) && <BonusScreen progress={save.bonusProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onBack={()=>go({kind:'map'})}/>}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{

@@ -56,11 +56,12 @@ interface CampaignPlay {
   stage: MixedStage; seedTrace: boolean; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
-export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; campaign?: CampaignPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
+interface BonusPlay { stage: MixedStage; label:string; part:number; of:number; completed:boolean; onComplete:(state:LabState)=>void; onNext:()=>void }
+export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
   const meta = LAB_META[id];
-  const spec = campaign?.stage.spec ?? DEFAULT_LAB_SPEC;
+  const spec = campaign?.stage.spec ?? bonus?.stage.spec ?? DEFAULT_LAB_SPEC;
   const gene=campaign?GENES[campaign.def.symbol]!:INS;
-  const tokenDef=spec.tokens&&campaign?{...campaign.def,tokens:spec.tokens}:null;
+  const tokenDef=spec.tokens&&(campaign||bonus)?{...(campaign?.def??ALL_LEVELS[0]!),tokens:spec.tokens}:null;
   const face=(b:string)=>spec.tokens?.[b]?<TokenFace seq={labDecode(spec,b)} label={labLabel(spec,b)}/>:b==='·'?'':b;
   const chipClass=(b:string)=>spec.tokens?.[b]?'lab-token tok '+tierClass(labDecode(spec,b).length):'b-'+b;
   const chipStyle=(b:string)=>tokenDef?tokenStyle(tokenDef,b):undefined;
@@ -76,8 +77,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   });
   const [selected, setSelected] = useState<number | null>(null);
   const [localHint, setHint] = useState(false);
-  const hint = campaign ? hintMode === true : localHint;
-  const toggleHint = () => { if (campaign && onHintModeChange) onHintModeChange(!hint); else setHint(v => !v); };
+  const hint = campaign || bonus ? hintMode === true : localHint;
+  const toggleHint = () => { if ((campaign || bonus) && onHintModeChange) onHintModeChange(!hint); else setHint(v => !v); };
   const gesture = useRef<{ pointer: number; start: number; last: number; pair: number; read: number; x: number; y: number; pitch: number } | null>(null);
   const [crushDrag, setCrushDrag] = useState<CrushDrag | null>(null);
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
@@ -115,11 +116,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   }, [state.won, gestureActive]);
   const credit: WinCredit = {
     newBases: campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
-    replayed: campaign?.completed ?? false,
+    replayed: campaign?.completed ?? bonus?.completed ?? false,
     assembled: !!campaign && !campaign.assembled && !campaign.completed && campaign.covered + campaign.stage.sequence.length === gene.cdsLength,
   };
   const onProgress = campaign?.onProgress;
   useEffect(() => { onProgress?.(session.actions, state); }, [onProgress, session.actions, state]);
+  const onBonusComplete=bonus?.onComplete;
+  useEffect(()=>{if(state.won)onBonusComplete?.(state);},[onBonusComplete,state]);
   const boardRef = useRef<HTMLDivElement>(null);
   const dispatch = (action: LabAction) => setSession(prev => {
     const result = applyLab(prev.state, action);
@@ -276,19 +279,20 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     </div>
   );
   const winDef = campaign?.def ?? ALL_LEVELS.find(l=>l.id===OPENING_LEVEL_ID)!;
-  const hasNext = campaign?.hasNext ?? !!next;
-  const advance = campaign ? campaign.onNext : () => next ? onNext(next) : onBack();
-  const nextLabel = campaign ? 'Next level →' : 'Next mechanic →';
+  const hasNext = bonus ? bonus.part<bonus.of : campaign?.hasNext ?? !!next;
+  const advance = bonus ? bonus.onNext : campaign ? campaign.onNext : () => next ? onNext(next) : onBack();
+  const nextLabel = campaign || bonus ? 'Next level →' : 'Next mechanic →';
   const winTitle: Record<LabId,string> = {
     trace:'Fragment traced', crush:'Codons collected', assembly:'Fragment assembled',
     mutation:'Mismatches repaired', connections:'Strands connected', restriction:'Fragment isolated',
   };
   // Lab connections are an abstract routing exercise: their complete pair sequences
   // are in the labels, whereas campaign endpoints encode the exact two-base fragment.
-  const extracted = state.won ? !campaign && id==='connections'
+  const extracted = state.won ? !campaign && !bonus && id==='connections'
     ? spec.CONNECTION_PAIRS.map(p=>p.seq).join('') : labExtractedSequence(state) : null;
   const closeWin = () => setSession(prev=>({...prev,celebration:null}));
-  const popup = state.won && winReady && session.celebration && extracted !== null &&
+  const bonusPopup=bonus && state.won && winReady && session.celebration && extracted!==null && <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="bonus-win-title" data-testid="bonus-win"><div className="card win-card"><div className="card-head"><div className="card-head-copy"><p className="muted small">{bonus.label} · {bonus.part}/{bonus.of} COMPLETE</p><h3 id="bonus-win-title">{winTitle[id]}</h3></div><button type="button" className="win-close" onClick={closeWin} aria-label="Close and view board">×</button></div><p className="mono small" style={{overflowWrap:'anywhere'}}>{extracted}</p><p className="muted small">Reference fragment verified. {bonus.part===bonus.of?'Gene bonus complete.':'Continue to the next fragment.'}</p><div className="card-actions"><button type="button" onClick={onBack}>Bonus map</button>{hasNext&&<button type="button" className="primary" onClick={advance}>Next level →</button>}</div></div></div>;
+  const popup = !bonus && state.won && winReady && session.celebration && extracted !== null &&
     <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel,...(campaign?{range:{start:campaign.stage.start,end:campaign.stage.end}}:{})}}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
       replayed={session.celebration.replayed} assembled={session.celebration.assembled && !!campaign?.assembled}
@@ -296,18 +300,18 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       hasNext={hasNext} onNext={advance} onMap={onBack} onCard={campaign?.onCard ?? onBack} onClose={closeWin} />;
   const solved = state.won && winReady && !session.celebration &&
     <SolvedBanner def={winDef} moves={state.moves} unranked pulse={false} hasNext={hasNext}
-      nextLabel={nextLabel} mapLabel={campaign?'Level map':'Lab menu'} onReplay={reset} onNext={advance} onMap={onBack} />;
+      nextLabel={nextLabel} mapLabel={bonus?'Bonus map':campaign?'Level map':'Lab menu'} onReplay={reset} onNext={advance} onMap={onBack} />;
   // All mechanics use the same play-screen chrome as the traditional sliding puzzle.
   // The target content, game board and mechanic-specific inputs remain independent.
-  const targetLength = campaign?.stage.sequence.length ?? (
+  const targetLength = bonus?.stage.sequence.length ?? campaign?.stage.sequence.length ?? (
     id==='trace'?TRACE_TARGET.length : id==='crush'?CRUSH_TARGETS.join('').length :
     id==='assembly'?ASSEMBLY_TARGET.length : id==='mutation'?MUTATION_ROWS.map(r=>r.seq).join('').length :
     id==='connections'?CONNECTION_PAIRS.map(p=>p.seq).join('').length : CUT_TARGET.length);
   return <>
-    <TargetShell reserveHeight hideCompleted={id==='crush'} defId={campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
+    <TargetShell reserveHeight hideCompleted={id==='crush'} defId={bonus?.stage.id ?? campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
         <span className="target-title">{meta.title}</span>
-        <span className="muted" data-testid="mixed-range">{campaign ? gene.symbol+' CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : 'INS · practice'}</span>
+        <span className="muted" data-testid="mixed-range">{bonus ? bonus.label+' · '+targetLength+' bp reference fragment'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : campaign ? gene.symbol+' CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : 'INS · practice'}</span>
       </div>
       {id==='trace' && <div className="clue-stack mode-sequence">
         <div className="clue-part"><b className="badge">1</b><div className="clue-tokens">
@@ -346,11 +350,12 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/{gene.cdsLength} bp assembled</span>}</div>
       {id==='mutation' && !state.won && <div className="base-picker lab-base-picker" aria-label="Choose replacement base">{labReplacementOptions(spec,mutationSelection??spec.MUTATIONS[0]??-1).map(b=><button type="button" style={chipStyle(b)} className={chipClass(b)+(mutationHintBase===b?' mutation-base-hinted':'')} key={b} disabled={mutationSelection===null} aria-label={'Replace with '+labDecode(spec,b)+(mutationHintBase===b?', suggested correction':'')} onClick={()=>{if(mutationSelection!==null) dispatch({type:'edit',cell:mutationSelection,base:b});}} data-testid={'lab-base-'+b}>{face(b)}</button>)}</div>}
       {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
-      {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
+      {!campaign && !bonus && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
       {id!=='trace'&&id!=='mutation'&&id!=='connections'&&id!=='crush'&&id!=='assembly'&&hint&&!state.won&&<p className="lab-hint small" role="status">{labHint(state)}</p>}
       {id!=='trace' && id!=='mutation' && <span className="trace-status muted small" role="status" data-testid="lab-message">{id==='crush'&&crushAnimation&&crushAnimation.frame>0 ? 'Chain reaction ×'+(crushAnimation.frame+1) : session.message || 'Ready.'}</span>}
-      {!campaign && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
+      {!campaign && !bonus && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
     </div>
     {popup}
+    {bonusPopup}
   </>;
 }

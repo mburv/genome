@@ -1031,3 +1031,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* Genome Assembly: one actionable source/destination pair, without changing DNA colours. */
 .mode-lab-assembly .lab-cell.assembly-hint-source { outline: 2px dashed var(--green); outline-offset: -4px; z-index: 2; }
 .mode-lab-assembly .lab-cell.assembly-hint-destination { outline: 3px solid var(--green); outline-offset: -4px; z-index: 2; }
+
+/* Large post-campaign catalogue: bounded lists, no horizontal overflow. */
+.bonus-map .bonus-filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.85rem;min-width:0}.bonus-filter input[type=search],.bonus-filter select{max-width:100%;min-width:0;flex:1;min-height:36px}.bonus-play{min-width:0}.bonus-map .cat-gene .row-between{flex-wrap:wrap;gap:4px}.bonus-map .cat-gene .muted{overflow-wrap:anywhere}.bonus-play .win-card{box-sizing:border-box;max-width:100%;min-width:0}.bonus-play .win-card p{overflow-wrap:anywhere}

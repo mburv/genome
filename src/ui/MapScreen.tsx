@@ -1,3 +1,4 @@
+import { BONUS_PACK, bonusUnlocked } from '../campaign/bonus.ts';
 import type { LevelDefinition } from '../engine/types.ts';
 import { GENES, MANIFEST } from '../genomics/genes.ts';
 import { CAMPAIGN_GENES, CAMPAIGN_LEVELS, introOf, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
@@ -17,10 +18,11 @@ interface Props {
   legacyM1: readonly string[];
   onPlay: (levelId: string) => void;
   onMechanics: () => void;
+  onBonus: () => void;
   onCard: (symbol: string) => void;
 }
 
-export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onMechanics, onCard, legacyM1 }: Props) {
+export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onMechanics, onBonus, onCard, legacyM1 }: Props) {
   const nextUnfinished = CAMPAIGN_LEVELS.find((l) => !completed.includes(l.id));
   const next = nextUnfinished ?? CAMPAIGN_LEVELS[0]!;
   const nextRun = runProgress(next)!;
@@ -31,7 +33,9 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
         {completed.length === 0 ? 'Start' : !nextUnfinished ? 'Replay' : 'Continue'} · {next.symbol} {nextRun.part}/{nextRun.of}
       </button>
       <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 new puzzles →</button>
-      <p className="muted small">Famous Genes · mixed mechanics</p>
+      <p className="muted small">Famous Genes · main campaign</p>
+      <button type="button" className="big" data-testid="open-bonus" disabled={!bonusUnlocked(completed)} onClick={onBonus}>Human Genome · {bonusUnlocked(completed)?'Bonus genes →':'Locked until main campaign complete'}</button>
+      <p className="muted tiny">{BONUS_PACK.genes.length?BONUS_PACK.genes.length.toLocaleString()+' additional annotated genes':'Bonus reference catalogue'} · separate post-campaign progress.</p>
       <div className="panel catalogue" data-testid="catalogue">
         <h2 className="gene">Gene catalogue</h2>
         {catalogue.map((m) => {

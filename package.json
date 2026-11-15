@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prepare:bonus": "python3 scripts/prepare-bonus.py",
+    "prebuild": "npm run prepare:bonus",
+    "prebuild:single": "npm run prepare:bonus",
     "build": "npm run typecheck && vite build",
     "build:single": "vite build --config vite.single.config.ts && node scripts/copy-single.mjs",
     "preview": "vite preview",
