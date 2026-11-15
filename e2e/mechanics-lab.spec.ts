@@ -296,7 +296,7 @@ test('DNA Connections graphical hints follow routes and recover without written 
   const at=async(c:number)=>{
     await expect(dashed).toHaveCount(1);
     await expect(tile(page,c)).toHaveClass(/connection-hinted/);
-    await expect(dashed).toHaveCSS('outline-style','dashed');
+    expect(await dashed.evaluate(el=>getComputedStyle(el,'::after').borderLeftStyle)).toBe('dashed');
     await expect(page.locator('.lab-hint')).toHaveCount(0);
   };
   await expect(dashed).toHaveCount(0);await hint.click();await at(1);
@@ -324,8 +324,8 @@ test('Codon Crush hints show two dashed swap tiles and update after animations',
     await expect(dashed).toHaveCount(2);
     await expect(tile(page,a)).toHaveClass(/crush-hinted/);
     await expect(tile(page,b)).toHaveClass(/crush-hinted/);
-    await expect(tile(page,a)).toHaveCSS('outline-style','dashed');
-    await expect(tile(page,b)).toHaveCSS('outline-style','dashed');
+    expect(await tile(page,a).evaluate(el=>getComputedStyle(el,'::after').borderLeftStyle)).toBe('dashed');
+    expect(await tile(page,b).evaluate(el=>getComputedStyle(el,'::after').borderLeftStyle)).toBe('dashed');
     await expect(arrow).toBeVisible();
     await expect(page.locator('.lab-hint')).toHaveCount(0);
   };
@@ -353,7 +353,7 @@ test('Genome Assembly hint shows the next read and destination, updates on undo 
   await hint.click();
   await expect(source).toHaveAttribute('data-lab-cell','1');
   await expect(destination).toHaveAttribute('data-lab-cell','67');
-  await expect(source).toHaveCSS('outline-style','dashed');
+  expect(await source.evaluate(el=>getComputedStyle(el,'::after').borderLeftStyle)).toBe('dashed');
   await expect(destination).toHaveCSS('outline-style','solid');
   await expect(page.locator('.lab-hint')).toHaveCount(0);
   await tap(page,19);

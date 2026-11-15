@@ -397,8 +397,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .tile .tick::after { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--white); font-size: calc(var(--board) / 48); font-weight: 700; }
 .tile.goal.ok { box-shadow: inset 0 -4px 0 rgba(17, 17, 17, 0.55); }
 .tile.selected { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); z-index: 2; }
-.tile.hinted { outline: 2px dashed var(--ink); outline-offset: -5px; z-index: 1; }
-.tile.selected.hinted { outline-color: var(--white); }
+.tile.hinted { --tile-dash: var(--ink); z-index: 1; }
+.tile.selected.hinted { z-index: 2; }
 .track-outline { pointer-events: none; border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--white); border-radius: 0; margin: 0; z-index: 3; position: relative; }
 .track-outline.all-ok { border-color: var(--green); }
 .track-outline.strand-complement { border-style: dashed; border-color: var(--blue); }
@@ -469,7 +469,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .gap-target.row { margin: 18% 0; }
 .board.targeting .tile:not(.candidate) { opacity: 0.28; filter: grayscale(0.6); }
 .board.targeting .tile.candidate { cursor: pointer; }
-.board.target-crispr .tile.candidate:hover { outline: 2px dashed var(--ink); outline-offset: -4px; }
+.board.target-crispr .tile.candidate:hover { --tile-dash: var(--ink); }
 .board.target-ligase .tile.candidate { box-shadow: inset 0 0 0 3px var(--amber); }
 .tile.previewed { opacity: 1 !important; filter: none !important; box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); z-index: 2; }
 .tile.edit-target { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); z-index: 3; opacity: 1 !important; filter: none !important; }
@@ -664,7 +664,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .bc-A { background: var(--A-edge); } .bc-C { background: var(--C-edge); } .bc-G { background: var(--G-edge); } .bc-T { background: var(--T-edge); }
 .tile.tok { --tok-bg: #e8e8e2; --tok-fg: #111111; --tok-soft: #3d3d3a; --tok-border: #8a8a84; background: var(--tok-bg); color: var(--tok-fg); border: 1px solid var(--tok-border); }
 /* CRISPR-created (non-reference) sequences: neutral hatching + dashed rule, never a palette colour. */
-.tile.tok.tok-custom { background: repeating-linear-gradient(135deg, #ffffff 0 4px, #e3e3dc 4px 8px); color: var(--ink); outline: 2px dashed var(--ink); outline-offset: -4px; }
+.tile.tok.tok-custom { background: repeating-linear-gradient(135deg, #ffffff 0 4px, #e3e3dc 4px 8px); color: var(--ink); --tile-dash: var(--ink); }
 /* In-play board letters match the softer solved-state ink. Clue chips stay carbon ink. */
 .tile,
 .tile.b-A, .tile.b-C, .tile.b-G, .tile.b-T,
@@ -963,10 +963,10 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-path .tutorial-starter-path { animation:none; stroke-dasharray:none; stroke-dashoffset:0; }
 
 /* Connections hints stay on the board, with the active pair's colour. */
-.mode-lab-connections .lab-cell.connection-hinted { outline: 2px dashed var(--connection-hint-color); outline-offset: -5px; z-index: 2; }
+.mode-lab-connections .lab-cell.connection-hinted { --tile-dash: var(--connection-hint-color); z-index: 2; }
 
 /* Codon Crush: two dashed tiles and a double arrow show the exact swap. */
-.mode-lab-crush .lab-cell.crush-hinted { outline: 2px dashed var(--green); outline-offset: -5px; }
+.mode-lab-crush .lab-cell.crush-hinted { --tile-dash: var(--green); }
 .crush-hint-arrow rect { fill:var(--white); stroke:var(--green); stroke-width:.04; }
 .crush-hint-arrow path { fill:none; stroke:var(--green); stroke-width:.055; stroke-linecap:round; stroke-linejoin:round; }
 .crush-hint-recovery [data-testid="action-undo"] { outline: 2px dashed var(--green); outline-offset:-5px; }
@@ -978,7 +978,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell[data-tutorial-group="2"], .tutorial-track[data-tutorial-group="2"] { outline-color:var(--green); border-color:var(--green); }
 .tutorial-cell[data-tutorial-group="3"], .tutorial-track[data-tutorial-group="3"] { outline-color:var(--amber); border-color:var(--amber); }
 .tutorial-group-mark { position:absolute; top:0; left:1px; z-index:3; font:700 8px var(--mono); background:var(--white); color:var(--ink); }
-.tutorial-cell.tutorial-repair-gap { outline:2px dashed var(--green); outline-offset:-2px; z-index:2; }
+.tutorial-cell.tutorial-repair-gap { --tile-dash: var(--green); --tile-dash-inset: 2px; z-index:2; }
 .tutorial-gap-mark { color:var(--green); font-weight:700; }
 .icon-row .recovery-hint { outline:2px dashed var(--green); outline-offset:-4px; background:var(--mint); }
 
@@ -1030,7 +1030,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell > .lab-token .tok-row { display: flex; }
 
 /* Genome Assembly: one actionable source/destination pair, without changing DNA colours. */
-.mode-lab-assembly .lab-cell.assembly-hint-source { outline: 2px dashed var(--green); outline-offset: -4px; z-index: 2; }
+.mode-lab-assembly .lab-cell.assembly-hint-source { --tile-dash: var(--green); z-index: 2; }
 .mode-lab-assembly .lab-cell.assembly-hint-destination { outline: 3px solid var(--green); outline-offset: -4px; z-index: 2; }
 
 /* Large post-campaign catalogue: bounded lists, no horizontal overflow. */
@@ -1071,3 +1071,36 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
   padding-top: 10px;
 }
 .target .assembly-reference .lab-token.tier-l { gap: 3px; }
+
+
+/* Four real border edges, rather than negative-offset outlines which can be
+   incompletely painted on mobile browsers. The overlay stays inside the tile. */
+.tile.hinted::after,
+.tile.tok-custom::after,
+.board.target-crispr .tile.candidate:hover::after,
+.lab-cell.connection-hinted::after,
+.lab-cell.crush-hinted::after,
+.lab-cell.assembly-hint-source::after,
+.tutorial-cell.tutorial-repair-gap::after {
+  content: '';
+  position: absolute;
+  inset: var(--tile-dash-inset, 5px);
+  box-sizing: border-box;
+  border: 2px dashed var(--tile-dash, var(--ink));
+  border-radius: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Keep both replication labels aligned with the taller split-fragment clues. */
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) {
+  --long-rep-chip-height: 40px;
+}
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) .rep-pair > .tok-chip {
+  min-height: var(--long-rep-chip-height);
+}
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) .rep-start,
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) .rep-end {
+  grid-template-rows: var(--long-rep-chip-height) 6px var(--long-rep-chip-height);
+  align-items: start;
+}

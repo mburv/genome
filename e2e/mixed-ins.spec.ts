@@ -343,7 +343,7 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
   const at=async(c:number)=>{
     await expect(dashed).toHaveCount(1);
     await expect(tile(page,c)).toHaveClass(/hinted/);
-    await expect(tile(page,c)).toHaveCSS('outline-style','dashed');
+    expect(await tile(page,c).evaluate(el=>getComputedStyle(el,'::after').borderLeftStyle)).toBe('dashed');
     await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
   };
   await at(12);
@@ -359,7 +359,7 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
   await expect(dashed).toHaveCount(1);
   const next=Number(await dashed.getAttribute('data-lab-cell'));
   expect([19,21]).toContain(next);
-  await expect(dashed).toHaveCSS('outline-style','dashed');
+  expect(await dashed.evaluate(el=>getComputedStyle(el,'::after').borderLeftStyle)).toBe('dashed');
   await tile(page,1).tap();await at(next);
   await hint.click();await expect(dashed).toHaveCount(0);
   await hint.click();await at(next);

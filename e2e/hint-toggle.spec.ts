@@ -43,3 +43,37 @@ test('Hint mode carries across campaign puzzles and remains off after toggling',
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('hint-cue')).toHaveCount(0);
 });
+
+
+test('dashed hints have four inset border edges on sliding and mixed boards', async ({page})=>{
+  for(const id of ['hbb-c08','ins-02','ins-03','ins-04','ins-05']){
+    await fresh(page);
+    await openMap(page);
+    await page.getByTestId('cnode-'+id).click();
+    await page.getByTestId('action-hint').click();
+    const marked=page.locator('.board .hinted, .board .assembly-hint-source');
+    expect(await marked.count()).toBeGreaterThan(0);
+    for(const vp of [{width:320,height:568},{width:390,height:844}]){
+      await page.setViewportSize(vp);
+      const edges=await marked.evaluateAll(nodes=>nodes.map(el=>{
+        const css=getComputedStyle(el,'::after');
+        const tile=el.getBoundingClientRect();
+        return {styles:[css.borderTopStyle,css.borderRightStyle,css.borderBottomStyle,css.borderLeftStyle],
+          widths:[css.borderTopWidth,css.borderRightWidth,css.borderBottomWidth,css.borderLeftWidth],
+          colors:[css.borderTopColor,css.borderRightColor,css.borderBottomColor,css.borderLeftColor],
+          insets:[css.top,css.right,css.bottom,css.left].map(parseFloat),size:[tile.width,tile.height],pointer:css.pointerEvents};
+      }));
+      for(const edge of edges){
+        expect(edge.styles).toEqual(['dashed','dashed','dashed','dashed']);
+        expect(edge.widths).toEqual(['2px','2px','2px','2px']);
+        expect(new Set(edge.colors).size).toBe(1);
+        expect(edge.insets.every(n=>n>=2)).toBe(true);
+        expect(edge.insets[1]!+edge.insets[3]!).toBeLessThan(edge.size[0]!);
+        expect(edge.insets[0]!+edge.insets[2]!).toBeLessThan(edge.size[1]!);
+        expect(edge.pointer).toBe('none');
+      }
+    }
+    await page.getByTestId('action-hint').click();
+    await expect(marked).toHaveCount(0);
+  }
+});
