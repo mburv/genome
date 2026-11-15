@@ -55,11 +55,17 @@ function demonstration(mechanic: TutorialId, stage: MixedStage | null): Step[] {
     if (!frame) throw new Error('Codon Crush tutorial requires a certified swap');
     const match=frame.matched;
     const swapped={...start,board:frame.swapped};
-    return [
+    const steps:Step[] = [
       step('Read the next codon','Collect the target three-base codons in order. Find two adjacent tiles whose swap would form the next codon.',start,start,[a,b],undefined,undefined,s.CRUSH_TARGETS[0]),
       {...step('Swap neighbours','Drag one tile into its neighbour, or tap the two tiles. Watch both tiles trade places. A wrong swap returns to its starting position.',start,swapped,[a,b],[a,b],undefined,s.CRUSH_TARGETS[0]),crush:{phase:'swap',a,b,frame}},
       {...step('Clear and refill','The three matching bases shrink and disappear. Existing bases fall down and new bases refill the gaps. If the next target codon is already on the board it clears automatically, creating a chain reaction! Each whole chain counts as one move.',swapped,{...result.state,board:frame.board},[...match],undefined,undefined,s.CRUSH_TARGETS[0]),crush:{phase:'settle',a,b,frame}},
     ];
+    const chain=result.crushFrames?.[1];
+    if(chain) {
+      const before={...start,board:chain.swapped}, after={...result.state,board:chain.board};
+      steps.push({...step('Chain reaction!','The next required codon is already here, so it clears without another swipe. Watch the tiles fall again. The chain continues until the next target is missing or the round is complete.',before,after,[...chain.matched],undefined,undefined,chain.codon),crush:{phase:'settle',a,b,frame:chain}});
+    }
+    return steps;
   }
   if (mechanic === 'assembly') {
     const read=1, offset=s.READ_STARTS[read]!, src=s.READ_CELLS[read]!, dest=s.ASSEMBLY_CELLS[offset]!;

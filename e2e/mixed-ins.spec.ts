@@ -15,6 +15,10 @@ test('first-use tutorials animate all seven mechanics, replay, and remember ackn
     await page.getByTestId('tutorial-next').click();
     await expect(page.getByTestId('tutorial-board')).toHaveAttribute('data-step','3');
     await page.getByTestId('tutorial-next').click();
+    if(kind==='crush'){
+      await expect(page.getByTestId('tutorial-board')).toHaveAttribute('data-step','4');
+      await page.getByTestId('tutorial-next').click();
+    }
     await expect(tutorial).toHaveCount(0);
     await openMap(page);
   }
@@ -317,10 +321,17 @@ test('Codon Crush guide swaps real neighbours then clears and refills the exact 
   await page.getByRole('button',{name:'Replay animation'}).click();
   await expect(guide.getByTestId('tutorial-crush-clear')).toHaveCount(3);
   await page.getByTestId('tutorial-next').click();
+  await expect(guide).toHaveAttribute('data-step','4');
+  await expect(page.getByRole('heading',{name:'Chain reaction!'})).toBeVisible();
+  await expect(guide.getByTestId('tutorial-crush-swap')).toHaveCount(0);
+  expect((await guide.getByTestId('tutorial-crush-clear').allTextContents()).join('')).toBe('CTG');
+  const chained=await guide.locator('[data-demo-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')).join(''));
+  await page.getByTestId('tutorial-next').click();
   await tile(page,12).tap();await tile(page,13).tap();
   await expect(actual).toHaveAttribute('data-crush-phase','idle');
   const live=await actual.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
-  expect(live).not.toBe(final); // the live board has completed the automatic clear as well
+  expect(live).not.toBe(final);
+  expect(live).toBe(chained); // both animated frames match the engine's actual cascade
   await expect(page.getByTestId('lab-progress')).toHaveText('2/3 codons');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
 });
@@ -435,4 +446,29 @@ test('Mutation Correction is named consistently in map, practice menu, play and 
   await openMap(page);await page.getByTestId('cnode-ins-06').click();
   await expect(page.getByTestId('target-panel').locator('.target-title').first()).toHaveText('Mutation Correction');
   await expect(page.getByTestId('mechanic-tutorial')).toHaveCount(0);
+});
+
+
+test('twelve-codon chapter keeps targets readable on a small phone and saves a whole chain as one move',async({page})=>{
+  await fresh(page,true);await page.setViewportSize({width:320,height:568});await openMap(page);
+  await page.getByTestId('cnode-ins-c02').click();await page.getByTestId('tutorial-skip').click();
+  const board=page.getByTestId('mechanics-board'),panel=page.getByTestId('target-panel');
+  await expect(panel.locator('.mixed-codon-clues .clue-part')).toHaveCount(12);
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(12);
+  const y=(await board.boundingBox())!.y;
+  await page.getByTestId('action-hint').click();
+  await expect(tile(page,12)).toHaveClass(/crush-hinted/);
+  await tile(page,12).tap();await tile(page,13).tap();
+  await expect(board).toHaveAttribute('data-crush-phase','idle');
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/12 codons');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  expect(Math.abs((await board.boundingBox())!.y-y)).toBeLessThan(1);
+  const before=await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
+  await page.reload();await openMap(page);await page.getByTestId('cnode-ins-c02').click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/12 codons');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  expect(await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''))).toBe(before);
+  await page.getByTestId('action-undo').click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/12 codons');
+  await expect(page.getByTestId('moves')).toHaveText('0 moves');
 });

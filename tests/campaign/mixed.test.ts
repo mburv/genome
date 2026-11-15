@@ -73,3 +73,17 @@ test('Codon Crush chapter collects twelve ordered codons with cascades and exact
   expect(end.moves).toBeLessThan(12);
   expect(verifiedMixed(stage,end)).toBe(true);
 });
+
+test('legacy Codon Crush logs keep the valid prefix and a backup if a cascade supersedes a swap',()=>{
+  const stage=mixedStage(runOf('INS').find(d=>d.id==='ins-05')!)!;
+  const old=[{type:'swap' as const,a:12,b:13},{type:'swap' as const,a:39,b:40}];
+  const initial={...newSave(LEVEL_PACK),completed:['ins-01'],mixedAttempts:{[stage.id]:old}};
+  const adapter=createMemoryAdapter(serializeSave(initial));
+  const loaded=loadSave(adapter,LEVEL_PACK);
+  expect(loaded.save.completed).toEqual(['ins-01']);
+  expect(loaded.save.mixedAttempts?.[stage.id]).toEqual(old.slice(0,1));
+  expect(loaded.notices.join(' ')).toContain('Codon Crush now chains automatically');
+  expect(adapter.backups.length).toBeGreaterThan(0);
+  expect(replayMixed(stage,loaded.save.mixedAttempts![stage.id]!).collected).toBe(2);
+  expect(loadSave(createMemoryAdapter(serializeSave(loaded.save)),LEVEL_PACK).notices).toEqual([]);
+});

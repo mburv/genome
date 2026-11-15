@@ -58,6 +58,13 @@ describe('Mechanics Lab', () => {
       expect(next.moves).toBe(state.moves+1);
       expect(next.refill).toBe(state.refill+3*frames.length);
       expect(next.board).toEqual(frames.at(-1)!.board);
+      if(!next.won) {
+        const target=CRUSH_TARGETS[next.collected]!;
+        for(let c=0;c<81;c++) for(const stride of [1,9]) {
+          const end=c+stride*2;
+          if(end<81&&(stride===9||Math.floor(c/9)===Math.floor(end/9))) expect([c,c+stride,end].map(x=>next.board[x]).join('')).not.toBe(target);
+        }
+      }
       expect(applyLab(state,{type:'swap',a,b})).toEqual(result);
       state=next;
     }

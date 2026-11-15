@@ -952,3 +952,14 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 .mixed-codon-clues .clue-part { flex-shrink:0; }
 .mixed-codon-clues .badge { min-width:18px; }
+
+/* Twelve ordered codons fit on small phones without hiding the current target. */
+.mixed-codon-clues.long-codon-clues { --chip-min: 14px; gap:3px 5px; }
+.long-codon-clues .clue-part { gap:2px; align-items:center; }
+.long-codon-clues .clue-tokens { gap:2px; }
+.long-codon-clues .strip-cell { min-height:20px; font-size:11px; }
+.long-codon-clues .badge { width:16px; min-width:16px; height:20px; font-size:10px; }
+@media (min-width:390px) {
+  .mixed-codon-clues.long-codon-clues { --chip-min:18px; gap:4px 6px; }
+  .long-codon-clues .strip-cell { min-height:23px; font-size:12px; }
+}
