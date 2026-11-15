@@ -18,7 +18,7 @@ import { bonusUnlocked, type BonusProgress } from '../campaign/bonus.ts';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string; nextLevelId?: string } | { kind: 'settings' } | { kind: 'mechanics' } | { kind: 'mechanic'; id: LabId } | {kind:'bonus'};
+type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string; nextLevelId?: string | undefined } | { kind: 'settings' } | { kind: 'mechanics' } | { kind: 'mechanic'; id: LabId } | {kind:'bonus'};
 
 export function App({ storage = createLocalStorageAdapter() }: { storage?: StorageAdapter }) {
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);

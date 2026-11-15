@@ -10,8 +10,8 @@ interface Props {
   historicalCompleted?:readonly string[];
   onPlay: (levelId: string) => void;
   onBack: () => void;
-  onContinue?: () => void;
-  nextGene?: string;
+  onContinue?: (() => void) | undefined;
+  nextGene?: string | undefined;
 }
 
 /**

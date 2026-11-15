@@ -38,6 +38,10 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
   await expect(page.getByTestId('bonus-map')).toBeVisible();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES));
   await expect(page.getByRole('button',{name:'Install pack',exact:true})).toHaveCount(25);
+  await expect(page.getByRole('heading',{name:'Reference data packs',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Gene catalogue',exact:true})).toHaveCount(0);
+  await expect(page.getByPlaceholder('Gene symbol or ID')).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Chromosomes',exact:true})).toBeVisible();
 });
 
 import {createHash} from 'node:crypto';
@@ -51,9 +55,11 @@ test('installs a test-only pack, assembles an exact interval and restores covera
   const save=newSave(LEVEL_PACK);
   await openCompleted(page,serializeSave({...save,settings:{...save.settings,sound:true,haptics:true},completed:CAMPAIGN_LEVELS.map(l=>l.id)}));
   await page.getByTestId('open-bonus').click();
-  await page.getByLabel('Install chromosome packs').setInputFiles({name:'chrM.genome',mimeType:'application/octet-stream',buffer:Buffer.concat([prefix,header,payload])});
-  await page.getByPlaceholder('Gene symbol or ID').fill('TESTGENE');
-  await page.getByRole('button',{name:'Assemble',exact:true}).last().click();
+  const row=page.getByTestId('chromosome-chrM');
+  const chooser=page.waitForEvent('filechooser');
+  await row.getByRole('button',{name:'Install pack',exact:true}).click();
+  await (await chooser).setFiles({name:'chrM.genome',mimeType:'application/octet-stream',buffer:Buffer.concat([prefix,header,payload])});
+  await row.getByRole('button',{name:'Assemble',exact:true}).click();
   await expect(page.getByTestId('bonus-play')).toBeVisible();
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
   await expect(page.getByTestId('bonus-win')).toBeVisible();
@@ -62,9 +68,8 @@ test('installs a test-only pack, assembles an exact interval and restores covera
   expect(cues.vibration).toEqual([8,8,8,8,8,8,[30,50,30,50,60]]);
   await page.getByTestId('bonus-win').getByRole('button',{name:'Bonus map'}).click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
-  await expect(page.getByRole('button',{name:'✓ Complete',exact:true})).toBeVisible();
+  await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
-  await page.getByPlaceholder('Gene symbol or ID').fill('TESTGENE');
   await expect(page.getByRole('button',{name:'✓ Complete',exact:true})).toBeVisible();
 });
