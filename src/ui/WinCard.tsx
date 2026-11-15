@@ -71,8 +71,8 @@ export function WinCard(p: Props) {
     strand = <div className="win-line">{cells(def.tracks[0]!.expected, '', 0, skipped)}</div>;
   }
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="win-title" data-testid="win">
-      <div className="card">
+    <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="win-title" data-testid="win">
+      <div className="card win-card" data-testid="win-card">
         <div className="card-head">
           <div className="card-head-copy">
             <p className="muted small" data-testid="win-meta">{practice ? p.mechanic ? 'MECHANICS LAB' : 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'}{def.lab && !p.mechanic ? ` · ${p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}` : ''}</p>

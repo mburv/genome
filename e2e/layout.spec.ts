@@ -50,16 +50,46 @@ test('a long-token chapter board is also full-bleed at 320px with no overflow', 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
-test('long splice completion card stays inside a narrow phone and its actions remain reachable', async ({page})=>{
-  await page.setViewportSize({width:320,height:568});
-  await openChapter(page,'hbb-c08');
+
+test('HBB 14/15 completion card stays centered and contains all 96 bases and both actions', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await openChapter(page, 'hbb-c08');
   await solveWithHints(page);
-  const card=page.getByTestId('win').locator('.card');
-  await expect(card).toBeVisible();
-  const bounds=(await card.boundingBox())!;
-  expect(bounds.x).toBeGreaterThanOrEqual(0);
-  expect(bounds.x+bounds.width).toBeLessThanOrEqual(320);
-  expect(await card.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
-  await expect(page.getByTestId('win-map')).toBeInViewport();
-  await expect(page.getByRole('button',{name:'Next level →'})).toBeInViewport();
+  const win = page.getByTestId('win');
+  const card = page.getByTestId('win-card');
+  await expect(win).toBeVisible();
+  await expect(win.getByTestId('win-meta')).toContainText('HBB 14/15 COMPLETE');
+  await expect(win.locator('.win-strand .strip-cell')).toHaveCount(96);
+  const assertBounds = async (width: number) => {
+    const m = await card.evaluate(el => {
+      const r = el.getBoundingClientRect();
+      const css = getComputedStyle(el);
+      const contentLeft = r.left + parseFloat(css.borderLeftWidth) + parseFloat(css.paddingLeft);
+      const contentRight = r.right - parseFloat(css.borderRightWidth) - parseFloat(css.paddingRight);
+      const children = Array.from(el.querySelectorAll('.win-strand .strip-cell, .card-actions button')).map(n => n.getBoundingClientRect());
+      return { left:r.left, right:r.right, top:r.top, bottom:r.bottom, viewport:window.innerHeight,
+        paddingLeft:css.paddingLeft,paddingRight:css.paddingRight,overflow:el.scrollWidth-el.clientWidth,
+        contentLeft,contentRight,childLeft:Math.min(...children.map(n=>n.left)),childRight:Math.max(...children.map(n=>n.right)) };
+    });
+    expect(m.left).toBeGreaterThanOrEqual(13.5);
+    expect(width-m.right).toBeGreaterThanOrEqual(13.5);
+    expect(Math.abs(m.left-(width-m.right))).toBeLessThanOrEqual(1);
+    expect(m.paddingLeft).toBe(m.paddingRight);
+    expect(m.top).toBeGreaterThanOrEqual(13.5);
+    expect(m.bottom).toBeLessThanOrEqual(m.viewport-13.5);
+    expect(m.overflow).toBeLessThanOrEqual(1);
+    expect(m.childLeft).toBeGreaterThanOrEqual(m.contentLeft-1);
+    expect(m.childRight).toBeLessThanOrEqual(m.contentRight+1);
+    await expect(win.getByTestId('win-map')).toBeVisible();
+    await expect(win.getByRole('button',{name:'Next level →'})).toBeVisible();
+  };
+  // The join animation must not widen the card; skip it to measure exact tile bounds.
+  await win.locator('.win-strand').click();
+  for(const vp of [{width:393,height:852},{width:320,height:568},{width:430,height:932},{width:568,height:320},{width:768,height:900}]){
+    await page.setViewportSize(vp);
+    await assertBounds(vp.width);
+  }
+  await page.setViewportSize({width:393,height:852});
+  await win.getByRole('button',{name:'Next level →'}).click();
+  await expect(page.getByTestId('play-progress')).toHaveText('15/15');
 });
