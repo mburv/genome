@@ -5,7 +5,7 @@ import { applySlide, segmentCells } from '../engine/grid.ts';
 import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, type LabAction, type LabState, type CrushTransition } from '../engine/mechanicsLab.ts';
 
 type CrushDemo = { phase: 'swap' | 'settle'; a: number; b: number; frame: CrushTransition };
-type Step = { crush?: CrushDemo; title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
+type Step = { crush?: CrushDemo; title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; pathBefore?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
 const run = (state: LabState, actions: readonly LabAction[]) => actions.reduce((s,a) => applyLab(s,a).state,state);
 const step = (title: string, text: string, before: LabState, after: LabState, cells: number[], cursor?: [number,number], path?: number[], target?: string): Step => ({title,text,before:before.board,after:after.board,cells,...(cursor ? {cursor} : {}),...(path ? {path} : {}),...(target ? {target} : {})});
 function demonstration(mechanic: Mechanic, stage: MixedStage | null): Step[] {
@@ -28,11 +28,12 @@ function demonstration(mechanic: Mechanic, stage: MixedStage | null): Step[] {
   const start = createLab(mechanic,s);
   if (mechanic === 'trace') {
     const p=s.TRACE_PATH, a=p[0]!, b=p[1]!, c=p[2]!;
-    const first=run(start,[{type:'trace',cell:a}]), next=run(first,[{type:'trace',cell:b},{type:'trace',cell:c}]);
+    const next=run(start,[{type:'trace',cell:c}]);
+    const prefix=[a,b];
     return [
-      step('Find the first base','Look at the target sequence. Start on a tile with its first letter.',start,first,[a],[a,a], [a],s.TRACE_TARGET),
-      step('Trace in order','Drag through neighbouring tiles matching the next letters. No diagonals, holes or reused cells.',first,next,[a,b,c],[a,c],[a,b,c],s.TRACE_TARGET),
-      step('Finish the strand','Continue until every target base has been traced. Lift your finger and continue with taps if needed; Undo backtracks.',next,run(start,p.map(cell=>({type:'trace',cell}))),[...p],undefined,[...p],s.TRACE_TARGET),
+      {...step('Continue the starter strand','The first two letters are already joined. Find the third letter in the target and continue from the end of the blue path.',start,start,prefix,undefined,undefined,s.TRACE_TARGET),pathBefore:prefix},
+      {...step('Trace in order','Drag from the last connected tile to the next matching neighbour, or tap it. No diagonals, holes or reused cells.',start,next,[a,b,c],[b,c],[b,c],s.TRACE_TARGET),pathBefore:prefix},
+      {...step('Finish the strand','Continue until every target base has been traced. Lift your finger and continue with taps if needed; Undo backtracks to the starter pair.',next,run(start,p.slice(2).map(cell=>({type:'trace',cell}))),[...p],undefined,[...p.slice(2)],s.TRACE_TARGET),pathBefore:[a,b,c]},
     ];
   }
   if (mechanic === 'crush') {
@@ -182,7 +183,7 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
             {changed && <span className={'tutorial-change b-'+after}>{after==='.'||after==='·'?'':after}</span>}
           </div>;
         })}
-        {item.path && <svg viewBox="0 0 9 9" className="tutorial-path" aria-hidden="true"><polyline points={points(item.path)} pathLength="1" /></svg>}
+        {(item.path || item.pathBefore) && <svg viewBox="0 0 9 9" className="tutorial-path" aria-hidden="true">{item.pathBefore && <polyline className="tutorial-starter-path" points={points(item.pathBefore)} pathLength="1" />}{item.path && <polyline className="tutorial-extension-path" points={points(item.path)} pathLength="1" />}</svg>}
         {item.cut?.map(c=><span key={c} className="tutorial-cut" style={{left:(c%9+.5)/9*100+'%',top:(Math.floor(c/9)+.5)/9*100+'%'}}>✂</span>)}
         {from&&to&&<span className="tutorial-finger" aria-hidden="true" style={{'--fx':from[0]/9*100+'%','--fy':from[1]/9*100+'%','--tx':to[0]/9*100+'%','--ty':to[1]/9*100+'%'} as CSSProperties}>☝</span>}
         </>}

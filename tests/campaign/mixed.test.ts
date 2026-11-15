@@ -40,11 +40,26 @@ describe('mixed INS campaign',()=>{
   test('mixed replay logs and first-use flags survive save load without dropping legacy attempts',()=>{
     const def=runOf('INS')[1]!, stage=mixedStage(def)!;
     const original=createInitialState(def);
-    const save={...newSave(LEVEL_PACK),attempts:{[def.id]:original},mixedAttempts:{[def.id]:stage.certificate.slice(0,3)},tutorialsSeen:['slide','trace']};
+    const save={...newSave(LEVEL_PACK),attempts:{[def.id]:original},mixedAttempts:{[def.id]:stage.certificate.slice(0,3)},traceStarterAttempts:[def.id],tutorialsSeen:['slide','trace']};
     const restored=loadSave(createMemoryAdapter(serializeSave(save)),LEVEL_PACK).save;
     expect(restored.attempts[def.id]).toEqual(original);
     expect(restored.mixedAttempts?.[def.id]).toEqual(stage.certificate.slice(0,3));
+    expect(restored.traceStarterAttempts).toEqual([def.id]);
     expect(restored.tutorialsSeen).toEqual(['slide','trace']);
     expect(verifiedMixed(stage,replayMixed(stage,restored.mixedAttempts![def.id]!))).toBe(false);
   });
+});
+
+ test('legacy trace logs retain their exact path and moves; new starter attempts remain distinct',()=>{
+  const def=runOf('INS')[1]!, stage=mixedStage(def)!;
+  const legacy=[9].map(cell=>({type:'trace' as const,cell}));
+  const old={...newSave(LEVEL_PACK),mixedAttempts:{[def.id]:legacy}};
+  const loaded=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK).save;
+  expect(loaded.mixedAttempts?.[def.id]).toEqual(legacy);
+  expect(loaded.traceStarterAttempts).toBeUndefined();
+  expect(replayMixed(stage,legacy,false).trace).toEqual([9]);
+  const seeded={...old,mixedAttempts:{[def.id]:stage.certificate.slice(0,1)},traceStarterAttempts:[def.id]};
+  const restored=loadSave(createMemoryAdapter(serializeSave(seeded)),LEVEL_PACK).save;
+  expect(restored.traceStarterAttempts).toEqual([def.id]);
+  expect(replayMixed(stage,restored.mixedAttempts![def.id]!).trace).toEqual(stage.spec.TRACE_PATH.slice(0,3));
 });

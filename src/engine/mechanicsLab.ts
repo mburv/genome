@@ -6,7 +6,7 @@ export type LabId = typeof LAB_IDS[number];
 export type DNA = 'A' | 'C' | 'G' | 'T';
 const dna = INS.sequence;
 export const LAB_META: Record<LabId, { title: string; short: string; instructions: string; biology: string; icon: string }> = {
-  trace: { title: 'DNA Tracing', short: 'Find and trace a sequence', instructions: 'Trace the target in order. Move between neighbouring cells, never diagonally or through a hole. You can also tap each base.', biology: 'A model of finding a sequence motif in DNA.', icon: '⌁' },
+  trace: { title: 'DNA Tracing', short: 'Find and trace a sequence', instructions: 'Continue from the two connected starter bases. Trace the target in order using neighbouring cells, never diagonally or through a hole. You can also tap each base.', biology: 'A model of finding a sequence motif in DNA.', icon: '⌁' },
   crush: { title: 'Codon Crush', short: 'Swap, clear and refill', instructions: 'Swap two adjacent bases to make the next codon, left to right or top to bottom. A valid match clears three cells and new bases fall in.', biology: 'Codons are three-base instructions in a coding sequence; the gravity is a game mechanic.', icon: '▦' },
   assembly: { title: 'Genome Assembly', short: 'Overlap sequencing reads', instructions: 'Select or drag a read, then place its first base in the lower assembly row. Overlapping bases must agree. Use all three reads to reconstruct the nine-base reference.', biology: 'Inspired by overlapping sequencing reads to assemble a contiguous sequence.', icon: '⊞' },
   mutation: { title: 'Mutation Detective', short: 'Deduce and repair mismatches', instructions: 'Each upper strand is the reference. Tap a base in the lower strand, then choose its complementary base. Repair every mismatch.', biology: 'A model of DNA mismatch detection using A–T and C–G pairing.', icon: '⌕' },
@@ -77,6 +77,8 @@ export interface LabState {
   id: LabId;
   board: string[];
   trace: number[];
+  /** Two fixed, free starter bases for new traces; zero for legacy attempts. */
+  traceStarter: number;
   routes: number[][];
   placements: number[];
   cuts: number[];
@@ -98,7 +100,7 @@ export interface CrushFall { from: number | null; to: number; rows: number }
 export interface CrushTransition { swapped: string[]; matched: number[]; falls: CrushFall[] }
 export interface LabResult { state: LabState; message: string; crush?: CrushTransition }
 
-export function createLab(id: LabId, spec: LabSpec = DEFAULT_LAB_SPEC): LabState {
+export function createLab(id: LabId, spec: LabSpec = DEFAULT_LAB_SPEC, seedTrace = true): LabState {
   const { TRACE_TARGET, TRACE_PATH, CRUSH_TARGETS, CRUSH_SWAPS, READ_CELLS, READS, ASSEMBLY_CELLS, MUTATION_ROWS, MUTATIONS, CONNECTION_PAIRS, CUT_STRANDS, CUT_SEQUENCES } = spec;
   let board = blank();
   if (id === 'trace') {
@@ -123,7 +125,8 @@ export function createLab(id: LabId, spec: LabSpec = DEFAULT_LAB_SPEC): LabState
   } else {
     CUT_STRANDS.forEach((strand, i) => strand.forEach((c, j) => { board[c] = CUT_SEQUENCES[i]![j]!; }));
   }
-  return { id, spec, collectedSeq: '', board, trace: [], routes: CONNECTION_PAIRS.map(() => []), placements: READS.map(() => -1), cuts: [], collected: 0, refill: 0, fresh: [], moves: 0, won: false };
+  const traceStarter = id === 'trace' && seedTrace ? Math.min(2, TRACE_PATH.length - 1) : 0;
+  return { id, spec, collectedSeq: '', board, trace: TRACE_PATH.slice(0, traceStarter), traceStarter, routes: CONNECTION_PAIRS.map(() => []), placements: READS.map(() => -1), cuts: [], collected: 0, refill: 0, fresh: [], moves: 0, won: false };
 }
 
 export function mutationExpected(cell: number, spec: LabSpec = DEFAULT_LAB_SPEC): DNA | null {
@@ -202,7 +205,7 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
     const c = action.cell, path = state.trace;
     if (!validCell(c) || state.board[c] === '.') return no('Stay on the DNA tiles.');
     if (path.at(-1) === c) return path.length === 1 ? yes({ trace: [] }, 'Backtracked.') : no('');
-    if (path.length > 1 && path.at(-2) === c) return yes({ trace: path.slice(0, -1) }, 'Backtracked.');
+    if (path.length > 1 && path.at(-2) === c) return path.length <= state.traceStarter ? no('') : yes({ trace: path.slice(0, -1) }, 'Backtracked.');
     if (path.includes(c) || (path.length && !adjacent(path.at(-1)!, c))) return no('Follow neighbouring cells without reusing one.');
     if (state.board[c] !== TRACE_TARGET[path.length]) return no('Find the next base in the target.');
     const trace = [...path, c];

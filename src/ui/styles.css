@@ -926,3 +926,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* Mutation Detective: the active repair and its replacement button share a green cue. */
 .mode-lab-mutation .lab-cell.mutation-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); z-index: 2; }
 .mixed-under-board .lab-base-picker button.mutation-base-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); }
+
+/* The pre-connected tracing prefix is visible even before tutorial animation starts. */
+.tutorial-path .tutorial-starter-path { animation:none; stroke-dasharray:none; stroke-dashoffset:0; }
