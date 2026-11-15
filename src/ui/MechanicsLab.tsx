@@ -27,7 +27,7 @@ const pathFills = ['var(--mint)', 'var(--sky)', 'var(--butter)'];
 type WinCredit = { newBases: number; replayed: boolean; assembled: boolean };
 type Session = { state: LabState; history: LabState[]; actions: LabAction[]; message: string; celebration: WinCredit | null };
 type CrushDrag = { a: number; b: number; fraction: number };
-type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; result: LabResult; action: LabAction; credit: WinCredit };
+type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; frame: number; result: LabResult; action: LabAction; credit: WinCredit };
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
 function acceptResult(prev: Session, result: LabResult, action: LabAction, credit: WinCredit | null = null): Session {
@@ -119,6 +119,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     const timer = window.setTimeout(() => {
       if (stage === 'swap') setCrushAnimation({ ...crushAnimation, stage: result.crush ? 'clear' : 'return' });
       else if (stage === 'clear') setCrushAnimation({ ...crushAnimation, stage: 'fall' });
+      else if (stage === 'fall' && crushAnimation.frame + 1 < (result.crushFrames?.length ?? 0)) setCrushAnimation({ ...crushAnimation, frame: crushAnimation.frame+1, stage:'clear' });
       else {
         setSession(prev => acceptResult(prev, result, action, credit));
         setCrushAnimation(null);
@@ -136,11 +137,12 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       setSession(prev => acceptResult(prev, result, action, credit));
       return;
     }
-    setCrushAnimation({ a, b, stage: 'swap', result, action, credit });
+    setCrushAnimation({ a, b, stage: 'swap', frame:0, result, action, credit });
   };
-  const animationFrame = crushAnimation?.result.crush;
+  const animationFrame = crushAnimation?.result.crushFrames?.[crushAnimation.frame];
   const displayBoard = crushAnimation?.stage === 'clear' && animationFrame ? animationFrame.swapped
-    : crushAnimation?.stage === 'fall' ? crushAnimation.result.state.board : state.board;
+    : crushAnimation?.stage === 'fall' && animationFrame ? animationFrame.board : state.board;
+  const displayCollected = state.collected + (animationFrame && crushAnimation ? crushAnimation.frame + (crushAnimation.stage==='fall'?1:0) : 0);
   const swapMotion = crushAnimation && (crushAnimation.stage === 'swap' || crushAnimation.stage === 'return')
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
@@ -220,13 +222,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const index = LAB_IDS.indexOf(id);
   const next = LAB_IDS[index + 1];
   const progress = id === 'trace' ? state.trace.length + '/' + TRACE_TARGET.length + ' bases'
-    : id === 'crush' ? state.collected + '/' + CRUSH_TARGETS.length + ' codons'
+    : id === 'crush' ? displayCollected + '/' + CRUSH_TARGETS.length + ' codons'
     : id === 'assembly' ? state.placements.filter(p => p >= 0).length + '/3 reads'
     : id === 'mutation' ? mutationCount(state.board) + ' mismatches'
     : id === 'connections' ? state.routes.filter((p, i) => p.at(-1) === CONNECTION_PAIRS[i]!.end).length + '/3 pairs'
     : state.cuts.length + '/2 cuts';
   const board = (
-    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
+    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} data-crush-chain={crushAnimation ? crushAnimation.frame+1 : undefined} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
         if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
@@ -287,7 +289,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     id==='assembly'?ASSEMBLY_TARGET.length : id==='mutation'?MUTATION_ROWS.map(r=>r.seq).join('').length :
     id==='connections'?CONNECTION_PAIRS.map(p=>p.seq).join('').length : CUT_TARGET.length);
   return <>
-    <TargetShell reserveHeight defId={campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={String(state.moves)}>
+    <TargetShell reserveHeight defId={campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
         <span className="target-title">{meta.title}</span>
         <span className="muted" data-testid="mixed-range">{campaign ? 'INS CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp' : 'INS · practice'}</span>
@@ -297,7 +299,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
           {[...TRACE_TARGET].map((b,i)=><span key={i} className={'strip-cell b-'+b+(i<state.trace.length?' ok':'')} data-clue-unit="" data-clue-done={String(i<state.trace.length)} data-clue-index={i+1} data-testid={i===0?'target-strip':undefined}>{b}</span>)}
         </div></div>
       </div>}
-      {id === 'crush' && <div className="clue-stack mode-sequence mixed-codon-clues">{CRUSH_TARGETS.map((c, i) => <div key={i} className="clue-part" data-clue-unit="" data-clue-done={String(i<state.collected)}><b className="badge">{i+1}</b><div className="clue-tokens">{[...c].map((b,j)=><span key={j} className={'strip-cell b-'+b+(i<state.collected?' ok':'')+(i===state.collected?' current-codon':'')}>{b}</span>)}</div></div>)}</div>}
+      {id === 'crush' && <div className={"clue-stack mode-sequence mixed-codon-clues"+(CRUSH_TARGETS.length>6?" long-codon-clues":"")}>{CRUSH_TARGETS.map((c, i) => <div key={i} className="clue-part" data-clue-unit="" data-clue-done={String(i<displayCollected)}><b className="badge">{i+1}</b><div className="clue-tokens">{[...c].map((b,j)=><span key={j} className={'strip-cell b-'+b+(i<displayCollected?' ok':'')+(i===displayCollected?' current-codon':'')}>{b}</span>)}</div></div>)}</div>}
       {id === 'assembly' && <><div className="lab-sequence assembly-reference mixed-clues" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={'b-' + b + (state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} data-clue-unit="" data-clue-done={String(state.board[ASSEMBLY_CELLS[i]!] === b)} aria-label={'Slot ' + (i + 1) + ': ' + b}>{b}<small>{i + 1}</small></span>)}</div></>}
       {id === 'mutation' && <div className="mutation-reference mixed-clues" data-testid="mutation-reference" role="group" aria-label="Target complementary strands, 3 prime to 5 prime">
         {MUTATION_ROWS.map(({ bottom, seq }) => {
@@ -331,7 +333,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
       {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
       {id!=='trace'&&id!=='mutation'&&id!=='connections'&&id!=='crush'&&hint&&!state.won&&<p className="lab-hint small" role="status">{labHint(state)}</p>}
-      {id!=='trace' && id!=='mutation' && <span className="trace-status muted small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</span>}
+      {id!=='trace' && id!=='mutation' && <span className="trace-status muted small" role="status" data-testid="lab-message">{id==='crush'&&crushAnimation&&crushAnimation.frame>0 ? 'Chain reaction ×'+(crushAnimation.frame+1) : session.message || 'Ready.'}</span>}
       {!campaign && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
     </div>
     {popup}

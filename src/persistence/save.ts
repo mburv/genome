@@ -491,6 +491,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const best = readBest(data.best, ids, attempts);
   const mixedAttempts: Record<string, LabAction[]> = {};
   const traceStarterAttempts: string[] = [];
+  let updatedCrushLogs = 0;
   const seededTraces = new Set(strings(data.traceStarterAttempts));
   if (sameContent && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
@@ -500,12 +501,19 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
       // Replay from pinned definitions; only accepted commands can enter the log.
       const seeded = stage.mechanic !== 'trace' || seededTraces.has(id) || rawLog.length === 0;
       const state = replayMixed(stage, rawLog, seeded);
-      if (state.moves === rawLog.length) {
+      if (stage.mechanic === 'crush' && state.moves !== rawLog.length) {
+        // Legacy logs may include now-unnecessary swaps after automatic collections.
+        let prefix = 0;
+        while (prefix < rawLog.length && replayMixed(stage,rawLog.slice(0,prefix+1),seeded).moves===prefix+1) prefix++;
+        mixedAttempts[id]=rawLog.slice(0,prefix);
+        updatedCrushLogs++;
+      } else if (state.moves === rawLog.length) {
         mixedAttempts[id] = rawLog;
         if (stage.mechanic === 'trace' && seeded) traceStarterAttempts.push(id);
       }
     }
   }
+  if (updatedCrushLogs) { adapter.backup(raw,'crush-cascades'); notices.push('Codon Crush now chains automatically. Older attempts were kept up to the last valid swap; completed levels are preserved.'); }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
   return {
     save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },

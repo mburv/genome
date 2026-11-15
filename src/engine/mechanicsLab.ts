@@ -7,7 +7,7 @@ export type DNA = 'A' | 'C' | 'G' | 'T';
 const dna = INS.sequence;
 export const LAB_META: Record<LabId, { title: string; short: string; instructions: string; biology: string; icon: string }> = {
   trace: { title: 'DNA Tracing', short: 'Find and trace a sequence', instructions: 'Continue from the two connected starter bases. Trace the target in order using neighbouring cells, never diagonally or through a hole. You can also tap each base.', biology: 'A model of finding a sequence motif in DNA.', icon: '⌁' },
-  crush: { title: 'Codon Crush', short: 'Swap, clear and refill', instructions: 'Swap two adjacent bases to make the next codon, left to right or top to bottom. A valid match clears three cells and new bases fall in.', biology: 'Codons are three-base instructions in a coding sequence; the gravity is a game mechanic.', icon: '▦' },
+  crush: { title: 'Codon Crush', short: 'Swap, clear and refill', instructions: 'Swap two adjacent bases to make the next codon, left to right or top to bottom. Matches clear three cells, refill, and automatically chain into the next required codon when it is already present.', biology: 'Codons are three-base instructions in a coding sequence; the gravity is a game mechanic.', icon: '▦' },
   assembly: { title: 'Genome Assembly', short: 'Overlap sequencing reads', instructions: 'Select or drag a read, then place its first base in the lower assembly row. Overlapping bases must agree. Use all three reads to reconstruct the nine-base reference.', biology: 'Inspired by overlapping sequencing reads to assemble a contiguous sequence.', icon: '⊞' },
   mutation: { title: 'Mutation Correction', short: 'Deduce and repair mismatches', instructions: 'Each upper strand is the reference. Tap a base in the lower strand, then choose its complementary base. Repair every mismatch.', biology: 'A model of DNA mismatch detection using A–T and C–G pairing.', icon: '⌕' },
   connections: { title: 'DNA Connections', short: 'Route complementary strands', instructions: 'Start at a numbered 5′ endpoint and trace to its matching 3′ endpoint. Paths may not cross, share cells or enter holes. Tap a start again to redraw its path.', biology: 'Pairs of reverse-complementary DNA fragments; the routing is an abstract puzzle.', icon: '↝' },
@@ -16,8 +16,10 @@ export const LAB_META: Record<LabId, { title: string; short: string; instruction
 export const LAB_REFERENCE = { symbol: INS.symbol, transcript: INS.transcript, sourceUrl: INS.sourceUrl };
 export const TRACE_TARGET = dna.slice(0, 9);
 export const TRACE_PATH = [10, 11, 12, 21, 30, 31, 40, 49, 50] as const;
-export const CRUSH_TARGETS = [dna.slice(0, 3), dna.slice(3, 6), dna.slice(6, 9)];
+export const CRUSH_TARGETS = dna.slice(0, 18).match(/.{3}/g)!;
+/** Starter near-matches; the actual solution can collect several codons per swap. */
 export const CRUSH_SWAPS = [[12, 13], [39, 40], [66, 67]] as const;
+export const CRUSH_SOLUTION = [[12,13],[4,13]] as const;
 export const ASSEMBLY_TARGET = dna.slice(0, 9);
 export const READS = [dna.slice(4, 9), dna.slice(0, 5), dna.slice(2, 7)];
 export const READ_STARTS = [4, 0, 2] as const;
@@ -54,7 +56,7 @@ const filled = (holes: readonly number[], seed: number): string[] => Array.from(
 
 export interface LabSpec {
   TRACE_TARGET: string; TRACE_PATH: readonly number[]; traceHoles: readonly number[];
-  CRUSH_TARGETS: readonly string[]; CRUSH_SWAPS: readonly (readonly [number, number])[]; crushHoles: readonly number[];
+  CRUSH_TARGETS: readonly string[]; CRUSH_SWAPS: readonly (readonly [number, number])[]; crushHoles: readonly number[]; crushSeed?: number;
   ASSEMBLY_TARGET: string; READS: readonly string[]; READ_STARTS: readonly number[]; READ_CELLS: readonly (readonly number[])[]; ASSEMBLY_CELLS: readonly number[];
   MUTATION_ROWS: readonly { top: number; bottom: number; seq: string }[]; MUTATIONS: readonly number[];
   CONNECTION_ROUTES: readonly (readonly number[])[]; CONNECTION_PAIRS: readonly { start: number; end: number; seq: string }[];
@@ -97,8 +99,8 @@ export type LabAction =
   | { type: 'cut'; cell: number };
 /** Visual metadata for one successful codon swap, derived by the same pure rules as the final board. */
 export interface CrushFall { from: number | null; to: number; rows: number }
-export interface CrushTransition { swapped: string[]; matched: number[]; falls: CrushFall[] }
-export interface LabResult { state: LabState; message: string; crush?: CrushTransition }
+export interface CrushTransition { swapped: string[]; matched: number[]; falls: CrushFall[]; board: string[]; codon: string }
+export interface LabResult { state: LabState; message: string; crush?: CrushTransition; crushFrames?: CrushTransition[] }
 
 export function createLab(id: LabId, spec: LabSpec = DEFAULT_LAB_SPEC, seedTrace = true): LabState {
   const { TRACE_TARGET, TRACE_PATH, CRUSH_TARGETS, CRUSH_SWAPS, READ_CELLS, READS, ASSEMBLY_CELLS, MUTATION_ROWS, MUTATIONS, CONNECTION_PAIRS, CUT_STRANDS, CUT_SEQUENCES } = spec;
@@ -107,12 +109,24 @@ export function createLab(id: LabId, spec: LabSpec = DEFAULT_LAB_SPEC, seedTrace
     board = filled(spec.traceHoles, 1);
     TRACE_PATH.forEach((p, i) => { board[p] = TRACE_TARGET[i]!; });
   } else if (id === 'crush') {
-    board = filled(spec.crushHoles, 2);
+    board = filled(spec.crushHoles, spec.crushSeed ?? 2);
     CRUSH_SWAPS.forEach(([a, b], i) => {
-      const seq = CRUSH_TARGETS[i]!;
+      const seq = CRUSH_TARGETS[i];
+      if (!seq) return;
       board[a - 2] = seq[0]!; board[a - 1] = seq[1]!;
-      board[a] = seq[2] === 'A' ? 'C' : 'A'; board[b] = seq[2]!;
+      board[a] = seq[2] === 'A' ? 'C' : 'A';
+      if (i === 0 && [seq[1], board[a], seq[2]].join('') === seq) board[a] = [...BASES].find(x=>!seq.includes(x))!;
+      board[b] = seq[2]!;
     });
+    // Start with a stable board and a guaranteed teaching swap.
+    const target = CRUSH_TARGETS[0]!;
+    const first = CRUSH_SWAPS[0]!;
+    const protectedCells = new Set([first[0]-2,first[0]-1,...first]);
+    const other = [...BASES].find(b=>!target.includes(b))!;
+    for (const match of matchingTriples(board,target)) {
+      const cell = match.findLast(c=>!protectedCells.has(c));
+      if (cell !== undefined) board[cell]=other;
+    }
   } else if (id === 'assembly') {
     READ_CELLS.forEach((cells, i) => cells.forEach((c, j) => { board[c] = READS[i]![j]!; }));
     ASSEMBLY_CELLS.forEach(c => { board[c] = '·'; });
@@ -221,9 +235,21 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
     const old = new Set(matchingTriples(state.board, target).map(c => c.join(',')));
     const match = matchingTriples(board, target).find(c => (c.includes(a) || c.includes(b)) && !old.has(c.join(',')));
     if (!match) return no('That swap does not create the next codon.');
-    const collected = state.collected + 1;
-    const { falls, ...settled } = settle(board, match, state.refill);
-    return { ...yes({ ...settled, collected, collectedSeq: state.collectedSeq + match.map(c => board[c]).join(''), won: collected === CRUSH_TARGETS.length }, 'Collected ' + target + ' — tiles refilled.'), crush: { swapped: board, matched: match, falls } };
+    // One player action, one undo snapshot, potentially many ordered collections.
+    const frames: CrushTransition[] = [];
+    let currentBoard = board, currentMatch: number[] | undefined = match;
+    let collected = state.collected, refill = state.refill, collectedSeq = state.collectedSeq;
+    let fresh: number[] = [];
+    while (currentMatch && collected < CRUSH_TARGETS.length) {
+      const codon = currentMatch.map(c=>currentBoard[c]).join('');
+      const settled = settle(currentBoard,currentMatch,refill);
+      frames.push({swapped:currentBoard, matched:currentMatch, falls:settled.falls, board:settled.board, codon});
+      collectedSeq += codon; collected++;
+      currentBoard=settled.board; refill=settled.refill; fresh=settled.fresh;
+      currentMatch = collected < CRUSH_TARGETS.length ? matchingTriples(currentBoard,CRUSH_TARGETS[collected]!)[0] : undefined;
+    }
+    const message = frames.length > 1 ? 'Chain reaction ×'+frames.length+' — '+frames.map(f=>f.codon).join(' → ') : 'Collected '+target+' — tiles refilled.';
+    return {...yes({board:currentBoard,refill,fresh,collected,collectedSeq,won:collected===CRUSH_TARGETS.length},message),crush:frames[0]!,crushFrames:frames};
   }
   if (action.type === 'place' && state.id === 'assembly') {
     const { read, offset } = action;

@@ -48,10 +48,12 @@ test('mechanics menu exposes six separate games and leaves campaign save untouch
 test('Codon Crush swaps, refills, and supports undo', async ({ page }) => {
   await openLab(page, 'crush');
   await trace(page, [12,13]);
-  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
+  await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');
+  await expect(page.getByTestId('lab-progress')).toHaveText('4/6 codons');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
-  await expect(page.getByTestId('lab-progress')).toHaveText('0/3 codons');
-  for (const [a,b] of [[12,13],[39,40],[66,67]] as const) { await tap(page,a); await tap(page,b); await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase', 'idle'); }
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/6 codons');
+  for (const [a,b] of [[12,13],[4,13]] as const) { await tap(page,a); await tap(page,b); await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase', 'idle'); }
   await won(page);
 });
 
@@ -163,7 +165,7 @@ test('Codon Crush follows a held finger and shows swap, clear and falling phases
   await expect(b).toHaveClass(/crush-moving/);
   expect((await a.boundingBox())!.x).toBeGreaterThan(aa.x + 5);
   expect((await b.boundingBox())!.x).toBeLessThan(bb.x - 5);
-  await expect(page.getByTestId('lab-progress')).toHaveText('0/3 codons');
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/6 codons');
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect(board).toHaveAttribute('data-crush-phase', 'swap');
   await expect(board).toHaveAttribute('data-crush-phase', 'clear');
@@ -171,8 +173,10 @@ test('Codon Crush follows a held finger and shows swap, clear and falling phases
   await expect(board).toHaveAttribute('data-crush-phase', 'fall');
   await expect(board.locator('.crush-new')).toHaveCount(3);
   expect(await board.locator('.crush-falling:not(.crush-new)').count()).toBeGreaterThan(0);
+  await expect(board).toHaveAttribute('data-crush-chain','2');
   await expect(board).toHaveAttribute('data-crush-phase', 'idle');
-  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
+  await expect(page.getByTestId('lab-progress')).toHaveText('4/6 codons');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
   await cdp.detach();
 });
 
@@ -186,13 +190,13 @@ test('Codon Crush rejected swap returns to the unchanged board; reduced motion s
   await expect(board).toHaveAttribute('data-crush-phase', 'return');
   await expect(board).toHaveAttribute('data-crush-phase', 'idle');
   expect(await snapshot()).toBe(before);
-  await expect(page.getByTestId('lab-progress')).toHaveText('0/3 codons');
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/6 codons');
   await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.reload();
   await openMap(page); await page.getByTestId('open-mechanics').click(); await page.getByTestId('mechanic-crush').click();
   await tap(page,12); await tap(page,13);
-  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
+  await expect(page.getByTestId('lab-progress')).toHaveText('4/6 codons');
   await expect(board).toHaveAttribute('data-crush-phase', 'idle');
 });
 
@@ -327,11 +331,11 @@ test('Codon Crush hints show two dashed swap tiles and update after animations',
   await tap(page,12);await at(12,13);
   await tap(page,13);
   await expect(board).toHaveAttribute('data-crush-phase','idle');
-  await at(39,40);
+  await at(4,13);
   await expect(hint).toHaveAttribute('aria-pressed','true');
   await page.getByTestId('action-undo').click();await at(12,13);
-  await trace(page,[12,13]);await expect(board).toHaveAttribute('data-crush-phase','idle');await at(39,40);
+  await trace(page,[12,13]);await expect(board).toHaveAttribute('data-crush-phase','idle');await at(4,13);
   await page.getByTestId('action-restart').click();await at(12,13);
-  for(const [a,b] of [[12,13],[39,40],[66,67]] as const){await at(a,b);await tap(page,a);await tap(page,b);await expect(board).toHaveAttribute('data-crush-phase','idle');}
+  for(const [a,b] of [[12,13],[4,13]] as const){await at(a,b);await tap(page,a);await tap(page,b);await expect(board).toHaveAttribute('data-crush-phase','idle');}
   await won(page);await expect(dashed).toHaveCount(0);await expect(arrow).toHaveCount(0);
 });
