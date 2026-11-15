@@ -602,3 +602,47 @@ test('MC1R 6/13 Mutation Correction keeps all reference rows together on phones'
   await page.getByTestId('action-undo').click();
   await allRows();
 });
+
+
+test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination and restores them on undo',async({page})=>{
+  const def=CAMPAIGN_LEVELS.filter(l=>l.symbol==='KRAS')[6]!;
+  expect(mechanicOf(def)).toBe('assembly');
+  const stage=mixedStage(def)!;
+  expect(stage.spec.ASSEMBLY_TARGET).toHaveLength(9);
+  await page.setViewportSize({width:390,height:844});
+  await fresh(page);await openMap(page);
+  await page.getByTestId('cnode-'+def.id).click();
+  const panel=page.getByTestId('target-panel');
+  const chips=page.getByTestId('assembly-reference').locator(':scope > [data-clue-unit]');
+  const allSlots=Array.from({length:9},(_,i)=>String(i+1));
+  const assertClues=async(expected:string[])=>{
+    await expect(panel.locator('.clue-pagination')).toBeHidden();
+    await expect(chips).toHaveCount(9);
+    await expect(chips.filter({visible:true}).locator('small')).toHaveText(expected);
+    expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+  };
+  await assertClues(allSlots);
+  await page.setViewportSize({width:320,height:568});
+  await assertClues(allSlots);
+  const read=0, offset=stage.spec.READ_STARTS[read]!;
+  const place=async()=>{
+    await tile(page,stage.spec.READ_CELLS[read]![0]!).tap();
+    await tile(page,stage.spec.ASSEMBLY_CELLS[offset]!).tap();
+  };
+  await place();
+  const remaining=allSlots.filter((_,i)=>i<offset||i>=offset+stage.spec.READS[read]!.length);
+  expect(remaining.length).toBeGreaterThan(0);
+  await assertClues(remaining);
+  await page.getByTestId('action-undo').click();
+  await assertClues(allSlots);
+  await place();
+  await page.reload();await openMap(page);await page.getByTestId('cnode-'+def.id).click();
+  await assertClues(remaining);
+  for(let read=1;read<stage.spec.READS.length;read++){
+    await tile(page,stage.spec.READ_CELLS[read]![0]!).tap();
+    await tile(page,stage.spec.ASSEMBLY_CELLS[stage.spec.READ_STARTS[read]!]!).tap();
+  }
+  await expect(page.getByTestId('win')).toBeVisible();
+  await expect(chips.filter({visible:true})).toHaveCount(0);
+  await expect(panel.locator('.clue-pagination')).toBeHidden();
+});

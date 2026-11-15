@@ -107,8 +107,8 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
       // steady even when completed clues disappear; measure again after a resize.
       el.style.minHeight = '';
       if (reserveHeight) el.style.minHeight = el.clientHeight + 'px';
-      // Codon Crush always removes collected clues, even on a roomy or solved board.
-      // Measure the full set first so the board stays at the same vertical position.
+      // Codon Crush and Genome Assembly always remove completed clues, even when solved.
+      // When reserveHeight is set, retain the full layout height during play.
       if (hideCompleted) units.forEach(unit => setHidden(unit, unit.dataset.clueDone === 'true'));
       // Long fragments use compact, content-sized clues. Keep every outstanding
       // clue visible; on short screens reserve the actual height above the board.

@@ -321,7 +321,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     id==='assembly'?ASSEMBLY_TARGET.length : id==='mutation'?MUTATION_ROWS.map(r=>r.seq).join('').length :
     id==='connections'?CONNECTION_PAIRS.map(p=>p.seq).join('').length : CUT_TARGET.length);
   return <>
-    <TargetShell longClues={id==='mutation'||Object.values(spec.tokens??{}).some(t=>t.seq.length>6)} reserveHeight hideCompleted={id==='crush'} defId={bonus?.stage.id ?? campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
+    <TargetShell longClues={id==='mutation'||id==='assembly'||Object.values(spec.tokens??{}).some(t=>t.seq.length>6)} reserveHeight={id!=='assembly'} hideCompleted={id==='crush'||id==='assembly'} defId={bonus?.stage.id ?? campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
         <span className="target-title">{meta.title}</span>
         <span className="muted" data-testid="mixed-range">{bonus ? bonus.label+' · '+targetLength+' bp reference fragment'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : campaign ? gene.symbol+' CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : 'INS · practice'}</span>
