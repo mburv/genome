@@ -218,3 +218,41 @@ test('all long fragments, including 36-base connection pieces, share the simplif
     expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
   }
 });
+
+
+test('long clue chips grow around both codons and their divider on narrow and standard phones', async ({page})=>{
+  test.setTimeout(120_000);
+  const kinds=['trace','crush','assembly','mutation','connections','restriction'] as const;
+  const ids=['hbb-c08',...kinds.map(kind=>CAMPAIGN_LEVELS.find(l=>(l.tier??0)>=12&&mechanicOf(l)===kind)?.id).filter((id):id is string=>!!id)];
+  expect(ids.length).toBeGreaterThan(3);
+  for(const id of ids){
+    await page.setViewportSize({width:390,height:844});
+    await openChapter(page,id);
+    for(const viewport of [{width:390,height:844},{width:320,height:568}]){
+      await page.setViewportSize(viewport);
+      const panel=page.getByTestId('target-panel');
+      const report=await panel.locator('.tok-face.long:visible').evaluateAll(faces=>faces.map(face=>{
+        const chip=face.parentElement!;
+        const bounds=chip.getBoundingClientRect();
+        const [a,b]=[...face.querySelectorAll('.tok-row')].map(el=>el.getBoundingClientRect());
+        const line=face.querySelector('.tok-divider')!.getBoundingClientRect();
+        const within=(r:DOMRect)=>r.left>=bounds.left-0.5&&r.right<=bounds.right+0.5&&r.top>=bounds.top-0.5&&r.bottom<=bounds.bottom+0.5;
+        return {label:face.textContent,chipHeight:bounds.height,rowsFit:within(a!)&&within(b!)&&within(line),
+          separated:a!.bottom<=line.top+0.5&&line.bottom<=b!.top+0.5,
+          lineVisible:line.height>=0.5&&line.width>0,
+          siblingsFit:[...chip.children].every(el=>within(el.getBoundingClientRect()))};
+      }));
+      expect(report.length,id+' should have visible long clue chips').toBeGreaterThan(0);
+      for(const chip of report){
+        expect(chip.chipHeight,id+' '+chip.label).toBeGreaterThanOrEqual(32);
+        expect(chip.rowsFit,id+' '+chip.label).toBe(true);
+        expect(chip.separated,id+' '+chip.label).toBe(true);
+        expect(chip.lineVisible).toBe(true);
+        expect(chip.siblingsFit,id+' '+chip.label).toBe(true);
+      }
+      expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+      expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+      await expect(page.getByTestId('icon-row')).toBeVisible();
+    }
+  }
+});
