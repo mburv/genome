@@ -58,16 +58,16 @@ export function playCue(cue: Cue, opts: FeedbackOptions): void {
   try {
     const t0 = ac.currentTime + 0.005;
     for (const [f, start, dur] of NOTES[cue]) {
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.type = cue === 'reject' ? 'triangle' : 'sine';
-    osc.frequency.value = f;
-    gain.gain.setValueAtTime(0.0001, t0 + start);
-    gain.gain.exponentialRampToValueAtTime(0.12, t0 + start + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
-    osc.connect(gain).connect(ac.destination);
-    osc.start(t0 + start);
-    osc.stop(t0 + start + dur + 0.02);
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = cue === 'reject' ? 'triangle' : 'sine';
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.0001, t0 + start);
+      gain.gain.exponentialRampToValueAtTime(0.12, t0 + start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
+      osc.connect(gain).connect(ac.destination);
+      osc.start(t0 + start);
+      osc.stop(t0 + start + dur + 0.02);
     }
   } catch { /* optional feedback must never interrupt gameplay */ }
 }

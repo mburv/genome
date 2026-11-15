@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { applyLab, createLab, labHint, traceHintCell, connectionHint, findCrushSwap, LAB_IDS, LAB_META, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, labDecode,labLabel,labReplacementOptions, type LabResult, type LabId, type LabState, type LabAction } from '../engine/mechanicsLab.ts';
 import { TargetShell } from './TargetPanel.tsx';
 import { PowerTray } from './PowerTray.tsx';
@@ -79,7 +79,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   // The latest committed session is available to rapid pointer events before React rerenders.
   // Feedback stays outside state updaters, so StrictMode and saved-action replay cannot duplicate it.
   const sessionRef = useRef(session);
-  const updateSession = (next: Session) => { sessionRef.current = next; setSession(next); };
+  const updateSession = useCallback((next: Session) => { sessionRef.current = next; setSession(next); }, []);
   const [selected, setSelected] = useState<number | null>(null);
   const [localHint, setHint] = useState(false);
   const hint = campaign || bonus ? hintMode === true : localHint;
@@ -129,13 +129,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const onBonusComplete=bonus?.onComplete;
   useEffect(()=>{if(state.won)onBonusComplete?.(state);},[onBonusComplete,state]);
   const boardRef = useRef<HTMLDivElement>(null);
-  const commitResult = (result: LabResult, action: LabAction, earned: WinCredit) => {
+  const commitResult = useCallback((result: LabResult, action: LabAction, earned: WinCredit) => {
     const prev = sessionRef.current;
     if (prev.state.won) return;
     updateSession(acceptResult(prev, result, action, earned));
     if (result.state !== prev.state) playCue(result.state.won ? 'win' : 'move', feedback);
     else if (result.message) playCue('reject', feedback);
-  };
+  }, [feedback, updateSession]);
   const dispatch = (action: LabAction) => {
     commitResult(applyLab(sessionRef.current.state, action), action, credit);
   };
@@ -153,7 +153,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
       }
     }, crushTiming[stage]);
     return () => window.clearTimeout(timer);
-  }, [crushAnimation]);
+  }, [crushAnimation, commitResult]);
   const startCrushSwap = (a: number, b: number) => {
     if (busy || state.won) return;
     setSelected(null);
@@ -230,6 +230,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const pointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || g.pointer !== e.pointerId) return;
+    prepareFeedback(feedback);
     if (id === 'crush') {
       const dx = e.clientX - g.x, dy = e.clientY - g.y;
       const motion = crushDirection(g.start, dx, dy, g.pitch, state.board);
