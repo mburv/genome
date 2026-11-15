@@ -80,7 +80,7 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
  * explicit pages rather than a scrolling box. DOM visibility is recalculated after
  * committed-match change; a drag preview never changes the committed completion flags.
  */
-export function TargetShell({ defId, label, solved, committedKey, children, reserveHeight = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; reserveHeight?: boolean }) {
+export function TargetShell({ defId, label, solved, committedKey, children, reserveHeight = false, hideCompleted = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; reserveHeight?: boolean; hideCompleted?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const page = useRef(0);
   const previous = useRef('');
@@ -88,7 +88,8 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (previous.current !== defId) { previous.current = defId; page.current = 0; }
+    const identity = hideCompleted ? defId + ':' + committedKey : defId;
+    if (previous.current !== identity) { previous.current = identity; page.current = 0; }
     const nav = el.querySelector<HTMLElement>('.clue-pagination')!;
     const status = nav.querySelector<HTMLElement>('.clue-page-count')!;
     const back = nav.querySelector<HTMLButtonElement>('[data-clue-back]')!;
@@ -106,9 +107,12 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
       // steady even when completed clues disappear; measure again after a resize.
       el.style.minHeight = '';
       if (reserveHeight) el.style.minHeight = el.clientHeight + 'px';
+      // Codon Crush always removes collected clues, even on a roomy or solved board.
+      // Measure the full set first so the board stays at the same vertical position.
+      if (hideCompleted) units.forEach(unit => setHidden(unit, unit.dataset.clueDone === 'true'));
       if (fits()) { page.current = 0; return; }
       el.classList.add('clues-compact');
-      const remaining = units.filter(unit => solved || unit.dataset.clueDone !== 'true');
+      const remaining = units.filter(unit => (!hideCompleted && solved) || unit.dataset.clueDone !== 'true');
       units.forEach(unit => setHidden(unit, !remaining.includes(unit)));
       if (fits()) { page.current = 0; return; }
 
@@ -142,7 +146,7 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [defId, solved, committedKey, reserveHeight]);
+  }, [defId, solved, committedKey, reserveHeight, hideCompleted]);
   return (
     <section ref={ref} className="target" aria-label={label} data-testid="target-panel">
       <div className="clue-pagination" hidden>

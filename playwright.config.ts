@@ -6,7 +6,7 @@ export default defineConfig({
   reporter: [['list']],
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'off' },
   webServer: {
-    command: 'npx vite build && npm run build:single && npx vite preview --host 127.0.0.1 --port 4173 --strictPort',
+    command: 'npx vite build --mode test && npm run build:single && npx vite preview --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: false,
     timeout: 60_000,

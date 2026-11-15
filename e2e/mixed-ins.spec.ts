@@ -458,6 +458,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   await tile(page,12).tap();await tile(page,13).tap();
   await expect(board).toHaveAttribute('data-crush-phase','idle');
   await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['3','4']);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   expect(Math.abs((await board.boundingBox())!.y-y)).toBeLessThan(1);
   const before=await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
@@ -467,6 +468,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   expect(await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''))).toBe(before);
   await page.getByTestId('action-undo').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/4 block matches');
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4']);
   await expect(page.getByTestId('moves')).toHaveText('0 moves');
 });
 
@@ -488,4 +490,22 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
   await page.reload();await openMap(page);await page.getByTestId('cnode-dmd-c11').click();
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await expect(page.getByTestId('mixed-coverage')).toHaveText('0/11058 bp assembled');
+});
+
+
+test('unified campaign map has numbered squares and no classic option; three-base letters match single-base ink',async({page})=>{
+  await fresh(page,true);await openMap(page);
+  await expect(page.getByTestId('classic-toggle')).toHaveCount(0);
+  await expect(page.locator('.node-mechanic')).toHaveCount(0);
+  await expect(page.getByTestId('cnode-ins-02')).toHaveText('2');
+  await page.getByTestId('cnode-ins-01').click();await page.getByTestId('tutorial-skip').click();
+  const ink=await page.locator('.tile .letter').first().evaluate(el=>getComputedStyle(el).color);
+  await solveWithHints(page);await page.getByTestId('win-map').click();
+  await expect(page.getByTestId('cnode-ins-01')).toHaveText('1✓');
+  await expect(page.getByTestId('cnode-ins-01')).toHaveClass(/done/);
+  await page.getByTestId('cnode-ins-c02').click();await page.getByTestId('tutorial-skip').click();
+  const letters=page.locator('.mechanics-board .tier-3 .tok-row i');
+  await expect(letters.first()).toHaveCSS('color',ink);
+  expect(await letters.evaluateAll(nodes=>[...new Set(nodes.map(n=>getComputedStyle(n).color))])).toEqual([ink]);
+  await expect(page.locator('.mixed-codon-clues .tier-3 .tok-row i').first()).toHaveCSS('color',ink);
 });

@@ -22,7 +22,6 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
   const [save, setSave] = useState<SaveData>(initial.save);
   const saveRef = useRef(initial.save);
-  const [classic, setClassic] = useState(() => typeof location !== 'undefined' && new URLSearchParams(location.search).get('classic') === '1');
   const [tutorial, setTutorial] = useState<TutorialId | null>(null);
   const [notices, setNotices] = useState<string[]>(initial.notices);
   // Write once on load (idempotent) so a fresh/migrated save is stored in the current format.
@@ -50,7 +49,10 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const playChrome = screen.kind === 'play' || labPlay;
   const heading = labPlay ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
   const stage = useMemo(() => mixedStage(def), [def]);
-  const useMixed = !!stage && !classic && (!!save.mixedAttempts?.[def.id] || !save.attempts[def.id] || save.completed.includes(def.id));
+  // Historical sliding-board fixtures are available only in the Playwright test build.
+  // Production always uses the assigned mechanic, including when an old sliding attempt exists.
+  const slidingFixture = import.meta.env.MODE === 'test' && new URLSearchParams(location.search).has('__slidingFixture');
+  const useMixed = !!stage && !slidingFixture;
   const activeMechanic: TutorialId | null = screen.kind === 'play' ? useMixed ? stage!.mechanic : slidingTutorial(def.mode) : screen.kind === 'mechanic' ? screen.id : null;
   const firstTutorial = activeMechanic && !save.tutorialsSeen?.includes(activeMechanic) ? activeMechanic : null;
   const shownTutorial = tutorial ?? firstTutorial;
@@ -144,9 +146,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         <MapScreen
           labs={LAB_LEVELS}
           completed={save.completed}
-          attempted={[...Object.keys(save.attempts), ...Object.keys(save.mixedAttempts ?? {})]}
-          classic={classic}
-          onClassic={setClassic}
+          attempted={[...Object.keys(save.attempts).filter(id=>{const level=ALL_LEVELS.find(l=>l.id===id);return level&&!mixedStage(level);}), ...Object.keys(save.mixedAttempts ?? {})]}
           currentLevelId={save.currentLevelId}
           legacyM1={save.legacy.m1Completed}
           onPlay={play}

@@ -107,3 +107,12 @@ test('all 31 gene runs begin with letters, escalate, and every mixed certificate
   }
   expect(blockKinds.size).toBe(6);expect([...tiers]).toContain(96);expect([...tiers]).toContain(48);
 });
+
+test('the unified campaign retains all four sliding modes and all six newer mechanics',()=>{
+  const modes=new Set<string>(),kinds=new Set<string>();
+  for(const gene of CATALOGUE_ORDER)for(const def of runOf(gene)){
+    const kind=mechanicOf(def);kinds.add(kind);if(kind==='slide')modes.add(def.mode);
+  }
+  expect(modes).toEqual(new Set(['sequence','splice','replicate','repair']));
+  expect(kinds.size).toBe(7);
+});
