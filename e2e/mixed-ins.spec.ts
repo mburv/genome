@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { fresh, openMap, openCompleted, solveWithHints } from './helpers';
 import { CAMPAIGN_LEVELS, LEVEL_PACK } from '../src/campaign/campaign.ts';
 import { newSave, serializeSave } from '../src/persistence/save.ts';
+import { GENES } from '../src/genomics/genes.ts';
 import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 const tile=(page:import('@playwright/test').Page,c:number)=>page.getByTestId('lab-cell-'+c);
 test('first-use tutorials animate all seven mechanics, replay, and remember acknowledgement',async({page})=>{
@@ -111,6 +112,11 @@ test('every mixed INS stage can be solved through the real game controls and rea
   await expect(page.locator('#card-title')).toHaveText('INS');
   await expect(page.getByTestId('card-state')).toContainText('Assembled');
   await expect(page.getByTestId('card-coverage')).toContainText('333 of 333');
+  const sequence=page.getByTestId('assembled-sequence');
+  await expect(sequence.getByRole('heading',{name:'Your assembled sequence (333 bases)'})).toBeVisible();
+  await expect(sequence.locator('.seq-wrap')).toBeVisible();
+  expect((await sequence.locator('.seq-wrap').textContent())!.replace(/\s/g,'')).toBe(GENES.INS!.sequence);
+  await expect(sequence.locator('summary')).toHaveCount(0);
   const next=CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l=>l.id==='ins-c07')+1]!;
   await expect(page.getByTestId('card-continue')).toHaveText('Continue to '+next.symbol+' →');
   await page.getByTestId('card-continue').click();
@@ -705,4 +711,17 @@ test('replaying a sliding final level shows the verified gene card without new b
   await page.getByRole('button',{name:'View card',exact:true}).click();
   await expect(page.locator('#card-title')).toHaveText(last.symbol);
   await expect(page.getByTestId('card-state')).toContainText('Assembled');
+});
+
+
+test('the full DMD sequence is visible without expanding and wraps on a narrow card',async({page})=>{
+  await page.setViewportSize({width:320,height:700});
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='DMD');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.map(l=>l.id),assembled:['DMD'],discovered:['DMD']}));
+  await page.getByTestId('cat-card-DMD').click();
+  const sequence=page.getByTestId('assembled-sequence'),body=sequence.locator('.seq-wrap');
+  await expect(sequence.getByRole('heading',{name:'Your assembled sequence ('+GENES.DMD!.cdsLength+' bases)'})).toBeVisible();
+  await expect(body).toBeVisible();
+  expect((await body.textContent())!.replace(/\s/g,'')).toBe(GENES.DMD!.sequence);
+  expect(await body.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
 });

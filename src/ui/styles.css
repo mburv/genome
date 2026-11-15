@@ -737,7 +737,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .pos-picker button { min-width: 24px; padding: 4px 3px; font: 700 13px var(--mono); background: var(--white); border: 0; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); border-radius: 0; }
 .pos-picker button.chosen { background: var(--ink); color: var(--white); }
 .pos-picker button.chosen i, .pos-picker button.chosen { color: var(--white); }
-.assembled-seq summary { cursor: pointer; font-weight: 700; }
+.assembled-seq { min-width: 0; }
+.assembled-seq h3 { font-size: inherit; font-weight: 700; margin: 0 0 6px; }
+.assembled-seq .seq-wrap { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; margin: 0; }
 
 @media (max-width: 360px) {
   :root { --pad: 10px; }

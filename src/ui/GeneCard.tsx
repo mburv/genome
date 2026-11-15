@@ -51,13 +51,13 @@ export function GeneCard({ gene, completed, historicalCompleted=[], onPlay, onBa
         {!status.verified && ' — every coding base must be placed by a solved puzzle.'}
       </p>
       </>)}
-      {status.verified && (
-        <details className="assembled-seq" data-testid="assembled-sequence">
-          <summary>Your assembled sequence ({gene.cdsLength} bases)</summary>
-          <p className="mono tiny seq-wrap">{status.assembled.match(/.{1,60}/g)!.join('\n')}</p>
-        </details>
-      )}
       {status.verified && onContinue && <button type="button" className="primary" data-testid="card-continue" onClick={onContinue}>Continue{nextGene ? ` to ${nextGene}` : ''} →</button>}
+      {status.verified && (
+        <section className="assembled-seq" aria-labelledby="assembled-sequence-title" data-testid="assembled-sequence">
+          <h3 id="assembled-sequence-title">Your assembled sequence ({gene.cdsLength} bases)</h3>
+          <p className="mono tiny seq-wrap">{status.assembled.match(/.{1,60}/g)!.join('\n')}</p>
+        </section>
+      )}
       {run.length > 0 && !status.verified && (
         <button type="button" className="primary" onClick={() => onPlay((nextPuzzle ?? run[0]!).id)} data-testid="card-play-chapter">
           {nextPuzzle ? `Play ${gene.symbol} · puzzle ${run.findIndex((l) => l.id === nextPuzzle.id) + 1} / ${run.length}` : `Replay ${gene.symbol}`}
