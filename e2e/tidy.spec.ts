@@ -114,14 +114,18 @@ async function expectReplicatePairs(page: Page): Promise<void> {
     const badge1 = panel.querySelector('[data-testid="clue-badge-1"]');
     const badge2 = panel.querySelector('[data-testid="clue-badge-2"]');
     const ends = [...panel.querySelectorAll('.rep-start .end, .rep-end .end')].map((e) => ({ text: (e.textContent ?? '').trim(), ...box(e) }));
+    const repEnd = panel.querySelector('.rep-end')!;
+    const endGap = parseFloat(getComputedStyle(repEnd).marginInlineStart);
     return {
       pairs,
       badge1: badge1 ? box(badge1) : null,
       badge2: badge2 ? box(badge2) : null,
       ends,
+      endGap,
     };
   });
   expect(data.pairs.length).toBeGreaterThan(0);
+  expect(data.endGap).toBeGreaterThanOrEqual(5);
   for (const p of data.pairs) {
     expect(p.template).toBeTruthy();
     expect(p.complement).toBeTruthy();
