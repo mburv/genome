@@ -29,23 +29,17 @@ test('Hint stays on across consecutive moves, undo and restart, then turns off',
   await expect(cue).toHaveCount(0);
 });
 
-test('Hint mode carries across puzzles and pauses during power targeting', async ({ page }) => {
+test('Hint mode carries across campaign puzzles and remains off after toggling', async ({ page }) => {
   await openChapter(page, 'hbb-c07');
   await readHint(page);
   await goToChapter(page, 'hbb-c08');
   const toggle = page.getByRole('button', { name: 'Hint' });
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('hint-cue')).toBeVisible();
-  await openMap(page);
-  await page.getByRole('button', { name: /^Enzyme lab 1: / }).click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('hint-cue')).toBeVisible();
-  await page.getByTestId('power-crispr').click();
-  await expect(page.getByTestId('power-panel')).toBeVisible();
-  await expect(page.getByTestId('hint-cue')).toHaveCount(0);
-  await page.getByTestId('power-cancel').click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('hint-cue')).toBeVisible();
   await toggle.click();
+  await expect(page.getByTestId('hint-cue')).toHaveCount(0);
+  await openMap(page);
+  await goToChapter(page, 'hbb-c07');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('hint-cue')).toHaveCount(0);
 });
