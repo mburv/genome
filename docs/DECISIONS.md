@@ -362,3 +362,8 @@ Owner playtest: render every source tile of a successfully placed Genome Assembl
 ### D-TUTORIAL-04 — Faithful Codon Crush demonstration
 
 Owner playtest: replace the generic before/after cell transitions with a slowed-down demonstration driven by the actual certified swap and engine CrushTransition metadata. Step two physically swaps both adjacent tiles. Step three displays the matched three bases clearing first, then the real surviving tiles falling within their column segments and three new bases appearing. The final frame equals the actual gameplay board. Keep the stationary board opaque, use one-shot replay, and honour reduced motion. No gameplay rule changes.
+
+
+### D-UI-38 — Graphical trace hints
+
+Owner playtest: remove normal DNA Tracing status and hint copy under the toolbar. The enabled Hint toggle always outlines one actionable tile: the certified next base, a viable alternative continuation found by bounded deterministic search, or the preceding base to backtrack. A lone selected base can be tapped again to clear it, so even an incorrect start has a graphical recovery. Rejected actions leave the hint in place. Other mechanics are unchanged.

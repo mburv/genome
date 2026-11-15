@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { applyLab, createLab, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SWAPS, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
+import { applyLab, createLab, traceHintCell, DEFAULT_LAB_SPEC, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SWAPS, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
 import { INS } from '../../src/genomics/genes.ts';
 
 const run = (id: typeof LAB_IDS[number], actions: LabAction[]): LabState => actions.reduce((state, action) => applyLab(state, action).state, createLab(id));
@@ -91,5 +91,34 @@ describe('Mechanics Lab', () => {
     expect(state.won).toBe(true);
     const strand = CUT_STRANDS[0]!;
     expect(CUT_SEQUENCES[0]!.slice(strand.indexOf(CUT_SOLUTION[0]!) + 1, strand.indexOf(CUT_SOLUTION[1]!) + 1)).toBe(CUT_TARGET);
+  });
+});
+
+describe('graphical tracing recovery', () => {
+  const spec = { ...DEFAULT_LAB_SPEC, TRACE_TARGET: INS.sequence.slice(9,18), traceHoles: [0,8,18,28,52,72,79,80] };
+  const start = createLab('trace', spec);
+  const trace = (cells: number[]) => cells.reduce((s,cell)=>applyLab(s,{type:'trace',cell}).state,start);
+  test('hints follow an alternate valid prefix and complete without backtracking', () => {
+    let state = trace([10,11,20]);
+    expect(traceHintCell(state)).not.toBeNull();
+    while (!state.won) {
+      const cell = traceHintCell(state)!;
+      const next = applyLab(state,{type:'trace',cell}).state;
+      expect(next.trace.length).toBe(state.trace.length+1);
+      state = next;
+    }
+    expect(traceHintCell(state)).toBeNull();
+  });
+  test('dead-end hint backtracks to a viable prefix and singleton hint clears the wrong start', () => {
+    const dead = trace([10,11,12,13]);
+    expect(traceHintCell(dead)).toBe(12);
+    const recovered = applyLab(dead,{type:'trace',cell:12}).state;
+    expect(traceHintCell(recovered)).toBe(21);
+    const wrong = trace([9]);
+    expect(traceHintCell(wrong)).toBe(9);
+    const cleared = applyLab(wrong,{type:'trace',cell:9}).state;
+    expect(cleared.trace).toEqual([]);
+    expect(traceHintCell(cleared)).toBe(10);
+    expect(applyLab(wrong,{type:'trace',cell:80}).state).toBe(wrong);
   });
 });

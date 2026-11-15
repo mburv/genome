@@ -315,3 +315,33 @@ test('Codon Crush guide swaps real neighbours then clears and refills the exact 
   expect(live).toBe(final);
   await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
 });
+
+test('DNA tracing hints remain graphical through wrong taps, alternate paths and backtracking',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
+  const board=page.getByTestId('mechanics-board'), dashed=board.locator('.hinted');
+  const hint=page.getByTestId('action-hint');
+  await hint.click();
+  const at=async(c:number)=>{
+    await expect(dashed).toHaveCount(1);
+    await expect(tile(page,c)).toHaveClass(/hinted/);
+    await expect(tile(page,c)).toHaveCSS('outline-style','dashed');
+    await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
+  };
+  await at(10);
+  await tile(page,80).tap();await at(10);
+  await tile(page,9).tap();await at(9);
+  await tile(page,9).tap();await at(10);
+  for(const c of [10,11,12,13])await tile(page,c).tap();
+  await at(12);
+  await tile(page,12).tap();await at(21);
+  await tile(page,11).tap();await at(12);
+  await tile(page,20).tap();
+  await expect(dashed).toHaveCount(1);
+  const next=Number(await dashed.getAttribute('data-lab-cell'));
+  expect([19,21]).toContain(next);
+  await expect(dashed).toHaveCSS('outline-style','dashed');
+  await tile(page,80).tap();await at(next);
+  await hint.click();await expect(dashed).toHaveCount(0);
+  await hint.click();await at(next);
+  await page.getByTestId('action-restart').click();await at(10);
+});
