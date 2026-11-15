@@ -194,7 +194,7 @@ function award(def: LevelDefinition, state: PuzzleState, board: Board, spent: nu
   };
 }
 
-function rotation(def: LevelDefinition, state: PuzzleState, origin: Cell, axis: Axis, steps: number, kind: 'rotate' | 'slide'): CommandResult {
+function rotation(def: LevelDefinition, state: PuzzleState, origin: Cell, axis: Axis, steps: number, kind: 'rotate' | 'slide', allowPowers: boolean): CommandResult {
   if (state.status === 'solved') return reject(state, 'solved');
   if (state.locks.includes(origin)) return reject(state, 'locked');
   const seg = segmentIn(def, state, origin, axis);
@@ -220,7 +220,7 @@ function rotation(def: LevelDefinition, state: PuzzleState, origin: Cell, axis: 
     scaffold = scaffold.remaining > 1 ? { ...scaffold, remaining: scaffold.remaining - 1 } : null;
     if (!scaffold) events.push({ type: 'scaffold-expired' });
   }
-  const { ledger, event } = award(def, state, board, state.spent);
+  const { ledger, event } = allowPowers ? award(def, state, board, state.spent) : { ledger: state.ledger, event: null };
   if (event) events.push(event);
   const solved = isSolved(def, board);
   if (solved) events.push({ type: 'solved', levelId: def.id });
@@ -237,13 +237,15 @@ function powerGuard(def: LevelDefinition, state: PuzzleState): RejectReason | nu
   return null;
 }
 
-export function applyCommand(def: LevelDefinition, state: PuzzleState, command: Command): CommandResult {
+/** The legacy engine supports powers for Enzyme Lab and old save fixtures; plain campaign play opts out. */
+export function applyCommand(def: LevelDefinition, state: PuzzleState, command: Command, allowPowers = true): CommandResult {
   if (state.levelId !== def.id) return reject(state, 'wrong-level');
+  if (!allowPowers && (command.type === 'edit' || command.type === 'bond' || command.type === 'release' || command.type === 'scaffold')) return reject(state, 'powers-unavailable');
   switch (command.type) {
     case 'rotate':
-      return rotation(def, state, command.move.origin, command.move.axis, command.move.direction, 'rotate');
+      return rotation(def, state, command.move.origin, command.move.axis, command.move.direction, 'rotate', allowPowers);
     case 'slide':
-      return rotation(def, state, command.origin, command.axis, command.steps, 'slide');
+      return rotation(def, state, command.origin, command.axis, command.steps, 'slide', allowPowers);
     case 'edit': {
       const g = powerGuard(def, state);
       if (g) return reject(state, g);

@@ -66,7 +66,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   // While dragging, target feedback reflects the whole-cell position under the finger (not committed).
   let shownBoard = puzzle.board;
   if (preview && puzzle.status === 'playing') {
-    const r = applyCommand(def, puzzle, { type: 'slide', ...preview });
+    const r = applyCommand(def, puzzle, { type: 'slide', ...preview }, powers);
     if (r.accepted) shownBoard = r.state.board;
   } else if (previewResult?.accepted && pending?.power === 'crispr') shownBoard = previewResult.state.board;
   const matches = trackMatches(def, shownBoard);
@@ -171,10 +171,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     [def, gene, save, persist, cue, powersUsed, alreadyCompleted, powers],
   );
 
-  const dispatch = useCallback((command: Command): boolean => {
-    if (!powers && !['rotate','slide','undo','restart'].includes(command.type)) return false;
-    return commit(applyCommand(def, puzzle, command));
-  }, [commit, def, puzzle, powers]);
+  const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command, powers)), [commit, def, puzzle, powers]);
 
   const onMove = useCallback((move: Move) => {
     dispatch({ type: 'rotate', move });

@@ -947,5 +947,5 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell[data-tutorial-group="3"], .tutorial-track[data-tutorial-group="3"] { outline-color:var(--amber); border-color:var(--amber); }
 .tutorial-group-mark { position:absolute; top:0; left:1px; z-index:3; font:700 8px var(--mono); background:var(--white); color:var(--ink); }
 .tutorial-cell.tutorial-repair-gap { outline:2px dashed var(--green); outline-offset:-2px; z-index:2; }
-.tutorial-gap-mark { color:var(--white); }
+.tutorial-gap-mark { color:var(--green); font-weight:700; }
 .icon-row .recovery-hint { outline:2px dashed var(--green); outline-offset:-4px; background:var(--mint); }

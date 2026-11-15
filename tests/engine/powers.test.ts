@@ -395,3 +395,23 @@ describe('bounded hint search', () => {
     expect(performance.now() - t0).toBeLessThan(1500);
   });
 });
+
+// Campaign UI deliberately uses the plain policy; legacy engine and Enzyme Lab stay supported.
+it('plain sliding policy neither awards energy nor accepts a power command', () => {
+  const def = CAMPAIGN_LEVELS.find(l=>l.id==='ins-02')!;
+  const initial = createInitialState(def);
+  let state = initial;
+  for (const slide of def.certificateSlides) {
+    const result=applyCommand(def,state,{type:'slide',...slide},false);
+    expect(result.accepted).toBe(true);
+    expect(result.events.some(e=>e.type==='energy')).toBe(false);
+    expect(result.state.ledger).toEqual(initial.ledger);
+    state=result.state;
+  }
+  expect(state.status).toBe('solved');
+  const funded={...initial,ledger:{...initial.ledger,earned:7}};
+  const cell=def.tracks[0]!.cells[0]!;
+  const rejectedPower=applyCommand(def,funded,{type:'edit',cell,base:funded.board[cell]==='A'?'C':'A'},false);
+  expect(rejectedPower.reason).toBe('powers-unavailable');
+  expect(rejectedPower.state).toBe(funded);
+});
