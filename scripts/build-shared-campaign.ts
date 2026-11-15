@@ -4,6 +4,7 @@ import {buildLevel,validateLevel,type GeneSource,type LevelSpec,type TrackLayout
 import {ALL_SPECS,M2_SPECS} from '../src/campaign/specs.ts';
 import {chapterSpecs,geneRunCoverageErrors,TOKEN_GENERATOR_VERSION} from '../src/campaign/chapters.ts';
 import type {LevelDefinition} from '../src/engine/types.ts';
+import {defaultLabel} from '../src/engine/tokens.ts';
 const read=<T>(p:string)=>JSON.parse(readFileSync(p,'utf8')) as T;
 type Mapping={sequence:string;sequenceSha256:string;chromosome:string;strand:string;intervals:[number,number][];transcript:string};
 const mapping=read<Record<string,Mapping>>('src/genomics/famous-t2t.generated.json');
@@ -18,11 +19,36 @@ const geneSource=(symbol:string):GeneSource=>({...oldGenes[symbol]!,sequence:map
 // Preserve every board whose targets AND decoys are still exact in the new reference.
 // Reserve its mask before generating any replacements, so unique-mask guarantees remain intact.
 const retained=new Map<string,LevelDefinition>();
+function refreshDecoys(l:LevelDefinition,gene:GeneSource):LevelDefinition{
+  if(!l.tokens)return l;
+  // Only preserve a board when its complete target interval is unchanged.
+  const iv=l.sourceIntervals[0]!;
+  if(oldGenes[l.symbol]!.sequence.slice(iv.start,iv.end)!==gene.sequence.slice(iv.start,iv.end))return l;
+  const tokens=structuredClone(l.tokens),used=new Set(Object.values(tokens).filter(t=>t.kind==='target').map(t=>t.seq));
+  const valid=(a:number,b:number)=>a>=0&&b<=gene.sequence.length&&a%3===0&&(b<=iv.start||a>=iv.end);
+  const pending=Object.values(tokens).filter(t=>t.kind==='decoy');
+  // Keep every valid original decoy reserved before replacing the obsolete ones.
+  const invalid=pending.filter(t=>!t.source||!valid(t.source.start,t.source.end)||gene.sequence.slice(t.source.start,t.source.end)!==t.seq);
+  for(const t of pending)if(!invalid.includes(t))used.add(t.seq);
+  for(const t of invalid){
+    const k=t.seq.length;let pos=-1;
+    // Prefer the original sequence at another genuine location, then its old coordinates, then a fresh in-frame slice.
+    for(let a=0;a+k<=gene.sequence.length;a+=3)if(valid(a,a+k)&&gene.sequence.slice(a,a+k)===t.seq&&!used.has(t.seq)){pos=a;break;}
+    if(pos<0&&t.source&&valid(t.source.start,t.source.start+k)&&!used.has(gene.sequence.slice(t.source.start,t.source.start+k)))pos=t.source.start;
+    if(pos<0)for(let a=0;a+k<=gene.sequence.length;a+=3)if(valid(a,a+k)&&!used.has(gene.sequence.slice(a,a+k))){pos=a;break;}
+    if(pos<0)return l;
+    t.seq=gene.sequence.slice(pos,pos+k);t.source={start:pos,end:pos+k};used.add(t.seq);
+  }
+  if(!invalid.length)return l;
+  const labels=new Map<string,number>();
+  for(const t of Object.values(tokens)){const base=defaultLabel(t.seq),n=labels.get(base)??0;labels.set(base,n+1);t.label=n?base+'·'+(n+1):base;}
+  return {...l,tokens};
+}
 for(const l of live){
  if(!changed.includes(l.symbol))continue;
  const gene=geneSource(l.symbol),end=l.sourceIntervals.at(-1)!.end;
  if(end>gene.sequence.length||(l.chapter&&l.chapter.part===l.chapter.of&&gene.sequence.length!==oldGenes[l.symbol]!.sequence.length))continue;
- const updated={...l,datasetId:gene.datasetId,sequenceSha256:gene.sequenceSha256};
+ const updated=refreshDecoys({...l,datasetId:gene.datasetId,sequenceSha256:gene.sequenceSha256},gene);
  if(!validateLevel(updated,gene,live).length)retained.set(l.id,updated);
 }
 const all:LevelDefinition[]=live.filter(l=>!changed.includes(l.symbol)).concat([...retained.values()]);
