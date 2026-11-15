@@ -75,7 +75,7 @@ test('level map lists the gene catalogue and labs; cards stay locked until the f
   await expect(page.getByTestId('run-nodes-INS')).toBeVisible();
   await expect(page.getByTestId('cnode-ins-01')).toBeVisible();
   await expect(page.getByTestId('cat-progress-INS')).toContainText('0 / 333');
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('6 intro + 7 assembly');
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('helps regulate blood sugar');
   await expect(page.getByTestId('cat-INS')).toContainText('New');
   await expect(page.getByText('Intro · 1-base tiles')).toHaveCount(0);
   await expect(page.getByText('Assembly · multi-base tiles')).toHaveCount(0);

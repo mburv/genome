@@ -4,6 +4,23 @@ import {CAMPAIGN_LEVELS,LEVEL_PACK} from '../src/campaign/campaign.ts';
 import {newSave,serializeSave} from '../src/persistence/save.ts';
 import {openCompleted} from './helpers.ts';
 const FAMOUS_BASES=Object.values(GENES).reduce((n,g)=>n+g.cdsLength,0);
+test('map puts Human Genome after the catalogue and labs and describes every gene',async({page})=>{
+  await openCompleted(page,serializeSave(newSave(LEVEL_PACK)));
+  await expect(page.getByText('Famous Genes · main campaign',{exact:true})).toHaveCount(0);
+  const map=page.getByTestId('level-map');
+  const order=await map.locator(':scope > [data-testid]').evaluateAll(els=>els.map(el=>el.getAttribute('data-testid')));
+  expect(order.indexOf('open-bonus')).toBeGreaterThan(order.indexOf('catalogue'));
+  expect(order.indexOf('open-bonus')).toBeGreaterThan(order.indexOf('lab-panel'));
+  for(const gene of Object.values(GENES)){
+    const label=page.getByTestId('cat-progress-'+gene.symbol);
+    await expect(label).toContainText('0 / '+gene.cdsLength+' bp · ');
+    const text=await label.textContent();
+    expect(text).not.toMatch(/· chr |stages ·|mechanics ·|1-base tiles|Codons|Hexamers/);
+    expect(text!.split(' bp · ')[1]!.length).toBeGreaterThan(25);
+  }
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('helps regulate blood sugar');
+});
+
 test('whole genome is locked until the main campaign ends',async({page})=>{
   const save=newSave(LEVEL_PACK),completed=CAMPAIGN_LEVELS.map(l=>l.id);
   await openCompleted(page,serializeSave({...save,completed:completed.slice(0,-1)}));

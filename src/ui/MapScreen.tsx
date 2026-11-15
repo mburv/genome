@@ -1,9 +1,9 @@
 import { GENOME_BASES, bonusUnlocked } from '../campaign/bonus.ts';
 import type { LevelDefinition } from '../engine/types.ts';
 import { GENES, MANIFEST } from '../genomics/genes.ts';
-import { CAMPAIGN_GENES, CAMPAIGN_LEVELS, introOf, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
+import { CAMPAIGN_GENES, CAMPAIGN_LEVELS, isDiscovered, runOf, runProgress } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
-import { tierName } from '../campaign/chapters.ts';
+import { GENE_FUNCTIONS } from '../genomics/functionDescriptions.ts';
 import { mechanicOf } from '../campaign/mixed.ts';
 import { LAB_META } from '../engine/mechanicsLab.ts';
 import { MODE_LABEL } from './modes.ts';
@@ -35,24 +35,13 @@ export function MapScreen({ labs, completed, historicalCompleted=[], attempted, 
         {completed.length === 0 ? 'Start' : !nextUnfinished ? 'Replay' : 'Continue'} · {next.symbol} {nextRun.part}/{nextRun.of}
       </button>
       <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 new puzzles →</button>
-      <p className="muted small">Famous Genes · main campaign</p>
-      {historicalCompleted.length>0&&<p className="muted small">Your earlier Famous Genes completions are preserved. Any changed reference bases remain available in Human Genome.</p>}
-      <button type="button" className="big" data-testid="open-bonus" disabled={!bonusUnlocked(progressed)} onClick={onBonus}>Human Genome · {bonusUnlocked(progressed)?'Bonus genes →':'Locked until main campaign complete'}</button>
-      <p className="muted tiny">{GENOME_BASES.toLocaleString()} reference DNA bases · shared reference progress; Famous Genes bases carry forward.</p>
       <div className="panel catalogue" data-testid="catalogue">
         <h2 className="gene">Gene catalogue</h2>
         {catalogue.map((m) => {
               const gene = GENES[m.symbol]!;
-              const intros = introOf(m.symbol);
               const run = runOf(m.symbol);
               const st = assemblyStatus(completed, gene);
               const disc = isDiscovered(progressed, m.symbol);
-              const chapters = run.filter((l) => l.chapter);
-              const tiers = [
-                ...(intros.length ? ['1-base tiles'] : []),
-                ...[...new Set(chapters.map((l) => l.tier!))].sort((a, b) => a - b).map(tierName),
-              ];
-              const countLabel = `${run.length} stages · ${new Set(run.map(mechanicOf)).size} mechanics`;
               const node = (l: LevelDefinition) => {
                 const done = progressed.includes(l.id);
                 const part = runProgress(l)!.part;
@@ -85,7 +74,7 @@ export function MapScreen({ labs, completed, historicalCompleted=[], attempted, 
                     <i style={{ width: `${(100 * st.covered) / m.cdsLength}%` }} />
                   </div>
                   <div className="row-between muted tiny">
-                    <span data-testid={`cat-progress-${m.symbol}`}>{st.covered} / {m.cdsLength} bp · chr {m.chromosome} · {countLabel} · {tiers.join(', ')}</span>
+                    <span data-testid={`cat-progress-${m.symbol}`}>{st.covered} / {m.cdsLength} bp · {GENE_FUNCTIONS[m.symbol] ?? gene.functionSummary}</span>
                   </div>
                   <ol className="chapter-nodes" aria-label={`${m.symbol} puzzles`} data-testid={`run-nodes-${m.symbol}`}>
                     {run.map(node)}
@@ -130,6 +119,9 @@ export function MapScreen({ labs, completed, historicalCompleted=[], attempted, 
       {legacyM1.length > 0 && (
         <p className="muted small legacy" data-testid="legacy-m1">M1 history: you completed prototype level{legacyM1.length > 1 ? 's' : ''} {legacyM1.map((id) => Number(id.slice(-2))).join(', ')}. The prototype challenges are kept here as history only.</p>
       )}
+      {historicalCompleted.length>0&&<p className="muted small">Your earlier Famous Genes completions are preserved. Any changed reference bases remain available in Human Genome.</p>}
+      <button type="button" className="big" data-testid="open-bonus" disabled={!bonusUnlocked(progressed)} onClick={onBonus}>Human Genome · {bonusUnlocked(progressed)?'Bonus genes →':'Locked until main campaign complete'}</button>
+      <p className="muted tiny">{GENOME_BASES.toLocaleString()} reference DNA bases · shared reference progress; Famous Genes bases carry forward.</p>
     </section>
   );
 }
