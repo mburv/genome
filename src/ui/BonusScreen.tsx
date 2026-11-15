@@ -60,7 +60,7 @@ export function BonusScreen({progress,onProgress,onBack,reducedMotion}:Props){
       <h3>Reference data packs</h3>
       <p className="muted small">Install chromosome .genome files from the verified build. Packs stay local and are saved offline when browser storage permits. Your completed coordinates are saved separately.</p>
       <input type="file" multiple accept=".genome" disabled={busy} onChange={e=>{void install(e.target.files);}} aria-label="Install chromosome packs"/>
-      <p className="muted tiny">{Object.keys(packs).length}/25 chromosome packs selected · <a href={REFERENCE_URL}>Reference source</a></p>
+      <p className="muted tiny">{Object.keys(packs).length}/25 chromosome packs selected · <a href="https://github.com/mburv/genome/releases/tag/t2t-chm13-v2.0">Download chromosome packs</a> · <a href={REFERENCE_URL}>Reference source</a></p>
       {busy&&<p role="status">Reading reference data…</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
     </div>
     <h3>Chromosomes</h3>
