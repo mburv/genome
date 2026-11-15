@@ -58,15 +58,14 @@ test('dashed hints have four inset border edges on sliding and mixed boards', as
       const edges=await marked.evaluateAll(nodes=>nodes.map(el=>{
         const css=getComputedStyle(el,'::after');
         const tile=el.getBoundingClientRect();
-        return {styles:[css.borderTopStyle,css.borderRightStyle,css.borderBottomStyle,css.borderLeftStyle],
-          widths:[css.borderTopWidth,css.borderRightWidth,css.borderBottomWidth,css.borderLeftWidth],
-          colors:[css.borderTopColor,css.borderRightColor,css.borderBottomColor,css.borderLeftColor],
+        return {rails:(css.backgroundImage.match(/repeating-linear-gradient/g)??[]).length,
+          sizes:css.backgroundSize, positions:css.backgroundPosition,
           insets:[css.top,css.right,css.bottom,css.left].map(parseFloat),size:[tile.width,tile.height],pointer:css.pointerEvents};
       }));
       for(const edge of edges){
-        expect(edge.styles).toEqual(['dashed','dashed','dashed','dashed']);
-        expect(edge.widths).toEqual(['2px','2px','2px','2px']);
-        expect(new Set(edge.colors).size).toBe(1);
+        expect(edge.rails).toBe(4);
+        expect(edge.sizes).toBe('100% 2px, 2px 100%, 100% 2px, 2px 100%');
+        expect(edge.positions).toBe('0% 0%, 100% 0%, 0% 100%, 0% 0%');
         expect(edge.insets.every(n=>n>=2)).toBe(true);
         expect(edge.insets[1]!+edge.insets[3]!).toBeLessThan(edge.size[0]!);
         expect(edge.insets[0]!+edge.insets[2]!).toBeLessThan(edge.size[1]!);

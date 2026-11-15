@@ -16,5 +16,10 @@ export default defineConfig({
       name: 'mobile-portrait',
       use: { ...devices['Pixel 7'], browserName: 'chromium', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true, isMobile: true },
     },
+    {
+      name: 'mobile-webkit-hints',
+      testMatch: '**/hint-rendering.spec.ts',
+      use: { ...devices['iPhone 13'], browserName: 'webkit', viewport: { width: 390, height: 844 } },
+    },
   ],
 });

@@ -398,7 +398,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .tile.goal.ok { box-shadow: inset 0 -4px 0 rgba(17, 17, 17, 0.55); }
 .tile.selected { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); z-index: 2; }
 .tile.hinted { --tile-dash: var(--ink); z-index: 1; }
-.tile.selected.hinted { z-index: 2; }
+.tile.selected.hinted { --tile-dash: var(--white); --tile-dash-inset: 2px; z-index: 2; }
 .track-outline { pointer-events: none; border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--white); border-radius: 0; margin: 0; z-index: 3; position: relative; }
 .track-outline.all-ok { border-color: var(--green); }
 .track-outline.strand-complement { border-style: dashed; border-color: var(--blue); }
@@ -1073,8 +1073,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .target .assembly-reference .lab-token.tier-l { gap: 3px; }
 
 
-/* Four real border edges, rather than negative-offset outlines which can be
-   incompletely painted on mobile browsers. The overlay stays inside the tile. */
+/* Draw each inset dash rail independently. Native dashed outlines/borders can
+   lose an edge on WebKit; four gradient strips never share a border path. */
 .tile.hinted::after,
 .tile.tok-custom::after,
 .board.target-crispr .tile.candidate:hover::after,
@@ -1084,10 +1084,16 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell.tutorial-repair-gap::after {
   content: '';
   position: absolute;
-  inset: var(--tile-dash-inset, 5px);
-  box-sizing: border-box;
-  border: 2px dashed var(--tile-dash, var(--ink));
-  border-radius: 0;
+  inset: var(--tile-dash-inset, 4px);
+  color: var(--tile-dash, var(--ink));
+  background-image:
+    repeating-linear-gradient(to right, currentColor 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(to bottom, currentColor 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(to right, currentColor 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(to bottom, currentColor 0 4px, transparent 4px 8px);
+  background-position: top left, top right, bottom left, top left;
+  background-size: 100% 2px, 2px 100%, 100% 2px, 2px 100%;
+  background-repeat: no-repeat;
   z-index: 4;
   pointer-events: none;
 }
