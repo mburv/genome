@@ -398,7 +398,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
           if (def.repair?.cell === cell) {
             const rseq = symbolSequence(def, custom, def.repair.expected);
             return repaired ? (
-              <div key={cell} className={`cell tile restored ${tokens ? `tok tok-target ${tierClass(rseq.length)}` : `b-${def.repair.expected}`}`} style={tokens ? { ...style, ...tokenStyle(def, def.repair.expected) } : style} data-seq={rseq} data-testid="repair-cell" aria-label={`Restored ${rseq}`}>
+              <div key={cell} className={`cell tile restored ${tokens ? `tok tok-target ${tierClass(rseq.length)}` : `b-${def.repair.expected}`}`} style={tokens ? { ...style, ...tokenStyle(def, def.repair.expected) } : style} data-seq={rseq} title={rseq.length > 6 ? rseq : undefined} data-testid="repair-cell" aria-label={`Restored ${rseq}`}>
                 {tokens ? <TokenFace seq={rseq} label={symbolLabel(def, custom, def.repair.expected)} /> : <span className="letter">{def.repair.expected}</span>}
               </div>
             ) : (
@@ -427,7 +427,7 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
         const label = `${spoken}, row ${r + 1}, column ${c + 1}${t ? `, target ${t.group} position ${t.pos + 1}, ${t.ok ? 'correct' : 'not yet correct'}` : ''}${lockSet.has(cell) ? ', bonded' : ''}`;
         const ghost = crispr?.base && seq[crispr.pos] !== crispr.base;
         return (
-          <button key={cell} type="button" data-cell={cell} data-base={ch} data-seq={seq} className={classes.join(' ')} style={tokens ? { ...style, ...tokenStyle(def, ch) } : style} tabIndex={cell === selected ? 0 : -1} aria-label={label} aria-pressed={cell === selected}>
+          <button key={cell} type="button" data-cell={cell} data-base={ch} data-seq={seq} title={seq.length > 6 ? seq : undefined} className={classes.join(' ')} style={tokens ? { ...style, ...tokenStyle(def, ch) } : style} tabIndex={cell === selected ? 0 : -1} aria-label={label} aria-pressed={cell === selected}>
             {tokens ? <TokenFace seq={seq} label={tokLabel} /> : <span className="letter">{ch}</span>}
             {t?.ok && <span className="tick" aria-hidden="true" />}
             {lockSet.has(cell) && <span className="lock-badge" aria-hidden="true">🔗</span>}

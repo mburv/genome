@@ -699,7 +699,10 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tok-row i { font-style: normal; font-weight: 700; }
 .tier-3 .tok-face { font-size: calc(var(--board) / 27); }
 .tier-6 .tok-face { font-size: calc(var(--board) / 34); }
-.tier-l .tok-face { font-size: calc(var(--board) / 37); }
+.tier-l .tok-face { font-size: calc(var(--board) / 34); }
+.tok-face.long { gap: 2px; }
+.tok-face.long .tok-row { justify-content: center; }
+.tok-divider { flex: 0 0 1px; width: 60%; height: 1px; background: var(--tok-border, var(--graphite)); }
 .tok-face .ell { font-weight: 400; }
 .tok-len { font-size: calc(var(--board) / 52); font-weight: 700; font-family: var(--sans); }
 .barcode { display: flex; width: 76%; height: 3px; overflow: hidden; margin-top: 1px; }
@@ -1001,7 +1004,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .block-lab-board .lab-token .tok-row { justify-content:center; }
 .block-lab-board .lab-token.tier-3 .tok-face { font-size:calc(var(--board) / 27); }
 .block-lab-board .lab-token.tier-6 .tok-face { font-size:calc(var(--board) / 34); }
-.block-lab-board .lab-token.tier-l .tok-face { font-size:calc(var(--board) / 37); }
+.block-lab-board .lab-token.tier-l .tok-face { font-size:calc(var(--board) / 34); }
 .strip-cell.lab-token,.mutation-target-base.lab-token,.restriction-target-base.lab-token,.assembly-reference .lab-token { min-width:30px; width:auto; padding:2px; flex:0 0 auto; }
 .lab-token .tok-face { font-size:10px; line-height:1.05; min-width:0; }
 .lab-token .tok-len { font-size:9px; }

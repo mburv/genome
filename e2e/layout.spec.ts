@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { completedLevelSave, openCompleted, openChapter, openMap, solveWithHints } from './helpers';
 import m2 from '../src/campaign/levels.generated.json' with {type:'json'};
 import type { LevelDefinition } from '../src/engine/types.ts';
+import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { mechanicOf } from '../src/campaign/mixed.ts';
 
 // Swiss redesign (D-UI-01): the board is full-bleed on phones, with 1px hairline gutters.
 for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 430, height: 932 }]) {
@@ -145,4 +147,46 @@ test('three-base block lettering matches the original single-base graphite on bo
     expect(await clues.count()).toBeGreaterThan(0);
     expect(await clues.evaluateAll(els=>[...new Set(els.map(el=>getComputedStyle(el).color))])).toEqual([grey]);
   }
+});
+
+test('long DNA tiles show only first and last codons with a divider in sliding and mixed boards', async ({ page }) => {
+  const mixed = CAMPAIGN_LEVELS.find(l => (l.tier ?? 0) >= 12 && mechanicOf(l) !== 'slide')!;
+  expect(mixed).toBeDefined();
+  for (const id of ['hbb-c08', mixed.id]) {
+    await openChapter(page, id);
+    const tiles = page.locator('.board .tier-l[data-seq]');
+    expect(await tiles.count()).toBeGreaterThan(0);
+    for (const vp of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(vp);
+      const report = await tiles.evaluateAll(els => els.map(el => {
+        const seq = el.getAttribute('data-seq')!;
+        const face = el.querySelector('.tok-face.long')!;
+        const rows = [...face.querySelectorAll('.tok-row')].map(r => r.textContent);
+        const divider = face.querySelector('.tok-divider')!;
+        const box = el.getBoundingClientRect(), line = divider.getBoundingClientRect();
+        return {
+          seq, rows, title: el.getAttribute('title'), accessible: el.getAttribute('aria-label'),
+          extras: face.querySelectorAll('.ell,.tok-len,.barcode').length,
+          grey: getComputedStyle(face.querySelector('.tok-row i')!).color,
+          fits: [...face.children].every(c => { const r = c.getBoundingClientRect(); return r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1; }),
+          line: line.width > 0 && Math.abs(line.height - 1) < .5,
+        };
+      }));
+      for (const tile of report) {
+        expect(tile.seq.length).toBeGreaterThan(6);
+        expect(tile.rows).toEqual([tile.seq.slice(0,3),tile.seq.slice(-3)]);
+        expect(tile.title).toBe(tile.seq);
+        expect(tile.accessible).toContain(tile.seq);
+        expect(tile.extras).toBe(0);
+        expect(tile.grey).toBe('rgb(68, 68, 67)');
+        expect(tile.fits).toBe(true);
+        expect(tile.line).toBe(true);
+      }
+    }
+  }
+  await openChapter(page, 'hbb-c07');
+  const hex = page.locator('.board .tier-6 .tok-face').first();
+  await expect(hex.locator('.tok-row')).toHaveCount(2);
+  await expect(hex.locator('.barcode i')).toHaveCount(6);
+  await expect(hex.locator('.tok-divider')).toHaveCount(0);
 });
