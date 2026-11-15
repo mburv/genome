@@ -18,7 +18,7 @@ import { bonusUnlocked, type BonusProgress } from '../campaign/bonus.ts';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string } | { kind: 'settings' } | { kind: 'mechanics' } | { kind: 'mechanic'; id: LabId } | {kind:'bonus'};
+type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: 'card'; symbol: string; nextLevelId?: string } | { kind: 'settings' } | { kind: 'mechanics' } | { kind: 'mechanic'; id: LabId } | {kind:'bonus'};
 
 export function App({ storage = createLocalStorageAdapter() }: { storage?: StorageAdapter }) {
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
@@ -90,6 +90,14 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const play = (levelId: string) => {
     persist({ ...saveRef.current, currentLevelId: levelId });
     go({ kind: 'play' });
+  };
+  // Completion cards use the same gene detail as the catalogue, but carry the
+  // next unfinished campaign level so a gene milestone never interrupts progression.
+  const openCompletionCard = (symbol: string) => {
+    const index = CAMPAIGN_LEVELS.findIndex(l => l.id === def.id);
+    const done = new Set([...saveRef.current.completed,...(saveRef.current.legacyReferenceLevels??[])]);
+    const next = CAMPAIGN_LEVELS.slice(index + 1).find(l => !done.has(l.id));
+    go({ kind: 'card', symbol, nextLevelId: next?.id });
   };
   const applyReset = () => {
     const settings = save.settings;
@@ -163,7 +171,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay feedback={save.settings} key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay feedback={save.settings} key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
-        def, completed: save.completed.includes(def.id), onCard: () => go({ kind: 'card', symbol: def.symbol }), hasNext: CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) < CAMPAIGN_LEVELS.length - 1,
+        def, completed: save.completed.includes(def.id), onCard: () => openCompletionCard(def.symbol), hasNext: CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) < CAMPAIGN_LEVELS.length - 1,
         stage, initialActions: mixedActions, seedTrace: !save.mixedAttempts?.[def.id]?.length || !!save.traceStarterAttempts?.includes(def.id), part: runProgress(def)!.part, of: runProgress(def)!.of,
         covered: assemblyStatus(save.completed, GENES[def.symbol]!).covered, assembled: assemblyStatus(save.completed, GENES[def.symbol]!).verified,
         onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS.slice(CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1).find(l=>!saveRef.current.legacyReferenceLevels?.includes(l.id)); if (next) play(next.id); else go({ kind: 'map' }); }
@@ -177,7 +185,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           reducedMotion={reducedMotion}
           onPlay={play}
           onMap={() => go({ kind: 'map' })}
-          onCard={(symbol) => go({ kind: 'card', symbol })}
+          onCard={openCompletionCard}
           onPowerArmed={onPowerArmed}
           hintMode={hintMode}
           onHintModeChange={setHintMode}
@@ -194,7 +202,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         />
       )}
       {screen.kind === 'card' && (
-        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} historicalCompleted={save.legacyReferenceLevels??[]} onPlay={play} onBack={() => go({ kind: 'map' })} />
+        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} historicalCompleted={save.legacyReferenceLevels??[]} onPlay={play} onBack={() => go({ kind: 'map' })} onContinue={screen.nextLevelId ? () => play(screen.nextLevelId!) : undefined} nextGene={CAMPAIGN_LEVELS.find(l=>l.id===screen.nextLevelId)?.symbol} />
       )}
 
       {shownTutorial && <MechanicTutorial key={shownTutorial} mechanic={shownTutorial} stage={useMixed && screen.kind === 'play' ? stage : null} reducedMotion={reducedMotion} onClose={closeTutorial} />}

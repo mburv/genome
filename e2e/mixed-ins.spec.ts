@@ -104,6 +104,16 @@ test('every mixed INS stage can be solved through the real game controls and rea
     if(s.end===333){await expect(page.getByTestId('assembled')).toBeVisible();expect(saved.assembled).toContain('INS');}
     else {const next=page.getByRole('button',{name:'Next level →'});await expect(next).toBeVisible();await next.click();}
   }
+  // Completing a non-final gene now opens its full card, just as DMD did.
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.getByTestId('gene-card')).toBeVisible();
+  await expect(page.locator('#card-title')).toHaveText('INS');
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
+  await expect(page.getByTestId('card-coverage')).toContainText('333 of 333');
+  const next=CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l=>l.id==='ins-c07')+1]!;
+  await expect(page.getByTestId('card-continue')).toHaveText('Continue to '+next.symbol+' →');
+  await page.getByTestId('card-continue').click();
+  await expect(page.getByTestId('play-title')).toHaveText(next.symbol);
 });
 
 test('sliding tutorial keeps stationary cells opaque and rotates the entire column with wrap',async({page})=>{

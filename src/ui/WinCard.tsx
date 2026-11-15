@@ -108,7 +108,7 @@ export function WinCard(p: Props) {
         )}
         <div className="card-actions">
           <button type="button" onClick={p.onMap} data-testid="win-map">{p.mechanic?.practice ? 'Lab menu' : 'Level map'}</button>
-          {p.assembled && !p.hasNext ? (
+          {p.assembled ? (
             <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
           ) : p.mechanic?.practice && !p.hasNext ? null : (
             <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? p.mechanic?.nextLabel ?? 'Next level →' : p.mechanic?.practice ? 'Lab menu' : 'Map'}</button>

@@ -89,8 +89,8 @@ export function MapScreen({ completed, historicalCompleted=[], attempted, curren
         <p className="muted small legacy" data-testid="legacy-m1">M1 history: you completed prototype level{legacyM1.length > 1 ? 's' : ''} {legacyM1.map((id) => Number(id.slice(-2))).join(', ')}. The prototype challenges are kept here as history only.</p>
       )}
       {historicalCompleted.length>0&&<p className="muted small">Your earlier Famous Genes completions are preserved. Any changed reference bases remain available in Human Genome.</p>}
-      <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 practice puzzles →</button>
       <button type="button" className="big" data-testid="open-bonus" disabled={!bonusUnlocked(progressed)} onClick={onBonus}>Human Genome · {bonusUnlocked(progressed)?'Bonus genes →':'Locked until main campaign complete'}</button>
+      <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 practice puzzles →</button>
       <p className="muted tiny">{GENOME_BASES.toLocaleString()} reference DNA bases · shared reference progress; Famous Genes bases carry forward.</p>
     </section>
   );

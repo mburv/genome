@@ -5,7 +5,7 @@ import {newSave,serializeSave} from '../src/persistence/save.ts';
 import {openCompleted} from './helpers.ts';
 import {installFeedbackProbe,feedbackLog} from './feedbackProbe';
 const FAMOUS_BASES=Object.values(GENES).reduce((n,g)=>n+g.cdsLength,0);
-test('map puts Human Genome after the catalogue and Mechanics Lab and describes every gene',async({page})=>{
+test('map puts Mechanics Lab after Human Genome and describes every gene',async({page})=>{
   await openCompleted(page,serializeSave(newSave(LEVEL_PACK)));
   await expect(page.getByText('Famous Genes · main campaign',{exact:true})).toHaveCount(0);
   const map=page.getByTestId('level-map');
@@ -13,7 +13,7 @@ test('map puts Human Genome after the catalogue and Mechanics Lab and describes 
   const order=await map.locator(':scope > [data-testid]').evaluateAll(els=>els.map(el=>el.getAttribute('data-testid')));
   expect(order.indexOf('open-bonus')).toBeGreaterThan(order.indexOf('catalogue'));
   expect(order.indexOf('open-mechanics')).toBeGreaterThan(order.indexOf('catalogue'));
-  expect(order.indexOf('open-bonus')).toBeGreaterThan(order.indexOf('open-mechanics'));
+  expect(order.indexOf('open-mechanics')).toBeGreaterThan(order.indexOf('open-bonus'));
   await expect(page.getByTestId('lab-panel')).toHaveCount(0);
   await expect(page.getByRole('button',{name:/^Enzyme lab/})).toHaveCount(0);
   for(const gene of Object.values(GENES)){
