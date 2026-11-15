@@ -159,6 +159,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       {screen.kind === 'map' && (
         <MapScreen
           completed={save.completed}
+          genomeProgress={save.genomeProgress??{}}
           historicalCompleted={save.legacyReferenceLevels??[]}
           attempted={[...Object.keys(save.attempts).filter(id=>{const level=ALL_LEVELS.find(l=>l.id===id);return level && mechanicOf(level)==='slide';}), ...Object.keys(save.mixedAttempts ?? {})]}
           currentLevelId={save.currentLevelId}

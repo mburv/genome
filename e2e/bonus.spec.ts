@@ -50,7 +50,7 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
 });
 
 import {createHash} from 'node:crypto';
-import {CHROMOSOMES,CHUNK_BASES,REFERENCE,genomeLevelInterval} from '../src/campaign/bonus.ts';
+import {CHROMOSOMES,CHUNK_BASES,REFERENCE,GENOME_BASES,genomeLevelInterval} from '../src/campaign/bonus.ts';
 test('automatically loads a chromosome, assembles an exact interval and restores coverage',async({page})=>{
   await page.setViewportSize({width:375,height:667});
   await installFeedbackProbe(page);
@@ -150,4 +150,19 @@ test('chromosome grids start at the exact next unfinished level with eleven squa
   await expect(page.getByRole('button',{name:'Next unfinished',exact:true})).toHaveCount(0);
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
   await expect(grid.locator('.cnode').first()).toHaveText('130');
+});
+
+
+test('Human Genome map button fills green according to shared reference coverage',async({page})=>{
+  const completed=CAMPAIGN_LEVELS.map(l=>l.id);
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed}));
+  const button=page.getByTestId('open-bonus'),fill=page.getByTestId('open-bonus-fill');
+  await expect(button).toBeEnabled();
+  await expect(page.getByTestId('open-bonus-percent')).toHaveText('<0.01%');
+  expect(await fill.evaluate(el=>parseFloat((el as HTMLElement).style.width))).toBeCloseTo(100*FAMOUS_BASES/GENOME_BASES,10);
+  await expect(fill).toHaveCSS('background-color','rgb(205, 235, 216)');
+  const all=Object.fromEntries(Object.entries(CHROMOSOMES).map(([c,len])=>[c,[[0,len]]]));
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed,genomeProgress:all}));
+  await expect(page.getByTestId('open-bonus-percent')).toHaveText('100%');
+  expect(await fill.evaluate(el=>(el as HTMLElement).style.width)).toBe('100%');
 });

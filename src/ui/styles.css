@@ -1138,3 +1138,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Restriction hints mark the next legal target bond using the shared inset cue. */
 .mode-lab-restriction .lab-cell.restriction-hinted { --tile-dash: var(--green); z-index: 2; }
+
+/* Human Genome entry doubles as an exact shared-reference completion meter. */
+.map .genome-progress-button { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f0f8f3; border-color: var(--mint-edge); font-weight: 700; min-width: 0; }
+.genome-progress-fill { position: absolute; inset: 0 auto 0 0; background: var(--mint); pointer-events: none; z-index: -1; }
+.genome-progress-label { min-width: 0; }
+.genome-progress-percent { flex: none; color: var(--green); font-size: 12px; font-variant-numeric: tabular-nums; }
