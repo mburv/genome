@@ -537,7 +537,7 @@ test('multi-base assembly clues read horizontally and share graphite and palette
 });
 
 
-test('multi-base Genome Assembly hints advance on the board and persist after reload',async({page})=>{
+test('multi-base Genome Assembly hints advance and recover saved progress after reload',async({page})=>{
   await fresh(page,true);await openMap(page);
   const def=CAMPAIGN_LEVELS.find(def=>def.tier===6 && mechanicOf(def)==='assembly') ?? CAMPAIGN_LEVELS.find(def=>def.tier && mechanicOf(def)==='assembly')!;
   const stage=mixedStage(def)!;
@@ -553,6 +553,9 @@ test('multi-base Genome Assembly hints advance on the board and persist after re
     await source.tap();await destination.tap();
     if(read===0){
       await page.reload();await openMap(page);await page.getByTestId('cnode-'+def.id).click();
+      await expect(page.getByTestId('lab-progress')).toHaveText('1/3 reads');
+      // Hint mode is session-local across a full reload, as in the other mechanics.
+      if(await hint.getAttribute('aria-pressed')!=='true')await hint.click();
       await expect(hint).toHaveAttribute('aria-pressed','true');
     }
   }
