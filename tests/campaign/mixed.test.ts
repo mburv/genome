@@ -107,3 +107,15 @@ test('all 31 gene runs begin with letters, escalate, and every mixed certificate
   }
   expect(blockKinds.size).toBe(6);expect([...tiers]).toContain(96);expect([...tiers]).toContain(48);
 });
+
+test('unified campaign retains all sliding modes and backs up old mixed attempts for reassigned stages',()=>{
+  const slides=CATALOGUE_ORDER.flatMap(symbol=>runOf(symbol)).filter(def=>mechanicOf(def)==='slide');
+  expect(new Set(slides.map(def=>def.mode))).toEqual(new Set(['sequence','splice','replicate','repair']));
+  const original={...newSave(LEVEL_PACK),completed:['ins-c04'],mixedAttempts:{'ins-c04':[{type:'place' as const,read:0,offset:3}]}};
+  const adapter=createMemoryAdapter(serializeSave(original));
+  const restored=loadSave(adapter,LEVEL_PACK);
+  expect(restored.save.completed).toContain('ins-c04');
+  expect(restored.save.mixedAttempts?.['ins-c04']).toBeUndefined();
+  expect(restored.notices.join(' ')).toContain('Older mixed attempts were backed up');
+  expect(adapter.backups.length).toBeGreaterThan(0);
+});

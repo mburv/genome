@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { openChapter, solveWithHints } from './helpers';
+import { completedLevelSave, openCompleted, openChapter, openMap, solveWithHints } from './helpers';
+import m2 from '../src/campaign/levels.generated.json' with {type:'json'};
+import type { LevelDefinition } from '../src/engine/types.ts';
 
 // Swiss redesign (D-UI-01): the board is full-bleed on phones, with 1px hairline gutters.
 for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 430, height: 932 }]) {
@@ -92,4 +94,39 @@ test('HBB 14/15 completion card stays centered and contains all 96 bases and bot
   await page.setViewportSize({width:393,height:852});
   await win.getByRole('button',{name:'Next level →'}).click();
   await expect(page.getByTestId('play-progress')).toHaveText('15/15');
+});
+
+test('one numbered campaign map keeps completion ticks and ignores the retired classic URL',async({page})=>{
+  const def=(m2.levels as LevelDefinition[]).find(l=>l.id==='ins-02')!;
+  const {save}=completedLevelSave(def);
+  const raw=JSON.stringify({...save,completed:['ins-01','ins-02']});
+  await page.setViewportSize({width:320,height:568});
+  await openCompleted(page,raw);
+  await page.goto('/?classic=1');await openMap(page);
+  await expect(page.getByTestId('classic-toggle')).toHaveCount(0);
+  await expect(page.getByText('Use classic boards')).toHaveCount(0);
+  await expect(page.locator('.node-mechanic,.cnode.play')).toHaveCount(0);
+  await expect(page.locator('.cnode')).toHaveCount(413);
+  const nodes=page.getByTestId('run-nodes-INS').locator('.cnode');
+  await expect(nodes).toHaveCount(13);
+  for(let i=0;i<13;i++)await expect(nodes.nth(i).locator('.node-number')).toHaveText(String(i+1));
+  await expect(nodes.nth(0)).toHaveClass(/done/);
+  await expect(nodes.nth(1)).toHaveClass(/done/);
+  await expect(nodes.nth(1).locator('.node-check')).toHaveText('✓');
+  await expect(nodes.nth(2).locator('.node-check')).toHaveCount(0);
+  expect(await nodes.nth(1).evaluate(el=>getComputedStyle(el).backgroundColor)).not.toBe(await nodes.nth(2).evaluate(el=>getComputedStyle(el).backgroundColor));
+  const bounds=await nodes.nth(1).evaluate(el=>{const r=el.getBoundingClientRect();return Array.from(el.children).every(c=>{const b=c.getBoundingClientRect();return b.left>=r.left&&b.right<=r.right&&b.top>=r.top&&b.bottom<=r.bottom;});});
+  expect(bounds).toBe(true);
+  await nodes.nth(1).click();
+  await expect(page.getByTestId('mechanics-board')).toBeVisible();
+  await expect(page.getByTestId('board')).toHaveCount(0);
+  await expect(page.getByTestId('solved-banner')).toBeVisible();
+  await page.getByTestId('replay').click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
+  await openMap(page);await page.getByTestId('cnode-ins-c04').click();
+  await expect(page.getByTestId('board')).toBeVisible();
+  await expect(page.getByTestId('mechanics-board')).toHaveCount(0);
+  await openMap(page);await page.getByTestId('cnode-ins-c06').click();
+  await expect(page.getByTestId('mechanics-board')).toBeVisible();
+  await expect(page.getByTestId('mixed-range')).toContainText('6-base blocks');
 });

@@ -493,11 +493,13 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const mixedAttempts: Record<string, LabAction[]> = {};
   const traceStarterAttempts: string[] = [];
   let updatedCrushLogs = 0;
+  let retiredMixedLogs = 0;
   const seededTraces = new Set(strings(data.traceStarterAttempts));
   if (sameContent && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
       const def = pack.levels.find(l => l.id === id);
       const stage = def && mixedStage(def);
+      if (!stage && def && !def.lab && Array.isArray(rawLog) && rawLog.length) { retiredMixedLogs++; continue; }
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
       if(stage.spec.tokens && data.catalogueId !== pack.catalogueId && rawLog.length){
@@ -517,6 +519,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
       }
     }
   }
+  if (retiredMixedLogs) { adapter.backup(raw,'unified-campaign'); notices.push('Some stages now use their assigned sliding puzzle. Older mixed attempts were backed up; completed levels are preserved.'); }
   if (updatedCrushLogs) { adapter.backup(raw,'crush-cascades'); notices.push('Codon Crush now chains automatically. Older attempts were kept up to the last valid swap; completed levels are preserved.'); }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
   return {
