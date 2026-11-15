@@ -64,13 +64,14 @@ test('first-run: title Play opens the map; the first puzzle is the 1-base INS in
   await page.screenshot({ path: '/workspace/game/screenshots/genome-discovery-win-390x844.png', animations: 'disabled' });
 });
 
-test('level map lists the gene catalogue and labs; cards stay locked until the first puzzle', async ({ page }) => {
+test('level map lists the gene catalogue and Mechanics Lab; cards stay locked until the first puzzle', async ({ page }) => {
   await fresh(page);
   await openMap(page);
   await expect(page.getByTestId('level-map')).toBeVisible();
   await expect(page.getByTestId('continue')).toHaveText(/Start · INS 1\/13/);
   await expect(page.locator('.node:not(.lab)')).toHaveCount(0);
-  await expect(page.locator('.node.lab')).toHaveCount(3);
+  await expect(page.locator('.node.lab')).toHaveCount(0);
+  await expect(page.getByTestId('open-mechanics')).toBeVisible();
   await expect(page.getByTestId('catalogue')).toBeVisible();
   await expect(page.getByTestId('run-nodes-INS')).toBeVisible();
   await expect(page.getByTestId('cnode-ins-01')).toBeVisible();

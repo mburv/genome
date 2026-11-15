@@ -37,7 +37,8 @@ test('map shows the gene catalogue, chapter nodes and exclusions', async ({ page
   expect(manifest.excluded).toHaveLength(0);
   await expect(page.getByTestId('catalogue-excluded')).toHaveCount(0);
   await expect(page.locator('.node:not(.lab)')).toHaveCount(0);
-  await expect(page.locator('.node.lab')).toHaveCount(3);
+  await expect(page.locator('.node.lab')).toHaveCount(0);
+  await expect(page.getByTestId('open-mechanics')).toBeVisible();
 });
 
 test('long-token level: readable tiles, drag-solve with hints; finishing the chapter assembles INS', async ({ page }) => {

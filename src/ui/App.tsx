@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ALL_LEVELS, CAMPAIGN_LEVELS, LAB_LEVELS, LEVEL_PACK, OPENING_LEVEL_ID, runProgress, isDiscovered } from '../campaign/campaign.ts';
+import { ALL_LEVELS, CAMPAIGN_LEVELS, LEVEL_PACK, OPENING_LEVEL_ID, runProgress, isDiscovered } from '../campaign/campaign.ts';
 import { GENES } from '../genomics/genes.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { mechanicOf, mixedStage, verifiedMixed, slidingTutorial, type TutorialId } from '../campaign/mixed.ts';
@@ -148,7 +148,6 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       )}
       {screen.kind === 'map' && (
         <MapScreen
-          labs={LAB_LEVELS}
           completed={save.completed}
           historicalCompleted={save.legacyReferenceLevels??[]}
           attempted={[...Object.keys(save.attempts).filter(id=>{const level=ALL_LEVELS.find(l=>l.id===id);return level && mechanicOf(level)==='slide';}), ...Object.keys(save.mixedAttempts ?? {})]}
