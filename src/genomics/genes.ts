@@ -1,7 +1,7 @@
-import insAsset from './ins.generated.json';
-import hbbAsset from './hbb.generated.json';
-import catalogueAsset from './catalogue.generated.json';
-import manifestAsset from './manifest.generated.json';
+import insAsset from './ins.generated.json' with { type: 'json' };
+import hbbAsset from './hbb.generated.json' with { type: 'json' };
+import catalogueAsset from './catalogue.generated.json' with { type: 'json' };
+import manifestAsset from './manifest.generated.json' with { type: 'json' };
 
 /**
  * Verified reference coding sequences, imported at build time from pinned RefSeq records by
