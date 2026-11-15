@@ -739,7 +739,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .pos-picker button.chosen i, .pos-picker button.chosen { color: var(--white); }
 .assembled-seq { min-width: 0; }
 .assembled-seq h3 { font-size: inherit; font-weight: 700; margin: 0 0 6px; }
-.assembled-seq .seq-wrap { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; margin: 0; }
+.assembled-seq .seq-wrap { white-space: normal; overflow-wrap: anywhere; overflow-x: visible; margin: 0; }
 
 @media (max-width: 360px) {
   :root { --pad: 10px; }

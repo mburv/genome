@@ -57,7 +57,7 @@ export function GeneCard({ gene, completed, historicalCompleted=[], onPlay, onBa
         <section className="assembled-seq" aria-labelledby="assembled-sequence-title" data-testid="assembled-sequence">
           <h3 id="assembled-sequence-title">{status.verified ? 'Your assembled sequence' : 'Your assembled sequence so far'} ({status.covered} bases)</h3>
           {!status.verified && <p className="muted tiny">Dots mark bases not yet assembled against the current reference.</p>}
-          <p className="mono tiny seq-wrap">{status.assembled.match(/.{1,60}/g)!.join('\n')}</p>
+          <p className="mono tiny seq-wrap">{status.assembled}</p>
         </section>
       )}
       {run.length > 0 && !status.verified && (

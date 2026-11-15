@@ -115,7 +115,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
   const sequence=page.getByTestId('assembled-sequence');
   await expect(sequence.getByRole('heading',{name:'Your assembled sequence (333 bases)'})).toBeVisible();
   await expect(sequence.locator('.seq-wrap')).toBeVisible();
-  expect((await sequence.locator('.seq-wrap').textContent())!.replace(/\s/g,'')).toBe(GENES.INS!.sequence);
+  expect(await sequence.locator('.seq-wrap').textContent()).toBe(GENES.INS!.sequence);
   await expect(sequence.locator('summary')).toHaveCount(0);
   const next=CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l=>l.id==='ins-c07')+1]!;
   await expect(page.getByTestId('card-continue')).toHaveText('Continue to '+next.symbol+' →');
@@ -722,7 +722,7 @@ test('the full DMD sequence is visible without expanding and wraps on a narrow c
   const sequence=page.getByTestId('assembled-sequence'),body=sequence.locator('.seq-wrap');
   await expect(sequence.getByRole('heading',{name:'Your assembled sequence ('+GENES.DMD!.cdsLength+' bases)'})).toBeVisible();
   await expect(body).toBeVisible();
-  expect((await body.textContent())!.replace(/\s/g,'')).toBe(GENES.DMD!.sequence);
+  expect(await body.textContent()).toBe(GENES.DMD!.sequence);
   expect(await body.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
 });
 
@@ -742,7 +742,9 @@ test('NPY final replay opens the card even when earlier reference intervals are 
   await expect(page.locator('#card-title')).toHaveText('NPY');
   await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
   await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
-  await expect(page.getByTestId('assembled-sequence').locator('.seq-wrap')).toContainText('·');
+  const partialSequence=page.getByTestId('assembled-sequence').locator('.seq-wrap');
+  await expect(partialSequence).toContainText('·');
+  expect(await partialSequence.textContent()).toMatch(/^[ACGT·]+$/);
   await expect(page.getByTestId('card-continue')).toBeVisible();
 });
 
