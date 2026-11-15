@@ -5,7 +5,7 @@ import {
 } from '../engine/engine.ts';
 import { codonComplete, OPENING_LEVEL_ID, POWER_COST, powersEnabled, SCAFFOLD_TURNS, scaffoldCandidates, type ScaffoldCandidate } from '../engine/powers.ts';
 import type { Axis, Base, Cell, LevelDefinition, Move, Power } from '../engine/types.ts';
-import { CAMPAIGN_LEVELS, LAB_LEVELS, isDiscovered } from '../campaign/campaign.ts';
+import { CAMPAIGN_LEVELS, LAB_LEVELS, isDiscovered, runOf } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { symbolLabel, symbolSequence } from '../engine/tokens.ts';
 import { GENES } from '../genomics/genes.ts';
@@ -409,7 +409,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           powersUsed={powersUsed}
           newBases={celebrate.newBases}
           replayed={celebrate.replayed}
-          assembled={celebrate.assembled}
+          assembled={celebrate.assembled || (!def.lab && assembly.verified && runOf(def.symbol).at(-1)?.id === def.id)}
           assembledBases={assembly.covered}
           cdsLength={gene.cdsLength}
           reducedMotion={reducedMotion}

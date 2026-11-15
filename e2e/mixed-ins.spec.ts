@@ -115,6 +115,18 @@ test('every mixed INS stage can be solved through the real game controls and rea
   await expect(page.getByTestId('card-continue')).toHaveText('Continue to '+next.symbol+' →');
   await page.getByTestId('card-continue').click();
   await expect(page.getByTestId('play-title')).toHaveText(next.symbol);
+  // Replaying the final level must offer the same verified card without new credit.
+  await openMap(page);
+  await page.getByTestId('cnode-ins-c07').click();
+  await page.getByTestId('replay').click();
+  await tile(page,17).tap();await tile(page,10).tap();
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('win-assembly')).toHaveText('333 / 333 INS coding bases assembled.');
+  await expect(page.getByTestId('assembled')).toContainText('INS assembled');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
+  await expect(page.locator('#card-title')).toHaveText('INS');
+  await expect(page.getByTestId('card-continue')).toHaveText('Continue to '+next.symbol+' →');
 });
 
 test('sliding tutorial keeps stationary cells opaque and rotates the entire column with wrap',async({page})=>{
@@ -659,7 +671,7 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
 });
 
 
-test('a sliding solve that completes a gene also offers its completion card, without repeating on replay',async({page})=>{
+test('a sliding solve that completes a gene offers its card, but replaying a non-final level does not',async({page})=>{
   // Complete the other INS levels first, then fill the last missing interval by sliding.
   const ins=CAMPAIGN_LEVELS.filter(l=>l.symbol==='INS');
   const opener=ins[0]!;
@@ -677,4 +689,20 @@ test('a sliding solve that completes a gene also offers its completion card, wit
   await solveWithHints(page);
   await expect(page.getByTestId('assembled')).toHaveCount(0);
   await expect(page.getByRole('button',{name:'View card',exact:true})).toHaveCount(0);
+});
+
+
+test('replaying a sliding final level shows the verified gene card without new bases',async({page})=>{
+  const last=CAMPAIGN_LEVELS.find((level,i)=>CAMPAIGN_LEVELS[i+1]?.symbol!==level.symbol&&mechanicOf(level)==='slide')!;
+  expect(last).toBeTruthy();
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol===last.symbol);
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.map(l=>l.id),assembled:[last.symbol],discovered:[last.symbol]}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();
+  await solveWithHints(page);
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('assembled')).toContainText(last.symbol+' assembled');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText(last.symbol);
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
 });

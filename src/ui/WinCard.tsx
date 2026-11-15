@@ -13,7 +13,7 @@ interface Props {
   newBases: number;
   /** True when this win is a replay of an already-completed puzzle. */
   replayed?: boolean;
-  /** M4: this solve completed an exact, checksum-verified assembly of the gene. */
+  /** The gene is newly assembled, or its final puzzle was solved again with the full CDS verified. */
   assembled?: boolean;
   assembledBases?: number;
   cdsLength: number;
