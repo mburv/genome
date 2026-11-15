@@ -63,3 +63,13 @@ describe('mixed INS campaign',()=>{
   expect(restored.traceStarterAttempts).toEqual([def.id]);
   expect(replayMixed(stage,restored.mixedAttempts![def.id]!).trace).toEqual(stage.spec.TRACE_PATH.slice(0,3));
 });
+
+test('Codon Crush chapter collects twelve ordered codons with cascades and exact coverage',()=>{
+  const stage=mixedStage(runOf('INS').find(d=>d.id==='ins-c02')!)!;
+  expect(stage.mechanic).toBe('crush');
+  expect(stage.spec.CRUSH_TARGETS).toHaveLength(12);
+  const end=replayMixed(stage,stage.certificate);
+  expect(end.won).toBe(true);
+  expect(end.moves).toBeLessThan(12);
+  expect(verifiedMixed(stage,end)).toBe(true);
+});

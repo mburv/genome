@@ -65,7 +65,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
     {id:'ins-05',kind:'crush',end:42},
     {id:'ins-06',kind:'mutation',end:51},
     {id:'ins-c01',kind:'trace',end:78,cells:Array.from({length:27},(_,i)=>{const r=Math.floor(i/9)+1;return r*9+(r%2?8-i%9:i%9);})},
-    {id:'ins-c02',kind:'slide',end:114},
+    {id:'ins-c02',kind:'crush',end:114},
     {id:'ins-c03',kind:'mutation',end:132},
     {id:'ins-c04',kind:'slide',end:186},
     {id:'ins-c05',kind:'slide',end:240},
@@ -80,7 +80,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
     else if(s.kind==='trace')for(const c of s.cells!.slice(2))await tile(page,c).tap();
     else if(s.kind==='connections')for(const path of [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]])for(const c of path)await tile(page,c).tap();
     else if(s.kind==='assembly')for(const [a,b] of [[1,67],[19,63],[37,65]]){await tile(page,a!).tap();await tile(page,b!).tap();}
-    else if(s.kind==='crush')for(const [a,b] of [[12,13],[39,40],[66,67]]){await tile(page,a!).tap();await tile(page,b!).tap();await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');}
+    else if(s.kind==='crush')for(const [a,b] of (s.id==='ins-c02'?[[12,13],[66,67],[7,16],[4,5],[9,10],[2,3]]:[[12,13],[66,67]])){await tile(page,a!).tap();await tile(page,b!).tap();await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');}
     else if(s.kind==='mutation'){
       const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('data-lab-cell'))));
       for(const c of cells){const want=await page.getByTestId('mutation-target-'+c).textContent();await tile(page,c).tap();await page.getByTestId('lab-base-'+want).tap();}
@@ -320,8 +320,9 @@ test('Codon Crush guide swaps real neighbours then clears and refills the exact 
   await tile(page,12).tap();await tile(page,13).tap();
   await expect(actual).toHaveAttribute('data-crush-phase','idle');
   const live=await actual.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
-  expect(live).toBe(final);
-  await expect(page.getByTestId('lab-progress')).toHaveText('1/3 codons');
+  expect(live).not.toBe(final); // the live board has completed the automatic clear as well
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/3 codons');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
 });
 
 test('DNA tracing hints remain graphical through wrong taps, alternate paths and backtracking',async({page})=>{
@@ -413,11 +414,11 @@ test('campaign Codon Crush hints match the saved board and remain graphical',asy
   const board=page.getByTestId('mechanics-board'), dashed=board.locator('.crush-hinted');
   await expect(dashed).toHaveCount(2);await expect(tile(page,12)).toHaveClass(/crush-hinted/);await expect(tile(page,13)).toHaveClass(/crush-hinted/);
   await tile(page,12).tap();await tile(page,13).tap();await expect(board).toHaveAttribute('data-crush-phase','idle');
-  await expect(tile(page,39)).toHaveClass(/crush-hinted/);
+  await expect(tile(page,66)).toHaveClass(/crush-hinted/);
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-05').click();
   const hint=page.getByTestId('action-hint');
   if(await hint.getAttribute('aria-pressed')!=='true')await hint.click();
-  await expect(dashed).toHaveCount(2);await expect(tile(page,39)).toHaveClass(/crush-hinted/);await expect(tile(page,40)).toHaveClass(/crush-hinted/);
+  await expect(dashed).toHaveCount(2);await expect(tile(page,66)).toHaveClass(/crush-hinted/);await expect(tile(page,67)).toHaveClass(/crush-hinted/);
   await expect(page.locator('.lab-hint')).toHaveCount(0);
 });
 

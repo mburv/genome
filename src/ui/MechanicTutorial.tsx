@@ -58,7 +58,7 @@ function demonstration(mechanic: TutorialId, stage: MixedStage | null): Step[] {
     return [
       step('Read the next codon','Collect the target three-base codons in order. Find two adjacent tiles whose swap would form the next codon.',start,start,[a,b],undefined,undefined,s.CRUSH_TARGETS[0]),
       {...step('Swap neighbours','Drag one tile into its neighbour, or tap the two tiles. Watch both tiles trade places. A wrong swap returns to its starting position.',start,swapped,[a,b],[a,b],undefined,s.CRUSH_TARGETS[0]),crush:{phase:'swap',a,b,frame}},
-      {...step('Clear and refill','The three matching bases shrink and disappear. Existing bases fall down into the gaps, then new bases refill the columns. Collect the next codon to continue.',swapped,result.state,[...match],undefined,undefined,s.CRUSH_TARGETS[0]),crush:{phase:'settle',a,b,frame}},
+      {...step('Clear and refill','The three matching bases shrink and disappear. Existing bases fall down and new bases refill the gaps. If the next target codon is already on the board it clears automatically, creating a chain reaction! Each whole chain counts as one move.',swapped,{...result.state,board:frame.board},[...match],undefined,undefined,s.CRUSH_TARGETS[0]),crush:{phase:'settle',a,b,frame}},
     ];
   }
   if (mechanic === 'assembly') {

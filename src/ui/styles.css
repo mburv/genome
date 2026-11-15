@@ -949,3 +949,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell.tutorial-repair-gap { outline:2px dashed var(--green); outline-offset:-2px; z-index:2; }
 .tutorial-gap-mark { color:var(--green); font-weight:700; }
 .icon-row .recovery-hint { outline:2px dashed var(--green); outline-offset:-4px; background:var(--mint); }
+
+.mixed-codon-clues .clue-part { flex-shrink:0; }
+.mixed-codon-clues .badge { min-width:18px; }

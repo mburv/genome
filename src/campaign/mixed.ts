@@ -14,7 +14,7 @@ export const slidingTutorial = (mode: LevelDefinition['mode']): SlideTutorial =>
 /** Reuse existing stage ids and exact CDS intervals. Original sliding boards remain valid legacy alternatives. */
 const MECHANICS: Record<string, LabId> = {
   'ins-02': 'trace', 'ins-03': 'connections', 'ins-04': 'assembly', 'ins-05': 'crush', 'ins-06': 'mutation',
-  'ins-c01': 'trace', 'ins-c03': 'mutation', 'ins-c06': 'trace', 'ins-c07': 'restriction',
+  'ins-c01': 'trace', 'ins-c02': 'crush', 'ins-c03': 'mutation', 'ins-c06': 'trace', 'ins-c07': 'restriction',
 };
 export const mechanicOf = (def: LevelDefinition): Mechanic => MECHANICS[def.id] ?? 'slide';
 export interface MixedStage { id: string; mechanic: LabId; start: number; end: number; sequence: string; spec: LabSpec; certificate: LabAction[] }
@@ -45,7 +45,10 @@ export function mixedStage(def: LevelDefinition): MixedStage | null {
   } else if (mechanic === 'crush') {
     spec.CRUSH_TARGETS = sequence.match(/.{3}/g)!;
     spec.crushHoles = [...DEFAULT_LAB_SPEC.crushHoles, 54];
-    certificate = spec.CRUSH_SWAPS.map(([a,b]) => ({ type: 'swap', a,b }));
+    // The later chapter uses its original 36-base interval, with a verified seed.
+    if (def.id === 'ins-c02') spec.crushSeed=4;
+    const solution = def.id === 'ins-c02' ? [[12,13],[66,67],[7,16],[4,5],[9,10],[2,3]] : [[12,13],[66,67]];
+    certificate = solution.map(([a,b]) => ({type:'swap',a:a!,b:b!}));
   } else if (mechanic === 'mutation') {
     const width = sequence.length / 3;
     spec.MUTATION_ROWS = [1,4,7].map((r,i) => ({ top:r*9+1, bottom:(r+1)*9+1, seq:sequence.slice(i*width,(i+1)*width) }));

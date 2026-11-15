@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { applyLab, createLab, traceHintCell, connectionHint, findCrushSwap, DEFAULT_LAB_SPEC, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SWAPS, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
+import { applyLab, createLab, traceHintCell, connectionHint, findCrushSwap, DEFAULT_LAB_SPEC, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SOLUTION, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
 import { INS } from '../../src/genomics/genes.ts';
 
 const run = (id: typeof LAB_IDS[number], actions: LabAction[]): LabState => actions.reduce((state, action) => applyLab(state, action).state, createLab(id));
@@ -14,7 +14,7 @@ describe('Mechanics Lab', () => {
     });
     expect(new Set(masks).size).toBe(6);
     expect(TRACE_TARGET).toBe(INS.sequence.slice(0, 9));
-    expect(CRUSH_TARGETS.join('')).toBe(TRACE_TARGET);
+    expect(CRUSH_TARGETS.join('')).toBe(INS.sequence.slice(0,18));
     expect(CUT_TARGET).toBe(INS.sequence.slice(212, 241));
   });
   test('tracing rejects holes, wrong starts and reused cells; a real path wins', () => {
@@ -32,31 +32,39 @@ describe('Mechanics Lab', () => {
     expect(solved.won).toBe(true);
     expect(solved.moves).toBe(TRACE_PATH.length-2);
   });
-  test('codon swaps are adjacent, clear three cells, refill deterministically and preserve holes', () => {
-    let state = createLab('crush');
-    expect(applyLab(state, { type: 'swap', a: 0, b: 1 }).state).toBe(state);
-    expect(applyLab(state, { type: 'swap', a: 10, b: 40 }).state).toBe(state);
-    const mask = state.board.map(b => b === '.');
-    CRUSH_SWAPS.forEach(([a, b], i) => {
-      const result = applyLab(state, { type: 'swap', a, b });
-      const next = result.state;
-      const frame = result.crush!;
-      expect(frame.matched.map(c => frame.swapped[c]).join('')).toBe(CRUSH_TARGETS[i]);
-      expect(frame.falls.filter(f => f.from === null).map(f => f.to)).toEqual(next.fresh);
-      for (const fall of frame.falls) {
-        if (fall.from !== null) {
-          expect(next.board[fall.to]).toBe(frame.swapped[fall.from]);
-          expect(fall.to - fall.from).toBe(fall.rows * 9);
-          for (let c = fall.from; c <= fall.to; c += 9) expect(state.board[c]).not.toBe('.');
+  test('codon swaps cascade deterministically, preserve holes and count once per action', () => {
+    let state=createLab('crush');
+    const start=state, mask=state.board.map(b=>b==='.');
+    expect(applyLab(state,{type:'swap',a:0,b:1}).state).toBe(state);
+    expect(applyLab(state,{type:'swap',a:10,b:40}).state).toBe(state);
+    for(const [a,b] of CRUSH_SOLUTION){
+      const result=applyLab(state,{type:'swap',a,b}),next=result.state,frames=result.crushFrames!;
+      expect(frames.length).toBeGreaterThan(1);
+      expect(result.crush).toEqual(frames[0]);
+      let previous=state.collected;
+      for(const [i,frame] of frames.entries()){
+        expect(frame.matched.map(c=>frame.swapped[c]).join('')).toBe(CRUSH_TARGETS[previous++]);
+        expect(frame.codon).toBe(CRUSH_TARGETS[previous-1]);
+        if(i>0) expect(frame.swapped).toEqual(frames[i-1]!.board);
+        expect(frame.falls.filter(f=>f.from===null)).toHaveLength(3);
+        for(const fall of frame.falls) if(fall.from!==null){
+          expect(frame.board[fall.to]).toBe(frame.swapped[fall.from]);
+          expect(fall.to-fall.from).toBe(fall.rows*9);
+          for(let c=fall.from;c<=fall.to;c+=9)expect(frame.swapped[c]).not.toBe('.');
         }
+        expect(frame.board.map(b=>b==='.')).toEqual(mask);
       }
-      expect(next.collected).toBe(i + 1);
-      expect(next.refill).toBe(3 * (i + 1));
-      expect(next.board.map(b => b === '.')).toEqual(mask);
-      expect(next.board.filter(b => b !== '.').every(b => /^[ACGT]$/.test(b))).toBe(true);
-      state = next;
-    });
+      expect(next.collected).toBe(state.collected+frames.length);
+      expect(next.moves).toBe(state.moves+1);
+      expect(next.refill).toBe(state.refill+3*frames.length);
+      expect(next.board).toEqual(frames.at(-1)!.board);
+      expect(applyLab(state,{type:'swap',a,b})).toEqual(result);
+      state=next;
+    }
     expect(state.won).toBe(true);
+    expect(state.moves).toBe(2);
+    expect(state.collectedSeq).toBe(CRUSH_TARGETS.join(''));
+    expect(start.collected).toBe(0);
   });
   test('assembly checks overlaps and the exact reference before completing', () => {
     let state = createLab('assembly');
@@ -177,9 +185,10 @@ describe('graphical Codon Crush hints',()=>{
     const spec={...DEFAULT_LAB_SPEC,CRUSH_TARGETS:INS.sequence.slice(33,42).match(/.{3}/g)!,crushHoles:[...DEFAULT_LAB_SPEC.crushHoles,54]};
     for(const s of [DEFAULT_LAB_SPEC,spec]){
       let state=createLab('crush',s);
-      for(const [a,b] of CRUSH_SWAPS){
-        expect(findCrushSwap(state)).toEqual([a,b]);
-        state=applyLab(state,{type:'swap',a,b}).state;
+      for(let i=0;i<12&&!state.won;i++){
+        const next=findCrushSwap(state)!;
+        expect(next).not.toBeNull();
+        state=applyLab(state,{type:'swap',a:next[0],b:next[1]}).state;
       }
       expect(state.won).toBe(true);
       expect(findCrushSwap(state)).toBeNull();
@@ -204,7 +213,7 @@ describe('graphical Codon Crush hints',()=>{
       const next=findCrushSwap(state);
       if(!next)break;
       const result=applyLab(state,{type:'swap',a:next[0],b:next[1]}).state;
-      expect(result.collected).toBe(state.collected+1);
+      expect(result.collected).toBeGreaterThan(state.collected);
       state=result;
     }
     expect(state.won||findCrushSwap(state)===null).toBe(true);
