@@ -161,7 +161,7 @@ test('Human Genome map button fills green according to shared reference coverage
   await expect(page.getByTestId('open-bonus-percent')).toHaveText('<0.01%');
   expect(await fill.evaluate(el=>parseFloat((el as HTMLElement).style.width))).toBeCloseTo(100*FAMOUS_BASES/GENOME_BASES,10);
   await expect(fill).toHaveCSS('background-color','rgb(205, 235, 216)');
-  const all=Object.fromEntries(Object.entries(CHROMOSOMES).map(([c,len])=>[c,[[0,len]]]));
+  const all=Object.fromEntries(Object.entries(CHROMOSOMES).map(([c,len])=>[c,[[0,len] as const]]));
   await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed,genomeProgress:all}));
   await expect(page.getByTestId('open-bonus-percent')).toHaveText('100%');
   expect(await fill.evaluate(el=>(el as HTMLElement).style.width)).toBe('100%');
