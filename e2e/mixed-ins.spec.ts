@@ -458,6 +458,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   await tile(page,12).tap();await tile(page,13).tap();
   await expect(board).toHaveAttribute('data-crush-phase','idle');
   await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['3','4']);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   expect(Math.abs((await board.boundingBox())!.y-y)).toBeLessThan(1);
   const before=await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
@@ -467,7 +468,13 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   expect(await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''))).toBe(before);
   await page.getByTestId('action-undo').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/4 block matches');
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4']);
   await expect(page.getByTestId('moves')).toHaveText('0 moves');
+  await tile(page,12).tap();await tile(page,13).tap();
+  await expect(board).toHaveAttribute('data-crush-phase','idle');
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['3','4']);
+  await page.getByTestId('action-restart').click();
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4']);
 });
 
 test('new gene introductions and 96-base mixed mutation boards work in the browser',async({page})=>{

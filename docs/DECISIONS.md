@@ -414,3 +414,6 @@ Owner requested number-only campaign squares, with number + tick on green comple
 
 ### Graphite block lettering
 Owner requested the original single-base grey for multi-base DNA lettering. The mixed-mechanic tile faces and multi-base target chips now use --tile-ink (#444443); sliding board letters already use that tone. Keep the existing tile palette, coloured barcode, hints and borders unchanged.
+
+### Codon Crush clue consumption
+Owner requested collected clues disappear. Always hide completed codon groups after each animated refill, not only when the panel is crowded. Keep the full initial panel height and original clue indices; the next remaining target is first. Undo, Restart and restored sessions reconstruct the remaining clue set from collection state.
