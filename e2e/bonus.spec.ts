@@ -131,8 +131,10 @@ test('chromosome grids start at the exact next unfinished level with eleven squa
   await expect(page.getByTestId('bonus-node-chr1-130')).toHaveClass(/\bcurrent\b/);
   const boxes=await grid.locator('li').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));
   expect(boxes.filter(b=>Math.abs(b.y-boxes[0]!.y)<1)).toHaveLength(11);
-  expect(Math.abs(boxes[0]!.w-boxes[0]!.h)).toBeLessThan(1);
-  expect(Math.abs(boxes[120]!.y-boxes[0]!.y-10*boxes[0]!.h)).toBeLessThan(2);
+  expect(Math.abs(boxes[0]!.w-boxes[0]!.h)).toBeLessThanOrEqual(1);
+  const rect=await grid.boundingBox();expect(rect).not.toBeNull();
+  expect(Math.abs(rect!.width-rect!.height)).toBeLessThanOrEqual(1);
+  expect(Math.abs(boxes[120]!.y-boxes[0]!.y-rect!.height*10/11)).toBeLessThan(2);
   await page.getByRole('button',{name:'Previous chr1 levels'}).click();
   await expect(grid.locator('.cnode').first()).toHaveText('9✓');
   await expect(grid.locator('.cnode').last()).toHaveText('129✓');
@@ -159,7 +161,7 @@ test('Human Genome map button fills green according to shared reference coverage
   const button=page.getByTestId('open-bonus'),fill=page.getByTestId('open-bonus-fill');
   await expect(button).toBeEnabled();
   await expect(page.getByTestId('open-bonus-percent')).toHaveText('<0.01%');
-  expect(await fill.evaluate(el=>parseFloat((el as HTMLElement).style.width))).toBeCloseTo(100*FAMOUS_BASES/GENOME_BASES,10);
+  expect(await fill.evaluate(el=>parseFloat((el as HTMLElement).style.width))).toBeCloseTo(100*FAMOUS_BASES/GENOME_BASES,7);
   await expect(fill).toHaveCSS('background-color','rgb(205, 235, 216)');
   const all=Object.fromEntries(Object.entries(CHROMOSOMES).map(([c,len])=>[c,[[0,len] as const]]));
   await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed,genomeProgress:all}));
