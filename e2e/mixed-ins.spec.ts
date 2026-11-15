@@ -760,3 +760,18 @@ test('TTR final replay opens the card even with a missing earlier level',async({
   await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
   await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
 });
+
+
+test('B2M final replay opens the completion card even with older incomplete assembly credit',async({page})=>{
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='B2M'),last=run.at(-1)!;
+  expect(last.id).toBe('b2m-c08');expect(mechanicOf(last)).toBe('slide');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.slice(1).map(l=>l.id),legacyReferenceLevels:[run[0]!.id]}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();await solveWithHints(page);
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText('B2M');
+  await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
+  await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
+  await expect(page.getByTestId('assembled-sequence').locator('.seq-wrap')).toBeVisible();
+});
