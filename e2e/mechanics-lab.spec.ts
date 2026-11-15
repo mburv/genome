@@ -277,3 +277,30 @@ test('Mutation Detective hints highlight a mismatched square and its correct bas
   for(const c of [20,23,48,74,78]){await at(c);await replacement.tap();}
   await won(page);await expect(square).toHaveCount(0);await expect(replacement).toHaveCount(0);await noText();
 });
+
+
+test('DNA Connections graphical hints follow routes and recover without written hints',async({page})=>{
+  await openLab(page,'connections');
+  const board=page.getByTestId('mechanics-board'), dashed=board.locator('.connection-hinted');
+  const hint=page.getByTestId('action-hint');
+  const at=async(c:number)=>{
+    await expect(dashed).toHaveCount(1);
+    await expect(tile(page,c)).toHaveClass(/connection-hinted/);
+    await expect(dashed).toHaveCSS('outline-style','dashed');
+    await expect(page.locator('.lab-hint')).toHaveCount(0);
+  };
+  await expect(dashed).toHaveCount(0);await hint.click();await at(1);
+  await tap(page,1);await at(2);
+  await tap(page,27);await at(28);
+  await tap(page,28);await at(29);
+  await hint.click();await expect(dashed).toHaveCount(0);
+  await hint.click();await at(29);
+  await page.getByTestId('action-undo').click();await at(2);
+  await page.getByTestId('action-restart').click();await at(1);
+  for(const c of [1,2,3,4,5,6,15,24])await tap(page,c);
+  await at(25);await tap(page,25);await at(27);
+  for(const c of [27,28,29,38,39,40,41,42,43,44,53])await tap(page,c);
+  await at(55);
+  for(const c of [55,64,73,74,75,76,77])await tap(page,c);
+  await won(page);await expect(dashed).toHaveCount(0);
+});

@@ -392,3 +392,16 @@ test('old tracing attempts resume unchanged and restart with the free starter pa
   await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
   await expect(page.getByTestId('action-undo')).toBeDisabled();
 });
+
+
+test('campaign Connections graphical hint remains actionable after resuming a partial route',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-03').click();await page.getByTestId('tutorial-skip').click();
+  await tile(page,1).tap();await tile(page,2).tap();
+  await page.reload();await openMap(page);await page.getByTestId('cnode-ins-03').click();
+  await page.getByTestId('action-hint').click();
+  const dashed=page.locator('.connection-hinted');
+  await expect(dashed).toHaveAttribute('data-lab-cell','3');
+  await dashed.tap();await expect(dashed).toHaveAttribute('data-lab-cell','4');
+  await expect(page.locator('.lab-hint')).toHaveCount(0);
+  await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
+});
