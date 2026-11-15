@@ -3,7 +3,7 @@ import { completedLevelSave, openCompleted, openChapter, openMap, solveWithHints
 import m2 from '../src/campaign/levels.generated.json' with {type:'json'};
 import type { LevelDefinition } from '../src/engine/types.ts';
 import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
-import { mechanicOf } from '../src/campaign/mixed.ts';
+import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 
 // Swiss redesign (D-UI-01): the board is full-bleed on phones, with 1px hairline gutters.
 for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 430, height: 932 }]) {
@@ -189,4 +189,32 @@ test('long DNA tiles show only first and last codons with a divider in sliding a
   await expect(hex.locator('.tok-row')).toHaveCount(2);
   await expect(hex.locator('.barcode i')).toHaveCount(6);
   await expect(hex.locator('.tok-divider')).toHaveCount(0);
+});
+
+test('all long fragments, including 36-base connection pieces, share the simplified face in boards and clues', async ({page})=>{
+  const longConnection=CAMPAIGN_LEVELS.find(l=>{
+    if(mechanicOf(l)!=='connections'||!l.tier)return false;
+    const stage=mixedStage(l)!;
+    return Object.values(stage.spec.tokens??{}).some(t=>t.seq.length===36);
+  });
+  expect(longConnection,'a real campaign connection level with a 36-base token').toBeDefined();
+  for(const id of ['hbb-c08',longConnection!.id]){
+    await page.setViewportSize({width:390,height:844});
+    await openChapter(page,id);
+    const faces=page.locator('.board .tok-face.long, .target .tok-face.long');
+    expect(await faces.count()).toBeGreaterThan(0);
+    const report=await faces.evaluateAll(nodes=>nodes.map(el=>{
+      const host=el.closest('[data-seq], [title], [aria-label]');
+      const seq=host?.getAttribute('data-seq')??host?.getAttribute('title');
+      return {seq,rows:[...el.querySelectorAll('.tok-row')].map(n=>n.textContent),divider:el.querySelectorAll('.tok-divider').length,old:el.querySelectorAll('.barcode,.ell,.tok-len').length};
+    }));
+    for(const r of report){
+      expect(r.divider).toBe(1);expect(r.old).toBe(0);
+      if(r.seq){expect(r.rows).toEqual([r.seq.slice(0,3),r.seq.slice(-3)]);}
+    }
+    await expect(page.locator('.target .tier-l .barcode,.board .tier-l .barcode,.target .tier-l .tok-len,.board .tier-l .tok-len')).toHaveCount(0);
+    if(id===longConnection!.id)expect(report.some(r=>r.seq?.length===36)).toBe(true);
+    const panel=page.getByTestId('target-panel');
+    expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+  }
 });

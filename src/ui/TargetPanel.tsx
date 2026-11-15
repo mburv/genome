@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { LevelDefinition, Track } from '../engine/types.ts';
 import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
-import { Barcode, SeqLetters, tierClass, tokenStyle } from './TokenFace.tsx';
+import { Barcode, SeqLetters, TokenFace, tierClass, tokenStyle } from './TokenFace.tsx';
 
 interface Props {
   def: LevelDefinition;
@@ -21,8 +21,7 @@ function Chip({ track, index, ok, testId, done }: { track: Track; index: number;
     const seq = symbolSequence(tok.def, tok.custom, sym);
     return (
       <span className={`tok-chip ${tierClass(seq.length)} ${ok ? 'ok' : ''}`} data-seq={seq} {...unit} title={seq} style={tokenStyle(tok.def, sym)} data-testid={testId}>
-        <span className="chip-label">{seq.length <= 6 ? <SeqLetters seq={seq} /> : symbolLabel(tok.def, tok.custom, sym)}</span>
-        {seq.length > 3 && <Barcode seq={seq} />}
+        {seq.length > 6 ? <TokenFace seq={seq} label={symbolLabel(tok.def, tok.custom, sym)} /> : <><span className="chip-label"><SeqLetters seq={seq} /></span>{seq.length > 3 && <Barcode seq={seq} />}</>}
       </span>
     );
   }
@@ -214,6 +213,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     );
   }
   if (def.mode === 'repair' && def.repair) {
+    const restoredSeq = symbolSequence(def, custom, def.repair.expected);
     const [a, b] = def.tracks as [Track, Track];
     return (
       <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
@@ -223,7 +223,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
             <TokenRow>
               <Strip track={a} ok={matches[0]!} done={committedMatches[0]!} testId="target-strip" />
               {toks
-                ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false" style={solved ? tokenStyle(def, def.repair.expected) : {}}>{gapLabel(def, custom, solved)}</span>
+                ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false" style={solved ? tokenStyle(def, def.repair.expected) : {}} title={solved ? restoredSeq : undefined} aria-label={solved ? 'Restored ' + restoredSeq : undefined}>{solved && restoredSeq.length > 6 ? <TokenFace seq={restoredSeq} label={symbolLabel(def, custom, def.repair.expected)} /> : gapLabel(def, custom, solved)}</span>
                 : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false">{gapLabel(def, custom, solved)}</span>}
             </TokenRow>
           </CluePart>

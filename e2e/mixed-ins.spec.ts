@@ -516,16 +516,23 @@ test('multi-base assembly clues read horizontally and share graphite and palette
     await expect(chips).toHaveCount(stage.spec.ASSEMBLY_TARGET.length);
     const geometry=await chips.evaluateAll(nodes=>nodes.filter(el=>!el.hasAttribute('data-clue-hidden')).map(el=>{
       const rect=el.getBoundingClientRect();
-      const letters=Array.from(el.querySelectorAll('.chip-label i'));
+      const letters=Array.from(el.querySelectorAll('.chip-label i, .tok-row i'));
       const positions=letters.map(l=>({x:l.getBoundingClientRect().x,y:l.getBoundingClientRect().y,colour:getComputedStyle(l).color}));
-      return {x:rect.x,y:rect.y,right:rect.right,bg:getComputedStyle(el).backgroundColor,positions,seq:el.getAttribute('aria-label')!.split(': ')[1]};
+      return {x:rect.x,y:rect.y,right:rect.right,bg:getComputedStyle(el).backgroundColor,positions,seq:el.getAttribute('aria-label')!.split(': ')[1]!,divider:el.querySelectorAll('.tok-divider').length,barcode:el.querySelectorAll('.barcode').length};
     }));
     expect(geometry[1]!.x).toBeGreaterThan(geometry[0]!.x);
     expect(geometry[1]!.y).toBe(geometry[0]!.y);
     for(const g of geometry){
       expect(g.right).toBeLessThanOrEqual(320);
-      expect(g.positions.every(p=>p.colour==='rgb(68, 68, 67)'&&p.y===g.positions[0]!.y)).toBe(true);
-      expect(g.positions.every((p,i)=>i===0||p.x>g.positions[i-1]!.x)).toBe(true);
+      expect(g.positions.every(p=>p.colour==='rgb(68, 68, 67)')).toBe(true);
+      if(g.seq.length>6){
+        expect(g.divider).toBe(1);expect(g.barcode).toBe(0);
+        expect(g.positions).toHaveLength(6);
+        expect(g.positions[3]!.y).toBeGreaterThan(g.positions[0]!.y);
+      }else{
+        expect(g.positions.every(p=>p.y===g.positions[0]!.y)).toBe(true);
+        expect(g.positions.every((p,i)=>i===0||p.x>g.positions[i-1]!.x)).toBe(true);
+      }
     }
     const tiles=await board.locator('.lab-token').evaluateAll(nodes=>nodes.map(el=>({seq:el.getAttribute('data-seq'),bg:getComputedStyle(el).backgroundColor,letters:Array.from(el.querySelectorAll('.tok-row i')).map(l=>getComputedStyle(l).color)})));
     for(const t of tiles)expect(t.letters.every(c=>c==='rgb(68, 68, 67)')).toBe(true);
