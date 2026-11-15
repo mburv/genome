@@ -46,7 +46,9 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
   await expect(page.getByRole('heading',{name:'Chromosomes',exact:true})).toBeVisible();
   await expect(page.getByTestId('bonus-continue')).toContainText('Continue · chr1');
   await expect(page.getByTestId('bonus-nodes-chr1').locator('.cnode')).toHaveCount(121);
-  await expect(page.getByTestId('bonus-node-chr1-1')).toBeEnabled();
+  await expect(page.getByTestId('bonus-node-chr1-1')).toBeDisabled();
+  await expect(page.getByTestId('bonus-nodes-chr1')).toHaveClass(/\bunavailable\b/);
+  await expect(page.getByTestId('bonus-node-chr1-1')).toHaveCSS('background-color','rgb(239, 239, 234)');
 });
 
 import {createHash} from 'node:crypto';
@@ -62,6 +64,7 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await openCompleted(page,serializeSave({...save,settings:{...save.settings,sound:true,haptics:true},completed:CAMPAIGN_LEVELS.map(l=>l.id)}));
   await page.getByTestId('open-bonus').click();
   const row=page.getByTestId('chromosome-chrM');
+  await expect(row.getByTestId('bonus-node-chrM-1')).toBeDisabled();
   let requests=0;
   let release!:()=>void;
   const gate=new Promise<void>(resolve=>{release=resolve;});
@@ -70,6 +73,7 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   try{
     await expect(page.getByTestId('reference-loading')).toHaveText('Reading reference data… 0%');
     await expect(row.getByRole('button',{name:'Loading 0%'})).toBeDisabled();
+    await expect(row.getByTestId('bonus-node-chrM-1')).toBeDisabled();
   }finally{release();}
   await expect(page.getByTestId('bonus-play')).toBeVisible();
   await expect(page.getByTestId('play-title')).toHaveText('chrM');
@@ -92,6 +96,8 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await page.getByRole('button',{name:'Previous chrM levels'}).click();
   await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/\bdone\b/);
   await expect(page.getByTestId('bonus-node-chrM-1')).toContainText('✓');
+  await expect(page.getByTestId('bonus-node-chrM-1')).toBeEnabled();
+  await expect(page.getByTestId('bonus-node-chrM-1')).toHaveCSS('background-color','rgb(205, 235, 216)');
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
@@ -99,6 +105,8 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await page.getByRole('button',{name:'Previous chrM levels'}).click();
   await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/\bdone\b/);
   await expect(page.getByTestId('bonus-node-chrM-1')).toContainText('✓');
+  await expect(page.getByTestId('bonus-node-chrM-1')).toBeEnabled();
+  await expect(page.getByTestId('bonus-node-chrM-1')).toHaveCSS('background-color','rgb(205, 235, 216)');
   await page.getByTestId('bonus-node-chrM-1').click();
   await expect(page.getByTestId('play-progress')).toHaveText('1/23');
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
@@ -116,6 +124,8 @@ test('a missing chromosome download reports an error and can be retried',async({
   await button.click();
   await expect(page.getByRole('alert')).toContainText('Reference data could not be loaded');
   await expect(button).toBeEnabled();
+  await expect(page.getByTestId('bonus-node-chr1-1')).toBeDisabled();
+  await expect(page.getByTestId('bonus-nodes-chr1')).toHaveClass(/\bunavailable\b/);
 });
 
 
@@ -137,6 +147,8 @@ test('chromosome grids start at the exact next unfinished level with eleven squa
   expect(Math.abs(boxes[120]!.y-boxes[0]!.y-rect!.height*10/11)).toBeLessThan(2);
   await page.getByRole('button',{name:'Previous chr1 levels'}).click();
   await expect(grid.locator('.cnode').first()).toHaveText('9✓');
+  await expect(grid.locator('.cnode').first()).toBeDisabled();
+  await expect(grid.locator('.cnode').first()).toHaveCSS('background-color','rgb(239, 239, 234)');
   await expect(grid.locator('.cnode').last()).toHaveText('129✓');
   await page.getByRole('button',{name:'Previous chr1 levels'}).click();
   await expect(grid.locator('.cnode')).toHaveCount(8);

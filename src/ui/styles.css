@@ -1144,3 +1144,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .genome-progress-fill { position: absolute; inset: 0 auto 0 0; background: var(--mint); pointer-events: none; z-index: -1; }
 .genome-progress-label { min-width: 0; }
 .genome-progress-percent { flex: none; color: var(--green); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* Reference data must be present before a chromosome's puzzle tiles are playable.
+   Retain the numbers and completion ticks, but neutralise their colours until loaded. */
+.bonus-map .bonus-nodes.unavailable .cnode { background: var(--stone); color: #777771; border-color: #b6b6b0; opacity: 1; box-shadow: none; cursor: default; }
+.bonus-map .bonus-nodes.unavailable .cnode .node-check { color: #777771; }
+.bonus-map .bonus-nodes.unavailable .bonus-node-empty { background: var(--stone); border-color: #b6b6b0; }

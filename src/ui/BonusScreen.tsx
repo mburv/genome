@@ -78,7 +78,7 @@ export function BonusScreen({progress,onProgress,onBack,onPlaying,onSettings,red
     </div>
     {busy&&<p role="status" data-testid="reference-loading">Reading reference data… {loadingPercent}%</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
     <div className="panel catalogue"><h3 className="gene">Chromosomes</h3>{Object.entries(CHROMOSOMES).map(([c,len])=>{
-      const n=covered(progress[c]??[],0,len),total=genomeLevelCount(len),next=nextGenomeLevel(progress,c);
+      const n=covered(progress[c]??[],0,len),total=genomeLevelCount(len),next=nextGenomeLevel(progress,c),available=!!packs[c];
       // The default window starts exactly at the first unfinished puzzle. Relative
       // pages preserve that anchor when going back through completed levels.
       const anchor=next??Math.max(1,total-PAGE+1),firstPage=-Math.ceil((anchor-1)/PAGE),lastPage=Math.floor((total-anchor)/PAGE);
@@ -87,12 +87,12 @@ export function BonusScreen({progress,onProgress,onBack,onPlaying,onSettings,red
       return <div className={'cat-gene'+(n===len?' assembled':'')} key={c} data-testid={'chromosome-'+c}>
         <div className="row-between"><b>{c}</b><span className={'cat-state'+(n===len?' ok':'')}>{n===len?'🧬 Assembled':n?'In progress':'New'}</span></div>
         <div className="progress thin" role="progressbar" aria-label={c+' bases assembled'} aria-valuemin={0} aria-valuemax={len} aria-valuenow={n}><i style={{width:100*n/len+'%'}}/></div>
-        <div className="row-between muted tiny"><span>{n.toLocaleString()} / {len.toLocaleString()} bp</span><button type="button" className="bonus-assemble" disabled={busy||next===null} onClick={()=>{if(next!==null)void open({chrom:c,level:next});}}>{next===null?'Complete':busy&&loadingChrom===c?`Loading ${loadingPercent}%`:'Assemble'}</button></div>
-        <ol className="chapter-nodes bonus-nodes" aria-label={c+' puzzles'} data-testid={'bonus-nodes-'+c}>{Array.from({length:PAGE},(_,i)=>{
+        <div className="row-between muted tiny"><span>{n.toLocaleString()} / {len.toLocaleString()} bp</span><button type="button" className="bonus-assemble" disabled={busy||(available&&next===null)} onClick={()=>{void open({chrom:c,level:next??1});}}>{busy&&loadingChrom===c?`Loading ${loadingPercent}%`:next===null?(available?'Complete':'Download'):'Assemble'}</button></div>
+        <ol className={'chapter-nodes bonus-nodes'+(available?'':' unavailable')} aria-label={c+' puzzles'+(available?'':' · download required')} data-testid={'bonus-nodes-'+c}>{Array.from({length:PAGE},(_,i)=>{
           const level=start+i;
           if(level>end)return <li key={'empty-'+i} className="bonus-node-empty" aria-hidden="true"/>;
           const iv=genomeLevelInterval(len,level),amount=covered(progress[c]??[],...iv),complete=amount===iv[1]-iv[0];
-          return <li key={level}><button type="button" className={'cnode'+(complete?' done':amount?' started':'')+(level===next?' current':'')} disabled={busy} onClick={()=>{void open({chrom:c,level});}} aria-label={c+' '+level+' of '+total+(complete?', complete':'')} data-testid={'bonus-node-'+c+'-'+level} data-digits={String(level).length}><span className="node-number">{level}</span>{complete&&<span className="node-check" aria-hidden="true">✓</span>}</button></li>;
+          return <li key={level}><button type="button" className={'cnode'+(complete?' done':amount?' started':'')+(level===next?' current':'')} disabled={busy||!available} onClick={()=>{void open({chrom:c,level});}} aria-label={c+' '+level+' of '+total+(complete?', complete':'')} data-testid={'bonus-node-'+c+'-'+level} data-digits={String(level).length}><span className="node-number">{level}</span>{complete&&<span className="node-check" aria-hidden="true">✓</span>}</button></li>;
         })}</ol>
         <div className="row-between bonus-pagination"><button type="button" disabled={page===firstPage||busy} onClick={()=>changePage(page-1)} aria-label={'Previous '+c+' levels'}>‹</button><span className="muted tiny">{start.toLocaleString()}–{end.toLocaleString()} / {total.toLocaleString()}</span><button type="button" disabled={page===lastPage||busy} onClick={()=>changePage(page+1)} aria-label={'Next '+c+' levels'}>›</button></div>
       </div>;
