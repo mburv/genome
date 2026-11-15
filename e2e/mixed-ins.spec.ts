@@ -357,7 +357,7 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
 });
 
 
-test('campaign Mutation Detective graphical hints retain toggle and repair the selected DNA base',async({page})=>{
+test('campaign Mutation Correction graphical hints retain toggle and repair the selected DNA base',async({page})=>{
   await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-06').click();await page.getByTestId('tutorial-skip').click();
   await page.getByTestId('action-hint').click();
   const square=page.locator('.mutation-hinted'), replacement=page.locator('.mutation-base-hinted');
@@ -419,4 +419,19 @@ test('campaign Codon Crush hints match the saved board and remain graphical',asy
   if(await hint.getAttribute('aria-pressed')!=='true')await hint.click();
   await expect(dashed).toHaveCount(2);await expect(tile(page,39)).toHaveClass(/crush-hinted/);await expect(tile(page,40)).toHaveClass(/crush-hinted/);
   await expect(page.locator('.lab-hint')).toHaveCount(0);
+});
+
+
+test('Mutation Correction is named consistently in map, practice menu, play and tutorial',async({page})=>{
+  await fresh(page,true);await openMap(page);
+  await expect(page.getByTestId('cnode-ins-06')).toHaveAttribute('aria-label',/Mutation Correction/);
+  await page.getByTestId('open-mechanics').click();
+  await expect(page.getByTestId('mechanic-mutation')).toContainText('Mutation Correction');
+  await page.getByTestId('mechanic-mutation').click();
+  await expect(page.getByTestId('mechanic-tutorial').getByRole('heading',{name:'Mutation Correction',exact:true})).toBeVisible();
+  await page.getByTestId('tutorial-skip').click();
+  await expect(page.getByTestId('target-panel').locator('.target-title').first()).toHaveText('Mutation Correction');
+  await openMap(page);await page.getByTestId('cnode-ins-06').click();
+  await expect(page.getByTestId('target-panel').locator('.target-title').first()).toHaveText('Mutation Correction');
+  await expect(page.getByTestId('mechanic-tutorial')).toHaveCount(0);
 });

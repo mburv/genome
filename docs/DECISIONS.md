@@ -387,3 +387,8 @@ Owner playtest: remove the written Connections hint below the toolbar. Outline t
 ### D-UI-42 — Graphical Codon Crush hints
 
 Owner playtest: remove written Codon Crush hints from beneath the toolbar. Outline both adjacent swap tiles in dashed green and place a small double arrow at their shared edge, with no automatic swap or palette changes. Recalculate after the actual swap/clear/fall sequence, suppress stale cues during motion, and restore them after Undo, Restart or resume. Prefer certified swaps when valid, use bounded lookahead for alternate boards, and graphically highlight Undo if no solution can be found. Keep existing gameplay and gene credit unchanged.
+
+
+### D-UI-43 — Mutation Correction name
+
+Owner playtest: rename Mutation Detective to Mutation Correction in the shared mechanic metadata. The campaign map, Lab menu, target panel and tutorial all derive their title from this metadata. Keep the internal `mutation` ID, tutorial acknowledgement, saved attempts, puzzle rules and gene credit unchanged.
