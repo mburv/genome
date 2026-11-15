@@ -57,7 +57,7 @@ interface CampaignPlay {
   stage: MixedStage; seedTrace: boolean; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
-interface BonusPlay { stage: MixedStage; label:string; hasNext:boolean; completed:boolean; onComplete:(state:LabState)=>void; onNext:()=>void }
+interface BonusPlay { stage: MixedStage; label:string; hasNext:boolean; completed:boolean; covered:number; length:number; onComplete:(state:LabState)=>void; onNext:()=>void }
 export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; feedback: FeedbackOptions; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
   const meta = LAB_META[id];
   const spec = campaign?.stage.spec ?? bonus?.stage.spec ?? DEFAULT_LAB_SPEC;
@@ -326,7 +326,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     <TargetShell longClues={id==='mutation'||id==='assembly'||Object.values(spec.tokens??{}).some(t=>t.seq.length>6)} reserveHeight={id!=='assembly'} hideCompleted={id==='crush'||id==='assembly'} defId={bonus?.stage.id ?? campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
         <span className="target-title">{meta.title}</span>
-        <span className="muted" data-testid="mixed-range">{bonus ? bonus.label+' · '+targetLength+' bp reference fragment'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : campaign ? gene.symbol+' CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : 'INS · practice'}</span>
+        <span className="muted" data-testid="mixed-range">{bonus ? targetLength+' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : campaign ? gene.symbol+' CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : 'INS · practice'}</span>
       </div>
       {id==='trace' && <div className="clue-stack mode-sequence">
         <div className="clue-part"><b className="badge">1</b><div className="clue-tokens">
@@ -362,7 +362,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
       {solved}
     </div>
     <div className={'under-board mixed-under-board'+(crushRecovery||assemblyRecovery||cutRecovery?' crush-hint-recovery':'')} data-testid="under-board">
-      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/{gene.cdsLength} bp assembled</span>}</div>
+      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/{gene.cdsLength} bp assembled</span>}{bonus&&<span className="muted" data-testid="bonus-coverage">{bonus.covered.toLocaleString()}/{bonus.length.toLocaleString()} bp</span>}</div>
       {id==='mutation' && !state.won && <div className="base-picker lab-base-picker" aria-label="Choose replacement base">{labReplacementOptions(spec,mutationSelection??spec.MUTATIONS[0]??-1).map(b=><button type="button" style={chipStyle(b)} className={chipClass(b)+(mutationHintBase===b?' mutation-base-hinted':'')} key={b} disabled={mutationSelection===null} aria-label={'Replace with '+labDecode(spec,b)+(mutationHintBase===b?', suggested correction':'')} onClick={()=>{if(mutationSelection!==null) dispatch({type:'edit',cell:mutationSelection,base:b});}} data-testid={'lab-base-'+b}>{face(b)}</button>)}</div>}
       {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
       {!campaign && !bonus && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}

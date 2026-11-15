@@ -53,6 +53,25 @@ export function nextPuzzle(p:BonusProgress,chrom:string,start:number,end:number)
   const limit=n<9?9-n:n<36?36-n:n<90?90-n:864;
   return [gap[0],Math.min(gap[1],gap[0]+limit)];
 }
+/** Stable, numbered chromosome puzzles. Existing coordinate coverage is shared
+ * with these intervals; a replay or overlap never grants duplicate bases. */
+export function genomeLevelCount(length:number):number{
+  return length<=9?1:length<=36?2:length<=90?3:3+Math.ceil((length-90)/864);
+}
+export function genomeLevelInterval(length:number,level:number):Interval{
+  if(!Number.isInteger(level)||level<1||level>genomeLevelCount(length))throw Error('Invalid chromosome level');
+  const start=level===1?0:level===2?9:level===3?36:90+(level-4)*864;
+  const end=level===1?9:level===2?36:level===3?90:start+864;
+  return [start,Math.min(length,end)];
+}
+export function genomeLevelAt(offset:number):number{
+  return offset<9?1:offset<36?2:offset<90?3:4+Math.floor((offset-90)/864);
+}
+export function nextGenomeLevel(p:BonusProgress,chrom:string):number|null{
+  const length=CHROMOSOMES[chrom];if(!length)return null;
+  const gap=nextInterval(p[chrom]??[],0,length);
+  return gap?genomeLevelAt(gap[0]):null;
+}
 export function addGenomeCredit(p:BonusProgress,chrom:string,iv:Interval):BonusProgress{
   const len=CHROMOSOMES[chrom];
   if(!len||!Number.isInteger(iv[0])||!Number.isInteger(iv[1])||iv[0]<0||iv[1]>len||iv[0]>=iv[1])return p;

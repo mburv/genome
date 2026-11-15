@@ -44,11 +44,15 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
   await expect(page.getByRole('heading',{name:'Gene catalogue',exact:true})).toHaveCount(0);
   await expect(page.getByPlaceholder('Gene symbol or ID')).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Chromosomes',exact:true})).toBeVisible();
+  await expect(page.getByTestId('bonus-continue')).toContainText('Continue · chr1');
+  await expect(page.getByTestId('bonus-nodes-chr1').locator('.cnode')).toHaveCount(24);
+  await expect(page.getByTestId('bonus-node-chr1-1')).toBeEnabled();
 });
 
 import {createHash} from 'node:crypto';
 import {CHROMOSOMES,CHUNK_BASES,REFERENCE} from '../src/campaign/bonus.ts';
 test('automatically loads a chromosome, assembles an exact interval and restores coverage',async({page})=>{
+  await page.setViewportSize({width:375,height:667});
   await installFeedbackProbe(page);
   // Synthetic fixture exercises packing/UI; never part of the shipped reference.
   const length=CHROMOSOMES.chrM!,payload=Buffer.alloc(Math.ceil(length/4),0x1b);
@@ -68,6 +72,12 @@ test('automatically loads a chromosome, assembles an exact interval and restores
     await expect(row.getByRole('button',{name:'Loading 0%'})).toBeDisabled();
   }finally{release();}
   await expect(page.getByTestId('bonus-play')).toBeVisible();
+  await expect(page.getByTestId('play-title')).toHaveText('chrM');
+  await expect(page.getByTestId('play-top')).toHaveCount(1);
+  await expect(page.getByTestId('app-top')).toHaveCount(0);
+  await expect(page.getByTestId('play-progress')).toHaveText('1/23');
+  await expect(page.getByTestId('action-hint')).toBeInViewport();
+  await expect(page.getByTestId('action-undo')).toBeInViewport();
   await expect(page.getByTestId('reference-loading')).toHaveCount(0);
   expect(requests).toBe(1);
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
@@ -78,9 +88,19 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await page.getByTestId('bonus-win').getByRole('button',{name:'Bonus map'}).click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
+  await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/\bdone\b/);
+  await expect(page.getByTestId('bonus-node-chrM-1')).toContainText('✓');
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
+  await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/\bdone\b/);
+  await expect(page.getByTestId('bonus-node-chrM-1')).toContainText('✓');
+  await page.getByTestId('bonus-node-chrM-1').click();
+  await expect(page.getByTestId('play-progress')).toHaveText('1/23');
+  for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
+  await expect(page.getByTestId('bonus-win')).toBeVisible();
+  await page.getByTestId('bonus-win').getByRole('button',{name:'Bonus map'}).click();
+  await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
 });
 
 

@@ -1037,8 +1037,17 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mode-lab-assembly .lab-cell.assembly-hint-source { --tile-dash: var(--green); z-index: 2; }
 .mode-lab-assembly .lab-cell.assembly-hint-destination { outline: 3px solid var(--green); outline-offset: -4px; z-index: 2; }
 
-/* Large post-campaign catalogue: bounded lists, no horizontal overflow. */
-.bonus-map .bonus-filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.85rem;min-width:0}.bonus-filter input[type=search],.bonus-filter select{max-width:100%;min-width:0;flex:1;min-height:36px}.bonus-play{min-width:0}.bonus-map .cat-gene .row-between{flex-wrap:wrap;gap:4px}.bonus-map .cat-gene .muted{overflow-wrap:anywhere}.bonus-play .win-card{box-sizing:border-box;max-width:100%;min-width:0}.bonus-play .win-card p{overflow-wrap:anywhere}
+/* Human Genome uses campaign map tiles, bounded to a small window per chromosome. */
+.bonus-map .cat-gene .row-between { flex-wrap: wrap; gap: 4px; }
+.bonus-map .cat-gene .muted { overflow-wrap: anywhere; }
+.bonus-map .bonus-assemble { padding: 4px 8px; font-size: 11px; }
+.bonus-map .bonus-nodes { grid-template-columns: repeat(auto-fill, 46px); }
+.bonus-map .bonus-nodes li { width: 46px; height: 30px; }
+.bonus-map .bonus-nodes .cnode { font-size: 11px; }
+.bonus-pagination { justify-content: flex-start; margin-top: 6px; }
+.bonus-pagination button { padding: 2px 8px; font-size: 12px; }
+.bonus-pagination .tiny { margin: 0; }
+.app:has([data-testid="bonus-play"]) .win-card p { overflow-wrap: anywhere; }
 
 
 /* Long-fragment clues retain the compact original clue footprint, while fitting

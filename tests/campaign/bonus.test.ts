@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import { CAMPAIGN_LEVELS,LEVEL_PACK } from '../../src/campaign/campaign.ts';
-import { CHROMOSOMES,GENOME_BASES,addGenomeCredit,bonusUnlocked,bonusVerified,covered,genomeCovered,genomeStage,nextPuzzle,readGenomeProgress } from '../../src/campaign/bonus.ts';
+import { CHROMOSOMES,GENOME_BASES,addGenomeCredit,bonusUnlocked,bonusVerified,covered,genomeCovered,genomeStage,nextPuzzle,readGenomeProgress,genomeLevelCount,genomeLevelInterval,genomeLevelAt,nextGenomeLevel } from '../../src/campaign/bonus.ts';
 import { readGenomeDownload } from '../../src/genomics/genomePack.ts';
 import { newSave,createMemoryAdapter,loadSave,serializeSave } from '../../src/persistence/save.ts';
 describe('full T2T genome',()=>{
@@ -47,5 +47,18 @@ describe('chromosome download progress',()=>{
     const progress:number[]=[];
     await expect(readGenomeDownload(new Response(bytes),'chrM',p=>progress.push(p))).rejects.toThrow('Incomplete data pack');
     expect(progress).not.toContain(100);
+  });
+});
+
+
+describe('stable chromosome level map',()=>{
+  it('partitions the chromosome without gaps and preserves level numbering with sparse credit',()=>{
+    const length=CHROMOSOMES.chrM!,total=genomeLevelCount(length);
+    let end=0;for(let level=1;level<=total;level++){const iv=genomeLevelInterval(length,level);expect(iv[0]).toBe(end);expect(genomeLevelAt(iv[0])).toBe(level);end=iv[1];}
+    expect(end).toBe(length);
+    const p=addGenomeCredit(addGenomeCredit({},'chrM',[0,9]),'chrM',[36,90]);
+    expect(nextGenomeLevel(p,'chrM')).toBe(2);
+    expect(nextGenomeLevel(addGenomeCredit(p,'chrM',[9,36]),'chrM')).toBe(4);
+    expect(nextGenomeLevel(addGenomeCredit(p,'chrM',[0,length]),'chrM')).toBeNull();
   });
 });

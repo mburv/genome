@@ -36,6 +36,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   // null preserves the introductory tutorial cue until the player explicitly chooses a mode.
   const [hintMode, setHintMode] = useState<boolean | null>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [bonusPlaying,setBonusPlaying]=useState(false);
   const onPowerArmed = useCallback((armed: boolean) => setHeaderCollapsed(armed), []);
 
   const persist = useCallback(
@@ -84,6 +85,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     setTutorial(null);
     if (next.kind === 'settings' && screen.kind !== 'settings') settingsFrom.current = screen;
     if (next.kind !== 'play') setHeaderCollapsed(false);
+    if(next.kind!=='bonus')setBonusPlaying(false);
     setScreen(next);
     if (next.kind === 'play' || next.kind === 'map' || next.kind === 'title' || next.kind === 'mechanics' || next.kind === 'mechanic') window.scrollTo?.(0, 0);
   };
@@ -110,7 +112,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
   return (
     <main className={`app${reducedMotion ? ' reduced-motion' : ''}${screen.kind === 'title' ? ' on-title' : ''}`}>
-      {screen.kind !== 'title' && (
+      {screen.kind !== 'title' && !(screen.kind==='bonus'&&bonusPlaying) && (
       <header className={`top${playChrome ? ' play-top' : ''}${headerCollapsed ? ' collapsed' : ''}`} data-testid={playChrome ? 'play-top' : 'app-top'}>
         <div className="top-collapse">
           <div className="top-collapse-inner" aria-hidden={headerCollapsed || undefined} inert={headerCollapsed || undefined}>
@@ -167,7 +169,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
-      {screen.kind==='bonus' && bonusUnlocked(progressed) && <BonusScreen feedback={save.settings} progress={save.genomeProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onBack={()=>go({kind:'map'})}/>}
+      {screen.kind==='bonus' && bonusUnlocked(progressed) && <BonusScreen feedback={save.settings} progress={save.genomeProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onPlaying={setBonusPlaying} onSettings={()=>go({kind:'settings'})} onBack={()=>go({kind:'map'})}/>}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay feedback={save.settings} key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay feedback={save.settings} key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
