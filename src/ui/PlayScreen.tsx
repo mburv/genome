@@ -139,7 +139,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             sound = 'expire';
             break;
           case 'energy':
-            if (powers && ev.gained > 0) sound = 'energy';
+            if (ev.gained > 0) sound = 'energy';
             break;
           case 'solved': {
             const used = powersUsed + result.events.filter((e) => e.type === 'spent').length;
@@ -168,7 +168,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       persist(next);
       return true;
     },
-    [def, gene, save, persist, cue, powersUsed, alreadyCompleted, powers],
+    [def, gene, save, persist, cue, powersUsed, alreadyCompleted],
   );
 
   const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command, powers)), [commit, def, puzzle, powers]);
