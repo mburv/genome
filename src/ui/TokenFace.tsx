@@ -1,7 +1,7 @@
 /**
  * Faces for M4 multi-base tiles. Readability ladder (Q002): codons show all three letters, hexamers
- * two rows of three, longer pieces their first and last codon ("ATG…GCC") plus a length badge. Every
- * multi-base tile carries a per-base colour barcode so distinct sequences look distinct; tap a tile to
+ * two rows of three, longer pieces their first and last codon ("ATG…GCC") plus a length badge. Longer
+ * multi-base tiles carry a per-base colour barcode so distinct sequences look distinct; tap a tile to
  * read its full sequence in the inspector.
  */
 export function SeqLetters({ seq, group = 0 }: { seq: string; group?: number }) {
