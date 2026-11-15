@@ -27,7 +27,8 @@ export function mechanicOf(def:LevelDefinition):Mechanic {
     if(def.id==='hbb-06')return 'mutation';
     return 'slide';
   }
-  if(def.symbol==='INS')return ({'ins-c01':'trace','ins-c02':'crush','ins-c03':'mutation','ins-c04':'assembly','ins-c05':'connections','ins-c06':'trace','ins-c07':'restriction'} as Record<string,LabId>)[def.id]??'slide';
+  if(def.symbol==='INS')return ({'ins-c01':'trace','ins-c02':'crush','ins-c03':'mutation','ins-c06':'trace','ins-c07':'restriction'} as Record<string,LabId>)[def.id]??'slide';
+  if(def.id==='hbb-c03')return 'slide';
   const part=Number(/-c(\d+)$/.exec(def.id)?.[1]??1);
   const order:Mechanic[]=['trace','crush','mutation','assembly','connections','restriction','slide','slide','trace','crush','mutation','connections','restriction','slide'];
   const wanted=order[(part-1)%order.length]!;

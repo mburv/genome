@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { ALL_LEVELS, CAMPAIGN_LEVELS, LAB_LEVELS, LEVEL_PACK, OPENING_LEVEL_ID, runProgress, isDiscovered } from '../campaign/campaign.ts';
 import { GENES } from '../genomics/genes.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
-import { mixedStage, verifiedMixed, slidingTutorial, type TutorialId } from '../campaign/mixed.ts';
+import { mechanicOf, mixedStage, verifiedMixed, slidingTutorial, type TutorialId } from '../campaign/mixed.ts';
 import { MechanicTutorial } from './MechanicTutorial.tsx';
 import { recordAssembly, recordCompletion, clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
@@ -22,7 +22,6 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
   const [save, setSave] = useState<SaveData>(initial.save);
   const saveRef = useRef(initial.save);
-  const [classic, setClassic] = useState(() => typeof location !== 'undefined' && new URLSearchParams(location.search).get('classic') === '1');
   const [tutorial, setTutorial] = useState<TutorialId | null>(null);
   const [notices, setNotices] = useState<string[]>(initial.notices);
   // Write once on load (idempotent) so a fresh/migrated save is stored in the current format.
@@ -50,7 +49,10 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const playChrome = screen.kind === 'play' || labPlay;
   const heading = labPlay ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
   const stage = useMemo(() => mixedStage(def), [def]);
-  const useMixed = !!stage && !classic && (!!save.mixedAttempts?.[def.id] || !save.attempts[def.id] || save.completed.includes(def.id));
+  const useMixed = !!stage;
+  // Completed legacy sliding alternatives retain their credit. Display the canonical
+  // solved mixed puzzle when no mixed log exists; replays still award no new bases.
+  const mixedActions = save.mixedAttempts?.[def.id] ?? (stage && save.completed.includes(def.id) ? stage.certificate : []);
   const activeMechanic: TutorialId | null = screen.kind === 'play' ? useMixed ? stage!.mechanic : slidingTutorial(def.mode) : screen.kind === 'mechanic' ? screen.id : null;
   const firstTutorial = activeMechanic && !save.tutorialsSeen?.includes(activeMechanic) ? activeMechanic : null;
   const shownTutorial = tutorial ?? firstTutorial;
@@ -144,9 +146,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         <MapScreen
           labs={LAB_LEVELS}
           completed={save.completed}
-          attempted={[...Object.keys(save.attempts), ...Object.keys(save.mixedAttempts ?? {})]}
-          classic={classic}
-          onClassic={setClassic}
+          attempted={[...Object.keys(save.attempts).filter(id=>{const level=ALL_LEVELS.find(l=>l.id===id);return level && mechanicOf(level)==='slide';}), ...Object.keys(save.mixedAttempts ?? {})]}
           currentLevelId={save.currentLevelId}
           legacyM1={save.legacy.m1Completed}
           onPlay={play}
@@ -158,7 +158,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
         def, completed: save.completed.includes(def.id), onCard: () => go({ kind: 'card', symbol: def.symbol }), hasNext: CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) < CAMPAIGN_LEVELS.length - 1,
-        stage, initialActions: save.mixedAttempts?.[def.id] ?? [], seedTrace: !save.mixedAttempts?.[def.id]?.length || !!save.traceStarterAttempts?.includes(def.id), part: runProgress(def)!.part, of: runProgress(def)!.of,
+        stage, initialActions: mixedActions, seedTrace: !save.mixedAttempts?.[def.id]?.length || !!save.traceStarterAttempts?.includes(def.id), part: runProgress(def)!.part, of: runProgress(def)!.of,
         covered: assemblyStatus(save.completed, GENES[def.symbol]!).covered, assembled: assemblyStatus(save.completed, GENES[def.symbol]!).verified,
         onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1]; if (next) play(next.id); else go({ kind: 'map' }); }
       }} />}

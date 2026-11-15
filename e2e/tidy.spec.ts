@@ -399,12 +399,12 @@ test('level map lists the re-planned INS run without overlapping chapters', asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await fresh(page);
   await openMap(page);
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('13 puzzles');
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('6 intro + 7 assembly');
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('13 stages');
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('7 mechanics');
   await page.screenshot({ path: 'test-results/screenshots/genome-progression-map-390x844.png' });
 });
 
-test('map run squares form one fixed-column grid, including the play square, at 320, 390 and 430', async ({ page }) => {
+test('map run squares form one fixed-column grid, at 320, 390 and 430', async ({ page }) => {
   for (const width of [320, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
     await fresh(page);
@@ -417,7 +417,7 @@ test('map run squares form one fixed-column grid, including the play square, at 
       const r = e.getBoundingClientRect();
       return { x: r.x, y: r.y, w: r.width, h: r.height, right: r.right, play: e.classList.contains('play') };
     }));
-    expect(boxes.length).toBe(14); // 13 INS puzzles + play square
+    expect(boxes.length).toBe(13); // numbered campaign levels only
     const w0 = boxes[0]!.w;
     const h0 = boxes[0]!.h;
     expect(Math.abs(w0 - h0)).toBeLessThanOrEqual(1);
@@ -426,7 +426,7 @@ test('map run squares form one fixed-column grid, including the play square, at 
       expect(Math.abs(b.h - h0)).toBeLessThanOrEqual(1);
     }
     const play = boxes.find((b) => b.play);
-    expect(play).toBeDefined();
+    expect(play).toBeUndefined();
     const rows: typeof boxes[] = [];
     for (const b of boxes) {
       const row = rows.find((r) => Math.abs(r[0]!.y - b.y) <= 1);
@@ -485,7 +485,7 @@ test('repair clue keeps the gap at the end of piece 1 and lays pieces inline at 
 
 test('replication clues pair template over complement and wrap in matched chunks at 320–430', async ({ page }) => {
   test.setTimeout(90_000);
-  const levels = ['ins-c03', 'hbb-c07', 'rho-c07'] as const; // 3-, 6- and 12-base
+  const levels = ['hbb-c03', 'hbb-c07', 'rho-c07'] as const; // 3-, 6- and 12-base
   for (const width of [320, 375, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
     for (const id of levels) {
@@ -576,7 +576,7 @@ async function expectClueWrapColumns(page: Page): Promise<void> {
 test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 430', async ({ page }) => {
   test.setTimeout(60_000);
   const levels = [
-    { id: 'ins-c01', heading: 'INS' },
+    { id: 'hbb-c03', heading: 'HBB' },
     { id: 'ins-c05', heading: 'INS' },
     { id: 'hbb-c08', heading: 'HBB' },
   ] as const;

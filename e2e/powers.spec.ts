@@ -5,7 +5,7 @@ const boardText = (page: import('@playwright/test').Page) => page.locator('.boar
 const baseAt = (page: import('@playwright/test').Page, c: number) => page.locator(`[data-cell="${c}"]`).getAttribute('data-base');
 
 test('campaign sliding levels show only Undo, Hint and Restart', async ({ page }) => {
-  for (const id of ['ins-01','ins-02','ins-03','ins-04','ins-c02','hbb-c08']) {
+  for (const id of ['ins-01','ins-c04','ins-c05','hbb-c03','hbb-c07','hbb-c08']) {
     await openChapter(page,id);
     await expect(page.getByTestId('energy')).toHaveCount(0);
     await expect(page.getByTestId('power-crispr')).toHaveCount(0);
@@ -16,7 +16,7 @@ test('campaign sliding levels show only Undo, Hint and Restart', async ({ page }
 test('campaign control row fits at 320, 375, 390 and 430', async ({page}) => {
   for (const width of [320,375,390,430]) {
     await page.setViewportSize({width,height:568});
-    await openChapter(page,'ins-02');
+    await openChapter(page,'hbb-c08');
     const row=page.getByTestId('icon-row'), under=page.getByTestId('under-board');
     const r=(await row.boundingBox())!, u=(await under.boundingBox())!;
     expect(r.x).toBeGreaterThanOrEqual(u.x-1);

@@ -71,8 +71,8 @@ test('every mixed INS stage can be solved through the real game controls and rea
     {id:'ins-c01',kind:'trace',end:78,cells:[17,16,15,14,13,12,11,10,9]},
     {id:'ins-c02',kind:'crush',end:114},
     {id:'ins-c03',kind:'mutation',end:132},
-    {id:'ins-c04',kind:'assembly',end:186},
-    {id:'ins-c05',kind:'connections',end:240},
+    {id:'ins-c04',kind:'slide',end:186},
+    {id:'ins-c05',kind:'slide',end:240},
     {id:'ins-c06',kind:'trace',end:294,cells:[17,16,15,14,13,12,11,10,9]},
     {id:'ins-c07',kind:'restriction',end:333},
   ];
