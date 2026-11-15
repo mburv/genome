@@ -64,11 +64,16 @@ test('Codon Crush swaps, refills, and supports undo', async ({ page }) => {
 
 test('Genome Assembly aligns overlapping reads on the board', async ({ page }) => {
   await openLab(page, 'assembly');
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
   const reference = page.getByTestId('assembly-reference');
   await expect(reference.locator('span')).toHaveCount(9);
   expect(await reference.locator('span').evaluateAll(cells => cells.map(c => c.firstChild?.textContent).join(''))).toBe('ATGGCCCTG');
   await expect(reference.locator('.assembled-match')).toHaveCount(0);
-  for (const [read, slot] of [[1,67],[19,63],[37,65]] as const) { await tap(page,read); await tap(page,slot); }
+  for (const [read, slot] of [[1,67],[19,63],[37,65]] as const) {
+    await tap(page,read); await tap(page,slot);
+    await expect(page.getByTestId('lab-message')).toHaveCount(0);
+    await expect(page.getByText('Read placed. Align all three.',{exact:true})).toHaveCount(0);
+  }
   await won(page);
   await expect(reference.locator('.assembled-match')).toHaveCount(9);
 });
