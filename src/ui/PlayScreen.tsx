@@ -168,7 +168,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       persist(next);
       return true;
     },
-    [def, gene, save, persist, cue, powersUsed, alreadyCompleted],
+    [def, gene, save, persist, cue, powersUsed, alreadyCompleted, setPreview, setAnimation, setSelected, setPowersUsed, setCelebrate],
   );
 
   const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command, powers)), [commit, def, puzzle, powers]);
