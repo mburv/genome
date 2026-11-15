@@ -32,6 +32,8 @@ export function legacyLevelExact(id:string):boolean{
   const old=LEGACY_LEVELS.find(l=>l.id===id),next=ALL_LEVELS.find(l=>l.id===id);
   if(!old||!next)return false;if(old.lab)return true;
   const oldSeq=LEGACY_GENES[old.symbol]!.sequence,newSeq=GENES[next.symbol]!.sequence;
+  let prefix=0;
+  if(oldSeq.length!==newSeq.length){while(prefix<Math.min(oldSeq.length,newSeq.length)&&oldSeq[prefix]===newSeq[prefix])prefix++;if(old.sourceIntervals.some(iv=>iv.end>prefix))return false;}
   return old.symbol===next.symbol&&JSON.stringify(old.sourceIntervals)===JSON.stringify(next.sourceIntervals)&&old.sourceIntervals.every(iv=>oldSeq.slice(iv.start,iv.end)===newSeq.slice(iv.start,iv.end));
 }
 

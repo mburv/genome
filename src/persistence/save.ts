@@ -561,7 +561,7 @@ export function recordAssembly(save: SaveData, symbol: string, levels?: readonly
 export function recordCompletion(save: SaveData, levelId: string): SaveData {
   if(save.completed.includes(levelId))return save;
   const completed=[...save.completed,levelId];
-  return {...save,completed,legacyReferenceLevels:save.legacyReferenceLevels?.filter(id=>id!==levelId),genomeProgress:creditFamousCompleted(save.genomeProgress??{},[levelId])};
+  return {...save,completed,legacyReferenceLevels:(save.legacyReferenceLevels??[]).filter(id=>id!==levelId),genomeProgress:creditFamousCompleted(save.genomeProgress??{},[levelId])};
 }
 
 
@@ -638,10 +638,11 @@ function validMixedAction(value: unknown): value is LabAction {
 
 /** Shared genome progress may complete migrated reference puzzles without replay. */
 export function recordGenomeProgress(save:SaveData,genomeProgress:BonusProgress):SaveData{
-  const completed=[...save.completed];
-  for(const def of ALL_LEVELS)if(referenceLevelCovered(genomeProgress,def)&&!completed.includes(def.id))completed.push(def.id);
-  const legacyReferenceLevels=save.legacyReferenceLevels?.filter(id=>!completed.includes(id));
-  let next={...save,genomeProgress,completed,legacyReferenceLevels};
-  for(const symbol of Object.keys(GENES))next=recordAssembly(next,symbol) as typeof next;
+  if(!save.legacyReferenceLevels?.length)return {...save,genomeProgress};
+  const completed=[...save.completed],changed=new Set<string>();
+  for(const def of ALL_LEVELS)if(save.legacyReferenceLevels.includes(def.id)&&referenceLevelCovered(genomeProgress,def)&&!completed.includes(def.id)){completed.push(def.id);changed.add(def.symbol);}
+  const legacyReferenceLevels=save.legacyReferenceLevels.filter(id=>!completed.includes(id));
+  let next:SaveData={...save,genomeProgress,completed,legacyReferenceLevels};
+  for(const symbol of changed)next=recordAssembly(next,symbol);
   return next;
 }

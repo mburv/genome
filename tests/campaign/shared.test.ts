@@ -44,7 +44,7 @@ it('preserves completed legacy campaign and credits only exact matching bases; b
  const s=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK).save;
  expect(bonusUnlocked([...s.completed,...s.legacyReferenceLevels??[]])).toBe(true);
  expect(s.legacyReferenceLevels).toContain('hbb-01');
- expect(genomeCovered(s.genomeProgress!)).toBeLessThan(Object.values(GENES).reduce((n,g)=>n+g.cdsLength,0));
+ expect(genomeCovered(s.genomeProgress!)).toBe(62969);
  const hbb=FAMOUS_REFERENCE.HBB!,coords=codingCoordinates('HBB',8,9)[0]!;
  expect(covered(s.genomeProgress![hbb.chromosome]??[],...coords)).toBe(0);
  const next=recordGenomeProgress(s,addGenomeCredit(s.genomeProgress!,hbb.chromosome,coords));
