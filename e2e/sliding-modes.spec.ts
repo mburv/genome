@@ -4,12 +4,11 @@ import { fresh, openMap, readHint, dragBy } from './helpers';
 test('four classic sliding modes have their own first-use guide, real target groups and persistent acknowledgement', async ({page}) => {
   await fresh(page,true);
   await openMap(page);
-  await page.getByTestId('classic-toggle').click();
   const stages = [
     ['ins-01','slide','Sequencing',1],
-    ['ins-02','slide-splice','Splicing',3],
-    ['ins-03','slide-replicate','Replication',2],
-    ['ins-04','slide-repair','Repair',2],
+    ['hbb-c08','slide-splice','Splicing',3],
+    ['hbb-c07','slide-replicate','Replication',2],
+    ['hba1-i03','slide-repair','Repair',2],
   ] as const;
   for (const [id,kind,title,groups] of stages) {
     await page.getByTestId('cnode-'+id).click();
@@ -34,7 +33,7 @@ test('four classic sliding modes have their own first-use guide, real target gro
     await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
     await openMap(page);
   }
-  await page.goto('/?classic=1');
+  await page.goto('/');
   await openMap(page);
   for(const [id,kind,title] of stages) {
     await page.getByTestId('cnode-'+id).click();
@@ -50,11 +49,11 @@ test('four classic sliding modes have their own first-use guide, real target gro
 test('a previous generic sliding acknowledgement does not skip the new mode guides', async ({page}) => {
   await fresh(page,true);
   await page.evaluate(()=>{const save=JSON.parse(localStorage.getItem('genome-save')!);save.tutorialsSeen=['slide'];localStorage.setItem('genome-save',JSON.stringify(save));});
-  await page.goto('/?classic=1'); await openMap(page);
+  await page.goto('/'); await openMap(page);
   await page.getByTestId('cnode-ins-01').click();
   await expect(page.getByTestId('mechanic-tutorial')).toHaveCount(0);
   await openMap(page);
-  await page.getByTestId('cnode-ins-02').click();
+  await page.getByTestId('cnode-hbb-c08').click();
   await expect(page.getByTestId('mechanic-tutorial')).toHaveAttribute('data-mechanic','slide-splice');
   await page.getByTestId('tutorial-skip').click();
   const hint=await readHint(page);

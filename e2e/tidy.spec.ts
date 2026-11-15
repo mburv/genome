@@ -399,8 +399,8 @@ test('level map lists the re-planned INS run without overlapping chapters', asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await fresh(page);
   await openMap(page);
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('13 puzzles');
-  await expect(page.getByTestId('cat-progress-INS')).toContainText('6 intro + 7 assembly');
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('13 stages');
+  await expect(page.getByTestId('cat-progress-INS')).toContainText('7 mechanics');
   await page.screenshot({ path: 'test-results/screenshots/genome-progression-map-390x844.png' });
 });
 
@@ -485,7 +485,7 @@ test('repair clue keeps the gap at the end of piece 1 and lays pieces inline at 
 
 test('replication clues pair template over complement and wrap in matched chunks at 320–430', async ({ page }) => {
   test.setTimeout(90_000);
-  const levels = ['ins-c03', 'hbb-c07', 'rho-c07'] as const; // 3-, 6- and 12-base
+  const levels = ['hbb-c07', 'rho-c07'] as const; // 6- and 12-base campaign replication
   for (const width of [320, 375, 390, 430] as const) {
     await page.setViewportSize({ width, height: 844 });
     for (const id of levels) {
@@ -576,8 +576,8 @@ async function expectClueWrapColumns(page: Page): Promise<void> {
 test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 430', async ({ page }) => {
   test.setTimeout(60_000);
   const levels = [
-    { id: 'ins-c01', heading: 'INS' },
-    { id: 'ins-c05', heading: 'INS' },
+    { id: 'pth-c08', heading: 'PTH' },
+    { id: 'gpx1-c08', heading: 'GPX1' },
     { id: 'hbb-c08', heading: 'HBB' },
   ] as const;
   for (const width of [320, 375, 390, 430] as const) {
@@ -586,11 +586,11 @@ test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 
       await openChapter(page, level.id);
       await expect(page.getByTestId('target-panel')).toBeVisible();
       await expect(page.getByTestId('play-title')).toHaveText(level.heading);
-      if (level.id === 'ins-c05') await expect(page.getByTestId('play-progress')).toHaveText('11/13');
+      if (level.id === 'gpx1-c08') await expect(page.getByTestId('play-progress')).toHaveText('11/11');
       await expectClueChipsFit(page);
       await expectClueAlignment(page);
       await expectClueWrapColumns(page);
-      if (width === 390 && level.id === 'ins-c05') {
+      if (width === 390 && level.id === 'gpx1-c08') {
         await page.screenshot({ path: 'test-results/screenshots/genome-ins11-clue-390x844.png', animations: 'disabled' });
         await page.screenshot({ path: 'test-results/screenshots/genome-clue-inline-ins11-390x844.png', animations: 'disabled' });
       }

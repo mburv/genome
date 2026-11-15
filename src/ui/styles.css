@@ -856,7 +856,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Mixed INS progression and animated first-use demonstrations. */
 .mixed-coverage { display:flex; justify-content:space-between; gap:6px; font-size:10px; color:var(--graphite); }
-.node-mechanic { position:absolute; top:0; right:1px; font-size:8px; line-height:1; color:var(--blue); }
+.cnode.done { display: inline-flex; align-items: center; justify-content: center; gap: 1px; }
+.cnode-tick { font-size: 10px; line-height: 1; color: var(--ink); }
 .tutorial-overlay { z-index:70; overflow-y:auto; align-items:center; }
 .tutorial-card { max-height:calc(100svh - 24px); overflow-y:auto; padding:12px; border-top-color:var(--mint-edge); }
 .tutorial-card h3 { font-size:22px; margin:4px 0; }
@@ -1007,3 +1008,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Very long Famous Genes fragments retain a scrollable preview, keeping actions reachable. */
 .win-card .win-strand.tok { max-height: min(33dvh, 220px); overflow-y: auto; overflow-x: hidden; }
+
+/* Use the original graphite letters for all DNA blocks, not the per-base text palette.
+   Colour continues to identify the tile background, border and barcode. */
+.lab-token .tok-face .tok-row i,
+.tok-chip .chip-label i { color: var(--tile-ink); }

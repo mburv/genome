@@ -12,7 +12,7 @@ export const isSlidingTutorial = (id: TutorialId): id is SlideTutorial => (SLIDE
 export const slidingTutorial = (mode: LevelDefinition['mode']): SlideTutorial => ({
   sequence: 'slide', splice: 'slide-splice', replicate: 'slide-replicate', repair: 'slide-repair',
 } as const)[mode];
-/** Reuse existing stage ids and exact CDS intervals. Original sliding boards remain valid legacy alternatives. */
+/** A single assigned mechanic per stage; the pinned sliding definitions retain exact CDS intervals and generator validation. */
 const MECHANICS: Record<string, LabId> = {
   'ins-02': 'trace', 'ins-03': 'connections', 'ins-04': 'assembly', 'ins-05': 'crush', 'ins-06': 'mutation',
   'ins-c01': 'trace', 'ins-c02': 'crush', 'ins-c03': 'mutation', 'ins-c06': 'trace', 'ins-c07': 'restriction',
@@ -22,6 +22,8 @@ export function mechanicOf(def:LevelDefinition):Mechanic {
   if(!def.tier) {
     if(MECHANICS[def.id])return MECHANICS[def.id]!;
     if(def.id.endsWith('-i02')||def.id==='hbb-02')return 'trace';
+    // Retain all four traditional sliding modes in the single campaign.
+    if(def.id==='hba1-i03')return 'slide';
     if(def.id.endsWith('-i03')||def.id==='hbb-04')return 'assembly';
     if(def.id==='hbb-03')return 'connections';
     if(def.id==='hbb-06')return 'mutation';

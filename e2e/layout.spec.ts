@@ -93,3 +93,20 @@ test('HBB 14/15 completion card stays centered and contains all 96 bases and bot
   await win.getByRole('button',{name:'Next level →'}).click();
   await expect(page.getByTestId('play-progress')).toHaveText('15/15');
 });
+
+
+test('multi-base board letters match the original single-base graphite colour', async ({page}) => {
+  await openChapter(page,'ins-01');
+  const grey=await page.locator('.board .tile .letter').first().evaluate(el=>getComputedStyle(el).color);
+  expect(grey).toBe('rgb(68, 68, 67)');
+  await page.getByTestId('open-settings').click();
+  await page.getByTestId('open-map').click();
+  await page.getByTestId('cnode-ins-c02').click();
+  const letters=page.getByTestId('mechanics-board').locator('.lab-token.tier-3 .tok-row i');
+  expect(await letters.count()).toBeGreaterThan(0);
+  const colors=await letters.evaluateAll(els=>[...new Set(els.map(el=>getComputedStyle(el).color))]);
+  expect(colors).toEqual([grey]);
+  const clues=page.getByTestId('target-panel').locator('.lab-token.tier-3 .tok-row i');
+  expect(await clues.count()).toBeGreaterThan(0);
+  expect(await clues.evaluateAll(els=>[...new Set(els.map(el=>getComputedStyle(el).color))])).toEqual([grey]);
+});
