@@ -56,7 +56,7 @@ interface CampaignPlay {
   stage: MixedStage; seedTrace: boolean; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
-interface BonusPlay { stage: MixedStage; label:string; part:number; of:number; completed:boolean; onComplete:(state:LabState)=>void; onNext:()=>void }
+interface BonusPlay { stage: MixedStage; label:string; hasNext:boolean; completed:boolean; onComplete:(state:LabState)=>void; onNext:()=>void }
 export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
   const meta = LAB_META[id];
   const spec = campaign?.stage.spec ?? bonus?.stage.spec ?? DEFAULT_LAB_SPEC;
@@ -279,7 +279,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
     </div>
   );
   const winDef = campaign?.def ?? ALL_LEVELS.find(l=>l.id===OPENING_LEVEL_ID)!;
-  const hasNext = bonus ? bonus.part<bonus.of : campaign?.hasNext ?? !!next;
+  const hasNext = bonus ? bonus.hasNext : campaign?.hasNext ?? !!next;
   const advance = bonus ? bonus.onNext : campaign ? campaign.onNext : () => next ? onNext(next) : onBack();
   const nextLabel = campaign || bonus ? 'Next level →' : 'Next mechanic →';
   const winTitle: Record<LabId,string> = {
@@ -291,7 +291,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
   const extracted = state.won ? !campaign && !bonus && id==='connections'
     ? spec.CONNECTION_PAIRS.map(p=>p.seq).join('') : labExtractedSequence(state) : null;
   const closeWin = () => setSession(prev=>({...prev,celebration:null}));
-  const bonusPopup=bonus && state.won && winReady && session.celebration && extracted!==null && <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="bonus-win-title" data-testid="bonus-win"><div className="card win-card"><div className="card-head"><div className="card-head-copy"><p className="muted small">{bonus.label} · REFERENCE FRAGMENT COMPLETE</p><h3 id="bonus-win-title">{winTitle[id]}</h3></div><button type="button" className="win-close" onClick={closeWin} aria-label="Close and view board">×</button></div><p className="mono small" style={{overflowWrap:'anywhere'}}>{extracted}</p><p className="muted small">Reference fragment verified. Continue assembling this region.</p><div className="card-actions"><button type="button" onClick={onBack}>Bonus map</button>{hasNext&&<button type="button" className="primary" onClick={advance}>Continue assembly →</button>}</div></div></div>;
+  const bonusPopup=bonus && state.won && winReady && session.celebration && extracted!==null && <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="bonus-win-title" data-testid="bonus-win"><div className="card win-card"><div className="card-head"><div className="card-head-copy"><p className="muted small">{bonus.label} · REFERENCE FRAGMENT COMPLETE</p><h3 id="bonus-win-title">{winTitle[id]}</h3></div><button type="button" className="win-close" onClick={closeWin} aria-label="Close and view board">×</button></div><p className="mono small" style={{overflowWrap:'anywhere'}}>{extracted}</p><p className="muted small">Reference fragment verified. {bonus.hasNext?'Continue assembling this region.':'Region fully assembled.'}</p><div className="card-actions"><button type="button" onClick={onBack}>Bonus map</button>{hasNext&&<button type="button" className="primary" onClick={advance}>Continue assembly →</button>}</div></div></div>;
   const popup = !bonus && state.won && winReady && session.celebration && extracted !== null &&
     <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel,...(campaign?{range:{start:campaign.stage.start,end:campaign.stage.end}}:{})}}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}

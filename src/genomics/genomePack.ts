@@ -2,15 +2,15 @@ import { CHROMOSOMES, CHUNK_BASES, REFERENCE, type GenomeHeader, type Interval }
 const MAGIC='GENOME-T2T-1';
 const MD5='06caded0055ec647a69acb708e13beff';
 const ALPHABET='ACGT';
-export interface GenomePack {file:File; header:GenomeHeader; offset:number}
-export async function openGenomePack(file:File):Promise<GenomePack>{
+export interface GenomePack {file:Blob; header:GenomeHeader; offset:number}
+export async function openGenomePack(file:Blob):Promise<GenomePack>{
   const prefix=await file.slice(0,4).arrayBuffer();
   if(prefix.byteLength!==4)throw Error('Incomplete data pack');
   const n=new DataView(prefix).getUint32(0,true);
   if(n<1||n>20_000_000||file.size<4+n)throw Error('Invalid data pack header');
   const h=JSON.parse(await file.slice(4,4+n).text()) as GenomeHeader;
   if(h.format!==MAGIC||h.reference!==REFERENCE||h.sourceMd5!==MD5||h.length!==CHROMOSOMES[h.chromosome]||h.chunkBases!==CHUNK_BASES||!Array.isArray(h.genes)||!Array.isArray(h.chunkSha256)||h.chunkSha256.length!==Math.ceil(h.length/CHUNK_BASES)||!h.chunkSha256.every(x=>/^[a-f0-9]{64}$/.test(x))||file.size!==4+n+Math.ceil(h.length/4))throw Error('Wrong reference or damaged data pack');
-  if(!h.genes.every(g=>Array.isArray(g)&&g.length===6&&Number.isInteger(g[3])&&Number.isInteger(g[4])&&g[3]>=0&&g[4]<=h.length&&g[3]<g[4]))throw Error('Invalid gene catalogue');
+  if(!h.genes.every(g=>Array.isArray(g)&&g.length===6&&g.slice(0,3).every(x=>typeof x==='string')&&(g[5]==='+'||g[5]==='-')&&Number.isInteger(g[3])&&Number.isInteger(g[4])&&g[3]>=0&&g[4]<=h.length&&g[3]<g[4]))throw Error('Invalid gene catalogue');
   return {file,header:h,offset:4+n};
 }
 async function readChunk(pack:GenomePack,index:number):Promise<Uint8Array>{
