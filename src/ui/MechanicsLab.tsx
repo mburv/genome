@@ -10,6 +10,7 @@ import type { LevelDefinition } from '../engine/types.ts';
 import { Barcode,SeqLetters,TokenFace,tierClass,tokenStyle } from './TokenFace.tsx';
 import { labExtractedSequence } from '../engine/mechanicsLab.ts';
 import { type MixedStage } from '../campaign/mixed.ts';
+import { playCue, prepareFeedback, type FeedbackOptions } from './feedback.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">
@@ -57,7 +58,7 @@ interface CampaignPlay {
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
 interface BonusPlay { stage: MixedStage; label:string; hasNext:boolean; completed:boolean; onComplete:(state:LabState)=>void; onNext:()=>void }
-export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
+export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; feedback: FeedbackOptions; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
   const meta = LAB_META[id];
   const spec = campaign?.stage.spec ?? bonus?.stage.spec ?? DEFAULT_LAB_SPEC;
   const gene=campaign?GENES[campaign.def.symbol]!:INS;
@@ -75,6 +76,10 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
     const initial: Session = { state: createLab(id, spec, campaign?.seedTrace ?? true), history: [], actions: [], message: '', celebration: null };
     return (campaign?.initialActions ?? []).reduce((prev, action) => acceptResult(prev, applyLab(prev.state, action), action), initial);
   });
+  // The latest committed session is available to rapid pointer events before React rerenders.
+  // Feedback stays outside state updaters, so StrictMode and saved-action replay cannot duplicate it.
+  const sessionRef = useRef(session);
+  const updateSession = (next: Session) => { sessionRef.current = next; setSession(next); };
   const [selected, setSelected] = useState<number | null>(null);
   const [localHint, setHint] = useState(false);
   const hint = campaign || bonus ? hintMode === true : localHint;
@@ -124,10 +129,16 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
   const onBonusComplete=bonus?.onComplete;
   useEffect(()=>{if(state.won)onBonusComplete?.(state);},[onBonusComplete,state]);
   const boardRef = useRef<HTMLDivElement>(null);
-  const dispatch = (action: LabAction) => setSession(prev => {
-    const result = applyLab(prev.state, action);
-    return acceptResult(prev, result, action, credit);
-  });
+  const commitResult = (result: LabResult, action: LabAction, earned: WinCredit) => {
+    const prev = sessionRef.current;
+    if (prev.state.won) return;
+    updateSession(acceptResult(prev, result, action, earned));
+    if (result.state !== prev.state) playCue(result.state.won ? 'win' : 'move', feedback);
+    else if (result.message) playCue('reject', feedback);
+  };
+  const dispatch = (action: LabAction) => {
+    commitResult(applyLab(sessionRef.current.state, action), action, credit);
+  };
   // Only presentation is delayed. Commit the exact engine result once, after the final frame.
   useEffect(() => {
     if (!crushAnimation) return;
@@ -137,7 +148,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
       else if (stage === 'clear') setCrushAnimation({ ...crushAnimation, stage: 'fall' });
       else if (stage === 'fall' && crushAnimation.frame + 1 < (result.crushFrames?.length ?? 0)) setCrushAnimation({ ...crushAnimation, frame: crushAnimation.frame+1, stage:'clear' });
       else {
-        setSession(prev => acceptResult(prev, result, action, credit));
+        commitResult(result, action, credit);
         setCrushAnimation(null);
       }
     }, crushTiming[stage]);
@@ -148,9 +159,10 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
     setSelected(null);
     setCrushDrag(null);
     const action: LabAction = { type: 'swap', a, b };
-    const result = applyLab(state, action);
+    prepareFeedback(feedback);
+    const result = applyLab(sessionRef.current.state, action);
     if (!adjacent(a, b) || state.board[b] === '.' || reducedMotion) {
-      setSession(prev => acceptResult(prev, result, action, credit));
+      commitResult(result, action, credit);
       return;
     }
     setCrushAnimation({ a, b, stage: 'swap', frame:0, result, action, credit });
@@ -163,8 +175,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { setWinReady(false); setGestureActive(false); setSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
-  const undo = () => { setWinReady(false); setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null } : prev; }); setSelected(null); };
+  const reset = () => { setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
+  const undo = () => { setWinReady(false); const prev = sessionRef.current; const last = prev.history.at(-1); if (last) { updateSession({ state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null }); playCue('undo', feedback); } setSelected(null); };
   const choose = (cell: number) => {
     if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
@@ -290,7 +302,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, bon
   // are in the labels, whereas campaign endpoints encode the exact two-base fragment.
   const extracted = state.won ? !campaign && !bonus && id==='connections'
     ? spec.CONNECTION_PAIRS.map(p=>p.seq).join('') : labExtractedSequence(state) : null;
-  const closeWin = () => setSession(prev=>({...prev,celebration:null}));
+  const closeWin = () => updateSession({...sessionRef.current,celebration:null});
   const bonusPopup=bonus && state.won && winReady && session.celebration && extracted!==null && <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="bonus-win-title" data-testid="bonus-win"><div className="card win-card"><div className="card-head"><div className="card-head-copy"><p className="muted small">{bonus.label} · REFERENCE FRAGMENT COMPLETE</p><h3 id="bonus-win-title">{winTitle[id]}</h3></div><button type="button" className="win-close" onClick={closeWin} aria-label="Close and view board">×</button></div><p className="mono small" style={{overflowWrap:'anywhere'}}>{extracted}</p><p className="muted small">Reference fragment verified. {bonus.hasNext?'Continue assembling this region.':'Region fully assembled.'}</p><div className="card-actions"><button type="button" onClick={onBack}>Bonus map</button>{hasNext&&<button type="button" className="primary" onClick={advance}>Continue assembly →</button>}</div></div></div>;
   const popup = !bonus && state.won && winReady && session.celebration && extracted !== null &&
     <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel,...(campaign?{range:{start:campaign.stage.start,end:campaign.stage.end}}:{})}}

@@ -5,11 +5,12 @@ import { loadGenomePacks,storeGenomePack } from '../genomics/genomeStorage.ts';
 import { MechanicsPlay } from './MechanicsLab.tsx';
 import { labExtractedSequence,type LabState } from '../engine/mechanicsLab.ts';
 import type { MixedStage } from '../campaign/mixed.ts';
+import type { FeedbackOptions } from './feedback.ts';
 
-interface Props{progress:BonusProgress;onProgress:(next:BonusProgress)=>void;onBack:()=>void;reducedMotion:boolean}
+interface Props{feedback:FeedbackOptions;progress:BonusProgress;onProgress:(next:BonusProgress)=>void;onBack:()=>void;reducedMotion:boolean}
 interface Scope{chrom:string;start:number;end:number;label:string;gene?:GenomeGene}
 const PAGE=40;
-export function BonusScreen({progress,onProgress,onBack,reducedMotion}:Props){
+export function BonusScreen({progress,onProgress,onBack,reducedMotion,feedback}:Props){
   const [packs,setPacks]=useState<Record<string,GenomePack>>({});
   const [storageNote,setStorageNote]=useState('');
   useEffect(()=>{let active=true;void loadGenomePacks().then(p=>{if(active)setPacks(old=>({...p,...old}));}).catch(()=>{if(active)setStorageNote('Offline storage is unavailable; selected packs work for this session.');});return()=>{active=false;};},[]);
@@ -45,7 +46,7 @@ export function BonusScreen({progress,onProgress,onBack,reducedMotion}:Props){
       <p className="muted small">{scope.chrom}:{(iv[0]+1).toLocaleString()}–{iv[1].toLocaleString()} · {REFERENCE}</p>
       <p className="muted small">{covered(progress[scope.chrom]??[],scope.start,scope.end).toLocaleString()} / {(scope.end-scope.start).toLocaleString()} bases assembled in this region</p>
       {error&&<p role="alert">{error}</p>}
-      <MechanicsPlay key={stage.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hint} onHintModeChange={setHint} onBack={back} onNext={()=>undefined}
+      <MechanicsPlay feedback={feedback} key={stage.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hint} onHintModeChange={setHint} onBack={back} onNext={()=>undefined}
         bonus={{stage,label:scope.label,hasNext:!!remaining,completed,onComplete:credit,onNext:()=>{if(remaining)void open(scope);else back();}}}/>
     </section>;
   }
