@@ -15,11 +15,11 @@ const generated:LevelDefinition[]=[];
 const replaced:Record<string,string[]>={};
 const add=(spec:LevelSpec,gene:GeneSource)=>{
   const def={...buildLevel(spec,gene,all),generatorVersion:TOKEN_GENERATOR_VERSION};
-  // Reuse a few real decoys if a board exceeds the accessible 66-colour palette.
+  // Reuse a few real decoys if a board exceeds the 65-colour contrast-safe prefix.
   // Target symbols, masks, scramble moves and solution certificates stay intact.
   if(def.tokens){
     const decoys=Object.keys(def.tokens).filter(s=>def.tokens![s]!.kind==='decoy');
-    while(Object.keys(def.tokens).length>66){
+    while(Object.keys(def.tokens).length>65){
       const remove=decoys.pop()!,keep=decoys[0]!;
       def.initial=def.initial.split(remove).join(keep);
       def.solved=def.solved.split(remove).join(keep);

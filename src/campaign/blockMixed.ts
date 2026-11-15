@@ -18,8 +18,8 @@ export function blockStage(def:LevelDefinition,mechanic:LabId,start:number,end:n
   };
   const target=chunks.map(s=>add(s)).join('');
   const targetSet=new Set(chunks);
-  const decoys=Object.values(def.tokens??{}).filter(t=>t.kind==='decoy'&&!targetSet.has(t.seq)).slice(0,12).map(t=>add(t.seq,'decoy'));
-  if(!decoys.length){
+  const decoys=(mechanic==='trace'||mechanic==='crush'?Object.values(def.tokens??{}):[]).filter(t=>t.kind==='decoy'&&!targetSet.has(t.seq)).slice(0,12).map(t=>add(t.seq,'decoy'));
+  if(!decoys.length&&(mechanic==='trace'||mechanic==='crush')){
     const seq=chunks[0]!;let other=seq;
     for(let i=0;targetSet.has(other);i++)other=seq.slice(0,i%seq.length)+('ACGT'[('ACGT'.indexOf(seq[i%seq.length]!)+1+Math.floor(i/seq.length))%4]!)+seq.slice(i%seq.length+1);
     decoys.push(add(other,'decoy'));

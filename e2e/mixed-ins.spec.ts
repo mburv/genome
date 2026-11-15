@@ -458,3 +458,23 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   await expect(page.getByTestId('lab-progress')).toHaveText('0/4 block matches');
   await expect(page.getByTestId('moves')).toHaveText('0 moves');
 });
+
+test('new gene introductions and 96-base mixed mutation boards work in the browser',async({page})=>{
+  await fresh(page,true);await page.setViewportSize({width:390,height:844});await openMap(page);
+  await page.getByTestId('cnode-gpx1-i02').click();await page.getByTestId('tutorial-skip').click();
+  await expect(page.getByTestId('play-title')).toHaveText('GPX1');
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
+  await expect(page.getByTestId('mechanics-board').locator('.lab-token')).toHaveCount(0);
+  await openMap(page);await page.getByTestId('cnode-dmd-c11').click();await page.getByTestId('tutorial-skip').click();
+  await expect(page.getByTestId('play-title')).toHaveText('DMD');
+  await expect(page.getByTestId('mixed-range')).toContainText('96-base blocks');
+  await expect(page.getByTestId('mechanics-board').locator('[data-seq]').first()).toHaveAttribute('data-seq',/^[ACGT]{96}$/);
+  await page.getByTestId('action-hint').click();
+  const suggested=page.locator('.mutation-base-hinted');
+  await expect(suggested).toHaveCount(1);
+  await suggested.tap();
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await page.reload();await openMap(page);await page.getByTestId('cnode-dmd-c11').click();
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await expect(page.getByTestId('mixed-coverage')).toHaveText('0/11058 bp assembled');
+});
