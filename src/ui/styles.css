@@ -1008,3 +1008,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Very long Famous Genes fragments retain a scrollable preview, keeping actions reachable. */
 .win-card .win-strand.tok { max-height: min(33dvh, 220px); overflow-y: auto; overflow-x: hidden; }
+
+/* Match the original single-base graphite lettering on DNA blocks.
+   Keep the distinct tile backgrounds, borders, and coloured barcodes. */
+.lab-token .tok-face .tok-row i,
+.tok-chip .chip-label i { color: var(--tile-ink); }

@@ -130,3 +130,19 @@ test('one numbered campaign map keeps completion ticks and ignores the retired c
   await expect(page.getByTestId('mechanics-board')).toBeVisible();
   await expect(page.getByTestId('mixed-range')).toContainText('6-base blocks');
 });
+
+
+test('three-base block lettering matches the original single-base graphite on both mechanics',async({page})=>{
+  await openChapter(page,'ins-01');
+  const grey=await page.locator('.board .tile .letter').first().evaluate(el=>getComputedStyle(el).color);
+  expect(grey).toBe('rgb(68, 68, 67)');
+  for(const id of ['hbb-c03','ins-c02']){
+    await openMap(page);await page.getByTestId('cnode-'+id).click();
+    const letters=page.locator('.tile.tok.tier-3 .tok-row i, .lab-cell.lab-token.tier-3 .tok-row i');
+    expect(await letters.count()).toBeGreaterThan(0);
+    expect(await letters.evaluateAll(els=>[...new Set(els.map(el=>getComputedStyle(el).color))])).toEqual([grey]);
+    const clues=page.getByTestId('target-panel').locator('.tok-chip.tier-3 .chip-label i, .lab-token.tier-3 .tok-row i');
+    expect(await clues.count()).toBeGreaterThan(0);
+    expect(await clues.evaluateAll(els=>[...new Set(els.map(el=>getComputedStyle(el).color))])).toEqual([grey]);
+  }
+});

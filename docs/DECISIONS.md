@@ -411,3 +411,6 @@ All 31 requested human MANE Select RefSeq CDS records are pinned and translated,
 
 ### Unified campaign map
 Owner requested number-only campaign squares, with number + tick on green completed squares. Remove mechanic glyphs and the extra play square (global Continue and every level remain clickable). Retire classic-mode toggle and URL override, including legacy attempt-based routing: the assigned mechanic is always used. Preserve completion credit and stored historical sliding records; when a completed alternative has no mixed log, show the certified solved canonical board. INS c04/c05 are dedicated sliding repair/sequencing stages and HBB c03 is dedicated sliding replication, keeping all four original sliding variants in the one campaign. All other stage IDs, DNA intervals and mechanic assignments remain unchanged. Existing attempts of the retired alternative are not resumed on that alternative.
+
+### Graphite block lettering
+Owner requested the original single-base grey for multi-base DNA lettering. The mixed-mechanic tile faces and multi-base target chips now use --tile-ink (#444443); sliding board letters already use that tone. Keep the existing tile palette, coloured barcode, hints and borders unchanged.
