@@ -1,3 +1,5 @@
+import { levelById } from '../src/campaign/campaign.ts';
+import { mixedStage } from '../src/campaign/mixed.ts';
 import { expect, test } from '@playwright/test';
 import { fresh, openMap, solveWithHints } from './helpers';
 const tile=(page:import('@playwright/test').Page,c:number)=>page.getByTestId('lab-cell-'+c);
@@ -61,34 +63,21 @@ test('every mixed INS stage can be solved through the real game controls and rea
   test.setTimeout(120_000);
   await fresh(page,true);await openMap(page);
   const skip=async()=>{const guide=page.getByTestId('mechanic-tutorial');if(await guide.isVisible())await page.getByTestId('tutorial-skip').click();};
-  const stages=[
-    {id:'ins-01',kind:'slide',end:9},
-    {id:'ins-02',kind:'trace',end:18,cells:[10,11,12,21,30,31,40,49,50]},
-    {id:'ins-03',kind:'connections',end:24},
-    {id:'ins-04',kind:'assembly',end:33},
-    {id:'ins-05',kind:'crush',end:42},
-    {id:'ins-06',kind:'mutation',end:51},
-    {id:'ins-c01',kind:'trace',end:78,cells:Array.from({length:27},(_,i)=>{const r=Math.floor(i/9)+1;return r*9+(r%2?8-i%9:i%9);})},
-    {id:'ins-c02',kind:'crush',end:114},
-    {id:'ins-c03',kind:'mutation',end:132},
-    {id:'ins-c04',kind:'slide',end:186},
-    {id:'ins-c05',kind:'slide',end:240},
-    {id:'ins-c06',kind:'trace',end:294,cells:Array.from({length:54},(_,i)=>{const r=Math.floor(i/9);return r*9+(r%2?8-i%9:i%9);})},
-    {id:'ins-c07',kind:'restriction',end:333},
-  ];
+  const stages=['ins-01','ins-02','ins-03','ins-04','ins-05','ins-06','ins-c01','ins-c02','ins-c03','ins-c04','ins-c05','ins-c06','ins-c07'].map(id=>{
+    const def=levelById(id)!,stage=mixedStage(def);
+    return {id,kind:stage?.mechanic??'slide',end:def.sourceIntervals[0]!.end,stage};
+  });
   await page.getByTestId('cnode-ins-01').click();
   for(const s of stages){
     console.log('INS stage',s.id);
     await skip();
-    if(s.kind==='slide')await solveWithHints(page);
-    else if(s.kind==='trace')for(const c of s.cells!.slice(2))await tile(page,c).tap();
-    else if(s.kind==='connections')for(const path of [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]])for(const c of path)await tile(page,c).tap();
-    else if(s.kind==='assembly')for(const [a,b] of [[1,67],[19,63],[37,65]]){await tile(page,a!).tap();await tile(page,b!).tap();}
-    else if(s.kind==='crush')for(const [a,b] of (s.id==='ins-c02'?[[12,13],[66,67],[7,16],[4,5],[9,10],[2,3]]:[[12,13],[66,67]])){await tile(page,a!).tap();await tile(page,b!).tap();await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');}
-    else if(s.kind==='mutation'){
-      const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('data-lab-cell'))));
-      for(const c of cells){const want=await page.getByTestId('mutation-target-'+c).textContent();await tile(page,c).tap();await page.getByTestId('lab-base-'+want).tap();}
-    }else if(s.kind==='restriction'){await tile(page,6).tap();await tile(page,53).tap();}
+    if(!s.stage)await solveWithHints(page);
+    else for(const action of s.stage.certificate){
+      if(action.type==='trace'||action.type==='route'||action.type==='cut')await tile(page,action.cell).tap();
+      else if(action.type==='swap'){await tile(page,action.a).tap();await tile(page,action.b).tap();await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');}
+      else if(action.type==='edit'){await tile(page,action.cell).tap();await page.getByTestId('lab-base-'+action.base).tap();}
+      else if(action.type==='place'){await tile(page,s.stage.spec.READ_CELLS[action.read]![0]!).tap();await tile(page,s.stage.spec.ASSEMBLY_CELLS[action.offset]!).tap();}
+    }
     if(s.kind!=='slide'){
       await expect(page.getByTestId('mixed-coverage')).toHaveText(s.end+'/333 bp assembled');
       const win=page.getByTestId('win');
@@ -193,17 +182,14 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   await page.getByTestId('action-undo').click();
   await expect(page.getByTestId('target-panel').locator('.strip-cell.ok')).toHaveCount(2);
   await openMap(page);await page.getByTestId('cnode-ins-c06').click();
-  await expect(page.getByTestId('target-panel').locator('[data-clue-unit]')).toHaveCount(54);
+  await expect(page.getByTestId('target-panel').locator('[data-clue-unit]')).toHaveCount(9);
   const cap=await page.getByTestId('target-panel').evaluate(el=>el.scrollHeight-el.clientHeight);
   expect(cap).toBeLessThanOrEqual(1);
   await expect(page.getByTestId('icon-row')).toBeVisible();
   const startY=(await page.getByTestId('mechanics-board').boundingBox())!.y;
-  for(let i=2;i<40;i++){
-    const r=Math.floor(i/9), c=r%2?8-i%9:i%9;
-    await tile(page,r*9+c).tap();
-  }
+  for(const c of mixedStage(levelById('ins-c06')!)!.spec.TRACE_PATH.slice(2,7))await tile(page,c).tap();
   expect(Math.abs((await page.getByTestId('mechanics-board').boundingBox())!.y-startY)).toBeLessThan(1);
-  await expect(page.getByTestId('lab-progress')).toHaveText('40/54 bases');
+  await expect(page.getByTestId('lab-progress')).toHaveText('7/9 blocks');
 });
 
  test('mixed completion shares sliding win card, close/replay, and no duplicate gene credit',async({page})=>{
@@ -453,22 +439,22 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   await fresh(page,true);await page.setViewportSize({width:320,height:568});await openMap(page);
   await page.getByTestId('cnode-ins-c02').click();await page.getByTestId('tutorial-skip').click();
   const board=page.getByTestId('mechanics-board'),panel=page.getByTestId('target-panel');
-  await expect(panel.locator('.mixed-codon-clues .clue-part')).toHaveCount(12);
-  await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(12);
+  await expect(panel.locator('.mixed-codon-clues .clue-part')).toHaveCount(4);
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(4);
   const y=(await board.boundingBox())!.y;
   await page.getByTestId('action-hint').click();
   await expect(tile(page,12)).toHaveClass(/crush-hinted/);
   await tile(page,12).tap();await tile(page,13).tap();
   await expect(board).toHaveAttribute('data-crush-phase','idle');
-  await expect(page.getByTestId('lab-progress')).toHaveText('2/12 codons');
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   expect(Math.abs((await board.boundingBox())!.y-y)).toBeLessThan(1);
   const before=await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-c02').click();
-  await expect(page.getByTestId('lab-progress')).toHaveText('2/12 codons');
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   expect(await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''))).toBe(before);
   await page.getByTestId('action-undo').click();
-  await expect(page.getByTestId('lab-progress')).toHaveText('0/12 codons');
+  await expect(page.getByTestId('lab-progress')).toHaveText('0/4 block matches');
   await expect(page.getByTestId('moves')).toHaveText('0 moves');
 });

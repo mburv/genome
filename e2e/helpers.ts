@@ -3,14 +3,15 @@ import { applyCommand, createInitialState, type PuzzleState } from '../src/engin
 import type { Axis, LevelDefinition } from '../src/engine/types.ts';
 import m2Pack from '../src/campaign/levels.generated.json' with { type: 'json' };
 import chapterPack from '../src/campaign/chapters.generated.json' with { type: 'json' };
+import manifest from '../src/genomics/manifest.generated.json' with {type:'json'};
 
 // Built here (not via campaign.ts) so Playwright's ESM loader can apply the JSON import attribute.
 const PACK = {
   campaignId: 'genome-m4-assembly',
   generatorVersion: m2Pack.generatorVersion,
   tokenGeneratorVersion: chapterPack.generatorVersion,
-  catalogueId: chapterPack.catalogueId,
-  datasets: { ...chapterPack.datasets, ...m2Pack.datasets },
+  catalogueId: manifest.catalogueId,
+  datasets: Object.fromEntries(manifest.included.map(g=>[g.symbol,g.datasetId])),
 };
 
 /** Real touch swipe via CDP so the app receives pointer events of type "touch". */

@@ -17,6 +17,8 @@ const onlyM2 = process.argv.includes('--only=M2');
 const sha = (s: string): string => createHash('sha256').update(s).digest('hex');
 
 const manifest = JSON.parse(readFileSync('src/genomics/manifest.generated.json', 'utf8')) as { catalogueId: string; included: { symbol: string; cdsLength: number; sequenceSha256: string }[] };
+// Keep the historical pack deterministic; the separate Famous Genes generator adds the rest.
+manifest.included=manifest.included.slice(0,12);manifest.catalogueId='genome-m4-catalogue-1';
 const catalogue = JSON.parse(readFileSync('src/genomics/catalogue.generated.json', 'utf8')) as { genes: GeneSource[] };
 const genes: Record<string, GeneSource> = {};
 for (const f of ['ins', 'hbb']) {
@@ -68,7 +70,7 @@ if (!onlyM2) {
   }
   const cerrors = chapters.flatMap((l) => validateLevel(l, genes[l.symbol]!, all));
   if (cerrors.length) throw new Error(cerrors.join('\n'));
-  const coverageErrors = Object.values(genes).flatMap((g) => geneRunCoverageErrors(all, g.symbol, g.sequence.length));
+  const coverageErrors = manifest.included.flatMap(({symbol})=>geneRunCoverageErrors(all,symbol,genes[symbol]!.sequence.length));
   if (coverageErrors.length) throw new Error(coverageErrors.join('\n'));
   const cdatasets = Object.fromEntries(manifest.included.map((g) => [g.symbol, genes[g.symbol]!.datasetId]));
   const cjson = JSON.stringify({ catalogueId: manifest.catalogueId, generatorVersion: TOKEN_GENERATOR_VERSION, datasets: cdatasets, levels: chapters }) + '\n';

@@ -217,7 +217,7 @@ describe('v5 → v7 intro-level restore', () => {
 describe('v6 → v7 non-overlapping chapters', () => {
   it('keeps intro, lab and other-gene progress, resets INS/HBB chapter credit, and writes an m6 backup', () => {
     const lab = LAB_LEVELS[0]!.id;
-    const other = CHAPTER_LEVELS.find((l) => l.symbol === 'HBA1')!.id;
+    const other = 'hba1-i01';
     const raw = JSON.stringify({
       ...newSave(LEVEL_PACK),
       schemaVersion: 6,

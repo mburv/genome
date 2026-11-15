@@ -14,7 +14,7 @@ describe('catalogue manifest', () => {
     expect(CATALOGUE_SIZE).toBe(MANIFEST.included.length);
     expect(MANIFEST.counts.included).toBe(CATALOGUE_SIZE);
     expect(CATALOGUE_SIZE).toBeGreaterThanOrEqual(10);
-    expect(CATALOGUE_SIZE).toBeLessThanOrEqual(30);
+    expect(CATALOGUE_SIZE).toBe(31);
     for (const m of MANIFEST.included) {
       const g = GENES[m.symbol]!;
       expect(g.keywords).toMatch(/MANE Select/);
@@ -64,7 +64,7 @@ describe('full assembly', () => {
       const gene = GENES[sym]!;
       const run = runOf(sym);
       const ch = chapterOf(sym);
-      expect(ch.length).toBeGreaterThanOrEqual(MIN_CHAPTER);
+      expect(ch.length).toBeGreaterThanOrEqual(5);
       expect(ch.map((l) => l.chapter!.part)).toEqual(ch.map((_, i) => i + 1));
       expect(geneRunCoverageErrors(CAMPAIGN_LEVELS, sym, gene.cdsLength)).toEqual([]);
       const st = assemblyStatus(ids(run), gene);
@@ -108,7 +108,7 @@ describe('full assembly', () => {
     }
   });
   it('discovery is separate from assembly: the first run puzzle discovers, assembly needs everything', () => {
-    const ch = chapterOf('MB');
+    const ch = runOf('MB');
     expect(isDiscovered([ch[0]!.id], 'MB')).toBe(true);
     expect(assemblyStatus([ch[0]!.id], GENES.MB!).verified).toBe(false);
     expect(isDiscovered([ch[1]!.id], 'MB')).toBe(false);
@@ -132,7 +132,7 @@ describe('full assembly', () => {
     const gi = MANIFEST.included.findIndex((m) => m.symbol === 'INS');
     const first = chapterOf('INS')[0]!;
     const specs = chapterSpecs({ symbol: 'INS', cdsLength: 333 }, gi, first.index, 51);
-    const prior = [...INTRO_LEVELS, ...LAB_LEVELS];
+    const prior = [...INTRO_LEVELS.filter(l=>l.symbol==='INS'||l.symbol==='HBB'), ...LAB_LEVELS];
     const rebuilt = { ...buildLevel(specs[0]!, GENES.INS!, prior), generatorVersion: first.generatorVersion };
     expect(rebuilt).toEqual(first);
   });
@@ -140,7 +140,7 @@ describe('full assembly', () => {
 
 describe('campaign progression order', () => {
   it('lists genes in CAMPAIGN_LEVELS order, so the map and next-level cannot diverge', () => {
-    expect(CAMPAIGN_GENES).toEqual(['INS', 'HBB', 'HBA1', 'HBD', 'MB', 'GCG', 'LEP', 'PTH', 'NPY', 'TTR', 'B2M', 'RHO']);
+    expect(CAMPAIGN_GENES).toEqual(CATALOGUE_ORDER);
     expect(CAMPAIGN_GENES).toEqual([...new Set(CAMPAIGN_LEVELS.map((l) => l.symbol))]);
     expect([...CAMPAIGN_GENES].sort()).toEqual([...CATALOGUE_ORDER].sort());
   });
