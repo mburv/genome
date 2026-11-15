@@ -304,3 +304,33 @@ test('DNA Connections graphical hints follow routes and recover without written 
   for(const c of [55,64,73,74,75,76,77])await tap(page,c);
   await won(page);await expect(dashed).toHaveCount(0);
 });
+
+
+test('Codon Crush hints show two dashed swap tiles and update after animations',async({page})=>{
+  await openLab(page,'crush');
+  const board=page.getByTestId('mechanics-board'), hint=page.getByTestId('action-hint');
+  const dashed=board.locator('.crush-hinted'), arrow=board.getByTestId('crush-hint-arrow');
+  const at=async(a:number,b:number)=>{
+    await expect(dashed).toHaveCount(2);
+    await expect(tile(page,a)).toHaveClass(/crush-hinted/);
+    await expect(tile(page,b)).toHaveClass(/crush-hinted/);
+    await expect(tile(page,a)).toHaveCSS('outline-style','dashed');
+    await expect(tile(page,b)).toHaveCSS('outline-style','dashed');
+    await expect(arrow).toBeVisible();
+    await expect(page.locator('.lab-hint')).toHaveCount(0);
+  };
+  await expect(dashed).toHaveCount(0);
+  await hint.click();await at(12,13);
+  await hint.click();await expect(dashed).toHaveCount(0);await expect(arrow).toHaveCount(0);
+  await hint.click();await at(12,13);
+  await tap(page,12);await at(12,13);
+  await tap(page,13);
+  await expect(board).toHaveAttribute('data-crush-phase','idle');
+  await at(39,40);
+  await expect(hint).toHaveAttribute('aria-pressed','true');
+  await page.getByTestId('action-undo').click();await at(12,13);
+  await trace(page,[12,13]);await expect(board).toHaveAttribute('data-crush-phase','idle');await at(39,40);
+  await page.getByTestId('action-restart').click();await at(12,13);
+  for(const [a,b] of [[12,13],[39,40],[66,67]] as const){await at(a,b);await tap(page,a);await tap(page,b);await expect(board).toHaveAttribute('data-crush-phase','idle');}
+  await won(page);await expect(dashed).toHaveCount(0);await expect(arrow).toHaveCount(0);
+});

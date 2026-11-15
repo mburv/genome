@@ -405,3 +405,18 @@ test('campaign Connections graphical hint remains actionable after resuming a pa
   await expect(page.locator('.lab-hint')).toHaveCount(0);
   await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
 });
+
+
+test('campaign Codon Crush hints match the saved board and remain graphical',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();await page.getByTestId('tutorial-skip').click();
+  await page.getByTestId('action-hint').click();
+  const board=page.getByTestId('mechanics-board'), dashed=board.locator('.crush-hinted');
+  await expect(dashed).toHaveCount(2);await expect(tile(page,12)).toHaveClass(/crush-hinted/);await expect(tile(page,13)).toHaveClass(/crush-hinted/);
+  await tile(page,12).tap();await tile(page,13).tap();await expect(board).toHaveAttribute('data-crush-phase','idle');
+  await expect(tile(page,39)).toHaveClass(/crush-hinted/);
+  await page.reload();await openMap(page);await page.getByTestId('cnode-ins-05').click();
+  const hint=page.getByTestId('action-hint');
+  if(await hint.getAttribute('aria-pressed')!=='true')await hint.click();
+  await expect(dashed).toHaveCount(2);await expect(tile(page,39)).toHaveClass(/crush-hinted/);await expect(tile(page,40)).toHaveClass(/crush-hinted/);
+  await expect(page.locator('.lab-hint')).toHaveCount(0);
+});

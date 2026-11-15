@@ -932,3 +932,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Connections hints stay on the board, with the active pair's colour. */
 .mode-lab-connections .lab-cell.connection-hinted { outline: 2px dashed var(--connection-hint-color); outline-offset: -5px; z-index: 2; }
+
+/* Codon Crush: two dashed tiles and a double arrow show the exact swap. */
+.mode-lab-crush .lab-cell.crush-hinted { outline: 2px dashed var(--green); outline-offset: -5px; }
+.crush-hint-arrow rect { fill:var(--white); stroke:var(--green); stroke-width:.04; }
+.crush-hint-arrow path { fill:none; stroke:var(--green); stroke-width:.055; stroke-linecap:round; stroke-linejoin:round; }
+.crush-hint-recovery [data-testid="action-undo"] { outline: 2px dashed var(--green); outline-offset:-5px; }

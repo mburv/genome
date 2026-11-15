@@ -356,11 +356,11 @@ export function connectionHint(state: LabState, selected: number | null = null):
 }
 
 export function labHint(state: LabState): string {
-  const { CRUSH_SWAPS, READ_STARTS, CUT_SOLUTION } = state.spec;
+  const { READ_STARTS, CUT_SOLUTION } = state.spec;
   if (state.won) return 'Complete.';
   switch (state.id) {
     case 'trace': { const c = traceHintCell(state); return c === null ? 'Complete.' : 'Try row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
-    case 'crush': { const move = findCrushSwap(state) ?? CRUSH_SWAPS[state.collected]; return move ? 'Swap row ' + (Math.floor(move[0] / 9) + 1) + ', column ' + (move[0] % 9 + 1) + ' with row ' + (Math.floor(move[1] / 9) + 1) + ', column ' + (move[1] % 9 + 1) + '.' : 'Undo the last collection or replay.'; }
+    case 'crush': { const move = findCrushSwap(state); return move ? 'Swap row ' + (Math.floor(move[0] / 9) + 1) + ', column ' + (move[0] % 9 + 1) + ' with row ' + (Math.floor(move[1] / 9) + 1) + ', column ' + (move[1] % 9 + 1) + '.' : 'Undo the last collection or replay.'; }
     case 'assembly': return READ_STARTS.map((start, read) => 'Read ' + (read + 1) + ' → slot ' + (start + 1)).join(' · ');
     case 'mutation': { const c = state.board.findIndex((b, i) => mutationExpected(i, state.spec) !== null && mutationExpected(i, state.spec) !== b); return c < 0 ? 'All correct.' : 'Check row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
     case 'connections': { const h = connectionHint(state); return h ? 'Pair ' + (h.pair + 1) + ': try row ' + (Math.floor(h.cell / 9) + 1) + ', column ' + (h.cell % 9 + 1) + '.' : 'Complete.'; }
@@ -368,17 +368,40 @@ export function labHint(state: LabState): string {
   }
 }
 
-/** A hint uses the actual board, not a stale initial swap. */
-export function findCrushSwap(state: LabState): readonly [number, number] | null {
-  if (state.id !== 'crush' || state.won) return null;
+/** Enumerate actual legal swaps, preferring the certified move when available. */
+function crushCandidates(state: LabState): [number, number][] {
   const target = state.spec.CRUSH_TARGETS[state.collected]!;
   const old = new Set(matchingTriples(state.board, target).map(c => c.join(',')));
+  const result: [number, number][] = [];
   for (let a = 0; a < 81; a++) for (const b of [a + 1, a + 9]) {
     if (!validCell(b) || !adjacent(a, b) || state.board[a] === '.' || state.board[b] === '.' || state.board[a] === state.board[b]) continue;
     const board = [...state.board]; [board[a], board[b]] = [board[b]!, board[a]!];
-    if (matchingTriples(board, target).some(c => (c.includes(a) || c.includes(b)) && !old.has(c.join(',')))) return [a,b];
+    if (matchingTriples(board, target).some(c => (c.includes(a) || c.includes(b)) && !old.has(c.join(',')))) result.push([a,b]);
   }
-  return null;
+  const preferred = state.spec.CRUSH_SWAPS[state.collected];
+  const rank = ([a,b]: [number,number]) => preferred && a===preferred[0] && b===preferred[1] ? 0 : 1;
+  return result.sort((a,b)=>rank(a)-rank(b));
+}
+
+/** Hint a real swap that can still complete the remaining codons. Deterministic
+ * bounded lookahead avoids highlighting a stale fixture or a known dead end. */
+export function findCrushSwap(state: LabState): readonly [number, number] | null {
+  if (state.id !== 'crush' || state.won) return null;
+  let budget = 400;
+  const failed = new Set<string>();
+  const solve = (s: LabState): [number,number] | null => {
+    if (--budget < 0) return null;
+    const key = s.collected + ':' + s.refill + ':' + s.board.join('');
+    if (failed.has(key)) return null;
+    for (const [a,b] of crushCandidates(s)) {
+      const next = applyLab(s,{type:'swap',a,b}).state;
+      if (next !== s && (next.won || solve(next))) return [a,b];
+      if (budget <= 0) break;
+    }
+    failed.add(key);
+    return null;
+  };
+  return solve(state);
 }
 
 /** Recover the actual coding strand from the solved puzzle, not from the requested target. */
