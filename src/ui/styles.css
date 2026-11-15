@@ -963,3 +963,20 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
   .mixed-codon-clues.long-codon-clues { --chip-min:18px; gap:4px 6px; }
   .long-codon-clues .strip-cell { min-height:23px; font-size:12px; }
 }
+
+/* Mixed mechanics share the established DNA block faces and palette. */
+.block-lab-board .lab-token,.lab-token.tok { background:var(--tok-bg,var(--paper)); border-color:var(--tok-border,var(--rule)); color:var(--tok-fg,var(--ink)); }
+.block-lab-board .lab-token .tok-face { width:100%; }
+.block-lab-board .lab-token .tok-row { justify-content:center; }
+.block-lab-board .lab-token.tier-3 .tok-face { font-size:calc(var(--board) / 27); }
+.block-lab-board .lab-token.tier-6 .tok-face { font-size:calc(var(--board) / 34); }
+.block-lab-board .lab-token.tier-l .tok-face { font-size:calc(var(--board) / 37); }
+.strip-cell.lab-token,.mutation-target-base.lab-token,.restriction-target-base.lab-token,.assembly-reference .lab-token { min-width:30px; width:auto; padding:2px; flex:0 0 auto; }
+.lab-token .tok-face { font-size:10px; line-height:1.05; min-width:0; }
+.lab-token .tok-len { font-size:9px; }
+.lab-token .barcode { min-width:0; max-width:100%; }
+.connection-pair:has(.tok-face) { display:flex; align-items:center; gap:4px; }
+.lab-base-picker .lab-token { min-width:0; min-height:42px; }
+.lab-base-picker .lab-token .tok-face { font-size:12px; }
+.tutorial-board .lab-token .tok-face { font-size:10px; }
+.tutorial-target .lab-token { min-width:30px; min-height:27px; }

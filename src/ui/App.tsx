@@ -68,8 +68,8 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     }
     if (verifiedMixed(stage, state)) {
       next = recordCompletion(next, stage.id);
-      if (isDiscovered(next.completed, 'INS') && !next.discovered.includes('INS')) next = { ...next, discovered: [...next.discovered, 'INS'] };
-      next = recordAssembly(next, 'INS');
+      if (isDiscovered(next.completed, stage.symbol) && !next.discovered.includes(stage.symbol)) next = { ...next, discovered: [...next.discovered, stage.symbol] };
+      next = recordAssembly(next, stage.symbol);
     }
     if (next !== saveRef.current) persist(next);
   }, [stage, persist]);
@@ -159,7 +159,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
         def, completed: save.completed.includes(def.id), onCard: () => go({ kind: 'card', symbol: def.symbol }), hasNext: CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) < CAMPAIGN_LEVELS.length - 1,
         stage, initialActions: save.mixedAttempts?.[def.id] ?? [], seedTrace: !save.mixedAttempts?.[def.id]?.length || !!save.traceStarterAttempts?.includes(def.id), part: runProgress(def)!.part, of: runProgress(def)!.of,
-        covered: assemblyStatus(save.completed, GENES.INS!).covered, assembled: assemblyStatus(save.completed, GENES.INS!).verified,
+        covered: assemblyStatus(save.completed, GENES[def.symbol]!).covered, assembled: assemblyStatus(save.completed, GENES[def.symbol]!).verified,
         onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1]; if (next) play(next.id); else go({ kind: 'map' }); }
       }} />}
       {screen.kind === 'play' && !useMixed && (
@@ -193,7 +193,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
       {shownTutorial && <MechanicTutorial key={shownTutorial} mechanic={shownTutorial} stage={useMixed && screen.kind === 'play' ? stage : null} reducedMotion={reducedMotion} onClose={closeTutorial} />}
       {screen.kind !== 'title' && (
-        <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · M4 gene assembly</footer>
+        <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · Famous Genes</footer>
       )}
     </main>
   );
