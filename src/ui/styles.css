@@ -274,7 +274,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 }
 .clue-stack.tier-3 { --chip-min: calc(3ch + 12px); }
 .clue-stack.tier-6 { --chip-min: calc(6ch + 14px); }
-.clue-stack:has(.tok-chip.tier-l) { --chip-min: calc(3ch + 14px); }
+.clue-stack:has(.tok-chip.tier-l) { --chip-min: 29px; }
 .clue-part {
   display: flex;
   flex-wrap: nowrap;
@@ -1037,15 +1037,20 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .bonus-map .bonus-filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.85rem;min-width:0}.bonus-filter input[type=search],.bonus-filter select{max-width:100%;min-width:0;flex:1;min-height:36px}.bonus-play{min-width:0}.bonus-map .cat-gene .row-between{flex-wrap:wrap;gap:4px}.bonus-map .cat-gene .muted{overflow-wrap:anywhere}.bonus-play .win-card{box-sizing:border-box;max-width:100%;min-width:0}.bonus-play .win-card p{overflow-wrap:anywhere}
 
 
-/* Long-fragment clues are content-sized, not miniature board cells. Their two
-   codons and divider must fit even in compact/paginated clues on narrow phones. */
+/* Long-fragment clues retain the compact original clue footprint, while fitting
+   two codons and the divider. Never paginate these; reserve their natural height. */
+.app:has(.target.long-clues) {
+  --clue-floor: max(108px, calc(var(--long-clue-height, 0px) + 4px));
+  --board: min(100vw, var(--app-max), max(180px, calc(100svh - var(--play-header) - var(--play-under) - (3 * var(--app-gap)) - var(--clue-floor))));
+}
+.target.long-clues { max-height: none; overflow: visible; flex-shrink: 0; }
 .target :is(.tok-chip, .lab-token).tier-l,
 .target .tok-chip:has(> .tok-face.long) {
   box-sizing: border-box;
   height: auto;
-  min-height: 36px;
-  min-width: 32px;
-  padding: 4px 5px;
+  min-height: 28px;
+  min-width: 28px;
+  padding: 2px 3px;
   align-items: center;
   justify-content: center;
 }
@@ -1059,9 +1064,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
   height: auto;
   width: auto;
   min-width: 3ch;
-  font-size: 10.5px;
-  line-height: 1.15;
-  gap: 2px;
+  font-size: 9.5px;
+  line-height: 1;
+  gap: 1px;
 }
 .target .tok-face.long > .tok-row {
   flex: 0 0 auto;
@@ -1070,7 +1075,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .target.clues-compact .clue-tokens > [data-clue-index].tier-l {
   padding-top: 10px;
 }
-.target .assembly-reference .lab-token.tier-l { gap: 3px; }
+.target .assembly-reference .lab-token.tier-l { gap: 2px; padding: 2px 3px; }
 
 
 /* Draw each inset dash rail independently. Native dashed outlines/borders can
@@ -1100,7 +1105,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Keep both replication labels aligned with the taller split-fragment clues. */
 .clue-stack.mode-replicate:has(.tok-chip.tier-l) {
-  --long-rep-chip-height: 40px;
+  --long-rep-chip-height: 28px;
+  gap: 2px;
 }
 .clue-stack.mode-replicate:has(.tok-chip.tier-l) .rep-pair > .tok-chip {
   min-height: var(--long-rep-chip-height);

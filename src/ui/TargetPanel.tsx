@@ -79,7 +79,7 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
  * explicit pages rather than a scrolling box. DOM visibility is recalculated after
  * committed-match change; a drag preview never changes the committed completion flags.
  */
-export function TargetShell({ defId, label, solved, committedKey, children, reserveHeight = false, hideCompleted = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; reserveHeight?: boolean; hideCompleted?: boolean }) {
+export function TargetShell({ defId, label, solved, committedKey, children, reserveHeight = false, hideCompleted = false, longClues = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; reserveHeight?: boolean; hideCompleted?: boolean; longClues?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const page = useRef(0);
   const previous = useRef('');
@@ -87,6 +87,7 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const app = el.closest<HTMLElement>('.app');
     const identity = hideCompleted ? defId + ':' + committedKey : defId;
     if (previous.current !== identity) { previous.current = identity; page.current = 0; }
     const nav = el.querySelector<HTMLElement>('.clue-pagination')!;
@@ -109,6 +110,13 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
       // Codon Crush always removes collected clues, even on a roomy or solved board.
       // Measure the full set first so the board stays at the same vertical position.
       if (hideCompleted) units.forEach(unit => setHidden(unit, unit.dataset.clueDone === 'true'));
+      // Long fragments use compact, content-sized clues. Keep every outstanding
+      // clue visible; on short screens reserve the actual height above the board.
+      if (longClues) {
+        app?.style.setProperty('--long-clue-height', Math.ceil(el.getBoundingClientRect().height) + 'px');
+        page.current = 0;
+        return;
+      }
       if (fits()) { page.current = 0; return; }
       el.classList.add('clues-compact');
       const remaining = units.filter(unit => (!hideCompleted && solved) || unit.dataset.clueDone !== 'true');
@@ -142,12 +150,13 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
     window.visualViewport?.addEventListener('resize', onResize);
     return () => {
       refresh.current = null;
+      if (longClues) app?.style.removeProperty('--long-clue-height');
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [defId, solved, committedKey, reserveHeight, hideCompleted]);
+  }, [defId, solved, committedKey, reserveHeight, hideCompleted, longClues]);
   return (
-    <section ref={ref} className="target" aria-label={label} data-testid="target-panel">
+    <section ref={ref} className={'target'+(longClues?' long-clues':'')} aria-label={label} data-testid="target-panel">
       <div className="clue-pagination" hidden>
         <button type="button" data-clue-back aria-label="Previous clues" onClick={() => refresh.current?.(-1)}>‹</button>
         <span className="clue-page-count" aria-live="polite" />
@@ -179,10 +188,11 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     </div>
   );
   const tier = toks ? def.tier : undefined;
+  const longClues = Object.values(def.tokens ?? {}).some(token => token.seq.length > 6);
   if (def.mode === 'replicate') {
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target strands">
+      <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target strands">
         {heading}
         <div className={stackClass('replicate', tier)}>
           <div className="rep-start">
@@ -216,7 +226,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     const restoredSeq = symbolSequence(def, custom, def.repair.expected);
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
+      <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
         {heading}
         <div className={stackClass('repair', tier)}>
           <CluePart group={a.group} testId="clue-part-1" badgeTestId="clue-badge-1">
@@ -238,7 +248,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
   }
   if (def.mode === 'splice') {
     return (
-      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target pieces">
+      <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target pieces">
         {heading}
         <div className={stackClass('splice', tier)}>
           {def.tracks.map((t, i) => (
@@ -257,7 +267,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     );
   }
   return (
-    <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence">
+    <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence">
       {heading}
       <div className={stackClass('sequence', tier)}>
         <CluePart group={t0.group} testId="clue-part-1" badgeTestId="clue-badge-1">

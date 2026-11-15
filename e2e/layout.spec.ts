@@ -221,9 +221,11 @@ test('all long fragments, including 36-base connection pieces, share the simplif
 
 
 test('long clue chips grow around both codons and their divider on narrow and standard phones', async ({page})=>{
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   const kinds=['trace','crush','assembly','mutation','connections','restriction'] as const;
-  const ids=['hbb-c08',...kinds.map(kind=>CAMPAIGN_LEVELS.find(l=>(l.tier??0)>=12&&mechanicOf(l)===kind)?.id).filter((id):id is string=>!!id)];
+  const replication=CAMPAIGN_LEVELS.filter(l=>(l.tier??0)>=12&&mechanicOf(l)==='slide'&&l.mode==='replicate');
+  expect(replication.length).toBeGreaterThan(0);
+  const ids=[...new Set(['hbb-c08','rho-c07','gpx1-c08',...replication.map(l=>l.id),...kinds.map(kind=>CAMPAIGN_LEVELS.find(l=>(l.tier??0)>=12&&mechanicOf(l)===kind)?.id).filter((id):id is string=>!!id)])].filter(id=>CAMPAIGN_LEVELS.some(l=>l.id===id));
   expect(ids.length).toBeGreaterThan(3);
   for(const id of ids){
     await page.setViewportSize({width:390,height:844});
@@ -245,7 +247,7 @@ test('long clue chips grow around both codons and their divider on narrow and st
       }));
       expect(report.length,id+' should have visible long clue chips').toBeGreaterThan(0);
       for(const chip of report){
-        expect(chip.chipHeight,id+' '+chip.label).toBeGreaterThanOrEqual(32);
+        expect(chip.chipHeight,id+' '+chip.label).toBeGreaterThanOrEqual(26);
         expect(chip.rowsFit,id+' '+chip.label).toBe(true);
         expect(chip.separated,id+' '+chip.label).toBe(true);
         expect(chip.lineVisible).toBe(true);
@@ -253,6 +255,8 @@ test('long clue chips grow around both codons and their divider on narrow and st
       }
       expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
       expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+      await expect(panel.locator('.clue-pagination')).toBeHidden();
+      await expect(panel.locator('[data-clue-unit][data-clue-done="false"][data-clue-hidden]')).toHaveCount(0);
       await expect(page.getByTestId('icon-row')).toBeVisible();
     }
   }
