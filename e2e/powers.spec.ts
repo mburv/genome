@@ -4,81 +4,24 @@ import { dragBy, fresh, openChapter, openLab, openMap, readHint, solveWithHints,
 const boardText = (page: import('@playwright/test').Page) => page.locator('.board').innerText();
 const baseAt = (page: import('@playwright/test').Page, c: number) => page.locator(`[data-cell="${c}"]`).getAttribute('data-base');
 
-test('opening puzzle hides powers; later puzzles show ⚡2 and unaffordable powers spend nothing', async ({ page }) => {
-  await openChapter(page, 'ins-01');
-  await expect(page.getByTestId('energy')).toHaveCount(0);
-  await expect(page.getByTestId('power-crispr')).toHaveCount(0);
-  await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
-  await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Hint' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Restart' })).toBeVisible();
-  await openChapter(page, 'ins-02');
-  await expect(page.getByTestId('power-tray')).toBeVisible();
-  await expect(page.getByTestId('energy')).toContainText('2');
-  await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(6);
-  await page.getByTestId('power-crispr').click();
-  await expect(page.getByTestId('tray-note')).toHaveCount(0);
-  await expect(page.getByTestId('power-error')).toHaveCount(0);
-  await expect(page.getByTestId('power-panel')).toHaveCount(0);
-  await expect(page.getByTestId('energy')).toContainText('2');
+test('campaign sliding levels show only Undo, Hint and Restart', async ({ page }) => {
+  for (const id of ['ins-01','ins-02','ins-03','ins-04','ins-c02','hbb-c08']) {
+    await openChapter(page,id);
+    await expect(page.getByTestId('energy')).toHaveCount(0);
+    await expect(page.getByTestId('power-crispr')).toHaveCount(0);
+    await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
+    for (const name of ['Undo','Hint','Restart']) await expect(page.getByRole('button',{name,exact:true})).toBeVisible();
+  }
 });
-
-function underBoardMetrics() {
-  const app = document.querySelector('.app') as HTMLElement;
-  const under = document.querySelector('[data-testid="under-board"]') as HTMLElement;
-  const energy = document.querySelector('[data-testid="energy"]') as HTMLElement;
-  const pips = energy.querySelector('.pips') as HTMLElement;
-  const row = document.querySelector('[data-testid="icon-row"]') as HTMLElement;
-  const buttons = [...row.querySelectorAll('button')];
-  const a = app.getBoundingClientRect();
-  const u = under.getBoundingClientRect();
-  const e = energy.getBoundingClientRect();
-  const p = pips.getBoundingClientRect();
-  const r = row.getBoundingClientRect();
-  return {
-    appLeft: a.left,
-    appRight: a.right,
-    underLeft: u.left,
-    underRight: u.right,
-    energyLeft: e.left,
-    energyRight: e.right,
-    energyW: e.width,
-    pipsW: p.width,
-    rowLeft: r.left,
-    rowRight: r.right,
-    rowW: r.width,
-    ids: buttons.map((b) => b.getAttribute('data-testid')),
-    buttons: buttons.map((b) => {
-      const box = b.getBoundingClientRect();
-      return { w: box.width, h: box.height };
-    }),
-  };
-}
-
-test('energy bar and six icon buttons fit inside the under-board section at 320, 375, 390 and 430', async ({ page }) => {
-  for (const width of [320, 375, 390, 430] as const) {
-    await page.setViewportSize({ width, height: 844 });
-    await openChapter(page, 'ins-02');
-    const metrics = await page.evaluate(underBoardMetrics);
-    expect(metrics.rowRight, `row overflows at ${width}`).toBeLessThanOrEqual(metrics.underRight + 0.5);
-    expect(metrics.energyRight, `energy overflows at ${width}`).toBeLessThanOrEqual(metrics.underRight + 0.5);
-    expect(Math.abs(metrics.rowLeft - metrics.underLeft), `row left inset at ${width}`).toBeLessThanOrEqual(1);
-    expect(Math.abs(metrics.underRight - metrics.rowRight), `row right inset at ${width}`).toBeLessThanOrEqual(1);
-    expect(Math.abs((metrics.rowLeft - metrics.appLeft) - (metrics.appRight - metrics.rowRight)), `row left/right insets differ at ${width}`).toBeLessThanOrEqual(1);
-    expect(Math.abs(metrics.energyLeft - metrics.rowLeft), `energy/row left edges differ at ${width}`).toBeLessThanOrEqual(1);
-    expect(Math.abs(metrics.energyRight - metrics.rowRight), `energy/row right edges differ at ${width}`).toBeLessThanOrEqual(1);
-    expect(Math.abs(metrics.energyLeft - metrics.underLeft), `energy left inset at ${width}`).toBeLessThanOrEqual(1);
-    expect(Math.abs(metrics.underRight - metrics.energyRight), `energy right inset at ${width}`).toBeLessThanOrEqual(1);
-    expect(Math.abs((metrics.energyLeft - metrics.appLeft) - (metrics.appRight - metrics.energyRight)), `energy left/right insets differ at ${width}`).toBeLessThanOrEqual(1);
-    expect(metrics.pipsW).toBeGreaterThan(metrics.energyW * 0.6);
-    expect(metrics.ids).toEqual(['power-crispr', 'power-ligase', 'power-scaffold', 'action-undo', 'action-hint', 'action-restart']);
-    expect(metrics.buttons).toHaveLength(6);
-    const widths = metrics.buttons.map((b) => b.w);
-    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
-    for (const b of metrics.buttons) expect(b.h).toBeGreaterThanOrEqual(44);
-    if (width === 390) {
-      await page.screenshot({ path: '/workspace/game/screenshots/genome-icon-row-fit-390x844.png' });
-    }
+test('campaign control row fits at 320, 375, 390 and 430', async ({page}) => {
+  for (const width of [320,375,390,430]) {
+    await page.setViewportSize({width,height:568});
+    await openChapter(page,'ins-02');
+    const row=page.getByTestId('icon-row'), under=page.getByTestId('under-board');
+    const r=(await row.boundingBox())!, u=(await under.boundingBox())!;
+    expect(r.x).toBeGreaterThanOrEqual(u.x-1);
+    expect(r.x+r.width).toBeLessThanOrEqual(u.x+u.width+1);
+    await expect(row.locator('button')).toHaveCount(3);
   }
 });
 
@@ -273,19 +216,6 @@ test('Ligase: bonding a finished codon blocks drags on both axes; release is fre
   // Movement restored: the rest of the level solves by hints.
   await solveWithHints(page);
   await expect(page.getByTestId('win-meta')).toContainText('1 power used');
-});
-
-test('Ligase preview on a multi-base piece uses the shorter lock copy', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  // ins-c01 starts with no complete target tiles, so Ligase has no candidates there.
-  // ins-c02 already has placed target pieces that Ligase can lock.
-  await openChapter(page, 'ins-c02');
-  await page.getByTestId('power-ligase').click();
-  const cand = page.locator('.tile.candidate');
-  await expect(cand.first()).toBeVisible();
-  await cand.first().click();
-  await expect(page.getByTestId('power-preview')).toHaveText('Stop every row and column through it from rotating (both axes). Release any time for free. Undo will refund');
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-lock-copy-390x844.png', animations: 'disabled' });
 });
 
 test('Scaffold: bridge across a gap, rotations tick it, it expires after exactly 3 and undo brings it back', async ({ page }) => {

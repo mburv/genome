@@ -372,7 +372,7 @@ test('INS 7/13 has no full-sequence box or tile inspector under the board', asyn
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
   await page.locator('.tile.tok').first().click();
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
-  await expect(page.getByTestId('energy')).toBeVisible();
+  await expect(page.getByTestId('energy')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/screenshots/genome-ins7-tidy-390x844.png' });
 });
 

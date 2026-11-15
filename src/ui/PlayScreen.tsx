@@ -42,7 +42,8 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const bestForLevel = save.best[def.id];
   const puzzle = useMemo(() => attempt ?? (alreadyCompleted ? solvedDisplayState(def, bestForLevel) : createInitialState(def)), [attempt, alreadyCompleted, def, bestForLevel]);
   const gene = GENES[def.symbol]!;
-  const powers = powersEnabled(def);
+  // Campaign sliding puzzles use only Undo, Hint and Restart. Enzyme Lab remains optional.
+  const powers = !!def.lab && powersEnabled(def);
   const [selected, setSelected] = useState<Cell>(() => defaultSelection(def, puzzle));
   const [animation, setAnimation] = useState<MoveAnimation | null>(null);
   const [celebrate, setCelebrate] = useState<{ newBases: number; discovered: boolean; assembled: boolean; replayed: boolean } | null>(null);
@@ -138,7 +139,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
             sound = 'expire';
             break;
           case 'energy':
-            if (ev.gained > 0) sound = 'energy';
+            if (powers && ev.gained > 0) sound = 'energy';
             break;
           case 'solved': {
             const used = powersUsed + result.events.filter((e) => e.type === 'spent').length;
@@ -167,7 +168,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
       persist(next);
       return true;
     },
-    [def, gene, save, persist, cue, powersUsed, alreadyCompleted],
+    [def, gene, save, persist, cue, powersUsed, alreadyCompleted, powers],
   );
 
   const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command)), [commit, def, puzzle]);
@@ -199,6 +200,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
 
   // ---- power targeting ------------------------------------------------------------------
   const pickPower = (p: Power) => {
+    if (!powers) return;
     if (targeting === p) return clearPower();
     const free = puzzle.freeUses.includes(p);
     if (!free && energy < POWER_COST[p]) {
@@ -372,6 +374,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
           active={targeting}
           disabled={solvedView}
           highlightRelease={activeHint?.kind === 'release'}
+          recoveryHint={!powers && (activeHint?.kind === 'undo' || activeHint?.kind === 'restart') ? activeHint.kind : undefined}
           onPick={pickPower}
           onRelease={() => dispatch({ type: 'release' })}
           canUndo={puzzle.history.length > 0}
@@ -383,13 +386,13 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
         />
       )}
 
-      {activeHint?.kind === 'undo' && !solvedView && (
+      {powers && activeHint?.kind === 'undo' && !solvedView && (
         <div className="solved-bar">
           <button type="button" className="primary" onClick={() => rewind(activeHint.count)} data-testid="rewind">Undo ×{activeHint.count}</button>
           <button type="button" onClick={() => dispatch({ type: 'restart' })}>Restart (free)</button>
         </div>
       )}
-      {activeHint?.kind === 'restart' && !solvedView && (
+      {powers && activeHint?.kind === 'restart' && !solvedView && (
         <div className="solved-bar">
           <button type="button" className="primary" onClick={() => dispatch({ type: 'restart' })} data-testid="restart-hint">Restart (free)</button>
         </div>

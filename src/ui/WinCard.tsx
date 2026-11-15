@@ -75,7 +75,7 @@ export function WinCard(p: Props) {
       <div className="card">
         <div className="card-head">
           <div className="card-head-copy">
-            <p className="muted small" data-testid="win-meta">{practice ? p.mechanic ? 'MECHANICS LAB' : 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'} · {p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}</p>
+            <p className="muted small" data-testid="win-meta">{practice ? p.mechanic ? 'MECHANICS LAB' : 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'}{def.lab && !p.mechanic ? ` · ${p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}` : ''}</p>
             <h3 id="win-title">{p.mechanic?.title ?? MODE_WIN[def.mode]}</h3>
           </div>
           <button type="button" className="win-close" onClick={p.onClose} aria-label="Close and view board" data-testid="win-close">

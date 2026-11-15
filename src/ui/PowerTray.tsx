@@ -25,6 +25,7 @@ interface TrayProps {
   active: Power | null;
   disabled: boolean;
   highlightRelease: boolean;
+  recoveryHint?: 'undo' | 'restart' | undefined;
   onPick: (p: Power) => void;
   onRelease: () => void;
   canUndo: boolean;
@@ -38,7 +39,7 @@ interface TrayProps {
 /** Full-width energy meter + a six-icon action row (powers hidden on the opening puzzle). */
 export function PowerTray({
   energy, powersEnabled, freeUses, locks, scaffold, active, disabled, highlightRelease,
-  onPick, onRelease, canUndo, canRestart, onUndo, hintEnabled, onHint, onRestart,
+  onPick, onRelease, canUndo, canRestart, onUndo, hintEnabled, onHint, onRestart, recoveryHint,
 }: TrayProps) {
   return (
     <section className="tray" aria-label={powersEnabled ? 'Enzyme power-ups' : 'Puzzle controls'} data-testid="power-tray">
@@ -71,13 +72,13 @@ export function PowerTray({
             </button>
           );
         })}
-        <button type="button" className="icon-btn" onClick={onUndo} disabled={disabled || !canUndo} aria-label="Undo" title="Undo last move" data-testid="action-undo">
+        <button type="button" className={`icon-btn${recoveryHint === 'undo' ? ' recovery-hint' : ''}`} onClick={onUndo} disabled={disabled || !canUndo} aria-label="Undo" title="Undo last move" data-testid="action-undo">
           <IconUndo />
         </button>
         <button type="button" className={`icon-btn hint-toggle${hintEnabled ? ' active' : ''}`} onClick={onHint} disabled={disabled} aria-label="Hint" aria-pressed={hintEnabled} title={hintEnabled ? 'Turn hints off' : 'Turn hints on'} data-testid="action-hint">
           <IconHint />
         </button>
-        <button type="button" className="icon-btn" onClick={onRestart} disabled={disabled || !canRestart} aria-label="Restart" title="Restart this level" data-testid="action-restart">
+        <button type="button" className={`icon-btn${recoveryHint === 'restart' ? ' recovery-hint' : ''}`} onClick={onRestart} disabled={disabled || !canRestart} aria-label="Restart" title="Restart this level" data-testid="action-restart">
           <IconRestart />
         </button>
       </div>

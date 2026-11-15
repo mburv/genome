@@ -103,7 +103,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
           <h2 className="gene">Enzyme lab <span>· optional</span></h2>
           <span className="muted small">Practice anytime</span>
         </div>
-        <p className="muted small lab-note">One free use of each power to learn it. Practice only — no coverage. Campaign powers are available after the first puzzle; every level can be solved without them.</p>
+        <p className="muted small lab-note">One free use of each power to learn it. Practice only — no coverage. Powers are exclusive to this optional lab; campaign sliding puzzles use Undo, Hint and Restart.</p>
         <ol className="nodes">
           {labs.map((l, i) => {
             const done = completed.includes(l.id);

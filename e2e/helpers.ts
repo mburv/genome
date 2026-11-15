@@ -90,7 +90,7 @@ export async function fresh(page: Page, mixed = false): Promise<void> {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await page.getByTestId('title-screen').waitFor();
-  if (!mixed) { await page.evaluate(() => { const raw = JSON.parse(localStorage.getItem('genome-save')!); raw.tutorialsSeen = ['slide','trace','crush','assembly','mutation','connections','restriction']; localStorage.setItem('genome-save', JSON.stringify(raw)); }); await page.reload(); }
+  if (!mixed) { await page.evaluate(() => { const raw = JSON.parse(localStorage.getItem('genome-save')!); raw.tutorialsSeen = ['slide','slide-splice','slide-replicate','slide-repair','trace','crush','assembly','mutation','connections','restriction']; localStorage.setItem('genome-save', JSON.stringify(raw)); }); await page.reload(); }
 }
 
 export async function expectChapterHeading(page: Page, symbol: string, part: number, of: number, fullName: string): Promise<void> {
@@ -212,7 +212,7 @@ export function aNonWinningSlide(def: LevelDefinition): { origin: number; axis: 
 /** Seed localStorage with a completed level, launch (title), then Play to the map. */
 export async function openCompleted(page: Page, raw: string): Promise<void> {
   await page.goto('/?classic=1');
-  await page.evaluate((value) => { localStorage.clear(); const save = JSON.parse(value); save.tutorialsSeen = ['slide','trace','crush','assembly','mutation','connections','restriction']; localStorage.setItem('genome-save', JSON.stringify(save)); }, raw);
+  await page.evaluate((value) => { localStorage.clear(); const save = JSON.parse(value); save.tutorialsSeen = ['slide','slide-splice','slide-replicate','slide-repair','trace','crush','assembly','mutation','connections','restriction']; localStorage.setItem('genome-save', JSON.stringify(save)); }, raw);
   await page.reload();
   await page.getByTestId('title-screen').waitFor();
   await page.getByTestId('title-play').click();

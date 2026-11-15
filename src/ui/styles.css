@@ -938,3 +938,14 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .crush-hint-arrow rect { fill:var(--white); stroke:var(--green); stroke-width:.04; }
 .crush-hint-arrow path { fill:none; stroke:var(--green); stroke-width:.055; stroke-linecap:round; stroke-linejoin:round; }
 .crush-hint-recovery [data-testid="action-undo"] { outline: 2px dashed var(--green); outline-offset:-5px; }
+
+/* Sliding mode guides share the animated strip, with distinct, numbered target groups. */
+.tutorial-tracks { display:flex; flex-wrap:wrap; gap:4px 8px; margin:4px 0 8px; }
+.tutorial-tracks .tutorial-track { align-items:center; margin:0; padding:2px; border-bottom:2px solid var(--blue); }
+.tutorial-track b { padding:0 3px; font-size:10px; }
+.tutorial-cell[data-tutorial-group="2"], .tutorial-track[data-tutorial-group="2"] { outline-color:var(--green); border-color:var(--green); }
+.tutorial-cell[data-tutorial-group="3"], .tutorial-track[data-tutorial-group="3"] { outline-color:var(--amber); border-color:var(--amber); }
+.tutorial-group-mark { position:absolute; top:0; left:1px; z-index:3; font:700 8px var(--mono); background:var(--white); color:var(--ink); }
+.tutorial-cell.tutorial-repair-gap { outline:2px dashed var(--green); outline-offset:-2px; z-index:2; }
+.tutorial-gap-mark { color:var(--white); }
+.icon-row .recovery-hint { outline:2px dashed var(--green); outline-offset:-4px; background:var(--mint); }
