@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { dragBy, goToChapter, openChapter, openMap, readHint } from './helpers';
+import { dragBy, fresh, goToChapter, openChapter, openMap, readHint } from './helpers';
 
 test('Hint stays on across consecutive moves, undo and restart, then turns off', async ({ page }) => {
   await openChapter(page, 'hbb-c07');
