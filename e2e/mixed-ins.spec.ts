@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { fresh, openMap, solveWithHints } from './helpers';
+import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 const tile=(page:import('@playwright/test').Page,c:number)=>page.getByTestId('lab-cell-'+c);
 test('first-use tutorials animate all seven mechanics, replay, and remember acknowledgement',async({page})=>{
   await fresh(page,true);await openMap(page);
@@ -495,4 +497,68 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
   await page.reload();await openMap(page);await page.getByTestId('cnode-dmd-c11').click();
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await expect(page.getByTestId('mixed-coverage')).toHaveText('0/11058 bp assembled');
+});
+
+
+test('multi-base assembly clues read horizontally and share graphite and palette with the board',async({page})=>{
+  await fresh(page,true);
+  await page.setViewportSize({width:320,height:568});
+  await openMap(page);
+  const stages=CAMPAIGN_LEVELS.filter(def=>def.tier && mechanicOf(def)==='assembly');
+  expect(stages.length).toBeGreaterThan(0);
+  const chosen=[...new Map(stages.map(def=>[def.tier,def])).values()];
+  for(const def of chosen){
+    const stage=mixedStage(def)!;
+    await page.getByTestId('cnode-'+def.id).click();
+    if(await page.getByTestId('mechanic-tutorial').isVisible())await page.getByTestId('tutorial-skip').click();
+    const ref=page.getByTestId('assembly-reference'), board=page.getByTestId('mechanics-board');
+    const chips=ref.locator(':scope > .lab-token');
+    await expect(chips).toHaveCount(stage.spec.ASSEMBLY_TARGET.length);
+    const geometry=await chips.evaluateAll(nodes=>nodes.filter(el=>!el.hasAttribute('data-clue-hidden')).map(el=>{
+      const rect=el.getBoundingClientRect();
+      const letters=Array.from(el.querySelectorAll('.chip-label i'));
+      const positions=letters.map(l=>({x:l.getBoundingClientRect().x,y:l.getBoundingClientRect().y,colour:getComputedStyle(l).color}));
+      return {x:rect.x,y:rect.y,right:rect.right,bg:getComputedStyle(el).backgroundColor,positions,seq:el.getAttribute('aria-label')!.split(': ')[1]};
+    }));
+    expect(geometry[1]!.x).toBeGreaterThan(geometry[0]!.x);
+    expect(geometry[1]!.y).toBe(geometry[0]!.y);
+    for(const g of geometry){
+      expect(g.right).toBeLessThanOrEqual(320);
+      expect(g.positions.every(p=>p.colour==='rgb(68, 68, 67)'&&p.y===g.positions[0]!.y)).toBe(true);
+      expect(g.positions.every((p,i)=>i===0||p.x>g.positions[i-1]!.x)).toBe(true);
+    }
+    const tiles=await board.locator('.lab-token').evaluateAll(nodes=>nodes.map(el=>({seq:el.getAttribute('data-seq'),bg:getComputedStyle(el).backgroundColor,letters:Array.from(el.querySelectorAll('.tok-row i')).map(l=>getComputedStyle(l).color)})));
+    for(const t of tiles)expect(t.letters.every(c=>c==='rgb(68, 68, 67)')).toBe(true);
+    for(const g of geometry)expect(tiles.some(t=>t.seq===g.seq&&t.bg===g.bg)).toBe(true);
+    const panel=page.getByTestId('target-panel');
+    expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+    await openMap(page);
+  }
+});
+
+
+test('multi-base Genome Assembly hints advance and recover saved progress after reload',async({page})=>{
+  await fresh(page,true);await openMap(page);
+  const def=CAMPAIGN_LEVELS.find(def=>def.tier===6 && mechanicOf(def)==='assembly') ?? CAMPAIGN_LEVELS.find(def=>def.tier && mechanicOf(def)==='assembly')!;
+  const stage=mixedStage(def)!;
+  await page.getByTestId('cnode-'+def.id).click();
+  await page.getByTestId('tutorial-skip').click();
+  const hint=page.getByTestId('action-hint');
+  await hint.click();
+  const source=page.locator('.assembly-hint-source'), destination=page.locator('.assembly-hint-destination');
+  for(let read=0;read<stage.spec.READS.length;read++){
+    await expect(source).toHaveAttribute('data-lab-cell',String(stage.spec.READ_CELLS[read]![0]));
+    await expect(destination).toHaveAttribute('data-lab-cell',String(stage.spec.ASSEMBLY_CELLS[stage.spec.READ_STARTS[read]!]));
+    await expect(page.locator('.lab-hint')).toHaveCount(0);
+    await source.tap();await destination.tap();
+    if(read===0){
+      await page.reload();await openMap(page);await page.getByTestId('cnode-'+def.id).click();
+      await expect(page.getByTestId('lab-progress')).toHaveText('1/3 reads');
+      // Hint mode is session-local across a full reload, as in the other mechanics.
+      if(await hint.getAttribute('aria-pressed')!=='true')await hint.click();
+      await expect(hint).toHaveAttribute('aria-pressed','true');
+    }
+  }
+  await expect(page.getByTestId('win')).toBeVisible();
+  await expect(source).toHaveCount(0);await expect(destination).toHaveCount(0);
 });

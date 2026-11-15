@@ -341,3 +341,29 @@ test('Codon Crush hints show two dashed swap tiles and update after animations',
   for(const [a,b] of [[12,13],[4,13]] as const){await at(a,b);await tap(page,a);await tap(page,b);await expect(board).toHaveAttribute('data-crush-phase','idle');}
   await won(page);await expect(dashed).toHaveCount(0);await expect(arrow).toHaveCount(0);
 });
+
+
+test('Genome Assembly hint shows the next read and destination, updates on undo and toggles off',async({page})=>{
+  await openLab(page,'assembly');
+  const source=page.locator('.assembly-hint-source'), destination=page.locator('.assembly-hint-destination');
+  const hint=page.getByTestId('action-hint');
+  await hint.click();
+  await expect(source).toHaveAttribute('data-lab-cell','1');
+  await expect(destination).toHaveAttribute('data-lab-cell','67');
+  await expect(source).toHaveCSS('outline-style','dashed');
+  await expect(destination).toHaveCSS('outline-style','solid');
+  await expect(page.locator('.lab-hint')).toHaveCount(0);
+  await tap(page,19);
+  await expect(source).toHaveAttribute('data-lab-cell','19');
+  await expect(destination).toHaveAttribute('data-lab-cell','63');
+  await tap(page,63);
+  await expect(source).toHaveAttribute('data-lab-cell','1');
+  await tap(page,1);await tap(page,67);
+  await expect(source).toHaveAttribute('data-lab-cell','37');
+  await page.getByTestId('action-undo').click();
+  await expect(source).toHaveAttribute('data-lab-cell','1');
+  await hint.click();
+  await expect(source).toHaveCount(0);await expect(destination).toHaveCount(0);
+  await hint.click();
+  await expect(source).toHaveAttribute('data-lab-cell','1');
+});

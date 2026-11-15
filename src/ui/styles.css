@@ -659,7 +659,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .setting input[type="checkbox"]:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
 /* ---------- M4 multi-base tiles (combo colours: src/engine/tokenColours.ts) ---------- */
-.bl-A { color: var(--green); } .bl-C { color: var(--blue); } .bl-G { color: var(--amber); } .bl-T { color: var(--red); }
+.bl-A, .bl-C, .bl-G, .bl-T { color: inherit; }
 .bc-A { background: var(--A-edge); } .bc-C { background: var(--C-edge); } .bc-G { background: var(--G-edge); } .bc-T { background: var(--T-edge); }
 .tile.tok { --tok-bg: #e8e8e2; --tok-fg: #111111; --tok-soft: #3d3d3a; --tok-border: #8a8a84; background: var(--tok-bg); color: var(--tok-fg); border: 1px solid var(--tok-border); }
 /* CRISPR-created (non-reference) sequences: neutral hatching + dashed rule, never a palette colour. */
@@ -762,7 +762,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mechanic-instructions { font-size: 12px; line-height: 1.35; }
 .mechanic-target { background: var(--white); border: 1px solid var(--rule); padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
 .lab-sequence, .lab-codons { display: flex; flex-wrap: wrap; gap: 3px; font: 700 12px var(--mono); }
-.lab-sequence span, .lab-codons span { padding: 4px 5px; border: 1px solid var(--rule); }
+.lab-sequence > span, .lab-codons > span { padding: 4px 5px; border: 1px solid var(--rule); }
 .lab-sequence .done, .lab-codons .done { opacity: .48; text-decoration: line-through; }
 .lab-codons .current { border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--mint-edge); }
 .mechanics-board { position: relative; align-self: center; width: min(100%, 420px, calc(100svh - 300px)); min-width: min(100%, 270px); aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); gap: 1px; background: var(--rule); touch-action: none; user-select: none; }
@@ -824,7 +824,12 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Assembly reference: numbered target bases correspond to the numbered assembly slots. */
 .assembly-reference { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 2px; }
-.assembly-reference span { text-align: center; padding: 3px 0; display: flex; flex-direction: column; align-items: center; }
+.assembly-reference > span { text-align: center; padding: 3px 0; display: flex; flex-direction: column; align-items: center; }
+.assembly-reference.block-reference { display: flex; flex-wrap: wrap; align-items: stretch; gap: 3px; }
+.assembly-reference.block-reference > .lab-token { flex: 0 0 auto; min-width: 30px; max-width: 100%; padding: 3px 5px; gap: 2px; }
+.assembly-reference .chip-label { font: 700 10.5px/1 var(--mono); white-space: nowrap; }
+.assembly-reference .chip-label i { font-style: normal; }
+.assembly-reference .barcode { width: 100%; flex: none; }
 .assembly-reference small { font: 9px var(--sans); color: var(--graphite); }
 .assembly-reference .assembled-match, .lab-cell.assembly-correct { box-shadow: inset 0 -3px 0 var(--green); }
 
@@ -865,11 +870,11 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-card p { margin:4px 0 8px; }
 .tutorial-card .row-between button { padding:4px 9px; }
 .tutorial-target { display:flex; flex-wrap:wrap; gap:2px; margin:4px 0 8px; font:700 10px var(--mono); }
-.tutorial-target span { min-width:13px; padding:2px; text-align:center; border:1px solid var(--rule); }
+.tutorial-target > span { min-width:13px; padding:2px; text-align:center; border:1px solid var(--rule); }
 .tutorial-board { position:relative; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); grid-template-rows:repeat(9,minmax(0,1fr)); gap:1px; width:min(100%,300px,calc(100svh - 350px)); min-width:min(100%,175px); aspect-ratio:1; margin:0 auto 10px; background:var(--rule); overflow:hidden; }
 .tutorial-cell { position:relative; min-width:0; min-height:0; background:var(--white); font:700 11px var(--mono); }
 .tutorial-cell.hole { background:var(--hole); }
-.tutorial-cell span { position:absolute; inset:0; display:grid; place-items:center; }
+.tutorial-cell > span { position:absolute; inset:0; display:grid; place-items:center; }
 .tutorial-cell.highlighted { outline:2px solid var(--blue); outline-offset:-2px; z-index:2; }
 .tutorial-base { opacity:1; }
 .tutorial-change { background:var(--white); animation:tutorial-change 1.8s steps(1,end) both; }
@@ -1011,5 +1016,18 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Match the original single-base graphite lettering on DNA blocks.
    Keep the distinct tile backgrounds, borders, and coloured barcodes. */
-.lab-token .tok-face .tok-row i,
-.tok-chip .chip-label i { color: var(--tile-ink); }
+.tok-face .tok-row i,
+.tok-chip .chip-label i,
+.lab-token .chip-label { color: var(--tile-ink); }
+/* Keep the original combo palette on new mechanics; route colours remain in badges and paths. */
+.block-lab-board .lab-token, .lab-token.tok { color: var(--tile-ink); }
+.block-lab-board.mode-lab-connections .lab-token { background: var(--tok-bg); border-color: var(--tok-border); }
+.block-lab-board.mode-lab-assembly .lab-token.assembly-placed { color: var(--tile-ink); }
+.connection-pair > .lab-token { display: inline-flex; align-items: center; min-width: 30px; padding: 3px; border: 1px solid var(--tok-border); }
+.block-lab-board .lab-token .barcode, .lab-token.tok .barcode { box-sizing: content-box; border: 1px solid var(--tok-border); }
+.tutorial-cell > .lab-token .tok-face { display: flex; }
+.tutorial-cell > .lab-token .tok-row { display: flex; }
+
+/* Genome Assembly: one actionable source/destination pair, without changing DNA colours. */
+.mode-lab-assembly .lab-cell.assembly-hint-source { outline: 2px dashed var(--green); outline-offset: -4px; z-index: 2; }
+.mode-lab-assembly .lab-cell.assembly-hint-destination { outline: 3px solid var(--green); outline-offset: -4px; z-index: 2; }
