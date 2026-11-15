@@ -2,7 +2,7 @@ import { isCompatibleBoard, levelCodons, type PuzzleState, type Snapshot, HISTOR
 import { codonComplete, ENERGY_CAP, POWERS, START_ENERGY, scaffoldTrack, SCAFFOLD_TURNS, type Power } from '../engine/powers.ts';
 import { applyMove } from '../engine/grid.ts';
 import type { LevelDefinition, Move } from '../engine/types.ts';
-import { INTRO_IDS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
+import { INTRO_IDS, REPLACED_OPENERS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES } from '../genomics/genes.ts';
 import { mixedStage, replayMixed, SLIDE_TUTORIALS } from '../campaign/mixed.ts';
@@ -440,12 +440,12 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const notices: string[] = [];
   const ids = new Set(pack.levels.map((l) => l.id));
   const rawCompleted = strings(data.completed);
-  const completed = [...new Set(rawCompleted.filter((id) => ids.has(id)))];
+  const completed = [...new Set(rawCompleted.flatMap(id=>REPLACED_OPENERS[id]??[id]).filter(id=>ids.has(id)))];
   const discovered = [...new Set(
     Object.keys(pack.datasets).filter((g) => isDiscovered(completed, g)),
   )];
   const datasets = typeof data.datasets === 'object' && data.datasets !== null ? (data.datasets as Record<string, unknown>) : {};
-  const sameContent = data.generatorVersion === pack.generatorVersion && (data.tokenGeneratorVersion ?? '') === (pack.tokenGeneratorVersion ?? '') && Object.entries(pack.datasets).every(([g, id]) => datasets[g] === id);
+  const sameContent = data.generatorVersion === pack.generatorVersion && (data.tokenGeneratorVersion ?? '') === (pack.tokenGeneratorVersion ?? '') && Object.entries(datasets).every(([g,id])=>pack.datasets[g]===id);
   const attempts: Record<string, PuzzleState> = {};
   let dropped = 0;
   let retiredPowers = 0;
@@ -486,7 +486,8 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (upgradedV6) notices.unshift(droppedChapters.length
     ? `GENOME updated: assembly chapters now continue from where the 1-base intros left off, so each puzzle adds new coding bases. Your intro, lab and other-gene progress, stars, best scores and preferences are kept. INS and HBB chapter completions (${droppedChapters.join(', ')}) were reset because those puzzles now cover different stretches of the gene.`
     : `GENOME updated: assembly chapters now continue from where the 1-base intros left off, so each puzzle adds new coding bases. Your progress, stars, best scores and preferences are kept.`);
-  const current = typeof data.currentLevelId === 'string' && ids.has(data.currentLevelId) ? data.currentLevelId : nextCampaignId(completed);
+  const requested=typeof data.currentLevelId==='string'?(REPLACED_OPENERS[data.currentLevelId]?.[0]??data.currentLevelId):'';
+  const current=ids.has(requested)?requested:nextCampaignId(completed);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
   const mixedAttempts: Record<string, LabAction[]> = {};
@@ -499,6 +500,9 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
       const stage = def && mixedStage(def);
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
+      if(stage.spec.tokens && data.catalogueId !== pack.catalogueId && rawLog.length){
+        adapter.backup(raw,'famous-genes');notices.push('A former single-base chapter attempt was restarted as multi-base blocks. Completed credit is preserved.');continue;
+      }
       const seeded = stage.mechanic !== 'trace' || seededTraces.has(id) || rawLog.length === 0;
       const state = replayMixed(stage, rawLog, seeded);
       if (stage.mechanic === 'crush' && state.moves !== rawLog.length) {
@@ -601,7 +605,7 @@ function validMixedAction(value: unknown): value is LabAction {
     case 'swap': return cell(a.a) && cell(a.b);
     case 'route': return cell(a.cell) && Number.isInteger(a.pair) && Number(a.pair) >= 0 && Number(a.pair) < 3;
     case 'place': return Number.isInteger(a.read) && Number(a.read) >= 0 && Number(a.read) < 3 && Number.isInteger(a.offset) && Number(a.offset) >= 0 && Number(a.offset) < 9;
-    case 'edit': return cell(a.cell) && typeof a.base === 'string' && ['A','C','G','T'].includes(a.base);
+    case 'edit': return cell(a.cell) && typeof a.base === 'string' && a.base.length===1 && (['A','C','G','T'].includes(a.base)||(a.base.charCodeAt(0)>=0x100&&a.base.charCodeAt(0)<0x300));
     default: return false;
   }
 }

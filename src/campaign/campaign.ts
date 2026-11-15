@@ -1,5 +1,7 @@
 import pack from './levels.generated.json' with { type: 'json' };
 import chapterPack from './chapters.generated.json' with { type: 'json' };
+import famousPack from './famous.generated.json' with { type: 'json' };
+import { CATALOGUE_ORDER,GENES,MANIFEST } from '../genomics/genes.ts';
 import type { Interval, LevelDefinition } from '../engine/types.ts';
 
 export interface LevelPack {
@@ -21,11 +23,14 @@ const chapters = chapterPack as unknown as { catalogueId: string; generatorVersi
  * levels.generated.json so the pinned chapter pack stays byte-identical (mask uniqueness
  * and starting indexes). They are live campaign levels again — not a separate sample track.
  */
-export const INTRO_LEVELS: readonly LevelDefinition[] = m2.levels.filter((l) => !l.lab);
+const famous=famousPack as unknown as {catalogueId:string;replaced:Record<string,string[]>;levels:LevelDefinition[]};
+export const REPLACED_OPENERS=famous.replaced;
+export const INTRO_LEVELS: readonly LevelDefinition[] = [...m2.levels.filter(l=>!l.lab),...famous.levels.filter(l=>!l.chapter)];
 export const INTRO_IDS: readonly string[] = INTRO_LEVELS.map((l) => l.id);
 const LABS: readonly LevelDefinition[] = m2.levels.filter((l) => l.lab);
 
-const GENE_ORDER: readonly string[] = [...new Set(chapters.levels.map((l) => l.symbol))];
+const GENE_ORDER=CATALOGUE_ORDER;
+const liveChapters=[...chapters.levels.filter(l=>!REPLACED_OPENERS[l.id]).map(l=>REPLACED_OPENERS[l.symbol.toLowerCase()+'-c01']&&l.chapter?{...l,chapter:{part:l.chapter.part-1,of:l.chapter.of-1}}:l),...famous.levels.filter(l=>l.chapter)];
 
 export const CAMPAIGN_ID = 'genome-m4-assembly';
 /** First 1-base intro of the first catalogue gene; new players start here. */
@@ -34,7 +39,7 @@ export const OPENING_LEVEL_ID = INTRO_LEVELS[0]!.id;
 function runFor(symbol: string): LevelDefinition[] {
   return [
     ...INTRO_LEVELS.filter((l) => l.symbol === symbol),
-    ...chapters.levels.filter((l) => l.symbol === symbol),
+    ...liveChapters.filter((l) => l.symbol === symbol),
   ];
 }
 
@@ -46,8 +51,8 @@ export const LEVEL_PACK: LevelPack = {
   campaignId: CAMPAIGN_ID,
   generatorVersion: m2.generatorVersion,
   tokenGeneratorVersion: chapters.generatorVersion,
-  catalogueId: chapters.catalogueId,
-  datasets: { ...chapters.datasets, ...m2.datasets },
+  catalogueId: MANIFEST.catalogueId,
+  datasets: Object.fromEntries(CATALOGUE_ORDER.map(g=>[g,GENES[g]!.datasetId])),
   levels: [...GENE_ORDER.flatMap((symbol) => runFor(symbol)), ...LABS],
 };
 export const ALL_LEVELS: readonly LevelDefinition[] = LEVEL_PACK.levels;

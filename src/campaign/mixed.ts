@@ -1,5 +1,6 @@
-import { INS } from '../genomics/genes.ts';
+import { GENES } from '../genomics/genes.ts';
 import { DEFAULT_LAB_SPEC, createLab, applyLab, labExtractedSequence, mutationExpected, reverseComplement, type LabSpec, type LabId, type LabAction, type LabState } from '../engine/mechanicsLab.ts';
+import { blockStage } from './blockMixed.ts';
 import type { LevelDefinition } from '../engine/types.ts';
 
 export type Mechanic = LabId | 'slide';
@@ -16,8 +17,26 @@ const MECHANICS: Record<string, LabId> = {
   'ins-02': 'trace', 'ins-03': 'connections', 'ins-04': 'assembly', 'ins-05': 'crush', 'ins-06': 'mutation',
   'ins-c01': 'trace', 'ins-c02': 'crush', 'ins-c03': 'mutation', 'ins-c06': 'trace', 'ins-c07': 'restriction',
 };
-export const mechanicOf = (def: LevelDefinition): Mechanic => MECHANICS[def.id] ?? 'slide';
-export interface MixedStage { id: string; mechanic: LabId; start: number; end: number; sequence: string; spec: LabSpec; certificate: LabAction[] }
+export function mechanicOf(def:LevelDefinition):Mechanic {
+  if(def.lab)return 'slide';
+  if(!def.tier) {
+    if(MECHANICS[def.id])return MECHANICS[def.id]!;
+    if(def.id.endsWith('-i02')||def.id==='hbb-02')return 'trace';
+    if(def.id.endsWith('-i03')||def.id==='hbb-04')return 'assembly';
+    if(def.id==='hbb-03')return 'connections';
+    if(def.id==='hbb-06')return 'mutation';
+    return 'slide';
+  }
+  if(def.symbol==='INS')return ({'ins-c01':'trace','ins-c02':'crush','ins-c03':'mutation','ins-c04':'assembly','ins-c05':'connections','ins-c06':'trace','ins-c07':'restriction'} as Record<string,LabId>)[def.id]??'slide';
+  const part=Number(/-c(\d+)$/.exec(def.id)?.[1]??1);
+  const order:Mechanic[]=['trace','crush','mutation','assembly','connections','restriction','slide','slide','trace','crush','mutation','connections','restriction','slide'];
+  const wanted=order[(part-1)%order.length]!;
+  const n=Math.ceil((def.sourceIntervals[0]!.end-def.sourceIntervals[0]!.start)/def.tier);
+  if(wanted==='crush'&&(n%3!==0||n>12))return 'trace';
+  if(wanted==='assembly'&&n>9)return 'trace';
+  return wanted;
+}
+export interface MixedStage { id: string; symbol:string; mechanic: LabId; start: number; end: number; sequence: string; spec: LabSpec; certificate: LabAction[] }
 const snake = (n: number, startRow = 0): number[] => Array.from({ length: n }, (_, i) => {
   const row = Math.floor(i / 9) + startRow, col = i % 9;
   return row * 9 + (row % 2 ? 8 - col : col);
@@ -26,7 +45,8 @@ export function mixedStage(def: LevelDefinition): MixedStage | null {
   const mechanic = mechanicOf(def);
   if (mechanic === 'slide') return null;
   const start = def.sourceIntervals[0]!.start, end = def.sourceIntervals.at(-1)!.end;
-  const sequence = INS.sequence.slice(start, end);
+  const sequence = GENES[def.symbol]!.sequence.slice(start,end);
+  if(def.tier)return blockStage(def,mechanic,start,end,sequence);
   const spec: LabSpec = { ...DEFAULT_LAB_SPEC };
   let certificate: LabAction[];
   if (mechanic === 'trace') {
@@ -68,12 +88,12 @@ export function mixedStage(def: LevelDefinition): MixedStage | null {
     spec.CUT_SITES = [...spec.CUT_SOLUTION,decoy[6]!];
     certificate = spec.CUT_SOLUTION.map(cell => ({ type:'cut',cell }));
   }
-  return { id:def.id, mechanic, start,end,sequence,spec,certificate };
+  return { id:def.id,symbol:def.symbol, mechanic, start,end,sequence,spec,certificate };
 }
 export function replayMixed(stage: MixedStage, actions: readonly LabAction[], seedTrace = true): LabState {
   return actions.reduce((state, action) => applyLab(state, action).state, createLab(stage.mechanic, stage.spec, seedTrace));
 }
 export function verifiedMixed(stage: MixedStage, state: LabState): boolean {
-  return state.id === stage.mechanic && labExtractedSequence(state) === stage.sequence && stage.sequence === INS.sequence.slice(stage.start,stage.end);
+  return state.id === stage.mechanic && labExtractedSequence(state) === stage.sequence && stage.sequence === GENES[stage.symbol]!.sequence.slice(stage.start,stage.end);
 }
 export function mixedPairLabel(seq: string): string { return seq + ' ↔ ' + reverseComplement(seq); }
