@@ -84,12 +84,22 @@ function importGene(c) {
   const geneId = /\/db_xref="GeneID:(\d+)"/.exec(quals)?.[1];
   if (geneId !== c.geneId) fail(`GeneID ${geneId} != ${c.geneId}`);
   if (/\/codon_start=(\d)/.exec(quals)?.[1] !== '1') exclude('codon_start is not 1 (exception policy)');
-  if (/\/transl_except=/.test(quals)) exclude(`translation exception ${/\/transl_except=(\S+)/.exec(quals)[1]} (e.g. selenocysteine) — needs an exception policy`);
+  // GPX1's annotated UGA codes selenocysteine, not a stop. Never edit the CDS.
+  const exceptions = [...quals.matchAll(/\/transl_except=\(pos:(\d+)\.\.(\d+),aa:Sec\)/g)];
+  const secOffsets = [];
+  if (/\/transl_except=/.test(quals)) {
+    if (c.symbol !== 'GPX1' || exceptions.length !== 1 || ranges.length !== 1) exclude('unsupported translation exception');
+    const [,a,b] = exceptions[0];
+    const offset = Number(a) - ranges[0][0];
+    if (Number(b)-Number(a)!==2 || offset<0 || offset%3!==0 || cds.slice(offset,offset+3)!=='TGA') fail('invalid annotated selenocysteine position');
+    secOffsets.push(offset);
+  }
   if (/\/ribosomal_slippage|\/exception=/.test(quals)) exclude('annotated translation exception (exception policy)');
   if (!/^[ACGT]+$/.test(cds)) exclude('CDS contains non-ACGT characters');
   if (c.pinned && cds.length !== { INS: 333, HBB: 444 }[c.symbol]) fail('pinned CDS length changed');
   if (cds.length % 3 !== 0) exclude('CDS length not divisible by 3');
-  const protein = translate(cds);
+  let protein = translate(cds);
+  for (const offset of secOffsets) protein = protein.slice(0,offset/3)+'U'+protein.slice(offset/3+1);
   if (!protein.startsWith('M')) exclude('CDS does not start with ATG/Met');
   if (!protein.endsWith('*') || protein.slice(0, -1).includes('*')) exclude('CDS must end in a single terminal stop codon');
   if (protein.slice(0, -1) !== translation) fail('translated CDS does not match annotated /translation');
@@ -122,13 +132,14 @@ function importGene(c) {
     sequence: cds,
     sequenceSha256: sha256(cds),
     translationVerified: true,
+    ...(secOffsets.length ? { selenocysteineOffsets: secOffsets } : {}),
     proteinLength: translation.length,
     sourceUrl: `https://www.ncbi.nlm.nih.gov/nuccore/${accession}`,
     retrievalUrl: prov.url,
     retrievedAt: prov.retrievedAt,
     rawRecordSha256: prov.rawSha256,
   };
-  if (cds.length > MAX_CDS_FOR_CHAPTER) exclude(`verified, but CDS ${cds.length} bp exceeds the chapter policy (≤ ${MAX_CDS_FOR_CHAPTER} bp with the current 3–24-base token tiers; needs longer tokens or a longer chapter)`, true);
+  if (cds.length > MAX_CDS_FOR_CHAPTER) exclude(`verified, but CDS ${cds.length} bp exceeds the chapter policy (≤ ${MAX_CDS_FOR_CHAPTER} bp with extended chapters)`, true);
   return asset;
 }
 
@@ -156,7 +167,7 @@ const countBy = (xs, f) => xs.reduce((o, x) => ((o[f(x)] = (o[f(x)] ?? 0) + 1), 
 const manifest = {
   catalogueId: CATALOGUE_ID,
   release: CATALOGUE_RELEASE,
-  policy: `Human nuclear protein-coding genes, one MANE Select RefSeq transcript each (GRCh38 annotation as in the record). Complete ordinary CDS only: ATG start, single terminal stop (included), length divisible by 3, standard-code translation equal to the record's /translation, no translation exceptions; CDS ≤ ${MAX_CDS_FOR_CHAPTER} bp for this release. Curated candidate list, not a full catalogue.`,
+  policy: `Human nuclear protein-coding genes, one MANE Select RefSeq transcript each (GRCh38 annotation as in the record). Complete ordinary CDS only: ATG start, single terminal stop (included), length divisible by 3, standard-code translation equal to the record's /translation, except explicitly annotated GPX1 selenocysteine; CDS ≤ ${MAX_CDS_FOR_CHAPTER} bp for this release. Curated candidate list, not a full catalogue.`,
   attribution: 'Sequences and summaries: NCBI RefSeq (O\'Leary et al., Nucleic Acids Res 2016); MANE Select: Morales et al., Nature 2022 (doi:10.1038/s41586-022-04558-8). NCBI data are provided without restriction on use; see https://www.ncbi.nlm.nih.gov/home/about/policies/.',
   candidates: CANDIDATES.length,
   included: included.map(({ c, asset }) => ({

@@ -1,0 +1,27 @@
+name: Fetch Famous Genes data
+on:
+  push:
+    branches: ['expansion-data']
+    paths: ['.github/workflows/famous-data.yml', 'scripts/catalogue.config.mjs', 'scripts/fetch-catalogue.mjs', 'scripts/import-genes.mjs']
+permissions:
+  contents: write
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/fetch-catalogue.mjs
+      - run: node scripts/import-genes.mjs
+      - run: node scripts/import-genes.mjs --check
+      - name: Verify complete roster
+        run: node --input-type=module -e "import fs from 'node:fs'; const m=JSON.parse(fs.readFileSync('src/genomics/manifest.generated.json')); if(m.included.length!==31) throw Error(JSON.stringify(m.excluded));"
+      - name: Pin verified sources
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw src/genomics/*.generated.json
+          git commit -m "Pin verified Famous Genes RefSeq catalogue"
+          git push origin HEAD:expansion-data

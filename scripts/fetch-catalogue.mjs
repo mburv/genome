@@ -13,6 +13,7 @@ const wanted = process.argv.slice(2);
 mkdirSync('data/raw', { recursive: true });
 
 for (const c of CANDIDATES.filter((x) => !x.pinned && (wanted.length === 0 || wanted.includes(x.symbol)))) {
+  if (existsSync(`data/raw/${c.symbol}.mane.json`)) { console.log(`${c.symbol}: existing pinned resolution retained`); continue; }
   const url = `https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/${c.symbol}/taxon/9606/product_report`;
   const res = await fetch(url);
   if (!res.ok) { console.error(`${c.symbol}: Datasets HTTP ${res.status}`); continue; }
