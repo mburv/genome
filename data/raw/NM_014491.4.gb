@@ -1,0 +1,449 @@
+LOCUS       NM_014491               6543 bp    mRNA    linear   PRI 08-SEP-2026
+DEFINITION  Homo sapiens forkhead box P2 (FOXP2), transcript variant 1, mRNA.
+ACCESSION   NM_014491
+VERSION     NM_014491.4
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 6543)
+  AUTHORS   Che,F., Li,C., Zhang,L., Qian,C., Mo,L., Li,B., Wu,H., Wang,L. and
+            Yang,Y.
+  TITLE     Novel FOXP2 variant associated with speech and language dysfunction
+            in a Chinese family and literature review
+  JOURNAL   J Appl Genet 65 (2), 367-373 (2024)
+   PUBMED   38418803
+  REMARK    GeneRIF: Novel FOXP2 variant associated with speech and language
+            dysfunction in a Chinese family and literature review.
+            Review article
+            Erratum:[J Appl Genet. 2024 May;65(2):417. doi:
+            10.1007/s13353-024-00851-6. PMID: 38523169]
+REFERENCE   2  (bases 1 to 6543)
+  AUTHORS   Yan,L., Sun,H., Chen,Y., Yu,X., Zhang,J. and Li,P.
+  TITLE     FOXP2 suppresses the proliferation, invasion, and aerobic
+            glycolysis of hepatocellular carcinoma cells by regulating the
+            KDM5A/FBP1 axis
+  JOURNAL   Environ Toxicol 39 (1), 341-356 (2024)
+   PUBMED   37713600
+  REMARK    GeneRIF: FOXP2 suppresses the proliferation, invasion, and aerobic
+            glycolysis of hepatocellular carcinoma cells by regulating the
+            KDM5A/FBP1 axis.
+REFERENCE   3  (bases 1 to 6543)
+  AUTHORS   Stroud,J.C., Wu,Y., Bates,D.L., Han,A., Nowick,K., Paabo,S.,
+            Tong,H. and Chen,L.
+  TITLE     Structure of the forkhead domain of FOXP2 bound to DNA
+  JOURNAL   Structure 14 (1), 159-166 (2006)
+   PUBMED   16407075
+  REMARK    GeneRIF: Disease-causing mutations in FOXP2 map either to the DNA
+            binding surface or the domain-swapping dimer interface,
+            functionally corroborating the crystal structure.
+REFERENCE   4  (bases 1 to 6543)
+  AUTHORS   Gauthier,J., Joober,R., Mottron,L., Laurent,S., Fuchs,M., De
+            Kimpe,V. and Rouleau,G.A.
+  TITLE     Mutation screening of FOXP2 in individuals diagnosed with autistic
+            disorder
+  JOURNAL   Am J Med Genet A 118A (2), 172-175 (2003)
+   PUBMED   12655497
+  REMARK    GeneRIF: Observational study of gene-disease association. (HuGE
+            Navigator)
+REFERENCE   5  (bases 1 to 6543)
+  AUTHORS   Enard,W., Przeworski,M., Fisher,S.E., Lai,C.S., Wiebe,V.,
+            Kitano,T., Monaco,A.P. and Paabo,S.
+  TITLE     Molecular evolution of FOXP2, a gene involved in speech and
+            language
+  JOURNAL   Nature 418 (6900), 869-872 (2002)
+   PUBMED   12192408
+  REMARK    GeneRIF: Human FOXP2 contains changes in amino-acid coding and a
+            pattern of nucleotide polymorphism, which strongly suggest that
+            this gene has been the target of selection during recent human
+            evolution.
+REFERENCE   6  (bases 1 to 6543)
+  AUTHORS   Bruce,H.A. and Margolis,R.L.
+  TITLE     FOXP2: novel exons, splice variants, and CAG repeat length
+            stability
+  JOURNAL   Hum Genet 111 (2), 136-144 (2002)
+   PUBMED   12189486
+REFERENCE   7  (bases 1 to 6543)
+  AUTHORS   Lai,C.S., Fisher,S.E., Hurst,J.A., Vargha-Khadem,F. and Monaco,A.P.
+  TITLE     A forkhead-domain gene is mutated in a severe speech and language
+            disorder
+  JOURNAL   Nature 413 (6855), 519-523 (2001)
+   PUBMED   11586359
+  REMARK    GeneRIF: FOXP2 is disrupted by a translocation in CS, a child with
+            severe speech/language disorder. Moreover, a point mutation,
+            altering a critical residue of the forkhead domain, segregates with
+            speech/language deficits in all 15 affected members of family KE.
+REFERENCE   8  (bases 1 to 6543)
+  AUTHORS   Margolis,R.L., Abraham,M.R., Gatchell,S.B., Li,S.H., Kidwai,A.S.,
+            Breschel,T.S., Stine,O.C., Callahan,C., McInnis,M.G. and Ross,C.A.
+  TITLE     cDNAs with long CAG trinucleotide repeats from human brain
+  JOURNAL   Hum Genet 100 (1), 114-122 (1997)
+   PUBMED   9225980
+REFERENCE   9  (bases 1 to 6543)
+  AUTHORS   Morgan,A., Fisher,S.E., Scheffer,I. and Hildebrand,M.
+  TITLE     FOXP2-Related Speech and Language Disorder
+  JOURNAL   (in) Adam MP, Bick S, Mirzaa GM, Wallace SE and Amemiya A (Eds.);
+            GENEREVIEWS(R);
+            (1993)
+   PUBMED   27336128
+REFERENCE   10 (bases 1 to 6543)
+  AUTHORS   Hurst,J.A., Baraitser,M., Auger,E., Graham,F. and Norell,S.
+  TITLE     An extended family with a dominantly inherited speech disorder
+  JOURNAL   Dev Med Child Neurol 32 (4), 352-355 (1990)
+   PUBMED   2332125
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from AC073626.7, BC018016.1,
+            AF337817.1, AC020606.7 and AI369947.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 22, 2018 this sequence version replaced NM_014491.3.
+            
+            Summary: This gene encodes a member of the forkhead/winged-helix
+            (FOX) family of transcription factors. It is expressed in fetal and
+            adult brain as well as in several other organs such as the lung and
+            gut. The protein product contains a FOX DNA-binding domain and a
+            large polyglutamine tract and is an evolutionarily conserved
+            transcription factor, which may bind directly to approximately 300
+            to 400 gene promoters in the human genome to regulate the
+            expression of a variety of genes. This gene is required for proper
+            development of speech and language regions of the brain during
+            embryogenesis, and may be involved in a variety of biological
+            pathways and cascades that may ultimately influence language
+            development. Mutations in this gene cause speech-language disorder
+            1 (SPCH1), also known as autosomal dominant speech and language
+            disorder with orofacial dyspraxia. Multiple alternative transcripts
+            encoding different isoforms have been identified in this
+            gene.[provided by RefSeq, Feb 2010].
+            
+            Transcript Variant: This variant (1) lacks an in-frame exon in the
+            5' coding region, as compared to variant 2. The resulting isoform
+            (I) is shorter than isoform II.
+            
+            Sequence Note: This RefSeq record was created from transcript and
+            genomic sequence data to make the sequence consistent with the
+            reference genome assembly. The genomic coordinates used for the
+            transcript record were based on transcript alignments.
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: AF337817.1, SRR14038191.839039.1
+                                           [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMN03267753 [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000350908.9/ ENSP00000265436.7
+            RefSeq Select criteria :: based on conservation, expression
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-182               AC073626.7         130786-130967
+            183-406             BC018016.1         1-224
+            407-2878            AF337817.1         1-2472
+            2879-6326           AC020606.7         93462-96909
+            6327-6543           AI369947.1         13-229              c
+FEATURES             Location/Qualifiers
+     source          1..6543
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="7"
+                     /map="7q31.1"
+     gene            1..6543
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="forkhead box P2"
+                     /db_xref="GeneID:93986"
+                     /db_xref="HGNC:HGNC:13875"
+                     /db_xref="MIM:605317"
+     exon            1..546
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            547..724
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     misc_feature    551..553
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="upstream in-frame stop codon"
+     CDS             557..2704
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="isoform I is encoded by transcript variant 1;
+                     trinucleotide repeat containing 10; forkhead/winged-helix
+                     transcription factor; CAG repeat protein 44; forkhead box
+                     protein P2; trinucleotide repeat-containing gene 10
+                     protein"
+                     /codon_start=1
+                     /product="forkhead box protein P2 isoform I"
+                     /protein_id="NP_055306.1"
+                     /db_xref="CCDS:CCDS5760.1"
+                     /db_xref="GeneID:93986"
+                     /db_xref="HGNC:HGNC:13875"
+                     /db_xref="MIM:605317"
+                     /translation="MMQESATETISNSSMNQNGMSTLSSQLDAGSRDGRSSGDTSSEV
+                     STVELLHLQQQQALQAARQLLLQQQTSGLKSPKSSDKQRPLQVPVSVAMMTPQVITPQ
+                     QMQQILQQQVLSPQQLQALLQQQQAVMLQQQQLQEFYKKQQEQLHLQLLQQQQQQQQQ
+                     QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQHPGKQAKEQQQQQQQQQQLAAQQLVFQ
+                     QQLLQMQQLQQQQHLLSLQRQGLISIPPGQAALPVQSLPQAGLSPAEIQQLWKEVTGV
+                     HSMEDNGIKHGGLDLTTNNSSSTTSSNTSKASPPITHHSIVNGQSSVLSARRDSSSHE
+                     ETGASHTLYGHGVCKWPGCESICEDFGQFLKHLNNEHALDDRSTAQCRVQMQVVQQLE
+                     IQLSKERERLQAMMTHLHMRPSEPKPSPKPLNLVSSVTMSKNMLETSPQSLPQTPTTP
+                     TAPVTPITQGPSVITPASVPNVGAIRRRHSDKYNIPMSSEIAPNYEFYKNADVRPPFT
+                     YATLIRQAIMESSDRQLTLNEIYSWFTRTFAYFRRNAATWKNAVRHNLSLHKCFVRVE
+                     NVKGAVWTVDEVEYQKRRSQKITGSPTLVKNIPTSLGYGAALNASLQAALAESSLPLL
+                     SNPGLINNASSGLLQAVHEDLNGSLDHIDSNGNSSPGCSPQPHIHSIHVKEEPVIAED
+                     EDCPMSLVTTANHSPELEDDREIEEEPLSEDLE"
+     misc_feature    557..694
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="propagated from UniProtKB/Swiss-Prot (O15409.2);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    1397..1573
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="propagated from UniProtKB/Swiss-Prot (O15409.2);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    1820..1834
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="propagated from UniProtKB/Swiss-Prot (O15409.2);
+                     Region: CTBP1-binding. /evidence=ECO:0000250"
+     misc_feature    1868..1951
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="propagated from UniProtKB/Swiss-Prot (O15409.2);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    2501..2560
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="propagated from UniProtKB/Swiss-Prot (O15409.2);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    2588..2701
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="propagated from UniProtKB/Swiss-Prot (O15409.2);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     exon            725..814
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            815..952
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            953..1153
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1154..1331
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1332..1545
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1546..1650
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1651..1738
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1739..1822
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1823..2024
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2025..2101
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2102..2203
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2204..2325
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2326..2395
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2396..2559
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2560..6543
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      5455..5460
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="hexamer: TATAAA"
+     polyA_site      5482
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="major polyA site"
+     regulatory      5753..5758
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="hexamer: AATAAA"
+     regulatory      5779..5784
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="hexamer: AAGAAA"
+     polyA_site      5785
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="major polyA site"
+     polyA_site      5799
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+     regulatory      5931..5936
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="hexamer: ATTAAA"
+     polyA_site      5953
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+     regulatory      6515..6520
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+                     /note="hexamer: AATAAA"
+     polyA_site      6543
+                     /gene="FOXP2"
+                     /gene_synonym="CAGH44; SPCH1; TNRC10"
+ORIGIN      
+        1 acagacatga aagctaaccg aggacttgag agactcaaac tggtgctttt gtctctctct
+       61 ctctgtcttt ctctctctca cacacacact cacacactca cacacatgca cacacacaca
+      121 tacacacaca caaaaatgaa gcacttactt tagaaagatt atggtaagca tgctggctca
+      181 gtcttgaacc tttgtcaccc ctcacgttgc acaccaaaga cataccctag tgattaaatg
+      241 ctgattttgt gtacgattgt ccacggacgc caaaacaatc acagagctgc ttgatttgtt
+      301 ttaattacca gcacaaaatg ccatcagtct gggacgtgat cgggcagagg tgtactcaca
+      361 gtagtgtaaa tactgctgta aatagttgtc tgatggtggc tttgacagtg agctagcttc
+      421 tgagttttcc cttcttttta tactgttttc tgtgctggct tttttgaatc ttcctaattt
+      481 ttcatctctt taacaaactc ctatgaagtt gaaaccggga agtttgctct aacatttcca
+      541 gagaaggtat taagtcatga tgcaggaatc tgcgacagag acaataagca acagttcaat
+      601 gaatcaaaat ggaatgagca ctctaagcag ccaattagat gctggcagca gagatggaag
+      661 atcaagtggt gacaccagct ctgaagtaag cacagtagaa ctgctgcatc tgcaacaaca
+      721 gcaggctctc caggcagcaa gacaacttct tttacagcag caaacaagtg gattgaaatc
+      781 tcctaagagc agtgataaac agagaccact gcaggtgcct gtgtcagtgg ccatgatgac
+      841 tccccaggtg atcacccctc agcaaatgca gcagatcctt cagcaacaag tcctgtctcc
+      901 tcagcagcta caagcccttc tccaacaaca gcaggctgtc atgctgcagc agcaacaact
+      961 acaagagttt tacaagaaac agcaagagca gttacatctt cagcttttgc agcagcagca
+     1021 gcaacagcag cagcagcaac aacagcagca acaacagcag cagcaacaac aacaacaaca
+     1081 gcagcaacaa cagcagcagc agcagcaaca gcagcagcag cagcaacagc atcctggaaa
+     1141 gcaagcgaaa gagcagcagc agcagcagca gcagcaacag caattggcag cccagcagct
+     1201 tgtcttccag cagcagcttc tccagatgca acaactccag cagcagcagc atctgctcag
+     1261 ccttcagcgt cagggactca tctccattcc acctggccag gcagcacttc ctgtccaatc
+     1321 gctgcctcaa gctggcttaa gtcctgctga gattcagcag ttatggaaag aagtgactgg
+     1381 agttcacagt atggaagaca atggcattaa acatggaggg ctagacctca ctactaacaa
+     1441 ttcctcctcg actacctcct ccaacacttc caaagcatca ccaccaataa ctcatcattc
+     1501 catagtgaat ggacagtctt cagttctaag tgcaagacga gacagctcgt cacatgagga
+     1561 gactggggcc tctcacactc tctatggcca tggagtttgc aaatggccag gctgtgaaag
+     1621 catttgtgaa gattttggac agtttttaaa gcaccttaac aatgaacacg cattggatga
+     1681 ccgaagcact gctcagtgtc gagtgcaaat gcaggtggtg caacagttag aaatacagct
+     1741 ttctaaagaa cgcgaacgtc ttcaagcaat gatgacccac ttgcacatgc gaccctcaga
+     1801 gcccaaacca tctcccaaac ctctaaatct ggtgtctagt gtcaccatgt cgaagaatat
+     1861 gttggagaca tccccacaga gcttacctca aacccctacc acaccaacgg ccccagtcac
+     1921 cccgattacc cagggaccct cagtaatcac cccagccagt gtgcccaatg tgggagccat
+     1981 acgaaggcga cattcagaca aatacaacat tcccatgtca tcagaaattg ccccaaacta
+     2041 tgaattttat aaaaatgcag atgtcagacc tccatttact tatgcaactc tcataaggca
+     2101 ggctatcatg gagtcatctg acaggcagtt aacacttaat gaaatttaca gctggtttac
+     2161 acggacattt gcttacttca ggcgtaatgc agcaacttgg aagaatgcag tacgtcataa
+     2221 tcttagcctg cacaagtgtt ttgttcgagt agaaaatgtt aaaggagcag tatggactgt
+     2281 ggatgaagta gaataccaga agcgaaggtc acaaaagata acaggaagtc caaccttagt
+     2341 aaaaaatata cctaccagtt taggctatgg agcagctctt aatgccagtt tgcaggctgc
+     2401 cttggcagag agcagtttac ctttgctaag taatcctgga ctgataaata atgcatccag
+     2461 tggcctactg caggccgtcc acgaagacct caatggttct ctggatcaca ttgacagcaa
+     2521 tggaaacagt agtccgggct gctcacctca gccgcacata cattcaatcc acgtcaagga
+     2581 agagccagtg attgcagagg atgaagactg cccaatgtcc ttagtgacaa cagctaatca
+     2641 cagtccagaa ttagaagacg acagagagat tgaagaagag cctttatctg aagatctgga
+     2701 atgagaactg acttgtgaaa cctcagcgtg aagggacata tcactgacct tcataaccac
+     2761 tccacaacca tgaatatttg acaaattttt actgtgacta tttattaagc atggataaag
+     2821 gagacagccc taaaggaact tactaagcca gccctttggg attcagtacc aacaggcaaa
+     2881 ttgcttgttt tcttcttctt cttcttcttt tttttttttt ttttagaaaa aaagacaaaa
+     2941 actgattttc ttgaaaaaaa aaaatgaact gttctttcta taatggcttt gcccatttaa
+     3001 aaaatgtggc tcttaagggt tcatgaaatg actgaatatg aggatacatg tcctgtagaa
+     3061 agcaaatgcg cctcatatac tgccaaaaat agtgttagtt tcattaatgt gaattttcca
+     3121 gcattcagta gttgtaatgt tagaaacaat tgctggtcaa gttcaacttg ttgctattgt
+     3181 ttttaatttg cacaggagta gtatcagaaa ttagtgtcac tgcttgtatc tagctgaatt
+     3241 ttaaacaaca gaacattagt tttttatgtt ggtgccacca actgtaaatg acataagtta
+     3301 gttattacaa aacacagtaa ttagactgtt gcaaccatct aaaaccttag gcttccagtc
+     3361 tgtgctgtta gtgttaagat gtaaagtgca atcctaagct aacattatct gtgcaagcac
+     3421 catagaaaca tttgcatatc tgcatagatc ttacaactgt actctttacc tccttgtgat
+     3481 aaagctttgt ctacctgcaa acacagtcaa aggctacagc tgcaaaccaa agccaactct
+     3541 aaccatggcc aagagctcaa ggacagaagc agccacatgc tttggtcagc cttctgtaac
+     3601 ttcaattagt acaaaggaac cttttccatg aactacctgc tgttttctga tgacctctgg
+     3661 gatcttttca tttagcccta aacaaagaaa caaatatgac aaaaaccaca actaaaaaat
+     3721 gttaattcag tcacagagta atcttctgag gccaaaagtc catctaaatg caatgaagat
+     3781 ttgctttcat taaagacaga ggtgaggaca aaatccgcag tggaagttat gatatgctag
+     3841 aaagcaacaa atgtggatca ctgaccaaaa cgattatgta cttgatgcaa atgcagattg
+     3901 catattgtta tatatatagt actttgtgtt tttgttttcc ctcattcagt cagttatttt
+     3961 cagtggtgaa tacatgttgt tagaagatgt cttgtatggt cttaatcttt gttgtgtact
+     4021 atttttttat agtcttaagt tataatgaaa aaacaaaaag taggaaccaa acataaaagg
+     4081 tctagtaaag ccaaaaatta atttcatatt gattttaaag tgatctagct gagtttttac
+     4141 actgaaagca aagattatag caattgtagt ccatggtatt tattttcagt caaaccaaag
+     4201 ttacatataa ttctgcctct gcttatacgg gatattaaca ctaacaatac actcccttca
+     4261 aagacttgca caggccaaat tgttggaatg ctggttttct tgacaattcc aaaccccaaa
+     4321 actatgataa tgagttatga tgtagttgaa aatagcatag tcagatgttt gcttaaaacc
+     4381 tagaaactta acatgttgct tttcatgtgc tgtgccaagt cttgataata ctttttcccc
+     4441 caaccaaggg acctcataac ctgattatgg ttattgcttt acaaacagtt ttgacagaag
+     4501 gtggctgcta gagcttaaca tacgttcccg ttccatgtga tggaaccggt tcttgcaaac
+     4561 taagctcatc attgattctt tgctgaagtc agcaaataga gttagagaga tacccagtca
+     4621 tctatcacac caaataaaag gacataacgg ctttcaaaag ggttttccca cttacccaaa
+     4681 aggctttctg aaagcttcta cctctgcaaa aaaaaaaaaa gaaaaaaaaa aaaagaaaaa
+     4741 cattagaaca attatggcag attgcatgaa acgtgagaac gtcacagtaa ctgctacttt
+     4801 tcattatgtt tgtctttggg tcatgatcaa cgaaccggaa gtttacaata tggtattaaa
+     4861 agaaagatgg gtatggtgaa agatggtttt cagtcatcta ggatcctact gtaaggatta
+     4921 tctgaaagga aaaatgggtc tttcaggtgc atgttcaaaa ggctttgagg gactggaagt
+     4981 aactgcgaga gttgtaccat cagaagggtg gcctaagact acaatgctaa agtatgcata
+     5041 cctcagttag aaaacttttg aaaggaagtc tcagccacag aatgcatata cctgtagagt
+     5101 tttgcatggg ttttatatga atacaatttt aaaaaatagc tgcttgcaca ttataccaga
+     5161 aaaacctcca aaactgcaat tgctttgaaa atagatttta ggttttttgg agtttcctga
+     5221 aatgcttggt ctgtattttg ataattgtgc atattatgta aaaatgttgg tggacccata
+     5281 aatgaccaga ctttttctaa gaaaaatgtt gctttaatgc atttcatgaa tttttactct
+     5341 tatatcattg cttgctagta atagcaaatc tgcttttctg catctgcttt gcgtagctat
+     5401 tgtaaggctt tgaactaatg tatgtattta ttgcttgaac ttctgtgcat accttataaa
+     5461 gcataatgtc tgacaattta aatggctcat gtattcttgc ttctatcata agctgattat
+     5521 ggggactatg atcttttgta tacagcaaat tttaaactgt agcacaaaca tctgtttatg
+     5581 tattggtgga atatacctgt tttatttatc ttttttgagg taaactaatt tttgatactt
+     5641 ttcattactg tgtactatgt tcatactttg aattctctga cgttagaagt catggttgag
+     5701 aattgtaaca gctgttattc gttctgtatt catggctttc actgctgaat aaaataaagg
+     5761 accaaaccta ggatttgaaa gaaaactgtc tacctctaac accagggagt tatcagattt
+     5821 tattttacat agttttagtc tacaaagaca caattgctta aacctagtgg gcttaaggct
+     5881 tatattctat gtggttggat tcgtggcaca gttgtactat ttgaaaatca attaaaattt
+     5941 tatgtgaatg ttacaagtat ttggtagaat taccactaac tgggttttct ttagataact
+     6001 cagatatgga gaaaatgtca tcagcattct gtgtctacag ctgcttaact tcataagaat
+     6061 gcatttcttt gtgattaggg aatcgaagaa tagtcagcta ggaatagagc tacagaagta
+     6121 cacttacata aaccatcctg gactttaatg tccctgggca gattcagtcg caaaatccaa
+     6181 tatgatattt tgtaaagttt tcaagttgga catttacatt tttgagaatt ttgagacttc
+     6241 atcttacaca tgccagtatt aacacacatt tggacaatag ctttattaag tctataaagc
+     6301 tattgaaagg aacatggctt acccttgtta tttcactagt tcaggttgca acgaaaggtt
+     6361 tttttgtcca tgaacacttg gcatatctta cttagcaaaa aagaaggatg tacattttac
+     6421 tatagaatta atgtatgaac agtgtgtcac tgctgttgga tgtaaaaatg tatatgaaac
+     6481 catttcattc acttgattac atttctgaag tataaataaa aaaatctaat tctttttgac
+     6541 cca
+//
+

@@ -33,8 +33,9 @@ test('map shows the gene catalogue, chapter nodes and exclusions', async ({ page
   await expect(page.getByTestId('run-nodes-INS')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: '/workspace/game/screenshots/genome-map-order-390x844.png', animations: 'disabled' });
-  await expect(page.locator('.cnode:not(.play)')).toHaveCount(CHAPTERS.length + 12);
-  await expect(page.getByTestId('catalogue-excluded')).toContainText(manifest.excluded[0]!.symbol);
+  await expect(page.locator('.cnode:not(.play)')).toHaveCount(413);
+  expect(manifest.excluded).toHaveLength(0);
+  await expect(page.getByTestId('catalogue-excluded')).toHaveCount(0);
   await expect(page.locator('.node:not(.lab)')).toHaveCount(0);
   await expect(page.locator('.node.lab')).toHaveCount(3);
 });

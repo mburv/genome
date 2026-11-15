@@ -1,0 +1,273 @@
+LOCUS       NM_020061               1242 bp    mRNA    linear   PRI 28-APR-2025
+DEFINITION  Homo sapiens opsin 1, long wave sensitive (OPN1LW), mRNA.
+ACCESSION   NM_020061
+VERSION     NM_020061.6
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 1242)
+  AUTHORS   Wang,Y., Sun,W., Xiao,X., Jiang,Y., Ouyang,J., Wang,J., Yi,Z.,
+            Li,S., Jia,X., Wang,P., Hejtmancik,J.F. and Zhang,Q.
+  TITLE     Unique Haplotypes in OPN1LW as a Common Cause of High Myopia With
+            or Without Protanopia: A Potential Window Into Myopic Mechanism
+  JOURNAL   Invest Ophthalmol Vis Sci 64 (4), 29 (2023)
+   PUBMED   37097228
+  REMARK    GeneRIF: Unique Haplotypes in OPN1LW as a Common Cause of High
+            Myopia With or Without Protanopia: A Potential Window Into Myopic
+            Mechanism.
+REFERENCE   2  (bases 1 to 1242)
+  AUTHORS   Wissinger,B., Baumann,B., Buena-Atienza,E., Ravesh,Z.,
+            Cideciyan,A.V., Stingl,K., Audo,I., Meunier,I., Bocquet,B.,
+            Traboulsi,E.I., Hardcastle,A.J., Gardner,J.C., Michaelides,M.,
+            Branham,K.E., Rosenberg,T., Andreasson,S., Dollfus,H., Birch,D.,
+            Vincent,A.L., Martorell,L., Catala Mora,J., Kellner,U., Ruther,K.,
+            Lorenz,B., Preising,M.N., Manfredini,E., Zarate,Y.A., Vijzelaar,R.,
+            Zrenner,E., Jacobson,S.G. and Kohl,S.
+  TITLE     The landscape of submicroscopic structural variants at the
+            OPN1LW/OPN1MW gene cluster on Xq28 underlying blue cone
+            monochromacy
+  JOURNAL   Proc Natl Acad Sci U S A 119 (27), e2115538119 (2022)
+   PUBMED   35759666
+  REMARK    GeneRIF: The landscape of submicroscopic structural variants at the
+            OPN1LW/OPN1MW gene cluster on Xq28 underlying blue cone
+            monochromacy.
+REFERENCE   3  (bases 1 to 1242)
+  AUTHORS   Stingl,K., Baumann,B., De Angeli,P., Vincent,A., Heon,E.,
+            Cordonnier,M., De Baere,E., Raskin,S., Sato,M.T., Shiokawa,N.,
+            Kohl,S. and Wissinger,B.
+  TITLE     Novel OPN1LW/OPN1MW Exon 3 Haplotype-Associated Splicing Defect in
+            Patients with X-Linked Cone Dysfunction
+  JOURNAL   Int J Mol Sci 23 (12), 6868 (2022)
+   PUBMED   35743313
+  REMARK    GeneRIF: Novel OPN1LW/OPN1MW Exon 3 Haplotype-Associated Splicing
+            Defect in Patients with X-Linked Cone Dysfunction.
+REFERENCE   4  (bases 1 to 1242)
+  AUTHORS   Neitz,M., Wagner-Schuman,M., Rowlan,J.S., Kuchenbecker,J.A. and
+            Neitz,J.
+  TITLE     Insight from OPN1LW Gene Haplotypes into the Cause and Prevention
+            of Myopia
+  JOURNAL   Genes (Basel) 13 (6), 942 (2022)
+   PUBMED   35741704
+  REMARK    GeneRIF: Insight from OPN1LW Gene Haplotypes into the Cause and
+            Prevention of Myopia.
+REFERENCE   5  (bases 1 to 1242)
+  AUTHORS   Neitz,M. and Neitz,J.
+  TITLE     Intermixing the OPN1LW and OPN1MW Genes Disrupts the Exonic
+            Splicing Code Causing an Array of Vision Disorders
+  JOURNAL   Genes (Basel) 12 (8), 1180 (2021)
+   PUBMED   34440353
+  REMARK    GeneRIF: Intermixing the OPN1LW and OPN1MW Genes Disrupts the
+            Exonic Splicing Code Causing an Array of Vision Disorders.
+            Review article
+REFERENCE   6  (bases 1 to 1242)
+  AUTHORS   Ueyama,H., Kuwayama,S., Imai,H., Tanabe,S., Oda,S., Nishida,Y.,
+            Wada,A., Shichida,Y. and Yamade,S.
+  TITLE     Novel missense mutations in red/green opsin genes in congenital
+            color-vision deficiencies
+  JOURNAL   Biochem Biophys Res Commun 294 (2), 205-209 (2002)
+   PUBMED   12051694
+  REMARK    GeneRIF: In a Japanese male with congenital protan red/green color
+            blindness the mutation Gly338Glu (GGG-->GAG) occurred in the single
+            red gene resulting in no absorbance and loss of function
+REFERENCE   7  (bases 1 to 1242)
+  AUTHORS   Winderickx,J., Lindsey,D.T., Sanocki,E., Teller,D.Y., Motulsky,A.G.
+            and Deeb,S.S.
+  TITLE     Polymorphism in red photopigment underlies variation in colour
+            matching
+  JOURNAL   Nature 356 (6368), 431-433 (1992)
+   PUBMED   1557123
+REFERENCE   8  (bases 1 to 1242)
+  AUTHORS   Dietrich,A., Korn,B. and Poustka,A.
+  TITLE     Completion of the physical map of Xq28: the location of the gene
+            for L1CAM on the human X chromosome
+  JOURNAL   Mamm Genome 3 (3), 168-172 (1992)
+   PUBMED   1617223
+REFERENCE   9  (bases 1 to 1242)
+  AUTHORS   Arveiler,B., Vincent,A. and Mandel,J.L.
+  TITLE     Toward a physical map of the Xq28 region in man: linking color
+            vision, G6PD, and coagulation factor VIII genes to an X-Y homology
+            region
+  JOURNAL   Genomics 4 (4), 460-471 (1989)
+   PUBMED   2501212
+REFERENCE   10 (bases 1 to 1242)
+  AUTHORS   Nathans,J., Thomas,D. and Hogness,D.S.
+  TITLE     Molecular genetics of human color vision: the genes encoding blue,
+            green, and red pigments
+  JOURNAL   Science 232 (4747), 193-202 (1986)
+   PUBMED   2937147
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from DN693335.1, BQ639996.1,
+            EL949562.1, BM688032.1 and BU726889.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On May 17, 2019 this sequence version replaced NM_020061.5.
+            
+            Summary: This gene encodes for a light absorbing visual pigment of
+            the opsin gene family. The encoded protein is called red cone
+            photopigment or long-wavelength sensitive opsin. Opsins are
+            G-protein coupled receptors with seven transmembrane domains, an
+            N-terminal extracellular domain, and a C-terminal cytoplasmic
+            domain. This gene and the medium-wavelength opsin gene are tandemly
+            arrayed on the X chromosome and frequent unequal recombination and
+            gene conversion may occur between these sequences. X chromosomes
+            may have fusions of the medium- and long-wavelength opsin genes or
+            may have more than one copy of these genes. Defects in this gene
+            are the cause of partial, protanopic colorblindness. [provided by
+            RefSeq, Jul 2008].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: CR749814.1 [ECO:0000332]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000369951.9/ ENSP00000358967.4
+            RefSeq Select criteria :: based on single protein-coding transcript
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: complete on the 3' end.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-493               DN693335.1         20-512
+            494-561             BQ639996.1         456-523
+            562-1006            EL949562.1         90-534
+            1007-1241           BM688032.1         254-488
+            1242-1242           BU726889.1         17-17               c
+FEATURES             Location/Qualifiers
+     source          1..1242
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="X"
+                     /map="Xq28"
+     gene            1..1242
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="opsin 1, long wave sensitive"
+                     /db_xref="GeneID:5956"
+                     /db_xref="HGNC:HGNC:9936"
+                     /db_xref="MIM:300822"
+     exon            1..153
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             42..1136
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="cone dystrophy 5 (X-linked); red-sensitive opsin;
+                     red cone photoreceptor pigment; red cone opsin; opsin 1
+                     (cone pigments), long-wave-sensitive"
+                     /codon_start=1
+                     /product="long-wave-sensitive opsin 1"
+                     /protein_id="NP_064445.2"
+                     /db_xref="CCDS:CCDS14742.1"
+                     /db_xref="GeneID:5956"
+                     /db_xref="HGNC:HGNC:9936"
+                     /db_xref="MIM:300822"
+                     /translation="MAQQWSLQRLAGRHPQDSYEDSTQSSIFTYTNSNSTRGPFEGPN
+                     YHIAPRWVYHLTSVWMIFVVTASVFTNGLVLAATMKFKKLRHPLNWILVNLAVADLAE
+                     TVIASTISIVNQVSGYFVLGHPMCVLEGYTVSLCGITGLWSLAIISWERWMVVCKPFG
+                     NVRFDAKLAIVGIAFSWIWAAVWTAPPIFGWSRYWPHGLKTSCGPDVFSGSSYPGVQS
+                     YMIVLMVTCCIIPLAIIMLCYLQVWLAIRAVAKQQKESESTQKAEKEVTRMVVVMIFA
+                     YCVCWGPYTFFACFAAANPGYAFHPLMAALPAYFAKSATIYNPVIYVFMNRQFRNCIL
+                     QLFGKKVDDGSELSSASKTEVSSVSSVSPA"
+     misc_feature    42..110
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    105..107
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="O-linked (GlcNAc) serine.
+                     /evidence=ECO:0000250|UniProtKB:Q9BGI7; propagated from
+                     UniProtKB/Swiss-Prot (P04000.2); glycosylation site"
+     misc_feature    141..143
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000255|PROSITE-ProRule:PRU00498; propagated
+                     from UniProtKB/Swiss-Prot (P04000.2); glycosylation site"
+     misc_feature    198..272
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     transmembrane region"
+     misc_feature    309..386
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     transmembrane region"
+     misc_feature    429..488
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     transmembrane region"
+     misc_feature    546..617
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     transmembrane region"
+     misc_feature    696..779
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     transmembrane region"
+     misc_feature    846..917
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     transmembrane region"
+     misc_feature    942..1016
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /note="propagated from UniProtKB/Swiss-Prot (P04000.2);
+                     transmembrane region"
+     exon            154..450
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            451..619
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            620..785
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            786..1025
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1026..1242
+                     /gene="OPN1LW"
+                     /gene_synonym="CBBM; CBP; COD5; RCP; ROP"
+                     /inference="alignment:Splign:2.1.0"
+ORIGIN      
+        1 gccagggccg gctgccgtcg gggacagggc tttccatagc catggcccag cagtggagcc
+       61 tccaaaggct cgcaggccgc catccgcagg acagctatga ggacagcacc cagtccagca
+      121 tcttcaccta caccaacagc aactccacca gaggcccctt cgaaggcccg aattaccaca
+      181 tcgctcccag atgggtgtac cacctcacca gtgtctggat gatctttgtg gtcactgcat
+      241 ccgtcttcac aaatgggctt gtgctggcgg ccaccatgaa gttcaagaag ctgcgccacc
+      301 cgctgaactg gatcctggtg aacctggcgg tcgctgacct agcagagacc gtcatcgcca
+      361 gcactatcag cattgtgaac caggtctctg gctacttcgt gctgggccac cctatgtgtg
+      421 tcctggaggg ctacaccgtc tccctgtgtg ggatcacagg tctctggtct ctggccatca
+      481 tttcctggga gagatggatg gtggtctgca agccctttgg caatgtgaga tttgatgcca
+      541 agctggccat cgtgggcatt gccttctcct ggatctgggc tgctgtgtgg acagccccgc
+      601 ccatctttgg ttggagcagg tactggcccc acggcctgaa gacttcatgc ggcccagacg
+      661 tgttcagcgg cagctcgtac cccggggtgc agtcttacat gattgtcctc atggtcacct
+      721 gctgcatcat cccactcgct atcatcatgc tctgctacct ccaagtgtgg ctggccatcc
+      781 gagcggtggc aaagcagcag aaagagtctg aatccaccca gaaggcagag aaggaagtga
+      841 cgcgcatggt ggtggtgatg atctttgcgt actgcgtctg ctggggaccc tacaccttct
+      901 tcgcatgctt tgctgctgcc aaccctggtt acgccttcca ccctttgatg gctgccctgc
+      961 cggcctactt tgccaaaagt gccactatct acaaccccgt tatctatgtc tttatgaacc
+     1021 ggcagtttcg aaactgcatc ttgcagcttt tcgggaagaa ggttgacgat ggctctgaac
+     1081 tctccagcgc ctccaaaacg gaggtctcat ctgtgtcctc ggtatcgcct gcatgaggtc
+     1141 tgcctcctac ccatcccgcc caccggggct ttggccacct ctcctttccc cctccttctc
+     1201 catccctgta aaataaatgt aatttatctt tgccaaaacc aa
+//
+

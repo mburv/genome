@@ -1,0 +1,16 @@
+{
+  "symbol": "FOXP2",
+  "geneId": "93986",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/FOXP2/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:35.235Z",
+  "responseSha256": "61456c12e50b08fd31db4033bc07fb598b46149bb3d0d3aef747c79e7f2487cb",
+  "description": "forkhead box P2",
+  "maneSelect": [
+    {
+      "accession": "NM_014491.4",
+      "ensembl": "ENST00000350908.9",
+      "protein": "NP_055306.1",
+      "chromosome": "7"
+    }
+  ]
+}

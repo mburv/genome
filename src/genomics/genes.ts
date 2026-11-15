@@ -31,6 +31,8 @@ export interface GeneAsset {
   sequence: string;
   sequenceSha256: string;
   translationVerified: boolean;
+  /** Annotated zero-based CDS offsets of UGA recoded to selenocysteine. */
+  selenocysteineOffsets?: number[];
   proteinLength: number;
   sourceUrl: string;
   retrievalUrl: string;

@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest';
 import { runOf, LEVEL_PACK } from '../../src/campaign/campaign.ts';
 import { assemblyStatus, levelContribution } from '../../src/campaign/assembly.ts';
 import { mechanicOf, mixedStage, replayMixed, verifiedMixed } from '../../src/campaign/mixed.ts';
-import { createLab, labExtractedSequence } from '../../src/engine/mechanicsLab.ts';
-import { INS } from '../../src/genomics/genes.ts';
+import { createLab, labExtractedSequence,labDecode } from '../../src/engine/mechanicsLab.ts';
+import { GENES,CATALOGUE_ORDER,INS } from '../../src/genomics/genes.ts';
 import { createMemoryAdapter, loadSave, newSave, serializeSave } from '../../src/persistence/save.ts';
 import { applyCommand, createInitialState } from '../../src/engine/engine.ts';
 
@@ -67,7 +67,8 @@ describe('mixed INS campaign',()=>{
 test('Codon Crush chapter collects twelve ordered codons with cascades and exact coverage',()=>{
   const stage=mixedStage(runOf('INS').find(d=>d.id==='ins-c02')!)!;
   expect(stage.mechanic).toBe('crush');
-  expect(stage.spec.CRUSH_TARGETS).toHaveLength(12);
+  expect(stage.spec.CRUSH_TARGETS).toHaveLength(4);
+  expect(stage.spec.blockSize).toBe(3);
   const end=replayMixed(stage,stage.certificate);
   expect(end.won).toBe(true);
   expect(end.moves).toBeLessThan(12);
@@ -86,4 +87,23 @@ test('legacy Codon Crush logs keep the valid prefix and a backup if a cascade su
   expect(adapter.backups.length).toBeGreaterThan(0);
   expect(replayMixed(stage,loaded.save.mixedAttempts![stage.id]!).collected).toBe(2);
   expect(loadSave(createMemoryAdapter(serializeSave(loaded.save)),LEVEL_PACK).notices).toEqual([]);
+});
+
+test('all 31 gene runs begin with letters, escalate, and every mixed certificate extracts exact reference DNA',()=>{
+  const blockKinds=new Set<string>(),tiers=new Set<number>();
+  for(const symbol of CATALOGUE_ORDER){
+    const run=runOf(symbol);expect(run[0]!.tier).toBeUndefined();
+    expect(run.filter(d=>!d.tier).length).toBeGreaterThanOrEqual(3);
+    let previous=1;
+    for(const def of run){
+      const tier=def.tier??1;if(def!==run.at(-1))expect(tier).toBeGreaterThanOrEqual(previous);previous=tier;tiers.add(tier);
+      const stage=mixedStage(def);if(!stage)continue;
+      const initial=createLab(stage.mechanic,stage.spec);expect(initial.board).toHaveLength(81);expect(initial.won).toBe(false);
+      if(def.tier){expect(stage.spec.blockSize).toBe(def.tier);expect(Object.keys(stage.spec.tokens!).length).toBeLessThanOrEqual(65);expect(Object.values(stage.spec.tokens!).some(t=>t.seq.length>1)).toBe(true);blockKinds.add(stage.mechanic);}
+      const solved=replayMixed(stage,stage.certificate);expect(verifiedMixed(stage,solved),def.id).toBe(true);
+      expect(labExtractedSequence(solved)).toBe(GENES[symbol]!.sequence.slice(stage.start,stage.end));
+      if(stage.spec.tokens)expect(labDecode(stage.spec,solved.board.filter(b=>b!=='.'&&b!=='·').join(''))).toMatch(/^[ACGT]+$/);
+    }
+  }
+  expect(blockKinds.size).toBe(6);expect([...tiers]).toContain(96);expect([...tiers]).toContain(48);
 });

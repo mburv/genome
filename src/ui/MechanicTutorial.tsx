@@ -1,10 +1,11 @@
+import { TokenFace,tierClass,tokenStyle } from './TokenFace.tsx';
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { ALL_LEVELS } from '../campaign/campaign.ts';
 import { isSlidingTutorial, type TutorialId, type MixedStage } from '../campaign/mixed.ts';
 import { MODE_LABEL } from './modes.ts';
 import type { LevelMode, Track } from '../engine/types.ts';
 import { applySlide, segmentCells } from '../engine/grid.ts';
-import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, type LabAction, type LabState, type CrushTransition } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, labDecode,labLabel,type LabSpec,type LabAction, type LabState, type CrushTransition } from '../engine/mechanicsLab.ts';
 
 type CrushDemo = { phase: 'swap' | 'settle'; a: number; b: number; frame: CrushTransition };
 type Step = { tracks?: Track[]; repair?: {cell:number; expected:string}; crush?: CrushDemo; title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; pathBefore?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
@@ -63,7 +64,7 @@ function demonstration(mechanic: TutorialId, stage: MixedStage | null): Step[] {
     const chain=result.crushFrames?.[1];
     if(chain) {
       const before={...start,board:chain.swapped}, after={...result.state,board:chain.board};
-      steps.push({...step('Chain reaction!','The next required codon is already here, so it clears without another swipe. Watch the tiles fall again. The chain continues until the next target is missing or the round is complete.',before,after,[...chain.matched],undefined,undefined,chain.codon),crush:{phase:'settle',a,b,frame:chain}});
+      steps.push({...step('Chain reaction!','The next required codon is already here, so it clears without another swipe. Watch the tiles fall again. The chain continues until the next target is missing or the round is complete.',before,after,[...chain.matched],undefined,undefined,chain.matched.map(c=>chain.swapped[c]).join('')),crush:{phase:'settle',a,b,frame:chain}});
     }
     return steps;
   }
@@ -147,7 +148,7 @@ function SlideTutorialBoard({ item, index, reducedMotion }: { item: Step; index:
 
 /** Use the engine's exact swap, match and gravity metadata. Each existing
  * tile occupies its real source and destination; no crossfade of the board. */
-function CrushTutorialBoard({item,reducedMotion}:{item:Step;reducedMotion:boolean}) {
+function CrushTutorialBoard({item,reducedMotion,spec,def}:{item:Step;reducedMotion:boolean;spec:LabSpec;def?:import('../engine/types.ts').LevelDefinition|undefined}) {
   const demo=item.crush;
   const phase=reducedMotion?undefined:demo?.phase;
   const board=reducedMotion?item.after:item.before;
@@ -164,10 +165,10 @@ function CrushTutorialBoard({item,reducedMotion}:{item:Step;reducedMotion:boolea
       const to=swap?(c===demo!.a?demo!.b:demo!.a):c;
       const dx=to%9-c%9,dy=Math.floor(to/9)-Math.floor(c/9);
       const style=swap?{'--demo-swap-x':'calc('+(dx*100)+'% + '+dx+'px)','--demo-swap-y':'calc('+(dy*100)+'% + '+dy+'px)'} as CSSProperties:fall?{'--fall-rows':fall.rows} as CSSProperties:undefined;
-      const classes=['tutorial-crush-tile','b-'+base,swap?'tutorial-crush-swap':'',fall?'tutorial-crush-fall':'',fall?.from===null?'tutorial-crush-new':'',!phase&&item.cells.includes(c)?'tutorial-crush-highlight':''].filter(Boolean).join(' ');
+      const classes=['tutorial-crush-tile',spec.tokens?.[base]?'lab-token tok '+tierClass(labDecode(spec,base).length):'b-'+base,swap?'tutorial-crush-swap':'',fall?'tutorial-crush-fall':'',fall?.from===null?'tutorial-crush-new':'',!phase&&item.cells.includes(c)?'tutorial-crush-highlight':''].filter(Boolean).join(' ');
       return <div key={c} className={'tutorial-cell'+(hole?' hole':'')} data-demo-cell={c} data-base={base}>
-        {!hole&&<span className={classes} style={style} data-testid={swap?'tutorial-crush-swap':fall?'tutorial-crush-fall':undefined} data-source={fall?fall.from??'new':c} data-destination={to} data-base={base}>{base}</span>}
-        {match&&<span className={'tutorial-crush-clear b-'+b} data-testid="tutorial-crush-clear" data-base={b}>{b}</span>}
+        {!hole&&<span className={classes} style={{...style,...(def&&spec.tokens?tokenStyle({...def,tokens:spec.tokens},base):{})}} data-testid={swap?'tutorial-crush-swap':fall?'tutorial-crush-fall':undefined} data-source={fall?fall.from??'new':c} data-destination={to} data-base={base}>{spec.tokens?.[base]?<TokenFace seq={labDecode(spec,base)} label={labLabel(spec,base)}/>:base}</span>}
+        {match&&<span className={'tutorial-crush-clear '+(spec.tokens?.[b]?'lab-token tok '+tierClass(labDecode(spec,b).length):'b-'+b)} style={def&&spec.tokens?tokenStyle({...def,tokens:spec.tokens},b):undefined} data-testid="tutorial-crush-clear" data-base={b}>{spec.tokens?.[b]?<TokenFace seq={labDecode(spec,b)} label={labLabel(spec,b)}/>:b}</span>}
       </div>;
     })}
     {phase==='swap'&&<span className="tutorial-finger" aria-hidden="true" style={{'--fx':xy(demo!.a)[0]/9*100+'%','--fy':xy(demo!.a)[1]/9*100+'%','--tx':xy(demo!.b)[0]/9*100+'%','--ty':xy(demo!.b)[1]/9*100+'%'} as CSSProperties}>☝</span>}
@@ -178,6 +179,11 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
   const [index,setIndex]=useState(0);
   const [replay,setReplay]=useState(0);
   const steps=demonstration(mechanic,stage);
+  const spec=stage?.spec??DEFAULT_LAB_SPEC;
+  const def=stage?ALL_LEVELS.find(l=>l.id===stage.id):undefined;
+  const face=(b:string)=>spec.tokens?.[b]?<TokenFace seq={labDecode(spec,b)} label={labLabel(spec,b)}/>:b==='.'||b==='·'?'':b;
+  const cls=(b:string)=>spec.tokens?.[b]?'lab-token tok '+tierClass(labDecode(spec,b).length):'b-'+b;
+  const style=(b:string)=>def&&spec.tokens?tokenStyle({...def,tokens:spec.tokens},b):undefined;
   const item=steps[index]!;
   const sliding=isSlidingTutorial(mechanic);
   const title=sliding?MODE_LABEL[slideMode[mechanic]]:LAB_META[mechanic].title;
@@ -197,18 +203,18 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
     <div className="card tutorial-card">
       <div className="row-between"><span className="muted small">FIRST-USE GUIDE · {index+1}/{steps.length}</span><button type="button" onClick={onClose} autoFocus data-testid="tutorial-skip">Skip</button></div>
       <h3 id="tutorial-title">{title}</h3>
-      <h4>{item.title}</h4><p className="small">{item.text}</p>
-      {item.target && <div className="tutorial-target" aria-label="Example target">{[...item.target].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>}
+      <h4>{item.title}</h4><p className="small">{spec.tokens?item.text.replace(/letters/g,'blocks').replace(/letter/g,'block').replace(/three-base codons/g,'three-block sequences').replace(/target base/g,'target block').replace(/replacement base/g,'replacement block'):item.text}</p>
+      {item.target && <div className="tutorial-target" aria-label="Example target">{[...item.target].map((b,i)=><span key={i} className={cls(b)} style={style(b)} title={labDecode(spec,b)}>{face(b)}</span>)}</div>}
       {item.tracks && item.tracks.length>1 && <div className="tutorial-tracks" aria-label="Example targets">{item.tracks.map(t=><div className="tutorial-target tutorial-track" key={t.group} data-tutorial-group={t.group}><b>{t.group}{mechanic==='slide-replicate' ? (t.strand==='coding'?' · 5′→3′':' · 3′→5′') : ''}</b>{[...t.expected].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>)}</div>}
       <div className={'tutorial-board'+(reducedMotion?' static':'')+(sliding?' slide-demo':mechanic==='crush'?' crush-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
-        {sliding ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : mechanic==='crush' ? <CrushTutorialBoard item={item} reducedMotion={reducedMotion} /> : <>
+        {sliding ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : mechanic==='crush' ? <CrushTutorialBoard item={item} reducedMotion={reducedMotion} spec={spec} def={def} /> : <>
         {item.before.map((b,c)=>{
           const after=item.after[c]!;
           const changed=b!==after && !reducedMotion;
           const shown=reducedMotion?after:b;
           return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')} data-demo-cell={c}>
-            <span className={'tutorial-base b-'+shown}>{shown==='.'||shown==='·'?'':shown}</span>
-            {changed && <span className={'tutorial-change b-'+after}>{after==='.'||after==='·'?'':after}</span>}
+            <span className={'tutorial-base '+cls(shown)} style={style(shown)}>{face(shown)}</span>
+            {changed && <span className={'tutorial-change '+cls(after)} style={style(after)}>{face(after)}</span>}
           </div>;
         })}
         {(item.path || item.pathBefore) && <svg viewBox="0 0 9 9" className="tutorial-path" aria-hidden="true">{item.pathBefore && <polyline className="tutorial-starter-path" points={points(item.pathBefore)} pathLength="1" />}{item.path && <polyline className="tutorial-extension-path" points={points(item.path)} pathLength="1" />}</svg>}

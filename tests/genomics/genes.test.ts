@@ -96,20 +96,33 @@ const OFFICIAL_NOTE: Record<string, string> = {
 
 describe('official full names', () => {
   it('covers every included catalogue gene with a provenanced name from the pinned record', () => {
-    expect(CATALOGUE_ORDER).toHaveLength(12);
-    expect(Object.keys(OFFICIAL_NOTE).sort()).toEqual([...CATALOGUE_ORDER].sort());
+    expect(CATALOGUE_ORDER).toHaveLength(31);
+    expect(Object.keys(OFFICIAL_NOTE).every(g=>CATALOGUE_ORDER.includes(g))).toBe(true);
     for (const symbol of CATALOGUE_ORDER) {
       const asset = GENES[symbol]!;
       const entry = MANIFEST.included.find((g) => g.symbol === symbol)!;
-      const expected = OFFICIAL_NOTE[symbol]!;
+      const expected = OFFICIAL_NOTE[symbol]??asset.fullName;
       expect(asset.fullName).toBe(expected);
       expect(entry.fullName).toBe(expected);
-      expect(asset.fullNameProvenance).toBe(`NCBI RefSeq gene /note in ${asset.transcript}`);
+      expect(asset.fullNameProvenance).toMatch(/NCBI RefSeq (gene \/note|CDS \/product) in /);
       expect(entry.fullNameProvenance).toBe(asset.fullNameProvenance);
       const raw = readFileSync(`data/raw/${asset.transcript}.gb`, 'utf8');
       const geneBlock = /^ {5}gene {12}.+\n((?: {21}.*\n)*)/m.exec(raw.split('FEATURES')[1] ?? raw);
       const note = /\/note="([^"]+)"/.exec((geneBlock?.[1] ?? '').replace(/\n {21}/g, ' '))?.[1]?.replace(/\s+/g, ' ').trim();
-      expect(note).toBe(expected);
+      if(asset.fullNameProvenance.includes('gene /note'))expect(note).toBe(expected);
+      else expect(raw).toContain('/product=');
     }
   });
+});
+
+it('all 31 pinned CDS records translate exactly, with GPX1 annotated Sec recoding only',()=>{
+  for(const symbol of CATALOGUE_ORDER){
+    const g=GENES[symbol]!;let protein=translate(g.sequence);
+    for(const offset of g.selenocysteineOffsets??[]){expect(symbol).toBe('GPX1');expect(g.sequence.slice(offset,offset+3)).toBe('TGA');protein=protein.slice(0,offset/3)+'U'+protein.slice(offset/3+1);}
+    const raw=readFileSync('data/raw/'+g.transcript+'.gb','utf8');
+    expect(sha(raw)).toBe(g.rawRecordSha256);
+    expect(protein.endsWith('*')).toBe(true);expect(protein.slice(0,-1)).not.toContain('*');
+    expect(protein.slice(0,-1)).toBe(/\/translation="([^"]+)"/.exec(raw)![1]!.replace(/\s/g,''));
+  }
+  expect(GENES.GPX1!.selenocysteineOffsets).toEqual([144]);
 });

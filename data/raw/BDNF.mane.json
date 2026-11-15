@@ -1,0 +1,16 @@
+{
+  "symbol": "BDNF",
+  "geneId": "627",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/BDNF/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:26.456Z",
+  "responseSha256": "a6517ca2b7e17251cd9dd6a29531b4a4648ac829e9abd7cfaf15d93b582be359",
+  "description": "brain derived neurotrophic factor",
+  "maneSelect": [
+    {
+      "accession": "NM_001709.5",
+      "ensembl": "ENST00000356660.9",
+      "protein": "NP_001700.2",
+      "chromosome": "11"
+    }
+  ]
+}

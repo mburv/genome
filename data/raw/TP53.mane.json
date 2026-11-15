@@ -1,0 +1,16 @@
+{
+  "symbol": "TP53",
+  "geneId": "7157",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/TP53/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:27.932Z",
+  "responseSha256": "e234d44f2156e9c5239b6807c8db620c2547c4e198daa4448432a4463eb82eac",
+  "description": "tumor protein p53",
+  "maneSelect": [
+    {
+      "accession": "NM_000546.6",
+      "ensembl": "ENST00000269305.9",
+      "protein": "NP_000537.3",
+      "chromosome": "17"
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { applyLab, createLab, labHint, traceHintCell, connectionHint, findCrushSwap, LAB_IDS, LAB_META, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, type LabResult, type LabId, type LabState, type LabAction, type DNA } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, labHint, traceHintCell, connectionHint, findCrushSwap, LAB_IDS, LAB_META, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, labDecode,labLabel,labReplacementOptions, type LabResult, type LabId, type LabState, type LabAction } from '../engine/mechanicsLab.ts';
 import { TargetShell } from './TargetPanel.tsx';
 import { PowerTray } from './PowerTray.tsx';
 import { WinCard } from './WinCard.tsx';
 import { SolvedBanner } from './SolvedBanner.tsx';
 import { ALL_LEVELS, OPENING_LEVEL_ID } from '../campaign/campaign.ts';
-import { INS } from '../genomics/genes.ts';
+import { GENES, INS } from '../genomics/genes.ts';
 import type { LevelDefinition } from '../engine/types.ts';
+import { TokenFace,tierClass,tokenStyle } from './TokenFace.tsx';
 import { labExtractedSequence } from '../engine/mechanicsLab.ts';
 import { type MixedStage } from '../campaign/mixed.ts';
 
@@ -58,6 +59,11 @@ interface CampaignPlay {
 export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; campaign?: CampaignPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
   const meta = LAB_META[id];
   const spec = campaign?.stage.spec ?? DEFAULT_LAB_SPEC;
+  const gene=campaign?GENES[campaign.def.symbol]!:INS;
+  const tokenDef=spec.tokens&&campaign?{...campaign.def,tokens:spec.tokens}:null;
+  const face=(b:string)=>spec.tokens?.[b]?<TokenFace seq={labDecode(spec,b)} label={labLabel(spec,b)}/>:b==='·'?'':b;
+  const chipClass=(b:string)=>spec.tokens?.[b]?'lab-token tok '+tierClass(labDecode(spec,b).length):'b-'+b;
+  const chipStyle=(b:string)=>tokenDef?tokenStyle(tokenDef,b):undefined;
   const { TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATION_ROWS, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET } = spec;
   const readAt = (c: number) => READ_CELLS.findIndex(row => row.includes(c));
   const endAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c || p.end === c);
@@ -103,7 +109,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const credit: WinCredit = {
     newBases: campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
     replayed: campaign?.completed ?? false,
-    assembled: !!campaign && !campaign.assembled && !campaign.completed && campaign.covered + campaign.stage.sequence.length === INS.cdsLength,
+    assembled: !!campaign && !campaign.assembled && !campaign.completed && campaign.covered + campaign.stage.sequence.length === gene.cdsLength,
   };
   const onProgress = campaign?.onProgress;
   useEffect(() => { onProgress?.(session.actions, state); }, [onProgress, session.actions, state]);
@@ -221,14 +227,14 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   };
   const index = LAB_IDS.indexOf(id);
   const next = LAB_IDS[index + 1];
-  const progress = id === 'trace' ? state.trace.length + '/' + TRACE_TARGET.length + ' bases'
-    : id === 'crush' ? displayCollected + '/' + CRUSH_TARGETS.length + ' codons'
+  const progress = id === 'trace' ? state.trace.length + '/' + TRACE_TARGET.length + (spec.tokens?' blocks':' bases')
+    : id === 'crush' ? displayCollected + '/' + CRUSH_TARGETS.length + (spec.tokens?' block matches':' codons')
     : id === 'assembly' ? state.placements.filter(p => p >= 0).length + '/3 reads'
     : id === 'mutation' ? mutationCount(state.board) + ' mismatches'
     : id === 'connections' ? state.routes.filter((p, i) => p.at(-1) === CONNECTION_PAIRS[i]!.end).length + '/3 pairs'
     : state.cuts.length + '/2 cuts';
   const board = (
-    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} data-crush-chain={crushAnimation ? crushAnimation.frame+1 : undefined} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
+    <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '')+(spec.tokens?' block-lab-board':'') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} data-crush-chain={crushAnimation ? crushAnimation.frame+1 : undefined} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
         if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
@@ -239,14 +245,14 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
         const moving = !!swapMotion && (c === swapMotion.a || c === swapMotion.b);
         const clear = crushAnimation?.stage === 'clear' && animationFrame?.matched.includes(c);
         const fall = falling.get(c);
-        const classes = ['lab-cell', placedRead ? 'assembly-placed' : '', id === 'trace' ? 'cell tile' : '', traceHint === c ? 'hinted' : '', routeHint?.cell === c ? 'hinted connection-hinted' : '', crushHint?.includes(c) ? 'hinted crush-hinted' : '', mutationHint === c ? 'mutation-hinted' : '', mutationTarget ? (b === mutationTarget ? 'mutation-correct' : 'mutation-mismatch') : '', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', /^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? 'trace-starter' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) && b === ASSEMBLY_TARGET[c - ASSEMBLY_CELLS[0]!] ? 'assembly-correct' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
+        const classes = ['lab-cell', placedRead ? 'assembly-placed' : '', id === 'trace' ? 'cell tile' : '', traceHint === c ? 'hinted' : '', routeHint?.cell === c ? 'hinted connection-hinted' : '', crushHint?.includes(c) ? 'hinted crush-hinted' : '', mutationHint === c ? 'mutation-hinted' : '', mutationTarget ? (b === mutationTarget ? 'mutation-correct' : 'mutation-mismatch') : '', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', spec.tokens?.[b]?chipClass(b):/^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? 'trace-starter' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) && b === ASSEMBLY_TARGET[c - ASSEMBLY_CELLS[0]!] ? 'assembly-correct' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
         const endpoint = id === 'connections' && pair >= 0;
         const connectionColor = id === 'connections' ? (endpoint ? pair : route) : -1;
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
         const badge = id === 'mutation' && c % 9 === 1 ? (isTop ? 'REF' : 'R' + (Math.floor(c / 9) + 1)) : endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
-        const motionStyle: CSSProperties = { transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}), ...(routeHint?.cell === c ? { '--connection-hint-color': pathColors[routeHint.pair] } : {}) } as CSSProperties;
-        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-read-placed={id === 'assembly' && read >= 0 ? String(placedRead) : undefined} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : b) + (badge ? ', ' + badge : '') + (traceHint === c ? ', suggested next move' : '') + (routeHint?.cell === c ? ', suggested move for pair ' + (routeHint.pair + 1) : '') + (crushHint?.includes(c) ? ', suggested swap tile' : '') + (id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? ', starter base' : '') + (mutationHint === c ? ', suggested repair' : '') + (placedRead ? ', read ' + (read + 1) + ' placed at slot ' + (state.placements[read]! + 1) : '')} aria-pressed={chosen} disabled={state.won && !gestureActive} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
-          <span className={id === 'trace' ? 'letter' : undefined}>{b === '·' ? '' : b}</span>{badge && <small>{badge}</small>}
+        const motionStyle: CSSProperties = { ...chipStyle(b), transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}), ...(routeHint?.cell === c ? { '--connection-hint-color': pathColors[routeHint.pair] } : {}) } as CSSProperties;
+        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-seq={labDecode(spec,b)} data-read-placed={id === 'assembly' && read >= 0 ? String(placedRead) : undefined} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : labDecode(spec,b)) + (badge ? ', ' + badge : '') + (traceHint === c ? ', suggested next move' : '') + (routeHint?.cell === c ? ', suggested move for pair ' + (routeHint.pair + 1) : '') + (crushHint?.includes(c) ? ', suggested swap tile' : '') + (id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? ', starter base' : '') + (mutationHint === c ? ', suggested repair' : '') + (placedRead ? ', read ' + (read + 1) + ' placed at slot ' + (state.placements[read]! + 1) : '')} aria-pressed={chosen} disabled={state.won && !gestureActive} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
+          {spec.tokens?.[b]?face(b):<span className={id === 'trace' ? 'letter' : undefined}>{b === '·' ? '' : b}</span>}{badge && <small>{badge}</small>}
         </button>;
       })}
       <svg className="lab-lines" viewBox="0 0 9 9" aria-hidden="true">
@@ -277,7 +283,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel,...(campaign?{range:{start:campaign.stage.start,end:campaign.stage.end}}:{})}}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
       replayed={session.celebration.replayed} assembled={session.celebration.assembled && !!campaign?.assembled}
-      assembledBases={campaign?.covered ?? 0} cdsLength={INS.cdsLength} reducedMotion={reducedMotion}
+      assembledBases={campaign?.covered ?? 0} cdsLength={gene.cdsLength} reducedMotion={reducedMotion}
       hasNext={hasNext} onNext={advance} onMap={onBack} onCard={campaign?.onCard ?? onBack} onClose={closeWin} />;
   const solved = state.won && winReady && !session.celebration &&
     <SolvedBanner def={winDef} moves={state.moves} unranked pulse={false} hasNext={hasNext}
@@ -292,15 +298,15 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     <TargetShell reserveHeight defId={campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
         <span className="target-title">{meta.title}</span>
-        <span className="muted" data-testid="mixed-range">{campaign ? 'INS CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp' : 'INS · practice'}</span>
+        <span className="muted" data-testid="mixed-range">{campaign ? gene.symbol+' CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : 'INS · practice'}</span>
       </div>
       {id==='trace' && <div className="clue-stack mode-sequence">
         <div className="clue-part"><b className="badge">1</b><div className="clue-tokens">
-          {[...TRACE_TARGET].map((b,i)=><span key={i} className={'strip-cell b-'+b+(i<state.trace.length?' ok':'')} data-clue-unit="" data-clue-done={String(i<state.trace.length)} data-clue-index={i+1} data-testid={i===0?'target-strip':undefined}>{b}</span>)}
+          {[...TRACE_TARGET].map((b,i)=><span key={i} className={'strip-cell '+chipClass(b)+(i<state.trace.length?' ok':'')} style={chipStyle(b)} title={labDecode(spec,b)} data-clue-unit="" data-clue-done={String(i<state.trace.length)} data-clue-index={i+1} data-testid={i===0?'target-strip':undefined}>{face(b)}</span>)}
         </div></div>
       </div>}
-      {id === 'crush' && <div className={"clue-stack mode-sequence mixed-codon-clues"+(CRUSH_TARGETS.length>6?" long-codon-clues":"")}>{CRUSH_TARGETS.map((c, i) => <div key={i} className="clue-part" data-clue-unit="" data-clue-done={String(i<displayCollected)}><b className="badge">{i+1}</b><div className="clue-tokens">{[...c].map((b,j)=><span key={j} className={'strip-cell b-'+b+(i<displayCollected?' ok':'')+(i===displayCollected?' current-codon':'')}>{b}</span>)}</div></div>)}</div>}
-      {id === 'assembly' && <><div className="lab-sequence assembly-reference mixed-clues" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={'b-' + b + (state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} data-clue-unit="" data-clue-done={String(state.board[ASSEMBLY_CELLS[i]!] === b)} aria-label={'Slot ' + (i + 1) + ': ' + b}>{b}<small>{i + 1}</small></span>)}</div></>}
+      {id === 'crush' && <div className={"clue-stack mode-sequence mixed-codon-clues"+(CRUSH_TARGETS.length>6?" long-codon-clues":"")}>{CRUSH_TARGETS.map((c, i) => <div key={i} className="clue-part" data-clue-unit="" data-clue-done={String(i<displayCollected)}><b className="badge">{i+1}</b><div className="clue-tokens">{[...c].map((b,j)=><span key={j} className={'strip-cell '+chipClass(b)+(i<displayCollected?' ok':'')+(i===displayCollected?' current-codon':'')} style={chipStyle(b)} title={labDecode(spec,b)}>{face(b)}</span>)}</div></div>)}</div>}
+      {id === 'assembly' && <><div className="lab-sequence assembly-reference mixed-clues" data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={chipClass(b)+(state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} style={chipStyle(b)} data-clue-unit="" data-clue-done={String(state.board[ASSEMBLY_CELLS[i]!] === b)} aria-label={'Slot ' + (i + 1) + ': ' + labDecode(spec,b)}>{face(b)}<small>{i + 1}</small></span>)}</div></>}
       {id === 'mutation' && <div className="mutation-reference mixed-clues" data-testid="mutation-reference" role="group" aria-label="Target complementary strands, 3 prime to 5 prime">
         {MUTATION_ROWS.map(({ bottom, seq }) => {
           const row = Math.floor(bottom / 9) + 1;
@@ -309,7 +315,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
             {[...seq].map((_, i) => {
               const cell = bottom + i, want = mutationExpected(cell)!;
               const ok = state.board[cell] === want;
-              return <span key={cell} className={'mutation-target-base b-' + want + (ok ? ' matched' : ' mismatch') + (mutationSelection === cell ? ' selected' : '')} data-testid={'mutation-target-' + cell} aria-label={'Row ' + row + ', column ' + (cell % 9 + 1) + ': target ' + want + ', ' + (ok ? 'correct' : 'needs repair')}>{want}</span>;
+              return <span key={cell} className={'mutation-target-base '+chipClass(want)+(ok ? ' matched' : ' mismatch') + (mutationSelection === cell ? ' selected' : '')} data-testid={'mutation-target-' + cell} data-symbol={want} style={chipStyle(want)} aria-label={'Row ' + row + ', column ' + (cell % 9 + 1) + ': target ' + labDecode(spec,want) + ', ' + (ok ? 'correct' : 'needs repair')}>{face(want)}</span>;
             })}
           </div>;
         })}
@@ -318,18 +324,18 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
         const done=state.routes[i]!.at(-1)===p.end;
         return <div key={i} className="clue-part connection-clue" data-clue-unit="" data-clue-done={String(done)}>
           <b className="badge" style={{background:pathColors[i]}}>{i+1}</b>
-          <span className={'connection-pair'+(done?' ok':'')} style={{borderColor:pathColors[i],background:pathFills[i]}}>{p.seq} ↔ {reverseComplement(p.seq)}</span>
+          <span className={'connection-pair'+(done?' ok':'')} style={{borderColor:pathColors[i],background:pathFills[i]}}>{spec.tokens?<>{face(p.seq)} ↔ {face(p.complement!)}</>:<>{p.seq} ↔ {reverseComplement(p.seq)}</>}</span>
         </div>;
       })}</div>}
-      {id === 'restriction' && <div className="mono small restriction-target mixed-clues" data-testid="restriction-target" aria-label={'Target sequence: ' + CUT_TARGET}>{[...CUT_TARGET].map((b, i) => <span key={i} className={'restriction-target-base b-' + b} data-base={b} data-clue-unit="" data-clue-done={String(state.won)}>{b}</span>)}</div>}
+      {id === 'restriction' && <div className="mono small restriction-target mixed-clues" data-testid="restriction-target" aria-label={'Target sequence: ' + labDecode(spec,CUT_TARGET)}>{[...CUT_TARGET].map((b, i) => <span key={i} className={'restriction-target-base '+chipClass(b)} style={chipStyle(b)} data-base={b} data-clue-unit="" data-clue-done={String(state.won)}>{face(b)}</span>)}</div>}
     </TargetShell>
     <div className="board-stage">
       {board}
       {solved}
     </div>
     <div className={'under-board mixed-under-board'+(crushRecovery?' crush-hint-recovery':'')} data-testid="under-board">
-      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/333 bp assembled</span>}</div>
-      {id==='mutation' && !state.won && <div className="base-picker lab-base-picker" aria-label="Choose replacement base">{(['A','C','G','T'] as DNA[]).map(b=><button type="button" className={'b-'+b+(mutationHintBase===b?' mutation-base-hinted':'')} key={b} disabled={mutationSelection===null} aria-label={'Replace with '+b+(mutationHintBase===b?', suggested correction':'')} onClick={()=>{if(mutationSelection!==null) dispatch({type:'edit',cell:mutationSelection,base:b});}} data-testid={'lab-base-'+b}>{b}</button>)}</div>}
+      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/{gene.cdsLength} bp assembled</span>}</div>
+      {id==='mutation' && !state.won && <div className="base-picker lab-base-picker" aria-label="Choose replacement base">{labReplacementOptions(spec,mutationSelection??spec.MUTATIONS[0]??-1).map(b=><button type="button" style={chipStyle(b)} className={chipClass(b)+(mutationHintBase===b?' mutation-base-hinted':'')} key={b} disabled={mutationSelection===null} aria-label={'Replace with '+labDecode(spec,b)+(mutationHintBase===b?', suggested correction':'')} onClick={()=>{if(mutationSelection!==null) dispatch({type:'edit',cell:mutationSelection,base:b});}} data-testid={'lab-base-'+b}>{face(b)}</button>)}</div>}
       {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
       {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
       {id!=='trace'&&id!=='mutation'&&id!=='connections'&&id!=='crush'&&hint&&!state.won&&<p className="lab-hint small" role="status">{labHint(state)}</p>}

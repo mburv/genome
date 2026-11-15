@@ -1,0 +1,16 @@
+{
+  "symbol": "BRCA2",
+  "geneId": "675",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/BRCA2/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:32.440Z",
+  "responseSha256": "875893bbe8de073be751b26588912d7a8c8131c2c2c59c8718d83633c2143aab",
+  "description": "BRCA2 DNA repair associated",
+  "maneSelect": [
+    {
+      "accession": "NM_000059.4",
+      "ensembl": "ENST00000380152.8",
+      "protein": "NP_000050.3",
+      "chromosome": "13"
+    }
+  ]
+}

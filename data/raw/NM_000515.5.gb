@@ -1,0 +1,249 @@
+LOCUS       NM_000515                823 bp    mRNA    linear   PRI 20-NOV-2025
+DEFINITION  Homo sapiens growth hormone 1 (GH1), transcript variant 1, mRNA.
+ACCESSION   NM_000515
+VERSION     NM_000515.5
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 823)
+  AUTHORS   Huang,X., Chen,H., Shangguan,H., Wu,W., Ai,Z., Chen,Z. and Chen,R.
+  TITLE     The clinical and genetic aspects of six individuals with GH1
+            variants and isolated growth hormone deficiency type II
+  JOURNAL   Front Endocrinol (Lausanne) 15, 1363050 (2024)
+   PUBMED   39435354
+  REMARK    GeneRIF: The clinical and genetic aspects of six individuals with
+            GH1 variants and isolated growth hormone deficiency type II.
+REFERENCE   2  (bases 1 to 823)
+  AUTHORS   Maimaituxun,G., Amano,T., Kenny,G.P., Mundel,T., Kajiki,M.,
+            Tagawa,K., Katagiri,A., Tanabe,Y., Watanabe,K., Nishiyasu,T.,
+            Kondo,N. and Fujii,N.
+  TITLE     GH and IGF-1 in skin interstitial fluid and blood are associated
+            with heat loss responses in exercising young adults
+  JOURNAL   Eur J Appl Physiol 124 (8), 2285-2301 (2024)
+   PUBMED   38446190
+  REMARK    GeneRIF: GH and IGF-1 in skin interstitial fluid and blood are
+            associated with heat loss responses in exercising young adults.
+REFERENCE   3  (bases 1 to 823)
+  AUTHORS   Zhou,Z., Luo,Y., Li,K., Zhong,S., Zhu,Y., Yang,H., Wang,L.,
+            Chen,S., Duan,L., Gong,F., Gong,G., Zhu,H. and Pan,H.
+  TITLE     Brain white matter alterations in young adult male patients with
+            childhood-onset growth hormone deficiency: a diffusion tensor
+            imaging study
+  JOURNAL   Endocrine 83 (3), 724-732 (2024)
+   PUBMED   37936007
+  REMARK    GeneRIF: Brain white matter alterations in young adult male
+            patients with childhood-onset growth hormone deficiency: a
+            diffusion tensor imaging study.
+REFERENCE   4  (bases 1 to 823)
+  AUTHORS   Herman,R., Janez,A., Mikhailidis,D.P., Poredos,P., Blinc,A.,
+            Sabovic,M., Studen,K.B., Schernthaner,G.H., Anagnostis,P.,
+            Antignani,P.L. and Jensterle,M.
+  TITLE     Growth Hormone, Atherosclerosis and Peripheral Arterial Disease:
+            Exploring the Spectrum from Acromegaly to Growth Hormone Deficiency
+  JOURNAL   Curr Vasc Pharmacol 22 (1), 28-35 (2024)
+   PUBMED   37962050
+  REMARK    GeneRIF: Growth Hormone, Atherosclerosis and Peripheral Arterial
+            Disease: Exploring the Spectrum from Acromegaly to Growth Hormone
+            Deficiency.
+            Review article
+REFERENCE   5  (bases 1 to 823)
+  AUTHORS   Fedorczak,A., Lewinski,A. and Stawerska,R.
+  TITLE     Involvement of Sirtuin 1 in the Growth Hormone/Insulin-like Growth
+            Factor 1 Signal Transduction and Its Impact on Growth Processes in
+            Children
+  JOURNAL   Int J Mol Sci 24 (20), 15406 (2023)
+   PUBMED   37895086
+  REMARK    GeneRIF: Involvement of Sirtuin 1 in the Growth
+            Hormone/Insulin-like Growth Factor 1 Signal Transduction and Its
+            Impact on Growth Processes in Children.
+            Review article
+REFERENCE   6  (bases 1 to 823)
+  AUTHORS   Akinci,A., Kanaka,C., Eble,A., Akar,N., Vidinlisan,S. and
+            Mullis,P.E.
+  TITLE     Isolated growth hormone (GH) deficiency type IA associated with a
+            45-kilobase gene deletion within the human GH gene cluster
+  JOURNAL   J Clin Endocrinol Metab 75 (2), 437-441 (1992)
+   PUBMED   1322425
+REFERENCE   7  (bases 1 to 823)
+  AUTHORS   Estes,P.A., Cooke,N.E. and Liebhaber,S.A.
+  TITLE     A native RNA secondary structure controls alternative splice-site
+            selection and generates two human growth hormone isoforms
+  JOURNAL   J Biol Chem 267 (21), 14902-14908 (1992)
+   PUBMED   1634529
+REFERENCE   8  (bases 1 to 823)
+  AUTHORS   de Vos,A.M., Ultsch,M. and Kossiakoff,A.A.
+  TITLE     Human growth hormone and extracellular domain of its receptor:
+            crystal structure of the complex
+  JOURNAL   Science 255 (5042), 306-312 (1992)
+   PUBMED   1549776
+REFERENCE   9  (bases 1 to 823)
+  AUTHORS   Roskam,W.G. and Rougeon,F.
+  TITLE     Molecular cloning and nucleotide sequence of the human growth
+            hormone structural gene
+  JOURNAL   Nucleic Acids Res 7 (2), 305-320 (1979)
+   PUBMED   386281
+REFERENCE   10 (bases 1 to 823)
+  AUTHORS   Martial,J.A., Hallewell,R.A., Baxter,J.D. and Goodman,H.M.
+  TITLE     Human growth hormone: complementary DNA cloning and expression in
+            bacteria
+  JOURNAL   Science 205 (4406), 602-607 (1979)
+   PUBMED   377496
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from AV749353.1 and BC090045.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 22, 2018 this sequence version replaced NM_000515.4.
+            
+            Summary: The protein encoded by this gene is a member of the
+            somatotropin/prolactin family of hormones which play an important
+            role in growth control. The gene, along with four other related
+            genes, is located at the growth hormone locus on chromosome 17
+            where they are interspersed in the same transcriptional
+            orientation; an arrangement which is thought to have evolved by a
+            series of gene duplications. The five genes share a remarkably high
+            degree of sequence identity. Alternative splicing generates
+            additional isoforms of each of the five growth hormones, leading to
+            further diversity and potential for specialization. This particular
+            family member is expressed in the pituitary but not in placental
+            tissue as is the case for the other four genes in the growth
+            hormone locus. Mutations in or deletions of the gene lead to growth
+            hormone deficiency and short stature. [provided by RefSeq, Jul
+            2008].
+            
+            Transcript Variant: This variant (1) represents the longest
+            transcript and encodes the longest isoform (1).
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: AY613431.1, SRR5189667.317972.1
+                                           [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA2162568 [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000323322.10/ ENSP00000312673.5
+            RefSeq Select criteria :: based on conservation, expression,
+                                      longest protein
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-20                AV749353.1         14-33
+            21-823              BC090045.1         1-803
+FEATURES             Location/Qualifiers
+     source          1..823
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="17"
+                     /map="17q23.3"
+     gene            1..823
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /note="growth hormone 1"
+                     /db_xref="GeneID:2688"
+                     /db_xref="HGNC:HGNC:4261"
+                     /db_xref="MIM:139250"
+     exon            1..73
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             64..717
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /note="isoform 1 precursor is encoded by transcript
+                     variant 1; pituitary growth hormone; somatotropin; growth
+                     hormone B5"
+                     /codon_start=1
+                     /product="somatotropin isoform 1 precursor"
+                     /protein_id="NP_000506.2"
+                     /db_xref="CCDS:CCDS11653.1"
+                     /db_xref="GeneID:2688"
+                     /db_xref="HGNC:HGNC:4261"
+                     /db_xref="MIM:139250"
+                     /translation="MATGSRTSLLLAFGLLCLPWLQEGSAFPTIPLSRLFDNAMLRAH
+                     RLHQLAFDTYQEFEEAYIPKEQKYSFLQNPQTSLCFSESIPTPSNREETQQKSNLELL
+                     RISLLLIQSWLEPVQFLRSVFANSLVYGASDSNVYDLLKDLEEGIQTLMGRLEDGSPR
+                     TGQIFKQTYSKFDTNSHNDDALLKNYGLLYCFRKDMDKVETFLRIVQCRSVEGSCGF"
+     sig_peptide     64..141
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /inference="COORDINATES: ab initio prediction:SignalP:6.0"
+     mat_peptide     142..714
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /product="Somatotropin. /id=PRO_0000032988"
+                     /note="propagated from UniProtKB/Swiss-Prot (P01241.2)"
+     misc_feature    457..459
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000269|PubMed:14997482; propagated from
+                     UniProtKB/Swiss-Prot (P01241.2); phosphorylation site"
+     misc_feature    589..591
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /note="Phosphoserine.
+                     /evidence=ECO:0000269|PubMed:14997482; propagated from
+                     UniProtKB/Swiss-Prot (P01241.2); phosphorylation site"
+     exon            74..234
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /inference="alignment:Splign:2.1.0"
+     exon            235..354
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /inference="alignment:Splign:2.1.0"
+     exon            355..519
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /inference="alignment:Splign:2.1.0"
+     exon            520..823
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      804..809
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /note="hexamer: AATAAA"
+     polyA_site      823
+                     /gene="GH1"
+                     /gene_synonym="GH; GH-N; GHB5; GHN; hGH; hGH-N; IGHD1A;
+                     IGHD1B; IGHD2"
+                     /note="major polyA site"
+ORIGIN      
+        1 aaggatccca aggcccaact ccccgaacca ctcagggtcc tgtggacagc tcacctagct
+       61 gcaatggcta caggctcccg gacgtccctg ctcctggctt ttggcctgct ctgcctgccc
+      121 tggcttcaag agggcagtgc cttcccaacc attcccttat ccaggctttt tgacaacgct
+      181 atgctccgcg cccatcgtct gcaccagctg gcctttgaca cctaccagga gtttgaagaa
+      241 gcctatatcc caaaggaaca gaagtattca ttcctgcaga acccccagac ctccctctgt
+      301 ttctcagagt ctattccgac accctccaac agggaggaaa cacaacagaa atccaaccta
+      361 gagctgctcc gcatctccct gctgctcatc cagtcgtggc tggagcccgt gcagttcctc
+      421 aggagtgtct tcgccaacag cctggtgtac ggcgcctctg acagcaacgt ctatgacctc
+      481 ctaaaggacc tagaggaagg catccaaacg ctgatgggga ggctggaaga tggcagcccc
+      541 cggactgggc agatcttcaa gcagacctac agcaagttcg acacaaactc acacaacgat
+      601 gacgcactac tcaagaacta cgggctgctc tactgcttca ggaaggacat ggacaaggtc
+      661 gagacattcc tgcgcatcgt gcagtgccgc tctgtggagg gcagctgtgg cttctagctg
+      721 cccgggtggc atccctgtga cccctcccca gtgcctctcc tggccctgga agttgccact
+      781 ccagtgccca ccagccttgt cctaataaaa ttaagttgca tca
+//
+

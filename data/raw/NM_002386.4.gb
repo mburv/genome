@@ -1,0 +1,265 @@
+LOCUS       NM_002386               2111 bp    mRNA    linear   PRI 04-FEB-2026
+DEFINITION  Homo sapiens melanocortin 1 receptor (MC1R), mRNA.
+ACCESSION   NM_002386
+VERSION     NM_002386.4
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 2111)
+  AUTHORS   Cavatao,F.G., Pinto,E.S.M., Krause,M.J., Alho,C.S. and Dorn,M.
+  TITLE     Molecular Basis of MC1R Activation: Mutation-Induced Alterations in
+            Structural Dynamics
+  JOURNAL   Proteins 92 (11), 1297-1307 (2024)
+   PUBMED   38923677
+  REMARK    GeneRIF: Molecular Basis of MC1R Activation: Mutation-Induced
+            Alterations in Structural Dynamics.
+REFERENCE   2  (bases 1 to 2111)
+  AUTHORS   Castejon-Grinan,M., Cerdido,S., Sanchez-Beltran,J., Lambertos,A.,
+            Abrisqueta,M., Herraiz,C., Jimenez-Cervantes,C. and
+            Garcia-Borron,J.C.
+  TITLE     Melanoma-associated melanocortin 1 receptor variants confer redox
+            signaling-dependent protection against oxidative DNA damage
+  JOURNAL   Redox Biol 72, 103135 (2024)
+   PUBMED   38565069
+  REMARK    GeneRIF: Melanoma-associated melanocortin 1 receptor variants
+            confer redox signaling-dependent protection against oxidative DNA
+            damage.
+REFERENCE   3  (bases 1 to 2111)
+  AUTHORS   Cerdido,S., Sanchez-Beltran,J., Lambertos,A., Abrisqueta,M.,
+            Padilla,L., Herraiz,C., Olivares,C., Jimenez-Cervantes,C. and
+            Garcia-Borron,J.C.
+  TITLE     A Side-by-Side Comparison of Wildtype and Variant Melanocortin 1
+            Receptor Signaling with Emphasis on Protection against Oxidative
+            Damage to DNA
+  JOURNAL   Int J Mol Sci 24 (18), 14381 (2023)
+   PUBMED   37762683
+  REMARK    GeneRIF: A Side-by-Side Comparison of Wildtype and Variant
+            Melanocortin 1 Receptor Signaling with Emphasis on Protection
+            against Oxidative Damage to DNA.
+REFERENCE   4  (bases 1 to 2111)
+  AUTHORS   Cui,Y., Miao,Y., Cao,L., Guo,L., Cui,Y., Yan,C., Zeng,Z., Xu,M. and
+            Han,T.
+  TITLE     Activation of melanocortin-1 receptor signaling in melanoma cells
+            impairs T cell infiltration to dampen antitumor immunity
+  JOURNAL   Nat Commun 14 (1), 5740 (2023)
+   PUBMED   37714844
+  REMARK    GeneRIF: Activation of melanocortin-1 receptor signaling in
+            melanoma cells impairs T cell infiltration to dampen antitumor
+            immunity.
+REFERENCE   5  (bases 1 to 2111)
+  AUTHORS   Dall'Olmo,L., Papa,N., Surdo,N.C., Marigo,I. and Mocellin,S.
+  TITLE     Alpha-melanocyte stimulating hormone (alpha-MSH): biology, clinical
+            relevance and implication in melanoma
+  JOURNAL   J Transl Med 21 (1), 562 (2023)
+   PUBMED   37608347
+  REMARK    GeneRIF: Alpha-melanocyte stimulating hormone (alpha-MSH): biology,
+            clinical relevance and implication in melanoma.
+            Review article
+REFERENCE   6  (bases 1 to 2111)
+  AUTHORS   Valverde,P., Healy,E., Jackson,I., Rees,J.L. and Thody,A.J.
+  TITLE     Variants of the melanocyte-stimulating hormone receptor gene are
+            associated with red hair and fair skin in humans
+  JOURNAL   Nat Genet 11 (3), 328-330 (1995)
+   PUBMED   7581459
+REFERENCE   7  (bases 1 to 2111)
+  AUTHORS   Magenis,R.E., Smith,L., Nadeau,J.H., Johnson,K.R., Mountjoy,K.G.
+            and Cone,R.D.
+  TITLE     Mapping of the ACTH, MSH, and neural (MC3 and MC4) melanocortin
+            receptors in the mouse and human
+  JOURNAL   Mamm Genome 5 (8), 503-508 (1994)
+   PUBMED   7949735
+REFERENCE   8  (bases 1 to 2111)
+  AUTHORS   Gantz,I., Yamada,T., Tashiro,T., Konda,Y., Shimoto,Y., Miwa,H. and
+            Trent,J.M.
+  TITLE     Mapping of the gene encoding the melanocortin-1 (alpha-melanocyte
+            stimulating hormone) receptor (MC1R) to human chromosome 16q24.3 by
+            Fluorescence in situ hybridization
+  JOURNAL   Genomics 19 (2), 394-395 (1994)
+   PUBMED   8188275
+REFERENCE   9  (bases 1 to 2111)
+  AUTHORS   Chhajlani,V. and Wikberg,J.E.
+  TITLE     Molecular cloning and expression of the human melanocyte
+            stimulating hormone receptor cDNA
+  JOURNAL   FEBS Lett 309 (3), 417-420 (1992)
+   PUBMED   1516719
+  REMARK    Erratum:[FEBS Lett. 1996 Jul 22;390(2):238. doi:
+            10.1016/0014-5793(96)81375-5. PMID: 8706868]
+REFERENCE   10 (bases 1 to 2111)
+  AUTHORS   Mountjoy,K.G., Robbins,L.S., Mortrud,M.T. and Cone,R.D.
+  TITLE     The cloning of a family of genes that encode the melanocortin
+            receptors
+  JOURNAL   Science 257 (5074), 1248-1251 (1992)
+   PUBMED   1325670
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from BE410897.1, AK024232.1 and
+            CF528726.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Dec 19, 2019 this sequence version replaced NM_002386.3.
+            
+            Summary: This intronless gene encodes the receptor protein for
+            melanocyte-stimulating hormone (MSH). The encoded protein, a seven
+            pass transmembrane G protein coupled receptor, controls
+            melanogenesis. Two types of melanin exist: red pheomelanin and
+            black eumelanin. Gene mutations that lead to a loss in function are
+            associated with increased pheomelanin production, which leads to
+            lighter skin and hair color. Eumelanin is photoprotective but
+            pheomelanin may contribute to UV-induced skin damage by generating
+            free radicals upon UV radiation. Binding of MSH to its receptor
+            activates the receptor and stimulates eumelanin synthesis. This
+            receptor is a major determining factor in sun sensitivity and is a
+            genetic risk factor for melanoma and non-melanoma skin cancer. Over
+            30 variant alleles have been identified which correlate with skin
+            and hair color, providing evidence that this gene is an important
+            component in determining normal human pigment variation. [provided
+            by RefSeq, Jul 2008].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript is intronless :: AK225902.1, BC007856.2 [ECO:0000345]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000555147.2/ ENSP00000451605.1
+            RefSeq Select criteria :: based on single protein-coding transcript
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: complete on the 3' end.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-415               BE410897.1         263-677
+            416-2110            AK024232.1         1401-3095
+            2111-2111           CF528726.1         22-22               c
+FEATURES             Location/Qualifiers
+     source          1..2111
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="16"
+                     /map="16q24.3"
+     gene            1..2111
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="melanocortin 1 receptor"
+                     /db_xref="GeneID:4157"
+                     /db_xref="HGNC:HGNC:6929"
+                     /db_xref="MIM:155555"
+     exon            1..2111
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /inference="alignment:Splign:2.1.0"
+     misc_feature    314..316
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="upstream in-frame stop codon"
+     CDS             398..1351
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="melanotropin receptor; MC1-R; alpha melanocyte
+                     stimulating hormone receptor"
+                     /codon_start=1
+                     /product="melanocyte-stimulating hormone receptor"
+                     /protein_id="NP_002377.4"
+                     /db_xref="CCDS:CCDS56011.1"
+                     /db_xref="GeneID:4157"
+                     /db_xref="HGNC:HGNC:6929"
+                     /db_xref="MIM:155555"
+                     /translation="MAVQGSQRRLLGSLNSTPTAIPQLGLAANQTGARCLEVSISDGL
+                     FLSLGLVSLVENALVVATIAKNRNLHSPMYCFICCLALSDLLVSGSNVLETAVILLLE
+                     AGALVARAAVLQQLDNVIDVITCSSMLSSLCFLGAIAVDRYISIFYALRYHSIVTLPR
+                     ARRAVAAIWVASVVFSTLFIAYYDHVAVLLCLVVFFLAMLVLMAVLYVHMLARACQHA
+                     QGIARLHKRQRPVHQGFGLKGAVTLTILLGIFFLCWGPFFLHLTLIVLCPEHPTCGCI
+                     FKNFNLFLALIICNAIIDPLIYAFHSQELRRTLKEVLTCSW"
+     misc_feature    482..484
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000255; propagated from
+                     UniProtKB/Swiss-Prot (Q01726.2); glycosylation site"
+     misc_feature    521..580
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q01726.2);
+                     transmembrane region"
+     misc_feature    623..697
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q01726.2);
+                     transmembrane region"
+     misc_feature    737..817
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q01726.2);
+                     transmembrane region"
+     misc_feature    884..946
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q01726.2);
+                     transmembrane region"
+     misc_feature    956..1024
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q01726.2);
+                     transmembrane region"
+     misc_feature    1112..1186
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q01726.2);
+                     transmembrane region"
+     misc_feature    1232..1300
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q01726.2);
+                     transmembrane region"
+     regulatory      2087..2092
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="hexamer: AATAAA"
+     polyA_site      2111
+                     /gene="MC1R"
+                     /gene_synonym="CMM5; MSH-R; SHEP2"
+                     /note="major polyA site"
+ORIGIN      
+        1 attcttccca ggacctcagc gcagccctgg cccaggaagg caggagacag aggccaggac
+       61 ggtccagagg tgtcgaaatg tcctggggac ctgagcagca gccaccaggg aagaggcagg
+      121 gagggagctg aggaccaggc ttggttgtga gaatccctga gcccaggcgg tagatgccag
+      181 gaggtgtctg gactggctgg gccatgcctg ggctgacctg tccagccagg gagagggtgt
+      241 gagggcagat ctgggggtgc ccagatggaa ggaggcaggc atgggggaca cccaaggccc
+      301 cctggcagca ccatgaacta agcaggacac ctggagggga agaactgtgg ggacctggag
+      361 gcctccaacg actccttcct gcttcctgga caggactatg gctgtgcagg gatcccagag
+      421 aagacttctg ggctccctca actccacccc cacagccatc ccccagctgg ggctggctgc
+      481 caaccagaca ggagcccggt gcctggaggt gtccatctct gacgggctct tcctcagcct
+      541 ggggctggtg agcttggtgg agaacgcgct ggtggtggcc accatcgcca agaaccggaa
+      601 cctgcactca cccatgtact gcttcatctg ctgcctggcc ttgtcggacc tgctggtgag
+      661 cgggagcaac gtgctggaga cggccgtcat cctcctgctg gaggccggtg cactggtggc
+      721 ccgggctgcg gtgctgcagc agctggacaa tgtcattgac gtgatcacct gcagctccat
+      781 gctgtccagc ctctgcttcc tgggcgccat cgccgtggac cgctacatct ccatcttcta
+      841 cgcactgcgc taccacagca tcgtgaccct gccgcgggcg cggcgagccg ttgcggccat
+      901 ctgggtggcc agtgtcgtct tcagcacgct cttcatcgcc tactacgacc acgtggccgt
+      961 cctgctgtgc ctcgtggtct tcttcctggc tatgctggtg ctcatggccg tgctgtacgt
+     1021 ccacatgctg gcccgggcct gccagcacgc ccagggcatc gcccggctcc acaagaggca
+     1081 gcgcccggtc caccagggct ttggccttaa aggcgctgtc accctcacca tcctgctggg
+     1141 cattttcttc ctctgctggg gccccttctt cctgcatctc acactcatcg tcctctgccc
+     1201 cgagcacccc acgtgcggct gcatcttcaa gaacttcaac ctctttctcg ccctcatcat
+     1261 ctgcaatgcc atcatcgacc ccctcatcta cgccttccac agccaggagc tccgcaggac
+     1321 gctcaaggag gtgctgacat gctcctggtg agcgcggtgc acgcggcttt aagtgtgctg
+     1381 ggcagaggga ggtggtgata ttgtgtggtc tggttcctgt gtgaccctgg gcagttcctt
+     1441 acctccctgg tccccgtttg tcaaagagga tggactaaat gatctctgaa agtgttgaag
+     1501 cgcggaccct tctgggtcca gggaggggtc cctgcaaaac tccaggcagg acttctcacc
+     1561 agcagtcgtg gggaacggag gaggacatgg ggaggttgtg gggcctcagg ctccgggcac
+     1621 caggggccaa cctcaggctc ctaaagagac attttccgcc cactcctggg acactccgtc
+     1681 tgctccaatg actgagcagc atccacccca ccccatcttt gctgccagct ctcaggaccg
+     1741 tgccctcgtc agctgggatg tgaagtctct gggtggaagt gtgtgccaag agctactccc
+     1801 acagcagccc caggagaagg ggctttgtga ccagaaagct tcatccacag ccttgcagcg
+     1861 gctcctgcaa aaggaggtga aatccctgcc tcaggccaag ggaccaggtt tgcaggagcc
+     1921 cccctagtgg tatggggctg agccctcctg agggccggtt ctaaggctca gactgggcac
+     1981 tggggcctca gcctgctttc ctgcagcagt cgcccaagca gacagccctg gcaaatgcct
+     2041 gactcagtga ccagtgcctg tgagcatggg gccaggaaag tctggtaata aatgtgactc
+     2101 agcatcaccc a
+//
+

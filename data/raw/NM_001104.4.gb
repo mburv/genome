@@ -1,0 +1,359 @@
+LOCUS       NM_001104               2882 bp    mRNA    linear   PRI 27-APR-2025
+DEFINITION  Homo sapiens actinin alpha 3 (ACTN3), transcript variant 1, coding,
+            mRNA.
+ACCESSION   NM_001104
+VERSION     NM_001104.4
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 2882)
+  AUTHORS   Chae,J.H., Eom,S.H., Lee,S.K., Jung,J.H. and Kim,C.H.
+  TITLE     Association between Complex ACTN3 and ACE Gene Polymorphisms and
+            Elite Endurance Sports in Koreans: A Case-Control Study
+  JOURNAL   Genes (Basel) 15 (9), 1110 (2024)
+   PUBMED   39336701
+  REMARK    GeneRIF: Association between Complex ACTN3 and ACE Gene
+            Polymorphisms and Elite Endurance Sports in Koreans: A Case-Control
+            Study.
+REFERENCE   2  (bases 1 to 2882)
+  AUTHORS   Del Coso,J., Rodas,G., Soler-Aguinaga,A., Lopez-Del Campo,R.,
+            Resta,R., Gonzalez-Rodenas,J., Ferrandis,J. and Moreno-Perez,V.
+  TITLE     ACTN3 XX Genotype Negatively Affects Running Performance and
+            Increases Muscle Injury Incidence in LaLiga Football Players
+  JOURNAL   Genes (Basel) 15 (3), 386 (2024)
+   PUBMED   38540445
+  REMARK    GeneRIF: ACTN3 XX Genotype Negatively Affects Running Performance
+            and Increases Muscle Injury Incidence in LaLiga Football Players.
+REFERENCE   3  (bases 1 to 2882)
+  AUTHORS   Petrovic,T., Djelic,M., Zdravkovic,M., Gavrilovic,T.,
+            Atanasijevic,N. and Stojkovic,O.
+  TITLE     Principal components analysis to evaluate complex association of
+            polymorphisms in ACE and ACTN3 genes and the extent of
+            cardiovascular adaptive changes in elite athletes
+  JOURNAL   J Sports Med Phys Fitness 64 (2), 192-200 (2024)
+   PUBMED   38093640
+  REMARK    GeneRIF: Principal components analysis to evaluate complex
+            association of polymorphisms in ACE and ACTN3 genes and the extent
+            of cardiovascular adaptive changes in elite athletes.
+REFERENCE   4  (bases 1 to 2882)
+  AUTHORS   Arejano,G.G., Hoffmann,L.V., Ferreira Wyse,L., Espindola
+            Correia,P., Pieniz,S., Torma Botelho,F., Schneider,A., Schadock,I.
+            and Castilho Barros,C.
+  TITLE     Genetic polymorphisms in the angiotensin converting enzyme, actinin
+            3 and paraoxonase 1 genes in women with diabetes and hypertension
+  JOURNAL   Arch Endocrinol Metab 68, e210204 (2023)
+   PUBMED   37948561
+  REMARK    GeneRIF: Genetic polymorphisms in the angiotensin converting
+            enzyme, actinin 3 and paraoxonase 1 genes in women with diabetes
+            and hypertension.
+REFERENCE   5  (bases 1 to 2882)
+  AUTHORS   Nikolopoulos,S.N., Spengler,B.A., Kisselbach,K., Evans,A.E.,
+            Biedler,J.L. and Ross,R.A.
+  TITLE     The human non-muscle alpha-actinin protein encoded by the ACTN4
+            gene suppresses tumorigenicity of human neuroblastoma cells
+  JOURNAL   Oncogene 19 (3), 380-386 (2000)
+   PUBMED   10656685
+REFERENCE   6  (bases 1 to 2882)
+  AUTHORS   North,K.N., Yang,N., Wattanasirichaigoon,D., Mills,M., Easteal,S.
+            and Beggs,A.H.
+  TITLE     A common nonsense mutation results in alpha-actinin-3 deficiency in
+            the general population
+  JOURNAL   Nat Genet 21 (4), 353-354 (1999)
+   PUBMED   10192379
+REFERENCE   7  (bases 1 to 2882)
+  AUTHORS   Chan,Y., Tong,H.Q., Beggs,A.H. and Kunkel,L.M.
+  TITLE     Human skeletal muscle-specific alpha-actinin-2 and -3 isoforms form
+            homodimers and heterodimers in vitro and in vivo
+  JOURNAL   Biochem Biophys Res Commun 248 (1), 134-139 (1998)
+   PUBMED   9675099
+REFERENCE   8  (bases 1 to 2882)
+  AUTHORS   Pavalko,F.M. and LaRoche,S.M.
+  TITLE     Activation of human neutrophils induces an interaction between the
+            integrin beta 2-subunit (CD18) and the actin binding protein
+            alpha-actinin
+  JOURNAL   J Immunol 151 (7), 3795-3807 (1993)
+   PUBMED   8104223
+REFERENCE   9  (bases 1 to 2882)
+  AUTHORS   Beggs,A.H., Byers,T.J., Knoll,J.H., Boyce,F.M., Bruns,G.A. and
+            Kunkel,L.M.
+  TITLE     Cloning and characterization of two human skeletal muscle
+            alpha-actinin genes located on chromosomes 1 and 11
+  JOURNAL   J Biol Chem 267 (13), 9281-9288 (1992)
+   PUBMED   1339456
+REFERENCE   10 (bases 1 to 2882)
+  AUTHORS   Yuruker,B. and Niggli,V.
+  TITLE     Alpha-actinin and vinculin in human neutrophils: reorganization
+            during adhesion and relation to the actin network
+  JOURNAL   J Cell Sci 101 (Pt 2), 403-414 (1992)
+   PUBMED   1629252
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from AK125851.1, DA915904.1,
+            AP002748.4, BC099647.3, AK303044.1 and AJ346025.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 22, 2018 this sequence version replaced NM_001104.3.
+            
+            Summary: This gene encodes a member of the alpha-actin binding
+            protein gene family. The encoded protein is primarily expressed in
+            skeletal muscle and functions as a structural component of
+            sarcomeric Z line. This protein is involved in crosslinking actin
+            containing thin filaments. An allelic polymorphism in this gene
+            results in both coding and non-coding variants; the reference
+            genome represents the coding allele. The non-functional allele of
+            this gene is associated with elite athlete status. [provided by
+            RefSeq, Apr 2024].
+            
+            Transcript Variant: This variant (1, coding) represents the
+            protein-coding allele and encodes isoform 1.
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: AK313556.1, M86407.1 [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA1968968, SAMEA2148093
+                                           [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000513398.2/ ENSP00000426797.1
+            polymorphic pseudogene :: PMID: 10192379
+            RefSeq Select criteria :: based on conservation, expression
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-104               AK125851.1         630-733
+            105-454             DA915904.1         169-518
+            455-1602            AK125851.1         1051-2198
+            1603-1603           AP002748.4         133364-133364
+            1604-1916           BC099647.3         1587-1899
+            1917-1917           AP002748.4         134410-134410
+            1918-2361           BC099647.3         1901-2344
+            2362-2362           AP002748.4         135423-135423
+            2363-2874           AK303044.1         2573-3084
+            2875-2877           AJ346025.1         332-334
+            2878-2882           AP002748.4         136492-136496
+FEATURES             Location/Qualifiers
+     source          1..2882
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="11"
+                     /map="11q13.2"
+     gene            1..2882
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="actinin alpha 3"
+                     /db_xref="GeneID:89"
+                     /db_xref="HGNC:HGNC:165"
+                     /db_xref="MIM:102574"
+     exon            1..182
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             36..2741
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="isoform 1 is encoded by transcript variant 1,
+                     coding; F-actin cross-linking protein; alpha-actinin
+                     skeletal muscle"
+                     /codon_start=1
+                     /product="alpha-actinin-3 isoform 1"
+                     /protein_id="NP_001095.2"
+                     /db_xref="CCDS:CCDS53663.1"
+                     /db_xref="GeneID:89"
+                     /db_xref="HGNC:HGNC:165"
+                     /db_xref="MIM:102574"
+                     /translation="MMMVMQPEGLGAGEGRFAGGGGGGEYMEQEEDWDRDLLLDPAWE
+                     KQQRKTFTAWCNSHLRKAGTQIENIEEDFRNGLKLMLLLEVISGERLPRPDKGKMRFH
+                     KIANVNKALDFIASKGVKLVSIGAEEIVDGNLKMTLGMIWTIILRFAIQDISVEETSA
+                     KEGLLLWCQRKTAPYRNVNVQNFHTSWKDGLALCALIHRHRPDLIDYAKLRKDDPIGN
+                     LNTAFEVAEKYLDIPKMLDAEDIVNTPKPDEKAIMTYVSCFYHAFAGAEQAETAANRI
+                     CKVLAVNQENEKLMEEYEKLASELLEWIRRTVPWLENRVGEPSMSAMQRKLEDFRDYR
+                     RLHKPPRIQEKCQLEINFNTLQTKLRLSHRPAFMPSEGKLVSDIANAWRGLEQVEKGY
+                     EDWLLSEIRRLQRLQHLAEKFRQKASLHEAWTRGKEEMLSQRDYDSALLQEVRALLRR
+                     HEAFESDLAAHQDRVEHIAALAQELNELDYHEAASVNSRCQAICDQWDNLGTLTQKRR
+                     DALERMEKLLETIDRLQLEFARRAAPFNNWLDGAVEDLQDVWLVHSVEETQSLLTAHD
+                     QFKATLPEADRERGAIMGIQGEIQKICQTYGLRPCSTNPYITLSPQDINTKWDMVRKL
+                     VPSCDQTLQEELARQQVNERLRRQFAAQANAIGPWIQAKVEEVGRLAAGLAGSLEEQM
+                     AGLRQQEQNIINYKTNIDRLEGDHQLLQESLVFDNKHTVYSMEHIRVGWEQLLTSIAR
+                     TINEVENQVLTRDAKGLSQEQLNEFRASFNHFDRKQNGMMEPDDFRACLISMGYDLGE
+                     VEFARIMTMVDPNAAGVVTFQAFIDFMTRETAETDTTEQVVASFKILAGDKNYITPEE
+                     LRRELPAKQAEYCIRRMVPYKGSGAPAGALDYVAFSSALYGESDL"
+     misc_feature    36..818
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q08043.2);
+                     Region: Actin-binding"
+     misc_feature    36..38
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="N-acetylmethionine.
+                     /evidence=ECO:0007744|PubMed:22223895; propagated from
+                     UniProtKB/Swiss-Prot (Q08043.2); acetylation site"
+     misc_feature    897..1229
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q08043.2);
+                     Region: Spectrin 1"
+     misc_feature    1257..1574
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q08043.2);
+                     Region: Spectrin 2"
+     misc_feature    1602..1937
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q08043.2);
+                     Region: Spectrin 3"
+     misc_feature    1965..2276
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q08043.2);
+                     Region: Spectrin 4"
+     exon            183..297
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            298..417
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            418..504
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            505..592
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            593..671
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            672..753
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            754..839
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            840..932
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            933..1163
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1164..1311
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1312..1462
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1463..1571
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1572..1712
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1713..1895
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            1896..2030
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2031..2210
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2211..2357
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2358..2423
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2424..2582
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     exon            2583..2882
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /inference="alignment:Splign:2.1.0"
+     regulatory      2853..2858
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="hexamer: AATAAA"
+     polyA_site      2882
+                     /gene="ACTN3"
+                     /gene_synonym="ACTN3D"
+                     /note="major polyA site"
+ORIGIN      
+        1 gtgccgagcg gagcgaagcc aggagcccga tcgagatgat gatggttatg cagcccgagg
+       61 gtctgggggc cggggagggg cgctttgcgg gcggcggcgg gggcggcgag tacatggaac
+      121 aggaggagga ctgggaccgc gacctgctgc tggacccggc ctgggagaag cagcagcgga
+      181 aaaccttcac tgcctggtgc aactcacacc tgcgcaaggc aggcacccag atcgagaaca
+      241 tcgaggaaga tttccgcaat ggcctcaaac tcatgctgct cctggaggtc atttcaggtg
+      301 agaggctgcc taggccagat aaaggcaaga tgcgcttcca caaaatcgcc aacgttaaca
+      361 aggccctgga cttcattgcc agcaaggggg ttaaactggt gtccattggt gctgaagaga
+      421 ttgttgacgg gaacctgaag atgaccctgg gcatgatctg gaccatcatc cttcgcttcg
+      481 ccatccagga catctctgtg gaagaaacct cagccaagga aggcttgctt ctgtggtgcc
+      541 agaggaagac agcaccgtac cgcaacgtca acgtgcagaa cttccacacc agctggaagg
+      601 atggcctggc cctctgtgcc ctcatccacc gacaccgccc tgacctcatc gactacgcca
+      661 aactgcgaaa ggatgacccc atcggaaacc tgaacactgc ctttgaggtg gcagagaaat
+      721 acctggacat ccccaagatg ttggatgcag aagacattgt gaacacccca aagccggatg
+      781 agaaggccat catgacctat gtgtcctgct tctaccatgc ctttgccggg gctgagcagg
+      841 cagagacagc tgccaacagg atctgcaagg tgctggcagt gaaccaggaa aacgagaagc
+      901 tgatggagga gtatgagaag cttgccagtg agctgctgga gtggatccgc cgcactgtcc
+      961 catggctgga gaaccgtgtg ggtgagccca gcatgagtgc catgcagcgc aaactagagg
+     1021 actttcggga ctaccggcgt ctgcacaagc cgccccgcat tcaggaaaag tgccagctgg
+     1081 agatcaactt caacacactg cagaccaagt tgcggctcag ccaccggcct gccttcatgc
+     1141 cctccgaggg caagctggtc tcggacatcg ccaacgcctg gcgggggctg gagcaggtgg
+     1201 aaaagggcta tgaggactgg ctgctctcgg agatccggcg cctgcagcga ctccagcacc
+     1261 tggctgagaa gttccggcag aaggcctccc tgcacgaagc ctggacccgg ggaaaggagg
+     1321 agatgctgag ccagcgcgac tacgattcgg ctttgctaca ggaggtgcgg gcgttgctgc
+     1381 ggcgccacga ggcctttgag agcgacctgg cggcgcacca ggaccgcgtg gagcacattg
+     1441 ccgcgctggc ccaggagctc aatgagctgg actaccacga ggcagcctca gtgaatagcc
+     1501 gctgccaggc catctgcgat cagtgggaca acctgggcac cctgacccag aagaggcggg
+     1561 atgcgctaga gcggatggag aagctcctgg agaccattga ccggctgcaa ctggagtttg
+     1621 cccggcgggc cgcgcccttc aacaactggc tggatggtgc cgtggaggac ctgcaggacg
+     1681 tgtggctggt acactctgtg gaggagaccc agagcctgct gacagcgcac gatcagttca
+     1741 aggcaacact gcccgaggct gaccgagagc gaggtgccat catgggcatc cagggtgaga
+     1801 tccagaagat ctgccagacg tatgggctgc ggccctgctc caccaatccc tacatcaccc
+     1861 tcagcccgca ggacatcaac accaagtggg atatggtccg aaagctggtg cccagctgtg
+     1921 accagacact gcaggaggag ctggcacggc agcaggtaaa cgagaggctc cggcgacagt
+     1981 ttgcggccca ggccaatgcc attggaccct ggatccaggc gaaggtggag gaagtggggc
+     2041 ggctggcagc agggctagct ggctctctgg aggagcagat ggctgggcta cggcagcagg
+     2101 agcagaacat tatcaactac aagactaaca ttgaccggct ggagggtgac caccagctgc
+     2161 tgcaggagag cctggtgttc gacaataagc acaccgtcta cagcatggag cacatccgcg
+     2221 tgggctggga gcagctgctc acctccattg cccgcaccat caatgaagtg gagaaccagg
+     2281 tactgacccg agacgccaag ggactgagcc aggagcagct caacgagttc cgagcatcct
+     2341 tcaaccactt tgacaggaag cagaatggga tgatggagcc tgatgacttc cgagcttgcc
+     2401 tcatctccat gggctatgac ctgggggaag tggagtttgc tcgcatcatg accatggtgg
+     2461 accccaacgc agctggggtg gtgaccttcc aggccttcat agacttcatg acccgagaga
+     2521 cagccgagac tgacacgact gagcaagttg tagcttcctt caagatcttg gcaggagaca
+     2581 agaactacat cacccccgag gagctgcggc gcgagctccc tgccaagcag gccgagtact
+     2641 gcatccgccg tatggtgccc tacaagggat ccggggcccc ggctggagcc ctggactacg
+     2701 tggccttctc cagtgccctc tatggggaga gcgacctttg accccaacca ctgaggttct
+     2761 ctatgcaaga tggagagagg atgcaccctg tggctgatcc catccgtccc tcggagcaag
+     2821 ggcctaagag aaaagccagc caagtgcttc tgaataaaga tccctctctg ggtctctccc
+     2881 ca
+//
+

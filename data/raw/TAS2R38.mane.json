@@ -1,0 +1,16 @@
+{
+  "symbol": "TAS2R38",
+  "geneId": "5726",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/TAS2R38/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:15.971Z",
+  "responseSha256": "847edb9a6d274efaed05a41899b340319a02e1ce902755d49ca8ae42ac0a2306",
+  "description": "taste 2 receptor member 38",
+  "maneSelect": [
+    {
+      "accession": "NM_176817.5",
+      "ensembl": "ENST00000547270.1",
+      "protein": "NP_789787.5",
+      "chromosome": "7"
+    }
+  ]
+}
