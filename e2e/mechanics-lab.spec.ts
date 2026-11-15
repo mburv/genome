@@ -47,9 +47,12 @@ test('mechanics menu exposes six separate games and leaves campaign save untouch
 
 test('Codon Crush swaps, refills, and supports undo', async ({ page }) => {
   await openLab(page, 'crush');
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
   await trace(page, [12,13]);
   await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');
   await expect(page.getByTestId('lab-progress')).toHaveText('4/6 codons');
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
+  await expect(page.getByText(/tiles refilled|Chain reaction ×/)).toHaveCount(0);
   await expect(page.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['5','6']);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
