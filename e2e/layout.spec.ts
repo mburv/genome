@@ -231,7 +231,8 @@ test('long clue chips grow around both codons and their divider on narrow and st
     for(const viewport of [{width:390,height:844},{width:320,height:568}]){
       await page.setViewportSize(viewport);
       const panel=page.getByTestId('target-panel');
-      const report=await panel.locator('.tok-face.long:visible').evaluateAll(faces=>faces.map(face=>{
+      await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+      const report=await panel.evaluate(root=>Array.from(root.querySelectorAll('.tok-face.long')).filter(face=>face.getBoundingClientRect().height>0).map(face=>{
         const chip=face.parentElement!;
         const bounds=chip.getBoundingClientRect();
         const [a,b]=[...face.querySelectorAll('.tok-row')].map(el=>el.getBoundingClientRect());

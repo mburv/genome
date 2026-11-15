@@ -65,7 +65,7 @@ test('dashed hints have four inset border edges on sliding and mixed boards', as
       for(const edge of edges){
         expect(edge.rails).toBe(4);
         expect(edge.sizes).toBe('100% 2px, 2px 100%, 100% 2px, 2px 100%');
-        expect(edge.positions).toBe('0% 0%, 100% 0%, 0% 100%, 0% 0%');
+        expect(edge.positions.replaceAll('0px','0%')).toBe('0% 0%, 100% 0%, 0% 100%, 0% 0%');
         expect(edge.insets.every(n=>n>=2)).toBe(true);
         expect(edge.insets[1]!+edge.insets[3]!).toBeLessThan(edge.size[0]!);
         expect(edge.insets[0]!+edge.insets[2]!).toBeLessThan(edge.size[1]!);
