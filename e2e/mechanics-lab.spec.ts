@@ -155,7 +155,21 @@ test('Restriction Enzyme isolates the fragment, and replay clears the cuts', asy
     expect(await chip.evaluate(style)).toEqual(await tile.evaluate(style));
     await expect(chip).toHaveCSS('font-size', '12px');
   }
+  const noText=async()=>await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
+  const hint=page.getByTestId('action-hint'), suggested=page.locator('.restriction-hinted');
+  await noText();
+  await hint.click();
+  await expect(suggested).toHaveAttribute('data-lab-cell','10');
+  expect(await suggested.evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
+  await tap(page,10);
+  await expect(page.getByTestId('lab-progress')).toHaveText('1/2 cuts');
+  await noText();
+  await expect(suggested).toHaveAttribute('data-lab-cell','41');
+  await page.getByTestId('action-undo').click();
+  await expect(suggested).toHaveAttribute('data-lab-cell','10');
   await tap(page,10); await tap(page,41);
+  await noText();
+  await expect(suggested).toHaveCount(0);
   await won(page);
   await page.getByTestId('win-close').click();
   await page.getByTestId('replay').click();

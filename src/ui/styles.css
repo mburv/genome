@@ -1088,6 +1088,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .lab-cell.connection-hinted::after,
 .lab-cell.crush-hinted::after,
 .lab-cell.assembly-hint-source::after,
+.lab-cell.restriction-hinted::after,
 .tutorial-cell.tutorial-repair-gap::after {
   content: '';
   position: absolute;
@@ -1118,3 +1119,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
   grid-template-rows: var(--long-rep-chip-height) 6px var(--long-rep-chip-height);
   align-items: start;
 }
+
+/* Restriction hints mark the next legal target bond using the shared inset cue. */
+.mode-lab-restriction .lab-cell.restriction-hinted { --tile-dash: var(--green); z-index: 2; }
