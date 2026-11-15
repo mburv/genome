@@ -42,6 +42,7 @@ export function WinCard(p: Props) {
   const restored = def.repair ? expand(def.repair.expected) : '';
   let strand;
   const practice = p.mechanic?.practice ?? !!def.lab;
+  const geneFinal = !practice && !!run && run.part === run.of;
   if (p.mechanic) {
     strand = <div className="win-line" data-testid="mixed-extracted">{[...p.mechanic.sequence].map((b,i)=><span key={i} className={'strip-cell b-'+b+' ok'} style={{animationDelay:skipped?'0ms':(i*(p.mechanic!.sequence.length>27?4:40))+'ms'}}>{b}</span>)}</div>;
   } else if (def.mode === 'splice') {
@@ -101,6 +102,9 @@ export function WinCard(p: Props) {
         <p className="muted small" data-testid="win-assembly">{p.assembledBases ?? 0} / {p.cdsLength} {def.symbol} coding bases assembled.</p>
         </>
         )}
+        {geneFinal && !p.assembled && (
+          <p className="muted small" data-testid="gene-final-complete">{def.symbol} final level complete. View the gene card for assembly progress.</p>
+        )}
         {p.assembled && (
           <div className="discovered assembled" data-testid="assembled">
             <b>🧬 {def.symbol} assembled!</b> All {p.cdsLength} coding bases rebuilt from the pieces you placed — exact match, SHA-256 verified.
@@ -108,7 +112,7 @@ export function WinCard(p: Props) {
         )}
         <div className="card-actions">
           <button type="button" onClick={p.onMap} data-testid="win-map">{p.mechanic?.practice ? 'Lab menu' : 'Level map'}</button>
-          {p.assembled ? (
+          {p.assembled || geneFinal ? (
             <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
           ) : p.mechanic?.practice && !p.hasNext ? null : (
             <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? p.mechanic?.nextLabel ?? 'Next level →' : p.mechanic?.practice ? 'Lab menu' : 'Map'}</button>

@@ -725,3 +725,38 @@ test('the full DMD sequence is visible without expanding and wraps on a narrow c
   expect((await body.textContent())!.replace(/\s/g,'')).toBe(GENES.DMD!.sequence);
   expect(await body.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
 });
+
+
+test('NPY final replay opens the card even when earlier reference intervals are historical',async({page})=>{
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='NPY'),last=run.at(-1)!;
+  expect(last.id).toBe('npy-c08');
+  expect(mechanicOf(last)).toBe('slide');
+  const historical=run.filter(l=>l.id==='npy-c05'||l.id==='npy-c06').map(l=>l.id);
+  expect(historical).toHaveLength(2);
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.filter(l=>!historical.includes(l.id)).map(l=>l.id),legacyReferenceLevels:historical}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();await solveWithHints(page);
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('assembled')).toHaveCount(0);
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText('NPY');
+  await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
+  await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
+  await expect(page.getByTestId('assembled-sequence').locator('.seq-wrap')).toContainText('·');
+  await expect(page.getByTestId('card-continue')).toBeVisible();
+});
+
+test('TTR final replay opens the card even with a missing earlier level',async({page})=>{
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='TTR'),last=run.at(-1)!;
+  const stage=mixedStage(last)!;
+  expect(last.id).toBe('ttr-c09');expect(stage.mechanic).toBe('trace');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.slice(1).map(l=>l.id)}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();
+  for(const cell of stage.spec.TRACE_PATH.slice(2))await tile(page,cell).tap();
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText('TTR');
+  await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
+  await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
+});
