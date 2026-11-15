@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openChapter } from './helpers';
+import { openChapter, solveWithHints } from './helpers';
 
 // Swiss redesign (D-UI-01): the board is full-bleed on phones, with 1px hairline gutters.
 for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 430, height: 932 }]) {
@@ -48,4 +48,18 @@ test('a long-token chapter board is also full-bleed at 320px with no overflow', 
   expect(Math.abs(r!.width - r!.height)).toBeLessThan(1);
   expect(Math.abs(r!.x - (320 - (r!.x + r!.width)))).toBeLessThanOrEqual(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+test('long splice completion card stays inside a narrow phone and its actions remain reachable', async ({page})=>{
+  await page.setViewportSize({width:320,height:568});
+  await openChapter(page,'hbb-c08');
+  await solveWithHints(page);
+  const card=page.getByTestId('win').locator('.card');
+  await expect(card).toBeVisible();
+  const bounds=(await card.boundingBox())!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x+bounds.width).toBeLessThanOrEqual(320);
+  expect(await card.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+  await expect(page.getByTestId('win-map')).toBeInViewport();
+  await expect(page.getByRole('button',{name:'Next level →'})).toBeInViewport();
 });
