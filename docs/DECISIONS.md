@@ -377,3 +377,8 @@ Owner playtest: remove Mutation Detective status and selection text and all writ
 ### D-UI-40 — Pre-connected tracing starter
 
 Owner playtest: all new tracing attempts begin with the first two reference bases connected by the normal blue path at zero moves. The two clue bases are marked matched; Hint starts at the third tile; tapping the starter cannot remove it, and Undo/Restart retain it. Certificates omit the free prefix but extraction still checks the complete reference. An additive per-attempt save marker preserves existing legacy unseeded trace logs exactly; restarting such an attempt switches to the new starter. The tutorial demonstrates continuing from the pre-connected pair, not finding the first base.
+
+
+### D-UI-41 — Graphical DNA Connections hints
+
+Owner playtest: remove the written Connections hint below the toolbar. Outline the next actionable square with a dashed line in the suggested pair's colour. Follow the active route where possible, find viable alternate continuations on the actual board, and guide recovery from dead ends or a route blocking another pair's certified corridor. Automatically target the hinted pair when its suggested square is tapped, including after reload or Undo. Keep normal status feedback, rules, saves and gene credit unchanged.

@@ -307,15 +307,63 @@ export function traceHintCell(state: LabState): number | null {
   return path.at(-2) ?? last;
 }
 
+/** A graphical route hint is a legal action for the actual board. Keep the
+ * certified corridors available for other pairs, but allow alternate paths
+ * when they can reach their endpoint without blocking those corridors. */
+export function connectionHint(state: LabState, selected: number | null = null): { pair: number; cell: number } | null {
+  if (state.id !== 'connections' || state.won) return null;
+  const { CONNECTION_PAIRS: pairs, CONNECTION_ROUTES: certified } = state.spec;
+  const incomplete = (i: number) => state.routes[i]!.at(-1) !== pairs[i]!.end;
+  // A route that occupies another pair's certified corridor may prevent the
+  // remaining puzzle from being solved. Redraw it from its own start.
+  const blocker = state.routes.findIndex((path, i) => path.some(c =>
+    certified.some((route, j) => j !== i && incomplete(j) && route.includes(c))));
+  if (blocker >= 0) return { pair: blocker, cell: pairs[blocker]!.start };
+  const pair = selected !== null && pairs[selected] && incomplete(selected)
+    ? selected : state.routes.findIndex((_, i) => incomplete(i));
+  if (pair < 0) return null;
+  const path = state.routes[pair]!, { start, end } = pairs[pair]!;
+  if (!path.length) return { pair, cell: start };
+  const blocked = new Set(path);
+  pairs.forEach((p, i) => {
+    if (i !== pair) {
+      blocked.add(p.start); blocked.add(p.end);
+      state.routes[i]!.forEach(c => blocked.add(c));
+      if (incomplete(i)) certified[i]!.forEach(c => blocked.add(c));
+    }
+  });
+  const last = path.at(-1)!;
+  const legal = (c: number, from: number) => validCell(c) && adjacent(from,c) && state.board[c] !== '.' && !blocked.has(c);
+  // Preserve the original solution when the player is already following it.
+  const route = certified[pair]!;
+  const next = route[path.length];
+  if (path.every((c,i) => c === route[i]) && next !== undefined && legal(next,last)) return { pair, cell: next };
+  // Breadth-first search finds a continuation on the current board, avoiding
+  // the player's own path and the other pairs' occupied/reserved squares.
+  const seen = new Set([last]);
+  const queue = [{ cell: last, first: -1 }];
+  for (let head = 0; head < queue.length; head++) {
+    const node = queue[head]!;
+    for (const c of [node.cell-9,node.cell+9,node.cell-1,node.cell+1]) {
+      if (!legal(c,node.cell) || seen.has(c)) continue;
+      const first = node.first < 0 ? c : node.first;
+      if (c === end) return { pair, cell: first };
+      seen.add(c); queue.push({ cell: c, first });
+    }
+  }
+  // Backtrack one step at a time; tapping the start can always reset a route.
+  return { pair, cell: path.at(-2) ?? start };
+}
+
 export function labHint(state: LabState): string {
-  const { CRUSH_SWAPS, READ_STARTS, CONNECTION_ROUTES, CUT_SOLUTION } = state.spec;
+  const { CRUSH_SWAPS, READ_STARTS, CUT_SOLUTION } = state.spec;
   if (state.won) return 'Complete.';
   switch (state.id) {
     case 'trace': { const c = traceHintCell(state); return c === null ? 'Complete.' : 'Try row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
     case 'crush': { const move = findCrushSwap(state) ?? CRUSH_SWAPS[state.collected]; return move ? 'Swap row ' + (Math.floor(move[0] / 9) + 1) + ', column ' + (move[0] % 9 + 1) + ' with row ' + (Math.floor(move[1] / 9) + 1) + ', column ' + (move[1] % 9 + 1) + '.' : 'Undo the last collection or replay.'; }
     case 'assembly': return READ_STARTS.map((start, read) => 'Read ' + (read + 1) + ' → slot ' + (start + 1)).join(' · ');
     case 'mutation': { const c = state.board.findIndex((b, i) => mutationExpected(i, state.spec) !== null && mutationExpected(i, state.spec) !== b); return c < 0 ? 'All correct.' : 'Check row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
-    case 'connections': { const i = state.routes.findIndex((p, n) => p.at(-1) !== CONNECTION_ROUTES[n]!.at(-1)); const path = CONNECTION_ROUTES[i]; const cell = path?.[state.routes[i]?.length ?? 0] ?? path?.[0]; return cell === undefined ? 'Redraw the unfinished path.' : 'Pair ' + (i + 1) + ': try row ' + (Math.floor(cell / 9) + 1) + ', column ' + (cell % 9 + 1) + '.'; }
+    case 'connections': { const h = connectionHint(state); return h ? 'Pair ' + (h.pair + 1) + ': try row ' + (Math.floor(h.cell / 9) + 1) + ', column ' + (h.cell % 9 + 1) + '.' : 'Complete.'; }
     case 'restriction': { const c = CUT_SOLUTION.find(x => !state.cuts.includes(x)); return c === undefined ? 'Both target cuts made.' : 'Cut row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + ' on the long strand.'; }
   }
 }

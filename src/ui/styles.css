@@ -929,3 +929,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* The pre-connected tracing prefix is visible even before tutorial animation starts. */
 .tutorial-path .tutorial-starter-path { animation:none; stroke-dasharray:none; stroke-dashoffset:0; }
+
+/* Connections hints stay on the board, with the active pair's colour. */
+.mode-lab-connections .lab-cell.connection-hinted { outline: 2px dashed var(--connection-hint-color); outline-offset: -5px; z-index: 2; }

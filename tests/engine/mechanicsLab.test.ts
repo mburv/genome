@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { applyLab, createLab, traceHintCell, DEFAULT_LAB_SPEC, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SWAPS, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
+import { applyLab, createLab, traceHintCell, connectionHint, DEFAULT_LAB_SPEC, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SWAPS, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
 import { INS } from '../../src/genomics/genes.ts';
 
 const run = (id: typeof LAB_IDS[number], actions: LabAction[]): LabState => actions.reduce((state, action) => applyLab(state, action).state, createLab(id));
@@ -127,5 +127,45 @@ describe('graphical tracing recovery', () => {
     expect(traceHintCell(cleared)).toBe(10);
     expect(traceHintCell(start)).toBe(12);
     expect(applyLab(wrong,{type:'trace',cell:80}).state).toBe(wrong);
+  });
+});
+
+
+describe('graphical connection hints', () => {
+  const route = (state: LabState, pair: number, cells: number[]) => cells.reduce((s,cell)=>applyLab(s,{type:'route',pair,cell}).state,state);
+  const follow = (initial: LabState, selected: number | null = null) => {
+    let state=initial;
+    for(let i=0;i<100&&!state.won;i++){
+      const hint=connectionHint(state,selected);
+      expect(hint).not.toBeNull();
+      const next=applyLab(state,{type:'route',...hint!}).state;
+      expect(next).not.toBe(state);
+      expect(next.routes).not.toEqual(state.routes);
+      state=next;selected=hint!.pair;
+    }
+    expect(state.won).toBe(true);
+    expect(connectionHint(state)).toBeNull();
+    return state;
+  };
+  test('starts a pair, follows the current route, and advances to the next pair',()=>{
+    const start=createLab('connections');
+    expect(connectionHint(start)).toEqual({pair:0,cell:1});
+    const second=route(start,1,[27,28]);
+    expect(connectionHint(second,1)).toEqual({pair:1,cell:29});
+    expect(connectionHint(route(start,0,[...CONNECTION_ROUTES[0]]),0)).toEqual({pair:1,cell:27});
+    follow(start);follow(second,1);
+  });
+  test('continues a viable alternate path, backtracks a dead end and frees a blocked corridor',()=>{
+    const start=createLab('connections');
+    const alternate=route(start,0,[1,2,3,4,5,6,15,24]);
+    expect(connectionHint(alternate,0)).toEqual({pair:0,cell:25});
+    follow(alternate,0);
+    const dead=route(start,0,[1,2,3,4,5,6,15,24,33+1,35]);
+    // This route is blocked by its own visited tiles and/or another pair's corridor;
+    // the hint must always lead to an accepted recovery or completion.
+    follow(dead,0);
+    const blocked=route(start,2,[55,64,73,74,75,76,67,58,59,50+1,42]);
+    expect(connectionHint(blocked,2)).toEqual({pair:2,cell:55});
+    follow(blocked,2);
   });
 });
