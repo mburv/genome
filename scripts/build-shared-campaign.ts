@@ -14,9 +14,19 @@ const famous=read<{levels:LevelDefinition[];replaced:Record<string,string[]>}>('
 const live=[...m2,...chapters.filter(l=>!famous.replaced[l.id]).map(l=>famous.replaced[l.symbol.toLowerCase()+'-c01']&&l.chapter?{...l,chapter:{part:l.chapter.part-1,of:l.chapter.of-1}}:l),...famous.levels];
 const dataset=(symbol:string)=>'t2t-chm13v2.0-'+symbol+'-'+mapping[symbol]!.sequenceSha256.slice(0,12);
 const changed=Object.keys(mapping).filter(s=>mapping[s]!.sequence!==oldGenes[s]!.sequence);
-const all:LevelDefinition[]=live.filter(l=>!changed.includes(l.symbol));
-const out:LevelDefinition[]=[];
 const geneSource=(symbol:string):GeneSource=>({...oldGenes[symbol]!,sequence:mapping[symbol]!.sequence,sequenceSha256:mapping[symbol]!.sequenceSha256,datasetId:dataset(symbol)});
+// Preserve every board whose targets AND decoys are still exact in the new reference.
+// Reserve its mask before generating any replacements, so unique-mask guarantees remain intact.
+const retained=new Map<string,LevelDefinition>();
+for(const l of live){
+ if(!changed.includes(l.symbol))continue;
+ const gene=geneSource(l.symbol),end=l.sourceIntervals.at(-1)!.end;
+ if(end>gene.sequence.length||(l.chapter&&l.chapter.part===l.chapter.of&&gene.sequence.length!==oldGenes[l.symbol]!.sequence.length))continue;
+ const updated={...l,datasetId:gene.datasetId,sequenceSha256:gene.sequenceSha256};
+ if(!validateLevel(updated,gene,live).length)retained.set(l.id,updated);
+}
+const all:LevelDefinition[]=live.filter(l=>!changed.includes(l.symbol)).concat([...retained.values()]);
+const out:LevelDefinition[]=[];
 const layoutFor=(l:LevelDefinition):TrackLayout=>{
   const t=l.tracks[0]!;
   if(l.mode==='sequence')return {kind:'sequence',orientation:t.orientation};
@@ -36,8 +46,10 @@ function compact(def:LevelDefinition){
   return def;
 }
 function rebuild(old:LevelDefinition,source:{start:number;end:number},gene:GeneSource,part?:{part:number;of:number},extra=false){
-  const original=ALL_SPECS.find(s=>s.id===old.id)??(old.chapter?undefined:M2_SPECS[0]);
-  const template=original??chapterSpecs({symbol:gene.symbol,cdsLength:927},Object.keys(mapping).indexOf(gene.symbol),old.index,27)[Math.min((old.chapter?.part??1)-1,5)]!;
+  const keep=retained.get(old.id);
+  if(keep&&!extra&&source.start===keep.sourceIntervals[0]!.start&&source.end===keep.sourceIntervals.at(-1)!.end){out.push({...keep,...(part?{chapter:part}:{})});return;}
+  const original=ALL_SPECS.find(s=>s.id===old.id);
+  const template=original??(old.chapter?undefined:M2_SPECS[0])??chapterSpecs({symbol:gene.symbol,cdsLength:927},Object.keys(mapping).indexOf(gene.symbol),old.index,27)[Math.min((old.chapter?.part??1)-1,5)]!;
   let layout=layoutFor(old),mode=old.mode,tokenSize=old.tier;
   let cells=Math.ceil((source.end-source.start)/(tokenSize??1));
   const oldCells=old.mode==='repair'?9:old.mode==='replicate'?old.tracks[0]!.cells.length:old.tracks.reduce((n,t)=>n+t.cells.length,0);
@@ -48,7 +60,7 @@ function rebuild(old:LevelDefinition,source:{start:number;end:number},gene:GeneS
     layout=mode==='sequence'?{kind:'sequence',orientation:'horizontal'}:{kind:'splice',parts:[{length:Math.ceil(cells/2),orientation:'horizontal'},{length:Math.floor(cells/2),orientation:'vertical'}]};
   }
   const spec:LevelSpec={...template,id:old.id,index:old.index,gene:gene.symbol,title:old.title,mode,seed:old.seed,source,layout,tutorial:old.tutorial,
-    scrambleDrags:old.tutorial?1:Math.max(3,old.metrics.certificateDrags),minDrags:old.tutorial?1:2,minWrongCells:Math.min(old.tutorial?1:4,cells-1),solverBudget:4000,
+    scrambleDrags:original?original.scrambleDrags:old.tutorial?1:Math.max(3,old.metrics.certificateDrags),minDrags:original?original.minDrags:old.tutorial?1:Math.min(3,old.metrics.solver.lowerBound),minWrongCells:original?original.minWrongCells:Math.min(old.tutorial?1:4,cells-1),...(original?{}:{solverBudget:4000}),
     ...(tokenSize?{tokenSize}:{}),...(part?{chapter:part}:{}),...(old.lab?{lab:old.lab}:{})};
   const def=compact({...buildLevel(spec,gene,all),generatorVersion:old.generatorVersion??TOKEN_GENERATOR_VERSION});
   all.push(def);out.push(def);
@@ -82,4 +94,4 @@ for(const symbol of changed){
 for(const l of out){const errors=validateLevel(l,geneSource(l.symbol),all);if(errors.length)throw Error(l.id+': '+errors.join('; '));}
 const data={changed,levels:out};
 writeFileSync('src/campaign/shared.generated.json',JSON.stringify(data)+'\n');
-console.log('Shared campaign rebuilt',out.length,'levels for',changed.length,'genes');
+console.log('Shared campaign validated',out.length,'levels for',changed.length,'genes; retained',retained.size,'unchanged boards');
