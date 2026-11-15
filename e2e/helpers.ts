@@ -165,14 +165,6 @@ export async function solveWithHints(page: Page): Promise<number> {
   return drags;
 }
 
-/** Open Enzyme lab n (1-based) through the level map. */
-export async function openLab(page: Page, n: number): Promise<void> {
-  await fresh(page);
-  await openMap(page);
-  await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${n}: `) }).click();
-  await page.getByTestId('board').waitFor();
-}
-
 /** A valid v4 save with `levelId` already completed, a solved board, and a recorded best. */
 export function completedLevelSave(def: LevelDefinition, opts: { lastMoves?: number; bestMoves?: number } = {}): { save: Record<string, unknown>; raw: string } {
   let s: PuzzleState = createInitialState(def);

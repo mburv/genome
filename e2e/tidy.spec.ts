@@ -1,13 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/chapters.generated.json' with { type: 'json' };
-import m2Pack from '../src/campaign/levels.generated.json' with { type: 'json' };
+import {CAMPAIGN_LEVELS} from '../src/campaign/campaign.ts';
+import {mechanicOf} from '../src/campaign/mixed.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
 import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted, openMap } from './helpers';
 
-const ALL_LEVEL_IDS = [
-  ...(m2Pack.levels as LevelDefinition[]).map((l) => l.id),
-  ...(pack.levels as LevelDefinition[]).map((l) => l.id),
-];
+const ALL_LEVEL_IDS = CAMPAIGN_LEVELS.filter(l=>mechanicOf(l)==='slide').map(l=>l.id);
 
 const def = (pack.levels as LevelDefinition[])[0]!;
 
@@ -624,19 +622,6 @@ async function expectActionRowInView(page: Page): Promise<void> {
   expect(report.pageOverflowX).toBeLessThanOrEqual(0);
 }
 
-const LAB_INDEX: Record<string, number> = { 'lab-crispr': 1, 'lab-ligase': 2, 'lab-scaffold': 3 };
-
-async function openAnyLevel(page: Page, id: string): Promise<void> {
-  const lab = LAB_INDEX[id];
-  if (lab != null) {
-    await openMap(page);
-    await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${lab}: `) }).click();
-    await page.getByTestId('board').waitFor();
-    return;
-  }
-  await goToChapter(page, id);
-}
-
 test('action row stays in the viewport on every level at 320×568 and 390×844', async ({ page }) => {
   test.setTimeout(240_000);
   expect(ALL_LEVEL_IDS.length).toBeGreaterThan(100);
@@ -644,7 +629,7 @@ test('action row stays in the viewport on every level at 320×568 and 390×844',
     await page.setViewportSize(viewport);
     await fresh(page);
     for (const id of ALL_LEVEL_IDS) {
-      await openAnyLevel(page, id);
+      await goToChapter(page, id);
       await expect(page.getByTestId('board')).toBeVisible();
       try {
         await expectActionRowInView(page);
