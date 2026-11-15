@@ -1,0 +1,16 @@
+{
+  "symbol": "CFTR",
+  "geneId": "1080",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/CFTR/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:33.848Z",
+  "responseSha256": "a433bb4362f324f849fbb4854ddf52f34f5c48407fd50bd621b2f3662309a24d",
+  "description": "CF transmembrane conductance regulator",
+  "maneSelect": [
+    {
+      "accession": "NM_000492.4",
+      "ensembl": "ENST00000003084.11",
+      "protein": "NP_000483.3",
+      "chromosome": "7"
+    }
+  ]
+}

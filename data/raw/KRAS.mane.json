@@ -1,0 +1,16 @@
+{
+  "symbol": "KRAS",
+  "geneId": "3845",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/KRAS/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:20.592Z",
+  "responseSha256": "1420fa4cc7fc17fb912d1297fc04e337e31dd413f6526d456b577f0cc31113f1",
+  "description": "KRas proto-oncogene, GTPase",
+  "maneSelect": [
+    {
+      "accession": "NM_004985.5",
+      "ensembl": "ENST00000311936.8",
+      "protein": "NP_004976.2",
+      "chromosome": "12"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "symbol": "MC1R",
+  "geneId": "4157",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/MC1R/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:14.350Z",
+  "responseSha256": "4a62b0b06866140fb5641cb23b322b0083ab51d00b27ec2e4d86a094ae352878",
+  "description": "melanocortin 1 receptor",
+  "maneSelect": [
+    {
+      "accession": "NM_002386.4",
+      "ensembl": "ENST00000555147.2",
+      "protein": "NP_002377.4",
+      "chromosome": "16"
+    }
+  ]
+}

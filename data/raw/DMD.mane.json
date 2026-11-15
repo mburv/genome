@@ -1,0 +1,16 @@
+{
+  "symbol": "DMD",
+  "geneId": "1756",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/DMD/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:37.921Z",
+  "responseSha256": "a07d7f8cc2f0af99c6593197afaddbf3d3599f50967d9b48c552e3d95f833646",
+  "description": "dystrophin",
+  "maneSelect": [
+    {
+      "accession": "NM_004006.3",
+      "ensembl": "ENST00000357033.9",
+      "protein": "NP_003997.2",
+      "chromosome": "X"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "symbol": "GH1",
+  "geneId": "2688",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/GH1/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:23.589Z",
+  "responseSha256": "7a216c075208e61192b6ead47281e904cbdf26f91a87af17b091ec683cbda722",
+  "description": "growth hormone 1",
+  "maneSelect": [
+    {
+      "accession": "NM_000515.5",
+      "ensembl": "ENST00000323322.10",
+      "protein": "NP_000506.2",
+      "chromosome": "17"
+    }
+  ]
+}

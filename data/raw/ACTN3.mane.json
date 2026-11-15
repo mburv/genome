@@ -1,0 +1,16 @@
+{
+  "symbol": "ACTN3",
+  "geneId": "89",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/ACTN3/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:29.446Z",
+  "responseSha256": "edbd84a585da4fef44f0df6b4b1617a2336f21a1ba2a25d851bc09b110021d72",
+  "description": "actinin alpha 3",
+  "maneSelect": [
+    {
+      "accession": "NM_001104.4",
+      "ensembl": "ENST00000513398.2",
+      "protein": "NP_001095.2",
+      "chromosome": "11"
+    }
+  ]
+}

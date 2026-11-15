@@ -1,0 +1,16 @@
+{
+  "symbol": "HTT",
+  "geneId": "3064",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/HTT/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:36.479Z",
+  "responseSha256": "f93b9dd783f894defc3fd40c963a2de6467dfc76791193b8cbed69c498d6b4af",
+  "description": "huntingtin",
+  "maneSelect": [
+    {
+      "accession": "NM_001388492.1",
+      "ensembl": "ENST00000355072.11",
+      "protein": "NP_001375421.1",
+      "chromosome": "4"
+    }
+  ]
+}

@@ -1,0 +1,269 @@
+LOCUS       NM_176817               1143 bp    mRNA    linear   PRI 28-APR-2025
+DEFINITION  Homo sapiens taste 2 receptor member 38 (TAS2R38), mRNA.
+ACCESSION   NM_176817
+VERSION     NM_176817.5
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 1143)
+  AUTHORS   Pifferi,M., Boner,A., Maj,D., Michelucci,A., Donzelli,G.,
+            Cangiotti,A.M., Guazzo,R., Bertolucci,G., Bertini,V., Doccioli,C.,
+            Piazza,M., Valetto,A., Caligo,M.A., Peroni,D. and Bush,A.
+  TITLE     Impact of TAS2R38 polymorphisms on nasal nitric oxide and
+            Pseudomonas infections in primary ciliary dyskinesia: relation to
+            genotype
+  JOURNAL   Thorax 79 (11), 1069-1076 (2024)
+   PUBMED   39181709
+  REMARK    GeneRIF: Impact of TAS2R38 polymorphisms on nasal nitric oxide and
+            Pseudomonas infections in primary ciliary dyskinesia: relation to
+            genotype.
+REFERENCE   2  (bases 1 to 1143)
+  AUTHORS   Kim,H.Y. and Choi,J.H.
+  TITLE     TAS2R38 bitterness receptor genetic variation is associated with
+            diet quality in Koreans
+  JOURNAL   Appetite 200, 107561 (2024)
+   PUBMED   38905855
+  REMARK    GeneRIF: TAS2R38 bitterness receptor genetic variation is
+            associated with diet quality in Koreans.
+REFERENCE   3  (bases 1 to 1143)
+  AUTHORS   Piatti,G., Girotto,G., Concas,M.P., Braga,L., Ambrosetti,U. and
+            Alde,M.
+  TITLE     TAS2R38 Genotype Does Not Affect SARS-CoV-2 Infection in Primary
+            Ciliary Dyskinesia
+  JOURNAL   Int J Mol Sci 25 (16), 8635 (2024)
+   PUBMED   39201321
+  REMARK    GeneRIF: TAS2R38 Genotype Does Not Affect SARS-CoV-2 Infection in
+            Primary Ciliary Dyskinesia.
+REFERENCE   4  (bases 1 to 1143)
+  AUTHORS   Nolden,A.A., Behrens,M., McGeary,J.E., Meyerhof,W. and Hayes,J.E.
+  TITLE     Differential Activation of TAS2R4 May Recover Ability to Taste
+            Propylthiouracil for Some TAS2R38 AVI Homozygotes
+  JOURNAL   Nutrients 16 (9), 1357 (2024)
+   PUBMED   38732607
+  REMARK    GeneRIF: Differential Activation of TAS2R4 May Recover Ability to
+            Taste Propylthiouracil for Some TAS2R38 AVI Homozygotes.
+REFERENCE   5  (bases 1 to 1143)
+  AUTHORS   Lukasiewicz-Smietanska,D., Godlewski,D., Nowakowska,E., Szpak,A.,
+            Chabros,E., Juszczyk,G., Charzewska,J. and Rybaczyk-Pathak,D.
+  TITLE     Association of the bitter taste genes TAS2R38 and CA6 and breast
+            cancer risk; a case-control study of Polish women in Poland and
+            Polish immigrants in USA
+  JOURNAL   PLoS One 19 (4), e0300061 (2024)
+   PUBMED   38687739
+  REMARK    GeneRIF: Association of the bitter taste genes TAS2R38 and CA6 and
+            breast cancer risk; a case-control study of Polish women in Poland
+            and Polish immigrants in USA.
+REFERENCE   6  (bases 1 to 1143)
+  AUTHORS   Zhang,Y., Hoon,M.A., Chandrashekar,J., Mueller,K.L., Cook,B.,
+            Wu,D., Zuker,C.S. and Ryba,N.J.
+  TITLE     Coding of sweet, bitter, and umami tastes: different receptor cells
+            sharing similar signaling pathways
+  JOURNAL   Cell 112 (3), 293-301 (2003)
+   PUBMED   12581520
+REFERENCE   7  (bases 1 to 1143)
+  AUTHORS   Bufe,B., Hofmann,T., Krautwurst,D., Raguse,J.D. and Meyerhof,W.
+  TITLE     The human TAS2R16 receptor mediates bitter taste in response to
+            beta-glucopyranosides
+  JOURNAL   Nat Genet 32 (3), 397-401 (2002)
+   PUBMED   12379855
+REFERENCE   8  (bases 1 to 1143)
+  AUTHORS   Montmayeur,J.P. and Matsunami,H.
+  TITLE     Receptors for bitter and sweet taste
+  JOURNAL   Curr Opin Neurobiol 12 (4), 366-371 (2002)
+   PUBMED   12139982
+  REMARK    Review article
+REFERENCE   9  (bases 1 to 1143)
+  AUTHORS   Margolskee,R.F.
+  TITLE     Molecular mechanisms of bitter and sweet taste transduction
+  JOURNAL   J Biol Chem 277 (1), 1-4 (2002)
+   PUBMED   11696554
+  REMARK    Review article
+REFERENCE   10 (bases 1 to 1143)
+  AUTHORS   Anne-Spence,M., Falk,C.T., Neiswanger,K., Field,L.L.,
+            Marazita,M.L., Allen,F.H. Jr., Siervogel,R.M., Roche,A.F.,
+            Crandall,B.F. and Sparkes,R.S.
+  TITLE     Estimating the recombination frequency for the PTC-Kell linkage
+  JOURNAL   Hum Genet 67 (2), 183-186 (1984)
+   PUBMED   6745938
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from AC073647.9.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On May 17, 2019 this sequence version replaced NM_176817.4.
+            
+            Summary: This gene encodes a seven-transmembrane G protein-coupled
+            receptor that controls the ability to taste glucosinolates, a
+            family of bitter-tasting compounds found in plants of the Brassica
+            sp. Synthetic compounds phenylthiocarbamide (PTC) and
+            6-n-propylthiouracil (PROP) have been identified as ligands for
+            this receptor and have been used to test the genetic diversity of
+            this gene. Although several allelic forms of this gene have been
+            identified worldwide, there are two predominant common forms
+            (taster and non-taster) found outside of Africa. These alleles
+            differ at three nucleotide positions resulting in amino acid
+            changes in the protein (A49P, A262V, and V296I) with the amino acid
+            combination PAV identifying the taster variant (and AVI identifying
+            the non-taster variant). [provided by RefSeq, Oct 2009].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript is intronless :: BC104933.1 [ECO:0000345]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000547270.1/ ENSP00000448219.1
+            RefSeq Select criteria :: based on single protein-coding transcript
+            ##RefSeq-Attributes-END##
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-1143              AC073647.9         55055-56197
+FEATURES             Location/Qualifiers
+     source          1..1143
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="7"
+                     /map="7q34"
+     gene            1..1143
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="taste 2 receptor member 38"
+                     /db_xref="GeneID:5726"
+                     /db_xref="HGNC:HGNC:9584"
+                     /db_xref="MIM:607751"
+     exon            1..1143
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="alignment:Splign:2.1.0"
+     misc_feature    70..72
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="upstream in-frame stop codon"
+     CDS             85..1086
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="PTC bitter taste receptor; taste receptor type 2
+                     member 61; taste receptor, type 2, member 38"
+                     /codon_start=1
+                     /product="taste receptor type 2 member 38"
+                     /protein_id="NP_789787.5"
+                     /db_xref="CCDS:CCDS34765.1"
+                     /db_xref="GeneID:5726"
+                     /db_xref="HGNC:HGNC:9584"
+                     /db_xref="MIM:607751"
+                     /translation="MLTLTRIRTVSYEVRSTFLFISVLEFAVGFLTNAFVFLVNFWDV
+                     VKRQALSNSDCVLLCLSISRLFLHGLLFLSAIQLTHFQKLSEPLNHSYQAIIMLWMIA
+                     NQANLWLAACLSLLYCSKLIRFSHTFLICLASWVSRKISQMLLGIILCSCICTVLCVW
+                     CFFSRPHFTVTTVLFMNNNTRLNWQIKDLNLFYSFLFCYLWSVPPFLLFLVSSGMLTV
+                     SLGRHMRTMKVYTRNSRDPSLEAHIKALKSLVSFFCFFVISSCAAFISVPLLILWRDK
+                     IGVMVCVGIMAACPSGHAAILISGNAKLRRAVMTILLWAQSSLKVRADHKADSRTLC"
+     misc_feature    136..198
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="propagated from UniProtKB/Swiss-Prot (P59533.3);
+                     transmembrane region"
+     misc_feature    142..210
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="protein motif:TMHMM:2.0"
+                     /note="Region: transmembrane helix"
+     misc_feature    247..315
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="protein motif:TMHMM:2.0"
+                     /note="Region: transmembrane helix"
+     misc_feature    250..312
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="propagated from UniProtKB/Swiss-Prot (P59533.3);
+                     transmembrane region"
+     misc_feature    349..351
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000255; propagated from
+                     UniProtKB/Swiss-Prot (P59533.3); glycosylation site"
+     misc_feature    367..435
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="protein motif:TMHMM:2.0"
+                     /note="Region: transmembrane helix"
+     misc_feature    367..429
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="propagated from UniProtKB/Swiss-Prot (P59533.3);
+                     transmembrane region"
+     misc_feature    511..573
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="propagated from UniProtKB/Swiss-Prot (P59533.3);
+                     transmembrane region"
+     misc_feature    514..582
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="protein motif:TMHMM:2.0"
+                     /note="Region: transmembrane helix"
+     misc_feature    616..618
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000255; propagated from
+                     UniProtKB/Swiss-Prot (P59533.3); glycosylation site"
+     misc_feature    655..717
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="propagated from UniProtKB/Swiss-Prot (P59533.3);
+                     transmembrane region"
+     misc_feature    679..747
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="protein motif:TMHMM:2.0"
+                     /note="Region: transmembrane helix"
+     misc_feature    832..900
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="protein motif:TMHMM:2.0"
+                     /note="Region: transmembrane helix"
+     misc_feature    838..900
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="propagated from UniProtKB/Swiss-Prot (P59533.3);
+                     transmembrane region"
+     misc_feature    913..981
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /inference="protein motif:TMHMM:2.0"
+                     /note="Region: transmembrane helix"
+     misc_feature    913..975
+                     /gene="TAS2R38"
+                     /gene_synonym="PTC; T2R38; T2R61; THIOT"
+                     /note="propagated from UniProtKB/Swiss-Prot (P59533.3);
+                     transmembrane region"
+ORIGIN      
+        1 cctttctgca ctgggtggca accaggtctt tagattagcc aactagagaa gagaagtaga
+       61 atagccaatt agagaagtga catcatgttg actctaactc gcatccgcac tgtgtcctat
+      121 gaagtcagga gtacatttct gttcatttca gtcctggagt ttgcagtggg gtttctgacc
+      181 aatgccttcg ttttcttggt gaatttttgg gatgtagtga agaggcaggc actgagcaac
+      241 agtgattgtg tgctgctgtg tctcagcatc agccggcttt tcctgcatgg actgctgttc
+      301 ctgagtgcta tccagcttac ccacttccag aagttgagtg aaccactgaa ccacagctac
+      361 caagccatca tcatgctatg gatgattgca aaccaagcca acctctggct tgctgcctgc
+      421 ctcagcctgc tttactgctc caagctcatc cgtttctctc acaccttcct gatctgcttg
+      481 gcaagctggg tctccaggaa gatctcccag atgctcctgg gtattattct ttgctcctgc
+      541 atctgcactg tcctctgtgt ttggtgcttt tttagcagac ctcacttcac agtcacaact
+      601 gtgctattca tgaataacaa tacaaggctc aactggcaga ttaaagatct caatttattt
+      661 tattcctttc tcttctgcta tctgtggtct gtgcctcctt tcctattgtt tctggtttct
+      721 tctgggatgc tgactgtctc cctgggaagg cacatgagga caatgaaggt ctataccaga
+      781 aactctcgtg accccagcct ggaggcccac attaaagccc tcaagtctct tgtctccttt
+      841 ttctgcttct ttgtgatatc atcctgtgct gccttcatct ctgtgcccct actgattctg
+      901 tggcgcgaca aaataggggt gatggtttgt gttgggataa tggcagcttg tccctctggg
+      961 catgcagcca tcctgatctc aggcaatgcc aagttgagga gagctgtgat gaccattctg
+     1021 ctctgggctc agagcagcct gaaggtaaga gccgaccaca aggcagattc ccggacactg
+     1081 tgctgagaat ggacatgaaa tgagctcttc attaatacgc ctgtgagtct tcataaatat
+     1141 gcc
+//
+

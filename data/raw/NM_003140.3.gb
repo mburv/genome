@@ -1,0 +1,227 @@
+LOCUS       NM_003140                828 bp    mRNA    linear   PRI 06-SEP-2026
+DEFINITION  Homo sapiens sex determining region Y (SRY), mRNA.
+ACCESSION   NM_003140
+VERSION     NM_003140.3
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 828)
+  AUTHORS   Houzelstein,D., Eozenou,C., Lagos,C.F., Elzaiat,M.,
+            Bignon-Topalovic,J., Gonzalez,I., Laville,V., Schlick,L.,
+            Wankanit,S., Madon,P., Kirtane,J., Athalye,A., Buonocore,F.,
+            Bigou,S., Conway,G.S., Bohl,D., Achermann,J.C., Bashamboo,A. and
+            McElreavey,K.
+  TITLE     A conserved NR5A1-responsive enhancer regulates SRY in
+            testis-determination
+  JOURNAL   Nat Commun 15 (1), 2796 (2024)
+   PUBMED   38555298
+  REMARK    GeneRIF: A conserved NR5A1-responsive enhancer regulates SRY in
+            testis-determination.
+REFERENCE   2  (bases 1 to 828)
+  AUTHORS   Calvo,S.E., Pagliarini,D.J. and Mootha,V.K.
+  TITLE     Upstream open reading frames cause widespread reduction of protein
+            expression and are polymorphic among humans
+  JOURNAL   Proc Natl Acad Sci U S A 106 (18), 7507-7512 (2009)
+   PUBMED   19372376
+  REMARK    GeneRIF: Includes the study of a disease-related upstream ORF in
+            this gene, and shows that it functions to reduce protein levels by
+            100%.
+REFERENCE   3  (bases 1 to 828)
+  AUTHORS   Sekido,R. and Lovell-Badge,R.
+  TITLE     Sex determination and SRY: down to a wink and a nudge?
+  JOURNAL   Trends Genet 25 (1), 19-29 (2009)
+   PUBMED   19027189
+  REMARK    Review article
+REFERENCE   4  (bases 1 to 828)
+  AUTHORS   Clepet,C., Schafer,A.J., Sinclair,A.H., Palmer,M.S.,
+            Lovell-Badge,R. and Goodfellow,P.N.
+  TITLE     The human SRY transcript
+  JOURNAL   Hum Mol Genet 2 (12), 2007-2012 (1993)
+   PUBMED   8111368
+REFERENCE   5  (bases 1 to 828)
+  AUTHORS   Behlke,M.A., Bogan,J.S., Beer-Romero,P. and Page,D.C.
+  TITLE     Evidence that the SRY protein is encoded by a single exon on the
+            human Y chromosome
+  JOURNAL   Genomics 17 (3), 736-739 (1993)
+   PUBMED   8244390
+REFERENCE   6  (bases 1 to 828)
+  AUTHORS   Su,H. and Lau,Y.F.
+  TITLE     Identification of the transcriptional unit, structural
+            organization, and promoter sequence of the human sex-determining
+            region Y (SRY) gene, using a reverse genetic approach
+  JOURNAL   Am J Hum Genet 52 (1), 24-38 (1993)
+   PUBMED   8434602
+REFERENCE   7  (bases 1 to 828)
+  AUTHORS   Mohnach,L., Fechner,P.Y. and Keegan,C.E.
+  TITLE     Nonsyndromic Disorders of Testicular Development Overview
+  JOURNAL   (in) Adam MP, Bick S, Mirzaa GM, Wallace SE and Amemiya A (Eds.);
+            GENEREVIEWS(R);
+            (1993)
+   PUBMED   20301714
+REFERENCE   8  (bases 1 to 828)
+  AUTHORS   Delot,E.C. and Vilain,E.J.
+  TITLE     Nonsyndromic 46,XX Testicular Disorders/Differences of Sex
+            Development
+  JOURNAL   (in) Adam MP, Bick S, Mirzaa GM, Wallace SE and Amemiya A (Eds.);
+            GENEREVIEWS(R);
+            (1993)
+   PUBMED   20301589
+REFERENCE   9  (bases 1 to 828)
+  AUTHORS   Hawkins,J.R.
+  TITLE     Cloning and mutational analysis of SRY
+  JOURNAL   Horm Res 38 (5-6), 222-225 (1992)
+   PUBMED   1307740
+REFERENCE   10 (bases 1 to 828)
+  AUTHORS   Sinclair,A.H., Berta,P., Palmer,M.S., Hawkins,J.R., Griffiths,B.L.,
+            Smith,M.J., Foster,J.W., Frischauf,A.M., Lovell-Badge,R. and
+            Goodfellow,P.N.
+  TITLE     A gene from the human sex-determining region encodes a protein with
+            homology to a conserved DNA-binding motif
+  JOURNAL   Nature 346 (6281), 240-244 (1990)
+   PUBMED   1695712
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from L10101.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On May 17, 2019 this sequence version replaced NM_003140.2.
+            
+            Summary: This intronless gene encodes a transcription factor that
+            is a member of the high mobility group (HMG)-box family of
+            DNA-binding proteins. This protein is the testis-determining factor
+            (TDF), which initiates male sex determination. Mutations in this
+            gene give rise to XY females with gonadal dysgenesis (Swyer
+            syndrome); translocation of part of the Y chromosome containing
+            this gene to the X chromosome causes XX male syndrome. [provided by
+            RefSeq, Jul 2008].
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript is intronless :: L10101.1, BC074923.2 [ECO:0000345]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000383070.2/ ENSP00000372547.1
+            RefSeq Select criteria :: based on single protein-coding transcript
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-828               L10101.1           18-845
+FEATURES             Location/Qualifiers
+     source          1..828
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="Y"
+                     /map="Yp11.2"
+     gene            1..828
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="sex determining region Y"
+                     /db_xref="GeneID:6736"
+                     /db_xref="HGNC:HGNC:11311"
+                     /db_xref="MIM:480000"
+     exon            1..828
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /inference="alignment:Splign:2.1.0"
+     misc_feature    20..22
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="upstream in-frame stop codon"
+     CDS             80..694
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="essential protein for sex determination in human
+                     males; sex-determining region on Y; testis-determining
+                     factor on Y"
+                     /codon_start=1
+                     /product="sex-determining region Y protein"
+                     /protein_id="NP_003131.1"
+                     /db_xref="CCDS:CCDS14772.1"
+                     /db_xref="GeneID:6736"
+                     /db_xref="HGNC:HGNC:11311"
+                     /db_xref="MIM:480000"
+                     /translation="MQSYASAMLSVFNSDDYSPAVQENIPALRRSSSFLCTESCNSKY
+                     QCETGENSKGNVQDRVKRPMNAFIVWSRDQRRKMALENPRMRNSEISKQLGYQWKMLT
+                     EAEKWPFFQEAQKLQAMHREKYPNYKYRPRRKAKMLPKNCSLLPADPASVLCSEVQLD
+                     NRLYRDDCTKATHSRMEHQLGHLPPINAASSPQQRDRYSHWTKL"
+     misc_feature    254..487
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q05066.1);
+                     Region: Sufficient for interaction with KPNB1.
+                     /evidence=ECO:0000269|PubMed:15297880"
+     misc_feature    260..310
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q05066.1);
+                     Region: Required for nuclear localization.
+                     /evidence=ECO:0000269|PubMed:12764225,
+                     ECO:0000269|PubMed:15746192"
+     misc_feature    398..496
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q05066.1);
+                     Region: Sufficient for interaction with EP300.
+                     /evidence=ECO:0000269|PubMed:15297880"
+     misc_feature    467..487
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q05066.1);
+                     Region: Required for nuclear localization.
+                     /evidence=ECO:0000269|PubMed:15297880"
+     misc_feature    485..487
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="N6-acetyllysine.
+                     /evidence=ECO:0000269|PubMed:15297880; propagated from
+                     UniProtKB/Swiss-Prot (Q05066.1); acetylation site"
+     misc_feature    491..544
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q05066.1);
+                     Region: Necessary for interaction with ZNF208 isoform
+                     KRAB-O. /evidence=ECO:0000269|PubMed:15469996"
+     misc_feature    602..691
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q05066.1);
+                     Region: Disordered. /evidence=ECO:0000256|SAM:MobiDB-lite"
+     misc_feature    671..691
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="propagated from UniProtKB/Swiss-Prot (Q05066.1);
+                     Region: Necessary for interaction with SLC9A3R2.
+                     /evidence=ECO:0000269|PubMed:9054412"
+     regulatory      807..812
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="hexamer: AATAAA"
+     polyA_site      828
+                     /gene="SRY"
+                     /gene_synonym="SRXX1; SRXY1; TDF; TDY"
+                     /note="major polyA site"
+ORIGIN      
+        1 agaagtgagt tttggatagt aaaataagtt tcgaactctg gcacctttca attttgtcgc
+       61 actctccttg tttttgacaa tgcaatcata tgcttctgct atgttaagcg tattcaacag
+      121 cgatgattac agtccagctg tgcaagagaa tattcccgct ctccggagaa gctcttcctt
+      181 cctttgcact gaaagctgta actctaagta tcagtgtgaa acgggagaaa acagtaaagg
+      241 caacgtccag gatagagtga agcgacccat gaacgcattc atcgtgtggt ctcgcgatca
+      301 gaggcgcaag atggctctag agaatcccag aatgcgaaac tcagagatca gcaagcagct
+      361 gggataccag tggaaaatgc ttactgaagc cgaaaaatgg ccattcttcc aggaggcaca
+      421 gaaattacag gccatgcaca gagagaaata cccgaattat aagtatcgac ctcgtcggaa
+      481 ggcgaagatg ctgccgaaga attgcagttt gcttcccgca gatcccgctt cggtactctg
+      541 cagcgaagtg caactggaca acaggttgta cagggatgac tgtacgaaag ccacacactc
+      601 aagaatggag caccagctag gccacttacc gcccatcaac gcagccagct caccgcagca
+      661 acgggaccgc tacagccact ggacaaagct gtaggacaat cgggtaacat tggctacaaa
+      721 gacctaccta gatgctcctt tttacgataa cttacagccc tcactttctt atgtttagtt
+      781 tcaatattgt tttcttttct ctggctaata aaggccttat tcatttca
+//
+

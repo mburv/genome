@@ -1,0 +1,314 @@
+LOCUS       NM_001709               3985 bp    mRNA    linear   PRI 08-NOV-2026
+DEFINITION  Homo sapiens brain derived neurotrophic factor (BDNF), transcript
+            variant 4, mRNA.
+ACCESSION   NM_001709
+VERSION     NM_001709.5
+KEYWORDS    RefSeq; MANE Select.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 3985)
+  AUTHORS   Przybylska,I., Marusiak,J., Toczylowska,B., Stepien,A.,
+            Brodacki,B., Langfort,J. and Chalimoniuk,M.
+  TITLE     Association between the Val66Met (rs6265) polymorphism of the
+            brain-derived neurotrophic factor (BDNF) gene, BDNF protein level
+            in the blood and the risk of developing early-onset Parkinson's
+            disease
+  JOURNAL   Acta Neurobiol Exp (Wars) 84 (3), 296-308 (2024)
+   PUBMED   39392027
+  REMARK    GeneRIF: Association between the Val66Met (rs6265) polymorphism of
+            the brain-derived neurotrophic factor (BDNF) gene, BDNF protein
+            level in the blood and the risk of developing early-onset
+            Parkinson's disease.
+REFERENCE   2  (bases 1 to 3985)
+  AUTHORS   Gliwinska,A., Badenska,M., Dworak,M., Swietochowska,E.,
+            Badenski,A., Bjanid,O., Trembecka-Dubel,E., Morawiec-Knysak,A. and
+            Szczepanska,M.
+  TITLE     Assessment of brain-derived neurotrophic factor and irisin
+            concentration in children with chronic kidney disease: a pilot
+            study
+  JOURNAL   BMC Nephrol 25 (1), 318 (2024)
+   PUBMED   39334009
+  REMARK    GeneRIF: Assessment of brain-derived neurotrophic factor and irisin
+            concentration in children with chronic kidney disease: a pilot
+            study.
+REFERENCE   3  (bases 1 to 3985)
+  AUTHORS   Liu,B., Liu,Y., Li,S., Chen,P., Zhang,J. and Feng,L.
+  TITLE     Depletion of placental brain-derived neurotrophic factor (BDNF) is
+            attributed to premature ovarian insufficiency (POI) in mice
+            offspring
+  JOURNAL   J Ovarian Res 17 (1), 141 (2024)
+   PUBMED   38982490
+  REMARK    GeneRIF: Depletion of placental brain-derived neurotrophic factor
+            (BDNF) is attributed to premature ovarian insufficiency (POI) in
+            mice offspring.
+REFERENCE   4  (bases 1 to 3985)
+  AUTHORS   Ton Loy,A.F., Adler,J.S., Merritt,V.C., Sorg,S.F., Bondi,M.W. and
+            Delano-Wood,L.
+  TITLE     APOExBDNF Interaction and Poorer Cognitive Outcomes Among Veterans
+            With Mild Traumatic Brain Injury: An Exploratory Study
+  JOURNAL   J Neuropsychiatry Clin Neurosci 36 (4), 300-305 (2024)
+   PUBMED   38988190
+  REMARK    GeneRIF: APOExBDNF Interaction and Poorer Cognitive Outcomes Among
+            Veterans With Mild Traumatic Brain Injury: An Exploratory Study.
+REFERENCE   5  (bases 1 to 3985)
+  AUTHORS   Rosenfeld,R.D., Zeni,L., Haniu,M., Talvenheimo,J., Radka,S.F.,
+            Bennett,L., Miller,J.A. and Welcher,A.A.
+  TITLE     Purification and identification of brain-derived neurotrophic
+            factor from human serum
+  JOURNAL   Protein Expr Purif 6 (4), 465-471 (1995)
+   PUBMED   8527932
+REFERENCE   6  (bases 1 to 3985)
+  AUTHORS   Parisi,M.A.
+  TITLE     Hirschsprung Disease Overview - RETIRED CHAPTER, FOR HISTORICAL
+            REFERENCE ONLY
+  JOURNAL   (in) Adam MP, Bick S, Mirzaa GM, Wallace SE and Amemiya A (Eds.);
+            GENEREVIEWS(R);
+            (1993)
+   PUBMED   20301612
+REFERENCE   7  (bases 1 to 3985)
+  AUTHORS   Shintani,A., Ono,Y., Kaisho,Y. and Igarashi,K.
+  TITLE     Characterization of the 5'-flanking region of the human
+            brain-derived neurotrophic factor gene
+  JOURNAL   Biochem Biophys Res Commun 182 (1), 325-332 (1992)
+   PUBMED   1339267
+REFERENCE   8  (bases 1 to 3985)
+  AUTHORS   Ozcelik,T., Rosenthal,A. and Francke,U.
+  TITLE     Chromosomal mapping of brain-derived neurotrophic factor and
+            neurotrophin-3 genes in man and mouse
+  JOURNAL   Genomics 10 (3), 569-575 (1991)
+   PUBMED   1889807
+REFERENCE   9  (bases 1 to 3985)
+  AUTHORS   Maisonpierre,P.C., Le Beau,M.M., Espinosa,R. 3rd, Ip,N.Y.,
+            Belluscio,L., de la Monte,S.M., Squinto,S., Furth,M.E. and
+            Yancopoulos,G.D.
+  TITLE     Human and rat brain-derived neurotrophic factor and neurotrophin-3:
+            gene structures, distributions, and chromosomal localizations
+  JOURNAL   Genomics 10 (3), 558-568 (1991)
+   PUBMED   1889806
+REFERENCE   10 (bases 1 to 3985)
+  AUTHORS   Jones,K.R. and Reichardt,L.F.
+  TITLE     Molecular cloning of a human gene that is a member of the nerve
+            growth factor family
+  JOURNAL   Proc Natl Acad Sci U S A 87 (20), 8060-8064 (1990)
+   PUBMED   2236018
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence was derived from AC104563.14 and KF459669.1.
+            This sequence is a reference standard in the RefSeqGene project.
+            
+            On Nov 23, 2018 this sequence version replaced NM_001709.4.
+            
+            Summary: This gene encodes a member of the nerve growth factor
+            family of proteins. Alternative splicing results in multiple
+            transcript variants, at least one of which encodes a preproprotein
+            that is proteolytically processed to generate the mature protein.
+            Binding of this protein to its cognate receptor promotes neuronal
+            survival in the adult brain. Expression of this gene is reduced in
+            Alzheimer's, Parkinson's, and Huntington's disease patients. This
+            gene may play a role in the regulation of the stress response and
+            in the biology of mood disorders. [provided by RefSeq, Nov 2015].
+            
+            Transcript Variant: This variant (4), also known as VIb or BDNF5,
+            differs in the 5' UTR and represents use of an alternate promoter
+            compared to variant 1. Variants 1, 2, 4, 5, and 7-16 encode the
+            same isoform (a).
+            
+            Publication Note:  This RefSeq record includes a subset of the
+            publications that are available for this gene. Please see the Gene
+            record to access additional publications.
+            
+            ##Evidence-Data-START##
+            Transcript exon combination :: EF689015.1, SRR3476690.292385.1
+                                           [ECO:0000332]
+            RNAseq introns              :: single sample supports all introns
+                                           SAMEA2158569 [ECO:0000348]
+            ##Evidence-Data-END##
+            
+            ##RefSeq-Attributes-START##
+            MANE Ensembl match     :: ENST00000356660.9/ ENSP00000349084.4
+            RefSeq Select criteria :: based on conservation, expression
+            ##RefSeq-Attributes-END##
+            COMPLETENESS: full length.
+PRIMARY     REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP
+            1-292               AC104563.14        120793-121084       c
+            293-634             AC104563.14        78873-79214         c
+            635-774             KF459669.1         1-140
+            775-3985            AC104563.14        75522-78732         c
+FEATURES             Location/Qualifiers
+     source          1..3985
+                     /organism="Homo sapiens"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="11"
+                     /map="11p14.1"
+     gene            1..3985
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="brain derived neurotrophic factor"
+                     /db_xref="GeneID:627"
+                     /db_xref="HGNC:HGNC:1033"
+                     /db_xref="MIM:113505"
+     exon            1..292
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /inference="alignment:Splign:2.1.0"
+     exon            293..3985
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /inference="alignment:Splign:2.1.0"
+     CDS             314..1057
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="isoform a preproprotein is encoded by transcript
+                     variant 4; proBDNF; neurotrophin; abrineurin; neurotrophic
+                     factor BDNF precursor form"
+                     /codon_start=1
+                     /product="neurotrophic factor BDNF precursor form isoform
+                     a preproprotein"
+                     /protein_id="NP_001700.2"
+                     /db_xref="CCDS:CCDS7866.1"
+                     /db_xref="GeneID:627"
+                     /db_xref="HGNC:HGNC:1033"
+                     /db_xref="MIM:113505"
+                     /translation="MTILFLTMVISYFGCMKAAPMKEANIRGQGGLAYPGVRTHGTLE
+                     SVNGPKAGSRGLTSLADTFEHVIEELLDEDQKVRPNEENNKDADLYTSRVMLSSQVPL
+                     EPPLLFLLEEYKNYLDAANMSMRVRRHSDPARRGELSVCDSISEWVTAADKKTAVDMS
+                     GGTVTVLEKVPVSKGQLKQYFYETKCNPMGYTKEGCRGIDKRHWNSQCRTTQSYVRAL
+                     TMDSKKRIGWRFIRIDTSCVCTLTIKRGR"
+     sig_peptide     314..367
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /inference="COORDINATES: ab initio prediction:SignalP:6.0"
+     mat_peptide     368..1054
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /product="Neurotrophic factor BDNF precursor form.
+                     /id=PRO_0000447533"
+                     /note="propagated from UniProtKB/Swiss-Prot (P23560.1)"
+     misc_feature    482..487
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="Cleavage, by MBTPS1.
+                     /evidence=ECO:0000269|PubMed:11152678; propagated from
+                     UniProtKB/Swiss-Prot (P23560.1); cleavage site"
+     misc_feature    674..676
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="N-linked (GlcNAc...) asparagine.
+                     /evidence=ECO:0000305|PubMed:11152678,
+                     ECO:0000305|PubMed:19467646; propagated from
+                     UniProtKB/Swiss-Prot (P23560.1); glycosylation site"
+     mat_peptide     698..1054
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /product="Neurotrophic factor BDNF. /id=PRO_0000019634"
+                     /note="propagated from UniProtKB/Swiss-Prot (P23560.1)"
+     misc_feature    1345..1385
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="alternative polyadenylation site"
+     regulatory      1346..1351
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="hexamer: AATAAA"
+     polyA_site      1374
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+     regulatory      1536..1541
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="hexamer: ATTAAA"
+     polyA_site      1556
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="major polyA site"
+     regulatory      3856..3861
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="hexamer: ATTAAA"
+     polyA_site      3878
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+     regulatory      3962..3967
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+                     /note="hexamer: AATATA"
+     polyA_site      3985
+                     /gene="BDNF"
+                     /gene_synonym="ANON2; BULN2"
+ORIGIN      
+        1 gcagcctgga gctccgggtc cccgacgctg ccgccgccgc gcccgggcgc acccgcccgc
+       61 tcgctgtccc gcgcaccccg tagcgcctcg ggctcccggg ccggacagag gagccagccc
+      121 ggtgcgcccc tccacctcct gctcgggggg ctttaatgag acacccaccg ctgctgtggg
+      181 gccggcgggg agcagcaccg cgacggggac cggggctggg cgctggagcc agaatcggaa
+      241 ccacgatgtg actccgccgc cggggacccg tgaggtttgt gtggaccccg agttccacca
+      301 ggtgagaaga gtgatgacca tccttttcct tactatggtt atttcatact ttggttgcat
+      361 gaaggctgcc cccatgaaag aagcaaacat ccgaggacaa ggtggcttgg cctacccagg
+      421 tgtgcggacc catgggactc tggagagcgt gaatgggccc aaggcaggtt caagaggctt
+      481 gacatcattg gctgacactt tcgaacacgt gatagaagag ctgttggatg aggaccagaa
+      541 agttcggccc aatgaagaaa acaataagga cgcagacttg tacacgtcca gggtgatgct
+      601 cagtagtcaa gtgcctttgg agcctcctct tctctttctg ctggaggaat acaaaaatta
+      661 cctagatgct gcaaacatgt ccatgagggt ccggcgccac tctgaccctg cccgccgagg
+      721 ggagctgagc gtgtgtgaca gtattagtga gtgggtaacg gcggcagaca aaaagactgc
+      781 agtggacatg tcgggcggga cggtcacagt ccttgaaaag gtccctgtat caaaaggcca
+      841 actgaagcaa tacttctacg agaccaagtg caatcccatg ggttacacaa aagaaggctg
+      901 caggggcata gacaaaaggc attggaactc ccagtgccga actacccagt cgtacgtgcg
+      961 ggcccttacc atggatagca aaaagagaat tggctggcga ttcataagga tagacacttc
+     1021 ttgtgtatgt acattgacca ttaaaagggg aagatagtgg atttatgttg tatagattag
+     1081 attatattga gacaaaaatt atctatttgt atatatacat aacagggtaa attattcagt
+     1141 taagaaaaaa ataattttat gaactgcatg tataaatgaa gtttatacag tacagtggtt
+     1201 ctacaatcta tttattggac atgtccatga ccagaaggga aacagtcatt tgcgcacaac
+     1261 ttaaaaagtc tgcattacat tccttgataa tgttgtggtt tgttgccgtt gccaagaact
+     1321 gaaaacataa aaagttaaaa aaaataataa attgcatgct gctttaattg tgaattgata
+     1381 ataaactgtc ctctttcaga aaacagaaaa aaaacacaca cacacacaac aaaaatttga
+     1441 accaaaacat tccgtttaca ttttagacag taagtatctt cgttcttgtt agtactatat
+     1501 ctgttttact gcttttaact tctgatagcg ttggaattaa aacaatgtca aggtgctgtt
+     1561 gtcattgctt tactggctta ggggatgggg gatggggggt atatttttgt ttgttttgtg
+     1621 tttttttttc gtttgtttgt tttgtttttt agttcccaca gggagtagag atggggaaag
+     1681 aattcctaca atatatattc tggctgataa aagatacatt tgtatgttgt gaagatgttt
+     1741 gcaatatcga tcagatgact agaaagtgaa taaaaattaa ggcaactgaa caaaaaaatg
+     1801 ctcacactcc acatcccgtg atgcacctcc caggccccgc tcattctttg ggcgttggtc
+     1861 agagtaagct gcttttgacg gaaggaccta tgtttgctca gaacacattc tttccccccc
+     1921 tccccctctg gtctcctctt tgttttgttt taaggaagaa aaatcagttg cgcgttctga
+     1981 aatattttac cactgctgtg aacaagtgaa cacattgtgt cacatcatga cactcgtata
+     2041 agcatggaga acagtgattt ttttttagaa cagaaaacaa caaaaaataa ccccaaaatg
+     2101 aagattattt tttatgagga gtgaacattt gggtaaatca tggctaagct taaaaaaaac
+     2161 tcatggtgag gcttaacaat gtcttgtaag caaaaggtag agccctgtat caacccagaa
+     2221 acacctagat cagaacagga atccacattg ccagtgacat gagactgaac agccaaatgg
+     2281 aggctatgtg gagttggcat tgcatttacc ggcagtgcgg gaggaatttc tgagtggcca
+     2341 tcccaaggtc taggtggagg tggggcatgg tatttgagac attccaaaac gaaggcctct
+     2401 gaaggaccct tcagaggtgg ctctggaatg acatgtgtca agctgcttgg acctcgtgct
+     2461 ttaagtgcct acattatcta actgtgctca agaggttctc gactggagga ccacactcaa
+     2521 gccgacttat gcccaccatc ccacctctgg ataattttgc ataaaattgg attagcctgg
+     2581 agcaggttgg gagccaaatg tggcatttgt gatcatgaga ttgatgcaat gagatagaag
+     2641 atgtttgcta cctgaacact tattgctttg aaactagact tgaggaaacc agggtttatc
+     2701 ttttgagaac ttttggtaag ggaaaaggga acaggaaaag aaaccccaaa ctcaggccga
+     2761 atgatcaagg ggacccatag gaaatcttgt ccagagacaa gacttcggga aggtgtctgg
+     2821 acattcagaa caccaagact tgaaggtgcc ttgctcaatg gaagaggcca ggacagagct
+     2881 gacaaaattt tgctccccag tgaaggccac agcaaccttc tgcccatcct gtctgttcat
+     2941 ggagagggtc cctgcctcac ctctgccatt ttgggttagg agaagtcaag ttgggagcct
+     3001 gaaatagtgg ttcttggaaa aatggatccc cagtgaaaac tagagctcta agcccattca
+     3061 gcccatttca cacctgaaaa tgttagtgat caccacttgg accagcatcc ttaagtatca
+     3121 gaaagcccca agcaattgct gcatcttagt agggtgaggg ataagcaaaa gaggatgttc
+     3181 accataaccc aggaatgaag ataccatcag caaagaattt caatttgttc agtctttcat
+     3241 ttagagctag tctttcacag taccatctga atacctcttt gaaagaagga agactttacg
+     3301 tagtgtagat ttgttttgtg ttgtttgaaa atattatctt tgtaattatt tttaatatgt
+     3361 aaggaatgct tggaatatct gctgtatgtc aactttatgc agcttccttt tgagggacaa
+     3421 atttaaaaca aacaaccccc catcacaaac ttaaaggatt gcaagggcca gatctgttaa
+     3481 gtggtttcat aggagacaca tccagcaatt gtgtggtcag tggctctttt acccaataag
+     3541 atacatcaca gtcacatgct tgatggttta tgttgaccta agatttattt tgttaaaatc
+     3601 tctctctgtt gtgttcgttc ttgttctgtt ttgttttgtt ttttaaagtc ttgctgtggt
+     3661 ctctttgtgg cagaagtgtt tcatgcatgg cagcaggcct gttgcttttt tatggcgatt
+     3721 cccattgaaa atgtaagtaa atgtctgtgg ccttgttctc tctatggtaa agatattatt
+     3781 caccatgtaa aacaaaaaac aatatttatt gtattttagt atatttatat aattatgtta
+     3841 ttgaaaaaaa ttggcattaa aacttaaccg catcagaagc ctattgtaaa tacaagttct
+     3901 atttaagtgt actaattaac atataatata tgttttaaat atagaatttt taatgttttt
+     3961 aaatatattt tcaaagtaca taaaa
+//
+

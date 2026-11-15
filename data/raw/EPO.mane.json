@@ -1,0 +1,16 @@
+{
+  "symbol": "EPO",
+  "geneId": "2056",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/EPO/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:22.090Z",
+  "responseSha256": "4c77ca9856e61e11fd38556f214f1c5a0959e0f3d075d94375bfd35b97fd9c3f",
+  "description": "erythropoietin",
+  "maneSelect": [
+    {
+      "accession": "NM_000799.4",
+      "ensembl": "ENST00000252723.3",
+      "protein": "NP_000790.2",
+      "chromosome": "7"
+    }
+  ]
+}

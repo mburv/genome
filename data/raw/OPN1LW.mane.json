@@ -1,0 +1,16 @@
+{
+  "symbol": "OPN1LW",
+  "geneId": "5956",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/OPN1LW/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:17.428Z",
+  "responseSha256": "57af2514f592e1e94eef8e1c1826c2e752d2f4b298e30964ecf5aab766d86ae7",
+  "description": "opsin 1, long wave sensitive",
+  "maneSelect": [
+    {
+      "accession": "NM_020061.6",
+      "ensembl": "ENST00000369951.9",
+      "protein": "NP_064445.2",
+      "chromosome": "X"
+    }
+  ]
+}

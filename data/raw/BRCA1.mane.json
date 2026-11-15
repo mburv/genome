@@ -1,0 +1,16 @@
+{
+  "symbol": "BRCA1",
+  "geneId": "672",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/BRCA1/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:31.114Z",
+  "responseSha256": "abb9b31047d466c9cb17dc1aed2c993e598ffe68d76a93be929783721a5a1799",
+  "description": "BRCA1 DNA repair associated",
+  "maneSelect": [
+    {
+      "accession": "NM_007294.4",
+      "ensembl": "ENST00000357654.9",
+      "protein": "NP_009225.1",
+      "chromosome": "17"
+    }
+  ]
+}

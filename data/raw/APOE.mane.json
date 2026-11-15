@@ -1,0 +1,16 @@
+{
+  "symbol": "APOE",
+  "geneId": "348",
+  "datasetsUrl": "https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/APOE/taxon/9606/product_report",
+  "retrievedAt": "2026-11-15T13:19:19.065Z",
+  "responseSha256": "915eef8ec28cbf9e15bccf07d8a1564870739fc7b94f148387da478d2539fa18",
+  "description": "apolipoprotein E",
+  "maneSelect": [
+    {
+      "accession": "NM_000041.4",
+      "ensembl": "ENST00000252486.9",
+      "protein": "NP_000032.1",
+      "chromosome": "19"
+    }
+  ]
+}
