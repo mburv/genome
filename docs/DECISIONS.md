@@ -401,3 +401,7 @@ Owner playtest: remove campaign energy, CRISPR, Ligase and Scaffold controls; us
 
 Owner playtest: after every valid swap, clear the next target codon and refill, then scan the entire board for the next required codon. Continue until the next target is absent or the exact target is complete. Animate each clear and fall; a chain is one move and one undo/replay action. Initial boards are stable and teach the first swap. The practice round grows to six codons; the existing INS 34–42 round stays at three and INS chapter 79–114 becomes a twelve-codon round, keeping the original CDS interval and classic board alternative. Preserve completed credit; old swap logs retain their valid prefix if a chain makes a later swap obsolete, with a backup and notice.
  The updated four-step guide shows the first automatic clear using the same engine frame; twelve codon clues use compact numbered chips to keep the next target visible on phones.
+
+### D-UI-46 — Completion modal containment
+
+Owner playtest: HBB 14/15 (96-base splicing preview) overflowed the right viewport edge because an unbreakable win-part enlarged the overlay grid's intrinsic column. Give the completion overlay explicit shrinkable grid tracks, a 440px maximum card width, symmetric 14px/safe-area gutters, equal inner padding, wrapping strand groups, and vertically scrollable short-screen content. Keep all preview bases and both actions accessible. Regression: real HBB 14/15 completion at 393, 320, 430, landscape 568, and desktop 768px widths.
