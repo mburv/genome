@@ -10,7 +10,6 @@ const m2=read('src/campaign/levels.generated.json') as {levels:LevelDefinition[]
 const manifest=read('src/genomics/manifest.generated.json') as {catalogueId:string;included:{symbol:string;cdsLength:number;datasetId:string}[]};
 const catalog=read('src/genomics/catalogue.generated.json') as {genes:GeneSource[]};
 const genes:Record<string,GeneSource>=Object.fromEntries([read('src/genomics/ins.generated.json'),read('src/genomics/hbb.generated.json'),...catalog.genes].map(g=>[g.symbol,g]));
-const originals=new Set(Object.keys(legacy.datasets));
 const all=[...m2.levels,...legacy.levels];
 const generated:LevelDefinition[]=[];
 const replaced:Record<string,string[]>={};
