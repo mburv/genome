@@ -17,6 +17,7 @@ test('launch shows the title screen; Play goes to the map', async ({ page }) => 
   const play = page.getByTestId('title-play');
   await expect(play).toBeVisible();
   await expect(play).toBeEnabled();
+  await expect(play).toHaveCSS('background-color', 'rgb(205, 235, 216)');
   await page.screenshot({ path: '/workspace/game/screenshots/genome-title-390x844.png', animations: 'disabled' });
   await play.focus();
   await expect(play).toBeFocused();
