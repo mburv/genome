@@ -5,7 +5,7 @@ import type { LevelDefinition } from '../src/engine/types.ts';
 
 const LEVELS = pack.levels as LevelDefinition[];
 
-test('launch shows the title screen; Play goes to the map', async ({ page }) => {
+test('launch shows the title screen; Play goes to the map', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await fresh(page);
   await expect(page.getByTestId('title-screen')).toBeVisible();
@@ -18,7 +18,7 @@ test('launch shows the title screen; Play goes to the map', async ({ page }) => 
   await expect(play).toBeVisible();
   await expect(play).toBeEnabled();
   await expect(play).toHaveCSS('background-color', 'rgb(205, 235, 216)');
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-title-390x844.png', animations: 'disabled' });
+  await page.screenshot({ path: testInfo.outputPath('genome-title-390x844.png'), animations: 'disabled' });
   await play.focus();
   await expect(play).toBeFocused();
   await play.click();
