@@ -198,7 +198,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
 
       {shownTutorial && <MechanicTutorial key={shownTutorial} mechanic={shownTutorial} stage={useMixed && screen.kind === 'play' ? stage : null} reducedMotion={reducedMotion} onClose={closeTutorial} />}
       {screen.kind !== 'title' && (
-        <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · Famous Genes</footer>
+        <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · {screen.kind==='bonus'?'Human Genome bonus':'Famous Genes'}</footer>
       )}
     </main>
   );

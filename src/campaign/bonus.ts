@@ -1,4 +1,4 @@
-import raw from '../genomics/bonus.generated.json' with { type: 'json' };
+import raw from '../genomics/bonus.generated.json?raw';
 import { CAMPAIGN_LEVELS } from './campaign.ts';
 import { blockStage } from './blockMixed.ts';
 import type { MixedStage } from './mixed.ts';
@@ -16,7 +16,7 @@ export interface BonusPack {
   annotationSha256: string; referenceSha256: string;
   totalGenes: number; mainGenes: number; genes: BonusGene[];
 }
-export const BONUS_PACK = raw as unknown as BonusPack;
+export const BONUS_PACK = JSON.parse(raw) as BonusPack;
 export type BonusProgress = Record<string, number>;
 export const bonusUnlocked = (completed: readonly string[]): boolean => {
   const done = new Set(completed);

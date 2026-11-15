@@ -1,0 +1,31 @@
+import { test,expect } from '@playwright/test';
+import { CAMPAIGN_LEVELS, LEVEL_PACK } from '../src/campaign/campaign.ts';
+import { newSave, serializeSave } from '../src/persistence/save.ts';
+import { openCompleted } from './helpers.ts';
+
+test('Human Genome unlocks after main campaign and saves completed bonus stages',async({page})=>{
+  const initial=newSave(LEVEL_PACK);
+  const completed=CAMPAIGN_LEVELS.map(l=>l.id);
+  await openCompleted(page,serializeSave({...initial,completed:completed.slice(0,-1)}));
+  await expect(page.getByTestId('open-bonus')).toBeDisabled();
+  await openCompleted(page,serializeSave({...initial,completed}));
+  await expect(page.getByTestId('open-bonus')).toBeEnabled();
+  await page.getByTestId('open-bonus').click();
+  await expect(page.getByTestId('bonus-map')).toBeVisible();
+  await page.getByPlaceholder('Symbol, Ensembl ID or gene type').fill('A1BG');
+  const first=page.getByRole('button',{name:'A1BG bonus stage 1',exact:true});
+  await expect(first).toBeVisible();
+  await first.click();
+  await expect(page.getByTestId('bonus-play')).toBeVisible();
+  for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
+  await expect(page.getByTestId('bonus-win')).toBeVisible();
+  await page.getByTestId('bonus-win').getByRole('button',{name:'Bonus map'}).click();
+  await expect(page.getByRole('button',{name:'A1BG bonus stage 1, complete',exact:true})).toBeVisible();
+  await page.reload();
+  await page.getByTestId('title-play').click();
+  await page.getByTestId('open-bonus').click();
+  await page.getByPlaceholder('Symbol, Ensembl ID or gene type').fill('A1BG');
+  await expect(page.getByRole('button',{name:'A1BG bonus stage 1, complete',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'A1BG bonus stage 2',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'A1BG bonus stage 3',exact:true})).toBeDisabled();
+});

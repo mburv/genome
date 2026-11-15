@@ -28,7 +28,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- e2e/compact-clues.spec.ts e2e/layout.spec.ts e2e/hint-toggle.spec.ts e2e/mechanics-lab.spec.ts e2e/mixed-ins.spec.ts e2e/sliding-modes.spec.ts
+      - run: npm run test:e2e -- e2e/compact-clues.spec.ts e2e/layout.spec.ts e2e/hint-toggle.spec.ts e2e/mechanics-lab.spec.ts e2e/mixed-ins.spec.ts e2e/sliding-modes.spec.ts e2e/bonus.spec.ts
       - run: npm run test:e2e -- e2e/tidy.spec.ts --grep 'replication clues pair|clue chips size'
       - run: npm run test:e2e -- e2e/powers.spec.ts --grep 'campaign sliding levels|campaign control row|CRISPR recovery|CRISPR.*preview'
       - run: npm run build

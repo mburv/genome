@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prepare:bonus": "python3 scripts/prepare-bonus.py",
+    "predev": "npm run prepare:bonus",
     "prebuild": "npm run prepare:bonus",
     "prebuild:single": "npm run prepare:bonus",
     "build": "npm run typecheck && vite build",
