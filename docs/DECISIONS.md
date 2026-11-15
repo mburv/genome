@@ -367,3 +367,8 @@ Owner playtest: replace the generic before/after cell transitions with a slowed-
 ### D-UI-38 — Graphical trace hints
 
 Owner playtest: remove normal DNA Tracing status and hint copy under the toolbar. The enabled Hint toggle always outlines one actionable tile: the certified next base, a viable alternative continuation found by bounded deterministic search, or the preceding base to backtrack. A lone selected base can be tapped again to clear it, so even an incorrect start has a graphical recovery. Rejected actions leave the hint in place. Other mechanics are unchanged.
+
+
+### D-UI-39 — Graphical Mutation Detective hints
+
+Owner playtest: remove Mutation Detective status and selection text and all written hints. When Hint is enabled, highlight one actual mismatch and its corresponding replacement A/C/G/T button with a green outline, preserving the base palette. The highlighted mismatch is selected automatically; manually selecting another mismatch changes the cue, and each correct repair advances it. Correct cells cannot steal the cue while Hint is enabled. Turning Hint off returns to manual selection. No rule, reference, coverage or save changes.

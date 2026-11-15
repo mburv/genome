@@ -85,7 +85,8 @@ test('Mutation Detective repairs each complementary mismatch', async ({ page }) 
     const b = await tile(page,c-9).getAttribute('data-base');
     const comp = ({ A:'T',T:'A',C:'G',G:'C' } as Record<string,string>)[b!]!;
     await tap(page,c);
-    await expect(page.getByTestId('mutation-selection')).toContainText('Target ' + comp);
+    await expect(tile(page,c)).toHaveAttribute('aria-pressed','true');
+    await expect(page.getByTestId('mutation-selection')).toHaveCount(0);
     await page.getByTestId('lab-base-' + comp).tap();
     await expect(page.getByTestId('mutation-target-' + c)).toHaveClass(/matched/);
   }
@@ -204,7 +205,8 @@ test('Mutation Detective reclaims board space on a short phone', async ({ page }
   await expect(page.getByTestId('lab-base-A')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeVisible();
   await tap(page, 20);
-  await expect(page.getByTestId('mutation-selection')).toBeVisible();
+  await expect(tile(page,20)).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByTestId('mutation-selection')).toHaveCount(0);
 });
 
 
@@ -239,4 +241,37 @@ test('Genome Assembly greys only placed source reads and restores them on undo o
   await page.getByTestId('action-restart').click();
   await expect(placed).toHaveCount(0);
   await expect(page.getByTestId('lab-progress')).toHaveText('0/3 reads');
+});
+
+
+test('Mutation Detective hints highlight a mismatched square and its correct base without text', async ({page}) => {
+  await openLab(page,'mutation');
+  const board=page.getByTestId('mechanics-board'), hint=page.getByTestId('action-hint');
+  const square=board.locator('.mutation-hinted'), replacement=page.locator('.mutation-base-hinted');
+  const noText=async()=>await expect(page.locator('.lab-hint,[data-testid="lab-message"],[data-testid="mutation-selection"]')).toHaveCount(0);
+  const at=async(c:number)=>{
+    await expect(square).toHaveCount(1);
+    await expect(tile(page,c)).toHaveClass(/mutation-hinted/);
+    await expect(tile(page,c)).toHaveClass(/mutation-mismatch/);
+    await expect(tile(page,c)).toHaveAttribute('aria-pressed','true');
+    await expect(tile(page,c)).toHaveCSS('outline-color','rgb(42, 110, 79)');
+    const want=await page.getByTestId('mutation-target-'+c).textContent();
+    await expect(replacement).toHaveCount(1);
+    await expect(replacement).toHaveText(want!);
+    await expect(replacement).toHaveCSS('outline-color','rgb(42, 110, 79)');
+    await expect(replacement).toBeEnabled();
+    await noText();
+  };
+  await noText();await expect(square).toHaveCount(0);
+  await hint.click();await at(20);
+  await tap(page,23);await at(23);
+  await replacement.tap();await at(20);
+  await replacement.tap();await at(48);
+  await page.getByTestId('action-undo').click();await at(20);
+  await tap(page,19);await at(20); // a correct base must not steal the repair cue
+  await hint.click();await expect(square).toHaveCount(0);await expect(replacement).toHaveCount(0);await noText();
+  await hint.click();await at(20);
+  await page.getByTestId('action-restart').click();await at(20);
+  for(const c of [20,23,48,74,78]){await at(c);await replacement.tap();}
+  await won(page);await expect(square).toHaveCount(0);await expect(replacement).toHaveCount(0);await noText();
 });
