@@ -18,11 +18,6 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - uses: actions/cache@v4
-        with:
-          path: src/genomics/bonus.generated.json
-          key: bonus-v48-${{ hashFiles('scripts/prepare-bonus.py', 'src/genomics/manifest.generated.json') }}
-      - run: python3 scripts/prepare-bonus.py
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint

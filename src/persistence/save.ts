@@ -5,6 +5,7 @@ import type { LevelDefinition, Move } from '../engine/types.ts';
 import { INTRO_IDS, REPLACED_OPENERS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES } from '../genomics/genes.ts';
+import { readGenomeProgress, type BonusProgress } from '../campaign/bonus.ts';
 import { mixedStage, replayMixed, SLIDE_TUTORIALS } from '../campaign/mixed.ts';
 import { LAB_IDS, type LabAction } from '../engine/mechanicsLab.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
@@ -33,8 +34,8 @@ export interface SaveData {
   /** Optional additive v7 fields: verified replay logs and first-use tutorial acknowledgements. */
   mixedAttempts?: Record<string, LabAction[]>;
   tutorialsSeen?: string[];
-  /** Separate, pinned GENCODE v48 bonus progress: completed sequential stages by Ensembl locus. */
-  bonusProgress?: Record<string, number>;
+  /** Separate T2T reference coverage, zero-based half-open intervals per chromosome. */
+  genomeProgress?: BonusProgress;
   /** Per-attempt marker: replay starts at the free two-base prefix rather than an empty path. */
   traceStarterAttempts?: string[];
   /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
@@ -524,12 +525,9 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (retiredMixedLogs) { adapter.backup(raw,'unified-campaign'); notices.push('Some stages now use their assigned sliding puzzle. Older mixed attempts were backed up; completed levels are preserved.'); }
   if (updatedCrushLogs) { adapter.backup(raw,'crush-cascades'); notices.push('Codon Crush now chains automatically. Older attempts were kept up to the last valid swap; completed levels are preserved.'); }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
-  const bonusProgress:Record<string,number>={};
-  if(data.bonusProgress && typeof data.bonusProgress==='object')for(const [id,n] of Object.entries(data.bonusProgress)){
-    if(/^ENSG\d+(?:\.\d+)?(?:_PAR_Y)?$/.test(id)&&typeof n==='number'&&Number.isInteger(n)&&n>=1&&n<=3)bonusProgress[id]=n;
-  }
+  const genomeProgress=readGenomeProgress(data.genomeProgress);
   return {
-    save: { ...fresh, ...(Object.keys(bonusProgress).length?{bonusProgress}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
+    save: { ...fresh, ...(Object.keys(genomeProgress).length?{genomeProgress}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
     recovered: notices.length > 0,
   };

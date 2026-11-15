@@ -1,74 +1,81 @@
-import { useCallback, useMemo, useState } from 'react';
-import { BONUS_PACK, advanceBonus, bonusCompleted, bonusStageCount, bonusStages, type BonusGene, type BonusProgress } from '../campaign/bonus.ts';
+import { useCallback,useMemo,useState } from 'react';
+import { CHROMOSOMES,GENOME_BASES,REFERENCE,REFERENCE_URL,addGenomeCredit,covered,genomeCovered,nextPuzzle,genomeStage,type BonusProgress,type GenomeGene,type Interval } from '../campaign/bonus.ts';
+import { openGenomePack,readGenomeSequence,type GenomePack } from '../genomics/genomePack.ts';
 import { MechanicsPlay } from './MechanicsLab.tsx';
-import { labExtractedSequence, type LabState } from '../engine/mechanicsLab.ts';
+import { labExtractedSequence,type LabState } from '../engine/mechanicsLab.ts';
+import type { MixedStage } from '../campaign/mixed.ts';
 
+interface Props{progress:BonusProgress;onProgress:(next:BonusProgress)=>void;onBack:()=>void;reducedMotion:boolean}
+interface Scope{chrom:string;start:number;end:number;label:string;gene?:GenomeGene}
 const PAGE=40;
-interface Props {
-  progress: BonusProgress;
-  onProgress: (next: BonusProgress) => void;
-  onBack: () => void;
-  reducedMotion: boolean;
-}
-export function BonusScreen({progress,onProgress,onBack,reducedMotion}:Props) {
-  const [query,setQuery]=useState('');
-  const [chrom,setChrom]=useState('');
-  const [page,setPage]=useState(0);
-  const [gene,setGene]=useState<BonusGene|null>(null);
-  const [part,setPart]=useState(0);
-  const [hint,setHint]=useState<boolean|null>(null);
-  const [onlyRemaining,setOnlyRemaining]=useState(false);
-  const chromosomes=useMemo(()=>[...new Set(BONUS_PACK.genes.map(g=>g[3]))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),[]);
-  const filtered=useMemo(()=>{
-    const q=query.trim().toLowerCase();
-    return BONUS_PACK.genes.filter(g=>(!chrom||g[3]===chrom)&&(!q||g[0].toLowerCase().includes(q)||g[1].toLowerCase().includes(q)||g[2].toLowerCase().includes(q))&&(!onlyRemaining||!bonusCompleted(progress,g)));
-  },[query,chrom,onlyRemaining,progress]);
-  const done=useMemo(()=>BONUS_PACK.genes.filter(g=>bonusCompleted(progress,g)).length,[progress]);
-  const stages=useMemo(()=>gene?bonusStages(gene):[],[gene]);
-  const stage=stages[part];
+export function BonusScreen({progress,onProgress,onBack,reducedMotion}:Props){
+  const [packs,setPacks]=useState<Record<string,GenomePack>>({});
+  const [query,setQuery]=useState(''),[chrom,setChrom]=useState(''),[page,setPage]=useState(0);
+  const [scope,setScope]=useState<Scope|null>(null),[stage,setStage]=useState<MixedStage|null>(null);
+  const [hint,setHint]=useState<boolean|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+  const done=genomeCovered(progress);
+  const genes=useMemo(()=>Object.values(packs).flatMap(p=>p.header.genes.map(g=>({g,c:p.header.chromosome}))).filter(({g,c})=>(!chrom||chrom===c)&&(!query||[g[0],g[1],g[2]].some(x=>x.toLowerCase().includes(query.toLowerCase())))).sort((a,b)=>a.g[1].localeCompare(b.g[1])||a.g[0].localeCompare(b.g[0])),[packs,chrom,query]);
+  const install=async(files:FileList|null)=>{
+    if(!files)return;setBusy(true);setError('');
+    try{const next={...packs};for(const file of Array.from(files)){const p=await openGenomePack(file);next[p.header.chromosome]=p;}setPacks(next);}
+    catch(e){setError(String(e));}finally{setBusy(false);}
+  };
+  const open=async(s:Scope)=>{
+    setBusy(true);setError('');
+    try{
+      const pack=packs[s.chrom];if(!pack)throw Error('Install this chromosome data pack first.');
+      const iv=nextPuzzle(progress,s.chrom,s.start,s.end);
+      if(!iv){setStage(null);setScope(null);return;}
+      const seq=await readGenomeSequence(pack,iv);setScope(s);setStage(genomeStage(s.chrom,iv,seq));setHint(null);
+    }catch(e){setError(String(e));}finally{setBusy(false);}
+  };
   const credit=useCallback((state:LabState)=>{
-    if(!gene||!stage||!state.won||labExtractedSequence(state)!==stage.sequence)return;
-    const next=advanceBonus(progress,gene,part+1);
-    if(next!==progress)onProgress(next);
-  },[gene,stage,part,progress,onProgress]);
-  const back=()=>{setGene(null);setHint(null);};
-  if(gene&&stage) {
-    const [,symbol,biotype,chr,start,end,strand,lo,hi]=gene;
-    const first=strand==='+'?lo+stage.start:hi-stage.end+1;
-    const last=strand==='+'?lo+stage.end-1:hi-stage.start;
+    if(!stage||!scope||!state.won||labExtractedSequence(state)!==stage.sequence)return;
+    const next=addGenomeCredit(progress,scope.chrom,[stage.start,stage.end]);if(next!==progress)onProgress(next);
+  },[stage,scope,progress,onProgress]);
+  const back=()=>{setScope(null);setStage(null);setHint(null);};
+  if(scope&&stage){
+    const iv:Interval=[stage.start,stage.end],remaining=nextPuzzle(progress,scope.chrom,scope.start,scope.end);
+    const completed=covered(progress[scope.chrom]??[],...iv)===iv[1]-iv[0];
     return <section className="bonus-play" data-testid="bonus-play">
-      <div className="row-between"><h2 className="gene">{symbol} <span>· {part+1}/{stages.length}</span></h2><button type="button" onClick={back}>Bonus map</button></div>
-      <p className="muted small">{biotype.replaceAll('_',' ')} · {chr}:{start.toLocaleString()}–{end.toLocaleString()} ({strand})</p>
-      <p className="muted tiny">{BONUS_PACK.release} · fragment {first.toLocaleString()}–{last.toLocaleString()} · {gene[0]}</p>
-      <MechanicsPlay key={stage.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hint} onHintModeChange={setHint}
-        onBack={back} onNext={()=>undefined} bonus={{stage,label:symbol,part:part+1,of:stages.length,completed:(progress[gene[0]]??0)>part,
-        onComplete:credit,onNext:()=>{if(part+1<stages.length)setPart(part+1);else back();}}}/>
+      <div className="row-between"><h2 className="gene">{scope.label}</h2><button type="button" onClick={back}>Genome map</button></div>
+      <p className="muted small">{scope.chrom}:{(iv[0]+1).toLocaleString()}–{iv[1].toLocaleString()} · {REFERENCE}</p>
+      <p className="muted small">{covered(progress[scope.chrom]??[],scope.start,scope.end).toLocaleString()} / {(scope.end-scope.start).toLocaleString()} bases assembled in this region</p>
+      {error&&<p role="alert">{error}</p>}
+      <MechanicsPlay key={stage.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hint} onHintModeChange={setHint} onBack={back} onNext={()=>undefined}
+        bonus={{stage,label:scope.label,part:1,of:2,completed,onComplete:credit,onNext:()=>{if(remaining)void open(scope);else back();}}}/>
     </section>;
   }
-  const lastPage=Math.max(0,Math.ceil(filtered.length/PAGE)-1);
-  const current=Math.min(page,lastPage);
+  const last=Math.max(0,Math.ceil(genes.length/PAGE)-1),current=Math.min(page,last);
   return <section className="map bonus-map" data-testid="bonus-map">
-    <div className="row-between"><h2 className="gene">Human Genome <span>· bonus</span></h2><button type="button" onClick={onBack}>Main map</button></div>
-    <p className="muted small">Every remaining annotated gene in the pinned reference. Complete its DNA fragment stages to discover the gene. Samples do not constitute full-gene assembly.</p>
-    <p className="muted small">{done.toLocaleString()} / {BONUS_PACK.genes.length.toLocaleString()} bonus genes complete · {BONUS_PACK.release}</p>
-    {!BONUS_PACK.genes.length ? <p role="status">Reference catalogue not installed. Run the reference preparation step before building GENOME.</p> : <>
-      <div className="progress thin" role="progressbar" aria-label="Bonus genes completed" aria-valuemin={0} aria-valuemax={BONUS_PACK.genes.length} aria-valuenow={done}><i style={{width:(100*done/BONUS_PACK.genes.length)+'%'}}/></div>
-      <label className="bonus-filter">Find gene <input type="search" value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}} placeholder="Symbol, Ensembl ID or gene type"/></label>
-      <label className="bonus-filter">Chromosome / contig <select value={chrom} onChange={e=>{setChrom(e.target.value);setPage(0);}}><option value="">All</option>{chromosomes.map(c=><option key={c}>{c}</option>)}</select></label>
-      <label className="bonus-filter"><input type="checkbox" checked={onlyRemaining} onChange={e=>{setOnlyRemaining(e.target.checked);setPage(0);}}/> Uncompleted genes only</label>
-      <p className="muted small">{filtered.length.toLocaleString()} matching genes</p>
-      <div className="panel catalogue">
-        {filtered.slice(current*PAGE,(current+1)*PAGE).map(g=>{
-          const n=bonusStageCount(g),p=progress[g[0]]??0;
-          return <div className="cat-gene" key={g[0]}>
-            <div className="row-between"><b>{g[1]}</b><span className="muted tiny">{g[3]} · {g[2].replaceAll('_',' ')}</span></div>
-            <p className="muted tiny">{g[0]} · {p}/{n} stages{p===n?' · Complete':''}</p>
-            <ol className="chapter-nodes">{Array.from({length:n},(_,i)=><li key={i}><button type="button" className={'cnode'+(i<p?' done':'')} disabled={i>p} aria-label={g[1]+' bonus stage '+(i+1)+(i<p?', complete':'')} onClick={()=>{setGene(g);setPart(i);setHint(null);}}><span className="node-number">{i+1}</span>{i<p&&<span className="node-check">✓</span>}</button></li>)}</ol>
-          </div>;
-        })}
-      </div>
-      <div className="row-between"><button type="button" disabled={!current} onClick={()=>setPage(current-1)}>Previous</button><span className="muted small">Page {current+1} / {lastPage+1}</span><button type="button" disabled={current>=lastPage} onClick={()=>setPage(current+1)}>Next</button></div>
-    </>}
-    <p className="muted tiny">Source: <a href="https://www.gencodegenes.org/human/release_48.html">GENCODE release 48</a> · primary assembly, including chromosome and scaffold loci. Reference fragments only; no clinical claims.</p>
+    <div className="row-between"><h2 className="gene">Human Genome</h2><button type="button" onClick={onBack}>Main map</button></div>
+    <p className="muted small">{REFERENCE} · every chromosome, every annotated gene and intergenic base.</p>
+    <p><b>{done.toLocaleString()} / {GENOME_BASES.toLocaleString()} bp assembled</b></p>
+    <div className="progress thin" role="progressbar" aria-label="Genome bases assembled" aria-valuemin={0} aria-valuemax={GENOME_BASES} aria-valuenow={done}><i style={{width:100*done/GENOME_BASES+'%'}}/></div>
+    {done===GENOME_BASES&&<p className="discovered assembled">Human reference genome assembled!</p>}
+    <div className="panel">
+      <h3>Reference data packs</h3>
+      <p className="muted small">Install chromosome .genome files from the verified build. Packs stay local; reselect them after reopening the game. Your completed coordinates are saved.</p>
+      <input type="file" multiple accept=".genome" disabled={busy} onChange={e=>{void install(e.target.files);}} aria-label="Install chromosome packs"/>
+      <p className="muted tiny">{Object.keys(packs).length}/25 chromosome packs selected · <a href={REFERENCE_URL}>Reference source</a></p>
+      {busy&&<p role="status">Reading reference data…</p>}{error&&<p role="alert">{error}</p>}
+    </div>
+    <h3>Chromosomes</h3>
+    <div className="panel catalogue">{Object.entries(CHROMOSOMES).map(([c,len])=>{
+      const n=covered(progress[c]??[],0,len);return <div className="cat-gene" key={c}>
+        <div className="row-between"><b>{c}</b><button type="button" disabled={!packs[c]||busy||n===len} onClick={()=>{void open({chrom:c,start:0,end:len,label:c});}}>{n===len?'Complete':packs[c]?'Assemble':'Install pack'}</button></div>
+        <div className="progress thin"><i style={{width:100*n/len+'%'}}/></div><p className="muted tiny">{n.toLocaleString()} / {len.toLocaleString()} bp</p>
+      </div>;
+    })}</div>
+    <h3>Gene catalogue</h3>
+    <p className="muted small">Select any installed gene to assemble its entire genomic span, including introns. Overlapping genes share coordinate credit. The 31 original RefSeq coding campaigns remain separate from this reference.</p>
+    <label className="bonus-filter">Find gene <input type="search" value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}} placeholder="Gene symbol or ID"/></label>
+    <label className="bonus-filter">Chromosome <select value={chrom} onChange={e=>{setChrom(e.target.value);setPage(0);}}><option value="">All installed</option>{Object.keys(packs).map(c=><option key={c}>{c}</option>)}</select></label>
+    <p className="muted small">{genes.length.toLocaleString()} matching annotated loci</p>
+    <div className="panel catalogue">{genes.slice(current*PAGE,(current+1)*PAGE).map(({g,c})=>{
+      const n=covered(progress[c]??[],g[3],g[4]),len=g[4]-g[3];
+      return <div className="cat-gene" key={c+g[0]}><div className="row-between"><b>{g[1]}</b><button type="button" disabled={busy||n===len} onClick={()=>{void open({chrom:c,start:g[3],end:g[4],label:g[1],gene:g});}}>{n===len?'✓ Complete':'Assemble'}</button></div><p className="muted tiny">{g[2]} · {c}:{(g[3]+1).toLocaleString()}–{g[4].toLocaleString()} · {n.toLocaleString()}/{len.toLocaleString()} bp</p></div>;
+    })}</div>
+    <div className="row-between"><button type="button" disabled={!current} onClick={()=>setPage(current-1)}>Previous</button><span>Page {current+1}/{last+1}</span><button type="button" disabled={current>=last} onClick={()=>setPage(current+1)}>Next</button></div>
   </section>;
 }

@@ -77,7 +77,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     }
     if (next !== saveRef.current) persist(next);
   }, [stage, persist]);
-  const persistBonus=useCallback((bonusProgress:BonusProgress)=>{if(bonusUnlocked(saveRef.current.completed))persist({...saveRef.current,bonusProgress});},[persist]);
+  const persistBonus=useCallback((bonusProgress:BonusProgress)=>{if(bonusUnlocked(saveRef.current.completed))persist({...saveRef.current,genomeProgress:bonusProgress});},[persist]);
   const settingsFrom = useRef<Screen>({ kind: 'title' });
   const go = (next: Screen) => {
     setTutorial(null);
@@ -158,7 +158,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
-      {screen.kind==='bonus' && bonusUnlocked(save.completed) && <BonusScreen progress={save.bonusProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onBack={()=>go({kind:'map'})}/>}
+      {screen.kind==='bonus' && bonusUnlocked(save.completed) && <BonusScreen progress={save.genomeProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onBack={()=>go({kind:'map'})}/>}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
