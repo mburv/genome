@@ -365,7 +365,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
       {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
       {!campaign && !bonus && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
       {id!=='trace'&&id!=='mutation'&&id!=='connections'&&id!=='crush'&&id!=='assembly'&&hint&&!state.won&&<p className="lab-hint small" role="status">{labHint(state)}</p>}
-      {id!=='trace' && id!=='mutation' && id!=='crush' && id!=='assembly' && <span className="trace-status muted small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</span>}
+      {id!=='trace' && id!=='mutation' && id!=='crush' && id!=='assembly' && id!=='connections' && <span className="trace-status muted small" role="status" data-testid="lab-message">{session.message || 'Ready.'}</span>}
       {!campaign && !bonus && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
     </div>
     {popup}

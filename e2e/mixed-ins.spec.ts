@@ -413,7 +413,7 @@ test('campaign Connections graphical hint remains actionable after resuming a pa
   const dashed=page.locator('.connection-hinted');
   await expect(dashed).toHaveAttribute('data-lab-cell','3');
   await dashed.tap();await expect(dashed).toHaveAttribute('data-lab-cell','4');
-  await expect(page.locator('.lab-hint')).toHaveCount(0);
+  await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
   await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
 });
 
