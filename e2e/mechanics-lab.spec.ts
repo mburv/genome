@@ -36,7 +36,9 @@ test('mechanics menu exposes six separate games and leaves campaign save untouch
   await page.getByTestId('open-mechanics').click();
   await expect(page.locator('.mechanic-entry')).toHaveCount(6);
   await page.getByTestId('mechanic-trace').click();
-  await trace(page, [10,11,12,21,30,31,40,49,50]);
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
+  await expect(page.getByTestId('moves')).toHaveText('0 moves');
+  await trace(page, [11,12,21,30,31,40,49,50]);
   await won(page);
   await page.getByRole('button', { name: 'Next mechanic' }).click();
   await expect(page.getByTestId('target-panel').locator('.target-title')).toHaveText('Codon Crush');

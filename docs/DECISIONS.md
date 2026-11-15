@@ -372,3 +372,8 @@ Owner playtest: remove normal DNA Tracing status and hint copy under the toolbar
 ### D-UI-39 — Graphical Mutation Detective hints
 
 Owner playtest: remove Mutation Detective status and selection text and all written hints. When Hint is enabled, highlight one actual mismatch and its corresponding replacement A/C/G/T button with a green outline, preserving the base palette. The highlighted mismatch is selected automatically; manually selecting another mismatch changes the cue, and each correct repair advances it. Correct cells cannot steal the cue while Hint is enabled. Turning Hint off returns to manual selection. No rule, reference, coverage or save changes.
+
+
+### D-UI-40 — Pre-connected tracing starter
+
+Owner playtest: all new tracing attempts begin with the first two reference bases connected by the normal blue path at zero moves. The two clue bases are marked matched; Hint starts at the third tile; tapping the starter cannot remove it, and Undo/Restart retain it. Certificates omit the free prefix but extraction still checks the complete reference. An additive per-attempt save marker preserves existing legacy unseeded trace logs exactly; restarting such an attempt switches to the new starter. The tutorial demonstrates continuing from the pre-connected pair, not finding the first base.

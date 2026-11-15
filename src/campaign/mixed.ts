@@ -25,7 +25,7 @@ export function mixedStage(def: LevelDefinition): MixedStage | null {
     spec.TRACE_TARGET = sequence;
     spec.TRACE_PATH = sequence.length === 9 ? DEFAULT_LAB_SPEC.TRACE_PATH : snake(sequence.length, sequence.length === 27 ? 1 : 0);
     spec.traceHoles = sequence.length === 9 ? [0,8,18,28,52,72,79,80] : sequence.length === 27 ? [0,4,8,37,44,54,63,71,80] : [55,62,65,70,72,78,80];
-    certificate = spec.TRACE_PATH.map(cell => ({ type: 'trace', cell }));
+    certificate = spec.TRACE_PATH.slice(2).map(cell => ({ type: 'trace', cell }));
   } else if (mechanic === 'connections') {
     spec.CONNECTION_PAIRS = DEFAULT_LAB_SPEC.CONNECTION_PAIRS.map((p, i) => ({ ...p, seq: sequence.slice(i*2,i*2+2) }));
     spec.connectionHoles = [...DEFAULT_LAB_SPEC.connectionHoles, 81-6].filter(c => !spec.CONNECTION_ROUTES.some(p => p.includes(c)));
@@ -59,8 +59,8 @@ export function mixedStage(def: LevelDefinition): MixedStage | null {
   }
   return { id:def.id, mechanic, start,end,sequence,spec,certificate };
 }
-export function replayMixed(stage: MixedStage, actions: readonly LabAction[]): LabState {
-  return actions.reduce((state, action) => applyLab(state, action).state, createLab(stage.mechanic, stage.spec));
+export function replayMixed(stage: MixedStage, actions: readonly LabAction[], seedTrace = true): LabState {
+  return actions.reduce((state, action) => applyLab(state, action).state, createLab(stage.mechanic, stage.spec, seedTrace));
 }
 export function verifiedMixed(stage: MixedStage, state: LabState): boolean {
   return state.id === stage.mechanic && labExtractedSequence(state) === stage.sequence && stage.sequence === INS.sequence.slice(stage.start,stage.end);

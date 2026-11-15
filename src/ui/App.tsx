@@ -63,6 +63,9 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     let next = saveRef.current;
     const prior = next.mixedAttempts?.[stage.id] ?? [];
     if (JSON.stringify(prior) !== JSON.stringify(actions)) next = { ...next, mixedAttempts: { ...next.mixedAttempts, [stage.id]: [...actions] } };
+    if (stage.mechanic === 'trace' && state.traceStarter > 0 && !next.traceStarterAttempts?.includes(stage.id)) {
+      next = { ...next, traceStarterAttempts: [...(next.traceStarterAttempts ?? []), stage.id], mixedAttempts: { ...next.mixedAttempts, [stage.id]: [...actions] } };
+    }
     if (verifiedMixed(stage, state)) {
       next = recordCompletion(next, stage.id);
       if (isDiscovered(next.completed, 'INS') && !next.discovered.includes('INS')) next = { ...next, discovered: [...next.discovered, 'INS'] };
@@ -155,7 +158,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
         def, completed: save.completed.includes(def.id), onCard: () => go({ kind: 'card', symbol: def.symbol }), hasNext: CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) < CAMPAIGN_LEVELS.length - 1,
-        stage, initialActions: save.mixedAttempts?.[def.id] ?? [], part: runProgress(def)!.part, of: runProgress(def)!.of,
+        stage, initialActions: save.mixedAttempts?.[def.id] ?? [], seedTrace: !save.mixedAttempts?.[def.id]?.length || !!save.traceStarterAttempts?.includes(def.id), part: runProgress(def)!.part, of: runProgress(def)!.of,
         covered: assemblyStatus(save.completed, GENES.INS!).covered, assembled: assemblyStatus(save.completed, GENES.INS!).verified,
         onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1]; if (next) play(next.id); else go({ kind: 'map' }); }
       }} />}

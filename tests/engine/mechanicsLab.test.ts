@@ -20,11 +20,17 @@ describe('Mechanics Lab', () => {
   test('tracing rejects holes, wrong starts and reused cells; a real path wins', () => {
     const start = createLab('trace');
     expect(applyLab(start, { type: 'trace', cell: 0 }).state).toBe(start);
-    const first = applyLab(start, { type: 'trace', cell: TRACE_PATH[0] }).state;
-    expect(applyLab(first, { type: 'trace', cell: 80 }).state).toBe(first);
-    const second = applyLab(first, { type: 'trace', cell: TRACE_PATH[1] }).state;
-    expect(applyLab(second, { type: 'trace', cell: TRACE_PATH[0] }).state.trace).toEqual([TRACE_PATH[0]]);
-    expect(run('trace', TRACE_PATH.map(cell => ({ type: 'trace', cell }))).won).toBe(true);
+    expect(start.trace).toEqual(TRACE_PATH.slice(0,2));
+    expect(start.moves).toBe(0);
+    expect(applyLab(start, { type: 'trace', cell: TRACE_PATH[0] }).state).toBe(start);
+    expect(applyLab(start, { type: 'trace', cell: TRACE_PATH[1] }).state).toBe(start);
+    expect(applyLab(start, { type: 'trace', cell: 80 }).state).toBe(start);
+    const third = applyLab(start, { type: 'trace', cell: TRACE_PATH[2] }).state;
+    expect(third.trace).toEqual(TRACE_PATH.slice(0,3));
+    expect(applyLab(third, { type: 'trace', cell: TRACE_PATH[1] }).state.trace).toEqual(start.trace);
+    const solved = run('trace', TRACE_PATH.slice(2).map(cell => ({ type: 'trace', cell })));
+    expect(solved.won).toBe(true);
+    expect(solved.moves).toBe(TRACE_PATH.length-2);
   });
   test('codon swaps are adjacent, clear three cells, refill deterministically and preserve holes', () => {
     let state = createLab('crush');
@@ -114,11 +120,12 @@ describe('graphical tracing recovery', () => {
     expect(traceHintCell(dead)).toBe(12);
     const recovered = applyLab(dead,{type:'trace',cell:12}).state;
     expect(traceHintCell(recovered)).toBe(21);
-    const wrong = trace([9]);
+    const wrong = applyLab(createLab('trace', spec, false),{type:'trace',cell:9}).state;
     expect(traceHintCell(wrong)).toBe(9);
     const cleared = applyLab(wrong,{type:'trace',cell:9}).state;
     expect(cleared.trace).toEqual([]);
     expect(traceHintCell(cleared)).toBe(10);
+    expect(traceHintCell(start)).toBe(12);
     expect(applyLab(wrong,{type:'trace',cell:80}).state).toBe(wrong);
   });
 });

@@ -33,6 +33,8 @@ export interface SaveData {
   /** Optional additive v7 fields: verified replay logs and first-use tutorial acknowledgements. */
   mixedAttempts?: Record<string, LabAction[]>;
   tutorialsSeen?: string[];
+  /** Per-attempt marker: replay starts at the free two-base prefix rather than an empty path. */
+  traceStarterAttempts?: string[];
   /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
   legacy: { m1Completed: string[] };
   settings: Settings;
@@ -472,19 +474,25 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
   const mixedAttempts: Record<string, LabAction[]> = {};
+  const traceStarterAttempts: string[] = [];
+  const seededTraces = new Set(strings(data.traceStarterAttempts));
   if (sameContent && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
       const def = pack.levels.find(l => l.id === id);
       const stage = def && mixedStage(def);
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
-      const state = replayMixed(stage, rawLog);
-      if (state.moves === rawLog.length) mixedAttempts[id] = rawLog;
+      const seeded = stage.mechanic !== 'trace' || seededTraces.has(id) || rawLog.length === 0;
+      const state = replayMixed(stage, rawLog, seeded);
+      if (state.moves === rawLog.length) {
+        mixedAttempts[id] = rawLog;
+        if (stage.mechanic === 'trace' && seeded) traceStarterAttempts.push(id);
+      }
     }
   }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => id === 'slide' || LAB_IDS.some(m => m === id)))];
   return {
-    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}) },
+    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
     recovered: notices.length > 0,
   };

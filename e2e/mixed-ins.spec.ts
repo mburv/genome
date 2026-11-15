@@ -34,7 +34,10 @@ test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances 
   await page.getByTestId('tutorial-skip').click();
   await expect(page.getByTestId('mixed-range')).toHaveText('INS CDS 10–18 · 9 bp');
   await expect(page.getByTestId('mixed-coverage')).toHaveText('9/333 bp assembled');
-  for(const c of [10,11,12])await tile(page,c).tap();
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
+  await expect(page.getByTestId('moves')).toHaveText('0 moves');
+  await expect(page.getByTestId('trace-path')).toHaveAttribute('points','1.5,1.5 2.5,1.5');
+  await tile(page,12).tap();
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('3/9 bases');
   for(const [i,c] of [21,30,31,40,49,50].entries()){
@@ -74,7 +77,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
     console.log('INS stage',s.id);
     await skip();
     if(s.kind==='slide')await solveWithHints(page);
-    else if(s.kind==='trace')for(const c of s.cells!)await tile(page,c).tap();
+    else if(s.kind==='trace')for(const c of s.cells!.slice(2))await tile(page,c).tap();
     else if(s.kind==='connections')for(const path of [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]])for(const c of path)await tile(page,c).tap();
     else if(s.kind==='assembly')for(const [a,b] of [[1,67],[19,63],[37,65]]){await tile(page,a!).tap();await tile(page,b!).tap();}
     else if(s.kind==='crush')for(const [a,b] of [[12,13],[39,40],[66,67]]){await tile(page,a!).tap();await tile(page,b!).tap();await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');}
@@ -147,7 +150,7 @@ test('DNA tracing tutorial keeps all bases static while drawing its path once',a
     await expect(board.locator('.tutorial-before,.tutorial-after,.tutorial-change')).toHaveCount(0);
     const cells=await board.locator('.tutorial-base').evaluateAll(nodes=>nodes.map(n=>({opacity:getComputedStyle(n).opacity,animation:getComputedStyle(n).animationName})));
     expect(cells.every(c=>c.opacity==='1'&&c.animation==='none')).toBe(true);
-    const path=board.locator('.tutorial-path polyline');
+    const path=board.locator('.tutorial-extension-path');
     await expect(path).toHaveCSS('animation-iteration-count','1');
     await path.evaluate(el=>{const a=el.getAnimations()[0]!;a.finish();});
     await expect(path).toHaveCSS('stroke-dashoffset','0px');
@@ -173,20 +176,20 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   await expect(page.getByTestId('icon-row')).toBeVisible();
   await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','false');
   await page.getByTestId('action-hint').click();
-  await expect(tile(page,10)).toHaveClass(/hinted/);
-  await tile(page,10).tap();
+  await expect(tile(page,12)).toHaveClass(/hinted/);
+  await tile(page,12).tap();
   await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
-  await expect(tile(page,11)).toHaveClass(/hinted/);
-  await expect(page.getByTestId('target-panel').locator('.strip-cell.ok')).toHaveCount(1);
+  await expect(tile(page,21)).toHaveClass(/hinted/);
+  await expect(page.getByTestId('target-panel').locator('.strip-cell.ok')).toHaveCount(3);
   await page.getByTestId('action-undo').click();
-  await expect(page.getByTestId('target-panel').locator('.strip-cell.ok')).toHaveCount(0);
+  await expect(page.getByTestId('target-panel').locator('.strip-cell.ok')).toHaveCount(2);
   await openMap(page);await page.getByTestId('cnode-ins-c06').click();
   await expect(page.getByTestId('target-panel').locator('[data-clue-unit]')).toHaveCount(54);
   const cap=await page.getByTestId('target-panel').evaluate(el=>el.scrollHeight-el.clientHeight);
   expect(cap).toBeLessThanOrEqual(1);
   await expect(page.getByTestId('icon-row')).toBeVisible();
   const startY=(await page.getByTestId('mechanics-board').boundingBox())!.y;
-  for(let i=0;i<40;i++){
+  for(let i=2;i<40;i++){
     const r=Math.floor(i/9), c=r%2?8-i%9:i%9;
     await tile(page,r*9+c).tap();
   }
@@ -196,7 +199,7 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
 
  test('mixed completion shares sliding win card, close/replay, and no duplicate gene credit',async({page})=>{
   await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
-  for(const c of [10,11,12,21,30,31,40,49,50])await tile(page,c).tap();
+  for(const c of [12,21,30,31,40,49,50])await tile(page,c).tap();
   const win=page.getByTestId('win');
   await expect(win).toBeVisible();
   await expect(win.locator('.card .card-head')).toBeVisible();
@@ -209,7 +212,7 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   await expect(page.getByTestId('solved-banner')).toBeVisible();
   await expect(page.getByTestId('solved-stars')).toHaveCount(0);
   await page.getByTestId('replay').click();
-  for(const c of [10,11,12,21,30,31,40,49,50])await tile(page,c).tap();
+  for(const c of [12,21,30,31,40,49,50])await tile(page,c).tap();
   await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
   await expect(page.getByTestId('win-assembly')).toHaveText('9 / 333 INS coding bases assembled.');
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
@@ -327,12 +330,12 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
     await expect(tile(page,c)).toHaveCSS('outline-style','dashed');
     await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
   };
-  await at(10);
-  await board.locator('[data-lab-cell="80"]').tap();await at(10);
-  await tile(page,1).tap();await at(10);
-  await tile(page,9).tap();await at(9);
-  await tile(page,9).tap();await at(10);
-  for(const c of [10,11,12,13])await tile(page,c).tap();
+  await at(12);
+  await board.locator('[data-lab-cell="80"]').tap();await at(12);
+  await tile(page,1).tap();await at(12);
+  await tile(page,10).tap();await at(12);
+  await tile(page,11).tap();await at(12);
+  for(const c of [12,13])await tile(page,c).tap();
   await at(12);
   await tile(page,12).tap();await at(21);
   await tile(page,11).tap();await at(12);
@@ -344,7 +347,8 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
   await tile(page,1).tap();await at(next);
   await hint.click();await expect(dashed).toHaveCount(0);
   await hint.click();await at(next);
-  await page.getByTestId('action-restart').click();await at(10);
+  await page.getByTestId('action-restart').click();await at(12);
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
 });
 
 
