@@ -392,3 +392,7 @@ Owner playtest: remove written Codon Crush hints from beneath the toolbar. Outli
 ### D-UI-43 — Mutation Correction name
 
 Owner playtest: rename Mutation Detective to Mutation Correction in the shared mechanic metadata. The campaign map, Lab menu, target panel and tutorial all derive their title from this metadata. Keep the internal `mutation` ID, tutorial acknowledgement, saved attempts, puzzle rules and gene credit unchanged.
+
+### D-UI-44 — Plain sliding controls and separate mode tutorials
+
+Owner playtest: remove campaign energy, CRISPR, Ligase and Scaffold controls; use the three-icon Undo / Hint / Restart toolbar, with recovery highlighted on an existing icon. Plain campaign commands also suppress energy awards and reject power actions at the engine boundary; the historical engine policy is retained for save validation and lab practice. The separate optional Enzyme Lab remains a practice-only feature. Add individually acknowledged animated guides for Sequencing, Splicing, Replication and Repair, replayable via the question mark. The old slide acknowledgement maps to Sequencing. Preserve ordinary attempts and completions; rewind legacy powered in-progress boards to the last unpowered snapshot, or restart when unavailable, with a notice and backup. No level definitions or genomic data change.

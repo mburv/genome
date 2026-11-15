@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { ALL_LEVELS, CAMPAIGN_LEVELS, LAB_LEVELS, LEVEL_PACK, OPENING_LEVEL_ID, runProgress, isDiscovered } from '../campaign/campaign.ts';
 import { GENES } from '../genomics/genes.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
-import { mixedStage, verifiedMixed, type Mechanic } from '../campaign/mixed.ts';
+import { mixedStage, verifiedMixed, slidingTutorial, type TutorialId } from '../campaign/mixed.ts';
 import { MechanicTutorial } from './MechanicTutorial.tsx';
 import { recordAssembly, recordCompletion, clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
@@ -23,7 +23,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const [save, setSave] = useState<SaveData>(initial.save);
   const saveRef = useRef(initial.save);
   const [classic, setClassic] = useState(() => typeof location !== 'undefined' && new URLSearchParams(location.search).get('classic') === '1');
-  const [tutorial, setTutorial] = useState<Mechanic | null>(null);
+  const [tutorial, setTutorial] = useState<TutorialId | null>(null);
   const [notices, setNotices] = useState<string[]>(initial.notices);
   // Write once on load (idempotent) so a fresh/migrated save is stored in the current format.
   const [saveOk, setSaveOk] = useState(() => storage.save(serializeSave(initial.save)));
@@ -51,7 +51,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const heading = labPlay ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
   const stage = useMemo(() => mixedStage(def), [def]);
   const useMixed = !!stage && !classic && (!!save.mixedAttempts?.[def.id] || !save.attempts[def.id] || save.completed.includes(def.id));
-  const activeMechanic: Mechanic | null = screen.kind === 'play' ? useMixed ? stage!.mechanic : 'slide' : screen.kind === 'mechanic' ? screen.id : null;
+  const activeMechanic: TutorialId | null = screen.kind === 'play' ? useMixed ? stage!.mechanic : slidingTutorial(def.mode) : screen.kind === 'mechanic' ? screen.id : null;
   const firstTutorial = activeMechanic && !save.tutorialsSeen?.includes(activeMechanic) ? activeMechanic : null;
   const shownTutorial = tutorial ?? firstTutorial;
   const closeTutorial = () => {

@@ -3,6 +3,14 @@ import { DEFAULT_LAB_SPEC, createLab, applyLab, labExtractedSequence, mutationEx
 import type { LevelDefinition } from '../engine/types.ts';
 
 export type Mechanic = LabId | 'slide';
+/** Keep the old 'slide' acknowledgement for Sequencing; the other three guides are independent. */
+export const SLIDE_TUTORIALS = ['slide', 'slide-splice', 'slide-replicate', 'slide-repair'] as const;
+export type SlideTutorial = typeof SLIDE_TUTORIALS[number];
+export type TutorialId = LabId | SlideTutorial;
+export const isSlidingTutorial = (id: TutorialId): id is SlideTutorial => (SLIDE_TUTORIALS as readonly string[]).includes(id);
+export const slidingTutorial = (mode: LevelDefinition['mode']): SlideTutorial => ({
+  sequence: 'slide', splice: 'slide-splice', replicate: 'slide-replicate', repair: 'slide-repair',
+} as const)[mode];
 /** Reuse existing stage ids and exact CDS intervals. Original sliding boards remain valid legacy alternatives. */
 const MECHANICS: Record<string, LabId> = {
   'ins-02': 'trace', 'ins-03': 'connections', 'ins-04': 'assembly', 'ins-05': 'crush', 'ins-06': 'mutation',

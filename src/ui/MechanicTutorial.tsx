@@ -1,27 +1,40 @@
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { ALL_LEVELS } from '../campaign/campaign.ts';
-import { type Mechanic, type MixedStage } from '../campaign/mixed.ts';
+import { isSlidingTutorial, type TutorialId, type MixedStage } from '../campaign/mixed.ts';
+import { MODE_LABEL } from './modes.ts';
+import type { LevelMode, Track } from '../engine/types.ts';
 import { applySlide, segmentCells } from '../engine/grid.ts';
 import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, type LabAction, type LabState, type CrushTransition } from '../engine/mechanicsLab.ts';
 
 type CrushDemo = { phase: 'swap' | 'settle'; a: number; b: number; frame: CrushTransition };
-type Step = { crush?: CrushDemo; title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; pathBefore?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
+type Step = { tracks?: Track[]; repair?: {cell:number; expected:string}; crush?: CrushDemo; title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; pathBefore?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
 const run = (state: LabState, actions: readonly LabAction[]) => actions.reduce((s,a) => applyLab(s,a).state,state);
 const step = (title: string, text: string, before: LabState, after: LabState, cells: number[], cursor?: [number,number], path?: number[], target?: string): Step => ({title,text,before:before.board,after:after.board,cells,...(cursor ? {cursor} : {}),...(path ? {path} : {}),...(target ? {target} : {})});
-function demonstration(mechanic: Mechanic, stage: MixedStage | null): Step[] {
-  if (mechanic === 'slide') {
-    const def = ALL_LEVELS.find(l => l.id === 'ins-01')!;
-    const move = def.certificateSlides[0]!;
+const slideMode = { slide: 'sequence', 'slide-splice': 'splice', 'slide-replicate': 'replicate', 'slide-repair': 'repair' } as const;
+function demonstration(mechanic: TutorialId, stage: MixedStage | null): Step[] {
+  if (isSlidingTutorial(mechanic)) {
+    const mode: LevelMode = slideMode[mechanic];
+    const def = ALL_LEVELS.find(l => l.id === ({sequence:'ins-01',splice:'ins-02',replicate:'ins-03',repair:'ins-04'} as const)[mode])!;
+    const move = def.certificate[0]!;
     const cells = segmentCells(def.mask,move.origin,move.axis);
-    const i = Math.floor(cells.length / 2);
-    const origin = cells[i]!;
-    const end = cells[i + move.steps]!;
-    const after = applySlide(def.mask,def.initial,move.origin,move.axis,move.steps).board;
+    const i = Math.max(move.direction < 0 ? 1 : 0, Math.min(cells.length - (move.direction > 0 ? 2 : 1), Math.floor(cells.length / 2)));
+    const origin = cells[i]!, end = cells[i + move.direction]!;
+    const after = applySlide(def.mask,def.initial,move.origin,move.axis,move.direction).board;
     const target = def.tracks[0]!.expected;
+    const goals = def.tracks.flatMap(t=>t.cells);
+    const shared = {tracks:def.tracks,...(def.repair ? {repair:def.repair} : {}),...(mode==='sequence'?{target}:{})};
+    const copy = {
+      sequence: ['Read the target','Build the DNA shown in the clue. The marked cells must spell the sequence in order.','Match all clues','Keep sliding until every target base is in its marked slot. Undo reverses a move; Hint shows the next recovery move.'],
+      splice: ['Read the numbered pieces','Each numbered group is a different part of the reference. Match every group to its own clue, in the direction shown by its marked cells.','Join the pieces in order','When all groups match at the same time, pieces 1, 2 and so on join into the reference strand. Correct pieces can still move until the puzzle is complete.'],
+      replicate: ['Read the paired strands','Match the 5′→3′ template and its aligned 3′→5′ complement. A pairs with T; C pairs with G. Both strands have their own marked cells.','Complete both strands','Both aligned strands must match simultaneously. Only the template contributes new coding bases.'],
+      repair: ['Find the missing base','The gap is marked between two target groups. Match the DNA on both sides. The gap is not a movable tile and cannot be crossed.','Restore the gap','Match both flanks at the same time. The missing reference base appears automatically when you win — no editing or power-up is needed.'],
+    }[mode];
+    const axis = move.axis === 'col' ? 'column' : 'row';
+    const direction = move.axis === 'col' ? (move.direction < 0 ? 'up' : 'down') : (move.direction < 0 ? 'left' : 'right');
     return [
-      {title:'Read the target',text:'Build the DNA shown in the clue. The marked cells must spell the sequence in order.',before:[...def.initial],after:[...def.initial],cells:def.tracks[0]!.cells,target},
-      {title:'Slide the whole column',text:'Swipe up one square. Every tile in the column segment moves together; the top tile wraps to the bottom. Holes stop a segment. Horizontal swipes move rows in the same way.',before:[...def.initial],after:[...after],cells,cursor:[origin,end],target,motion:{cells,axis:move.axis,steps:move.steps}},
-      {title:'Match all clues',text:'Keep sliding until every target base is in its marked slot. Undo reverses a move; Hint shows the next recovery move.',before:[...after],after:[...def.solved],cells:def.tracks[0]!.cells,target},
+      {title:copy[0]!,text:copy[1]!,before:[...def.initial],after:[...def.initial],cells:goals,...shared},
+      {title:'Slide the whole '+axis,text:'Swipe '+direction+' one square. Every tile in the '+axis+' segment moves together and wraps around. Holes stop a segment. Rows and columns work the same way.',before:[...def.initial],after:[...after],cells,cursor:[origin,end],motion:{cells,axis:move.axis,steps:move.direction},...shared},
+      {title:copy[2]!,text:copy[3]!,before:[...after],after:[...def.solved],cells:goals,...shared},
     ];
   }
   const s = stage?.mechanic === mechanic ? stage.spec : DEFAULT_LAB_SPEC;
@@ -101,9 +114,16 @@ function SlideTutorialBoard({ item, index, reducedMotion }: { item: Step; index:
   } as CSSProperties;
   const from = item.cursor ? xy(item.cursor[0]) : null, to = item.cursor ? xy(item.cursor[1]) : null;
   return <>
-    {board.map((b,c)=><div key={c} className={'tutorial-cell'+(b==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')} data-demo-cell={c} data-base={b}>
-      {b!=='.' && <span className={'tutorial-slide-static b-'+b}>{b}</span>}
-    </div>)}
+    {board.map((b,c)=>{
+      const track=item.tracks?.find(t=>t.cells.includes(c));
+      const gap=item.repair?.cell===c;
+      const restored=gap&&index===2;
+      const base=restored?item.repair!.expected:b;
+      return <div key={c} className={'tutorial-cell'+(base==='.'?' hole':'')+(item.cells.includes(c)||track||gap?' highlighted':'')+(gap?' tutorial-repair-gap':'')} data-demo-cell={c} data-base={base} data-tutorial-group={track?.group} data-repair-gap={gap?'true':undefined}>
+        {base!=='.' ? <span className={'tutorial-slide-static b-'+base}>{base}</span> : gap ? <span className="tutorial-gap-mark">?</span> : null}
+        {track && track.cells[0]===c && item.tracks!.length>1 && <small className="tutorial-group-mark">{track.group}</small>}
+      </div>;
+    })}
     {moving && <div className={'tutorial-slide-clip '+axis} style={stripStyle} data-testid="tutorial-slide-column" data-segment={cells.join(',')}>
       <div className="tutorial-slide-strip" data-testid="tutorial-slide-strip">
         {Array.from({length:n+2},(_,k)=>{
@@ -148,12 +168,13 @@ function CrushTutorialBoard({item,reducedMotion}:{item:Step;reducedMotion:boolea
   </>;
 }
 
-export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { mechanic:Mechanic; stage:MixedStage|null; reducedMotion:boolean; onClose:()=>void }) {
+export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { mechanic:TutorialId; stage:MixedStage|null; reducedMotion:boolean; onClose:()=>void }) {
   const [index,setIndex]=useState(0);
   const [replay,setReplay]=useState(0);
   const steps=demonstration(mechanic,stage);
   const item=steps[index]!;
-  const title=mechanic==='slide'?'Sliding tiles':LAB_META[mechanic].title;
+  const sliding=isSlidingTutorial(mechanic);
+  const title=sliding?MODE_LABEL[slideMode[mechanic]]:LAB_META[mechanic].title;
   const move = (i:number) => {setIndex(i);setReplay(0);};
   const onKey=(e:KeyboardEvent<HTMLDivElement>)=>{
     if(e.key==='Escape'){e.preventDefault();onClose();}
@@ -172,8 +193,9 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
       <h3 id="tutorial-title">{title}</h3>
       <h4>{item.title}</h4><p className="small">{item.text}</p>
       {item.target && <div className="tutorial-target" aria-label="Example target">{[...item.target].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>}
-      <div className={'tutorial-board'+(reducedMotion?' static':'')+(mechanic==='slide'?' slide-demo':mechanic==='crush'?' crush-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
-        {mechanic==='slide' ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : mechanic==='crush' ? <CrushTutorialBoard item={item} reducedMotion={reducedMotion} /> : <>
+      {item.tracks && item.tracks.length>1 && <div className="tutorial-tracks" aria-label="Example targets">{item.tracks.map(t=><div className="tutorial-target tutorial-track" key={t.group} data-tutorial-group={t.group}><b>{t.group}{mechanic==='slide-replicate' ? (t.strand==='coding'?' · 5′→3′':' · 3′→5′') : ''}</b>{[...t.expected].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>)}</div>}
+      <div className={'tutorial-board'+(reducedMotion?' static':'')+(sliding?' slide-demo':mechanic==='crush'?' crush-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
+        {sliding ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : mechanic==='crush' ? <CrushTutorialBoard item={item} reducedMotion={reducedMotion} /> : <>
         {item.before.map((b,c)=>{
           const after=item.after[c]!;
           const changed=b!==after && !reducedMotion;

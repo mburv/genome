@@ -5,7 +5,7 @@ import type { LevelDefinition, Move } from '../engine/types.ts';
 import { INTRO_IDS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES } from '../genomics/genes.ts';
-import { mixedStage, replayMixed } from '../campaign/mixed.ts';
+import { mixedStage, replayMixed, SLIDE_TUTORIALS } from '../campaign/mixed.ts';
 import { LAB_IDS, type LabAction } from '../engine/mechanicsLab.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
 
@@ -448,14 +448,30 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const sameContent = data.generatorVersion === pack.generatorVersion && (data.tokenGeneratorVersion ?? '') === (pack.tokenGeneratorVersion ?? '') && Object.entries(pack.datasets).every(([g, id]) => datasets[g] === id);
   const attempts: Record<string, PuzzleState> = {};
   let dropped = 0;
+  let retiredPowers = 0;
   const rawAttempts = typeof data.attempts === 'object' && data.attempts !== null ? (data.attempts as Record<string, unknown>) : {};
   for (const [id, attempt] of Object.entries(rawAttempts)) {
     const def = pack.levels.find((l) => l.id === id);
-    if (def && sameContent && validAttempt(def, attempt)) attempts[id] = attempt;
+    if (def && sameContent && validAttempt(def, attempt)) {
+      // Legacy powered campaign attempts cannot expose locks, edits or bridges now that
+      // those controls are retired. Keep the last pre-power snapshot and its undo history.
+      // Completed records and ordinary attempts are not changed. Enzyme Lab is separate.
+      const powered = (s: Snapshot) => s.spent > 0 || s.edits > 0 || s.locks.length > 0 || s.scaffold !== null || Object.keys(s.custom).length > 0;
+      if (!def.lab && attempt.status === 'playing' && (powered(attempt) || attempt.history.some(powered))) {
+        const first = attempt.history.findIndex(powered);
+        const index = first < 0 ? attempt.history.length - 1 : first - 1;
+        const prior = attempt.history[index];
+        attempts[id] = prior && !powered(prior)
+          ? { ...attempt, ...prior, history: attempt.history.slice(0, index), status: 'playing' }
+          : createInitialState(def);
+        retiredPowers++;
+      } else attempts[id] = attempt;
+    }
     else dropped++;
   }
   if (!sameContent && Object.keys(rawAttempts).length) notices.push('Levels were updated since your last visit. Completed levels are kept; boards in progress were restarted.');
   else if (dropped) notices.push(`${dropped} saved board(s) were invalid and were restarted. Completed levels are kept.`);
+  if (retiredPowers) notices.push(`${retiredPowers} powered sliding attempt(s) returned to the last unpowered board (or restarted if none remained). Completed levels are kept.`);
   // Assembly claims are re-verified from completed puzzles (exact reconstruction + checksum).
   const claimed = [...new Set(strings(data.assembled))];
   const assembled = claimed.filter((g) => GENES[g] && g in pack.datasets && assemblyStatus(completed, GENES[g]!, pack.levels).verified);
@@ -490,7 +506,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
       }
     }
   }
-  const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => id === 'slide' || LAB_IDS.some(m => m === id)))];
+  const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
   return {
     save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
