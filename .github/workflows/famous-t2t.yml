@@ -6,6 +6,7 @@ on:
     paths: ['scripts/extract-famous-t2t.py','.github/workflows/famous-t2t.yml']
 permissions:
   contents: write
+  actions: read
 jobs:
   extract:
     runs-on: ubuntu-latest
@@ -19,7 +20,7 @@ jobs:
       - name: Download the published reference packs
         env:
           GH_${{ github.token }}: TOKEN
-        run: gh release download t2t-chm13-v2.0 --pattern '*.genome' --dir genome-packs
+        run: gh run download 43729780128 --name genome-t2t-chromosome-packs --dir genome-packs
       - run: python3 scripts/extract-famous-t2t.py
       - name: Commit the small verified CDS coordinate index
         run: |
