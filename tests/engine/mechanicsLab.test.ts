@@ -160,12 +160,13 @@ describe('graphical connection hints', () => {
     const alternate=route(start,0,[1,2,3,4,5,6,15,24]);
     expect(connectionHint(alternate,0)).toEqual({pair:0,cell:25});
     follow(alternate,0);
-    const dead=route(start,0,[1,2,3,4,5,6,15,24,33+1,35]);
-    // This route is blocked by its own visited tiles and/or another pair's corridor;
-    // the hint must always lead to an accepted recovery or completion.
-    follow(dead,0);
-    const blocked=route(start,2,[55,64,73,74,75,76,67,58,59,50+1,42]);
-    expect(connectionHint(blocked,2)).toEqual({pair:2,cell:55});
-    follow(blocked,2);
+    const dead=route(start,1,[27,28,29,38,37,36]);
+    expect(dead.routes[1]!.at(-1)).toBe(36);
+    expect(connectionHint(dead,1)).toEqual({pair:1,cell:37});
+    follow(dead,1);
+    const blocked=route(start,0,[1,2,3,4,5,6,7,8,17,26,35,44]);
+    expect(blocked.routes[0]!.at(-1)).toBe(44);
+    expect(connectionHint(blocked,0)).toEqual({pair:0,cell:1});
+    follow(blocked,0);
   });
 });
