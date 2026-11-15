@@ -1021,6 +1021,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .lab-token .chip-label { color: var(--tile-ink); }
 /* Keep the original combo palette on new mechanics; route colours remain in badges and paths. */
 .block-lab-board .lab-token, .lab-token.tok { color: var(--tile-ink); }
+.block-lab-board.mode-lab-connections .lab-token { background: var(--tok-bg); border-color: var(--tok-border); }
+.block-lab-board.mode-lab-assembly .lab-token.assembly-placed { color: var(--tile-ink); }
 .connection-pair > .lab-token { display: inline-flex; align-items: center; min-width: 30px; padding: 3px; border: 1px solid var(--tok-border); }
 .block-lab-board .lab-token .barcode, .lab-token.tok .barcode { box-sizing: content-box; border: 1px solid var(--tok-border); }
 .tutorial-cell > .lab-token .tok-face { display: flex; }
