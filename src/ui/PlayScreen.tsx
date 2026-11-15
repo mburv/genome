@@ -171,7 +171,10 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
     [def, gene, save, persist, cue, powersUsed, alreadyCompleted, powers],
   );
 
-  const dispatch = useCallback((command: Command): boolean => commit(applyCommand(def, puzzle, command)), [commit, def, puzzle]);
+  const dispatch = useCallback((command: Command): boolean => {
+    if (!powers && !['rotate','slide','undo','restart'].includes(command.type)) return false;
+    return commit(applyCommand(def, puzzle, command));
+  }, [commit, def, puzzle, powers]);
 
   const onMove = useCallback((move: Move) => {
     dispatch({ type: 'rotate', move });

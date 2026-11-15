@@ -13,7 +13,7 @@ export const ENERGY_CAP = 9;
 /** Successful normal rotations a scaffold lasts. */
 export const SCAFFOLD_TURNS = 3;
 export const MAX_SCAFFOLD_GAP = 2;
-/** The opening 1-base puzzle has no powers so new players learn plain sliding first. Labs and every later puzzle do. */
+/** Legacy engine opening restriction. Campaign UI now permits powers only in the optional Enzyme Lab; the legacy engine remains for historical saves and tests. */
 export const OPENING_LEVEL_ID = 'ins-01';
 
 /** A temporary bridge: `cells` (segment A then segment B, skipping `gap`) rotate as one cyclic track. */

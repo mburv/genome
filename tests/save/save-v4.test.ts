@@ -83,16 +83,32 @@ describe('assembly records', () => {
     expect(r.notices.join(' ')).toMatch(/re-verified/);
     expect(adapter.backups).toHaveLength(1);
   });
-  it('a CRISPR-edited chapter board (custom tokens) survives reload', () => {
-    const def = CHAPTER_LEVELS.find((l) => l.tier === 12)!;
-    let s: ReturnType<typeof createInitialState> = { ...createInitialState(def), ledger: { earned: 7, credited: [] } };
+  it('rewinds a legacy powered campaign board to its last unpowered snapshot and keeps completions', () => {
+    const def = CHAPTER_LEVELS.find((l) => l.tier === 12 && l.certificateSlides.length > 1)!;
+    const initial = createInitialState(def);
+    const first = def.certificateSlides[0]!;
+    const prior = applyCommand(def, initial, { type: 'slide', ...first }).state;
+    expect(prior.status).toBe('playing');
+    const funded = { ...prior, ledger: { ...prior.ledger, earned: 7 } };
     const cell = def.tracks[0]!.cells[0]!;
-    const seq = def.tokens![s.board[cell]!]!.seq;
-    s = applyCommand(def, s, { type: 'edit', cell, base: seq[0] === 'A' ? 'C' : 'A', pos: 0 }).state;
-    const save = { ...newSave(LEVEL_PACK), currentLevelId: def.id, attempts: { [def.id]: s } };
-    const r = loadSave(createMemoryAdapter(serializeSave(save)), LEVEL_PACK);
-    expect(r.notices).toEqual([]);
-    expect(r.save.attempts[def.id]).toEqual(s);
+    const seq = def.tokens![funded.board[cell]!]!.seq;
+    const edited = applyCommand(def, funded, { type: 'edit', cell, base: seq[0] === 'A' ? 'C' : 'A', pos: 0 });
+    expect(edited.accepted).toBe(true);
+    expect(edited.state.status).toBe('playing');
+    const save = { ...newSave(LEVEL_PACK), completed:['ins-01'], currentLevelId: def.id, attempts: { [def.id]: edited.state }, tutorialsSeen:['slide','slide-splice','slide-repair','slide-replicate'] };
+    const adapter = createMemoryAdapter(serializeSave(save));
+    const r = loadSave(adapter, LEVEL_PACK);
+    const restored = r.save.attempts[def.id]!;
+    expect(r.notices.join(' ')).toContain('powered sliding attempt');
+    expect(restored.board).toEqual(prior.board);
+    expect(restored.moves).toEqual(prior.moves);
+    expect(restored.history).toEqual(prior.history);
+    expect(restored.edits).toBe(0);
+    expect(restored.custom).toEqual({});
+    expect(r.save.completed).toEqual(['ins-01']);
+    expect(r.save.tutorialsSeen).toEqual(save.tutorialsSeen);
+    expect(adapter.backups).toHaveLength(1);
+    expect(loadSave(createMemoryAdapter(serializeSave(r.save)),LEVEL_PACK).notices).toEqual([]);
   });
 });
 

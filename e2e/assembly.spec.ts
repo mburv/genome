@@ -96,28 +96,16 @@ test('HBB 1-base intro discovers HBB but does not assemble it; its chapter opene
   await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
 });
 
-test('CRISPR on a multi-base tile: pick a base position, preview by sequence, confirm, undo', async ({ page }) => {
+test('multi-base campaign tiles slide without power controls and keep their exact DNA', async ({ page }) => {
   const def = CHAPTERS.find((l) => l.tier === 12 && l.mode === 'sequence')!;
-  const st = { ...createInitialState(def), ledger: { earned: 7, credited: [] as string[] } };
+  const st = createInitialState(def);
   await patchSave(page, (s) => ({ ...s, currentLevelId: def.id, attempts: { [def.id]: st } }));
-  await page.getByTestId('continue').waitFor();
   await page.getByTestId(`cnode-${def.id}`).click();
-  const t = def.tracks[0]!;
-  const cell = t.cells.find((c, i) => st.board[c] !== t.expected[i])!;
-  const before = await page.locator(`[data-cell="${cell}"]`).getAttribute('data-seq');
-  await page.getByTestId('power-crispr').click();
-  await page.locator(`[data-cell="${cell}"]`).click();
-  await expect(page.getByTestId('power-panel')).toBeVisible();
-  await page.getByTestId('pos-5').click();
-  const other = ['A', 'C', 'G', 'T'].find((b) => b !== before![5])!;
-  await page.getByTestId(`base-${other}`).click();
-  await expect(page.getByTestId('edit-ghost')).toContainText(`6:${other}`);
-  await expect(page.getByTestId('power-preview')).toContainText(`Base 6: ${before![5]} → ${other}`);
-  await page.getByTestId('power-confirm').click();
-  const after = before!.slice(0, 5) + other + before!.slice(6);
-  await expect(page.locator(`[data-cell="${cell}"]`)).toHaveAttribute('data-seq', after);
-  await page.getByRole('button', { name: 'Undo' }).click();
-  await expect(page.locator(`[data-cell="${cell}"]`)).toHaveAttribute('data-seq', before!);
+  await expect(page.getByTestId('energy')).toHaveCount(0);
+  await expect(page.getByTestId('power-crispr')).toHaveCount(0);
+  await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
+  await solveWithHints(page);
+  await expect(page.getByTestId('win-meta')).not.toContainText('powers');
 });
 
 test('an M3 (v3) save upgrades to v7, keeps intro completions and lab credit, with a notice and an m3 backup', async ({ page }) => {

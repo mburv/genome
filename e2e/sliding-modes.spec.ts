@@ -1,0 +1,69 @@
+import { expect, test } from '@playwright/test';
+import { fresh, openMap, readHint, dragBy } from './helpers';
+
+test('four classic sliding modes have their own first-use guide, real target groups and persistent acknowledgement', async ({page}) => {
+  await fresh(page,true);
+  await openMap(page);
+  await page.getByTestId('classic-toggle').click();
+  const stages = [
+    ['ins-01','slide','Sequencing',1],
+    ['ins-02','slide-splice','Splicing',3],
+    ['ins-03','slide-replicate','Replication',2],
+    ['ins-04','slide-repair','Repair',2],
+  ] as const;
+  for (const [id,kind,title,groups] of stages) {
+    await page.getByTestId('cnode-'+id).click();
+    const tutorial=page.getByTestId('mechanic-tutorial'), board=page.getByTestId('tutorial-board');
+    await expect(tutorial).toHaveAttribute('data-mechanic',kind);
+    await expect(tutorial.getByRole('heading',{name:title,exact:true})).toBeVisible();
+    await expect(board.locator('.tutorial-cell')).toHaveCount(81);
+    for(let g=1;g<=groups;g++) expect(await board.locator('[data-tutorial-group="'+g+'"]').count()).toBeGreaterThan(0);
+    if(kind==='slide-replicate') {
+      await expect(tutorial.getByLabel('Example targets')).toContainText('5′→3′');
+      await expect(tutorial.getByLabel('Example targets')).toContainText('3′→5′');
+    }
+    if(kind==='slide-repair') await expect(board.locator('[data-repair-gap]')).toHaveAttribute('data-base','.');
+    await page.getByTestId('tutorial-next').click();
+    await expect(board.getByTestId('tutorial-slide-strip')).toBeVisible();
+    await page.getByRole('button',{name:'Replay animation'}).click();
+    await page.getByTestId('tutorial-next').click();
+    if(kind==='slide-repair') await expect(board.locator('[data-repair-gap]')).toHaveAttribute('data-base','T');
+    await page.getByTestId('tutorial-next').click();
+    await expect(tutorial).toHaveCount(0);
+    await expect(page.getByTestId('energy')).toHaveCount(0);
+    await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
+    await openMap(page);
+  }
+  await page.goto('/?classic=1');
+  await openMap(page);
+  for(const [id,kind,title] of stages) {
+    await page.getByTestId('cnode-'+id).click();
+    await expect(page.getByTestId('mechanic-tutorial')).toHaveCount(0);
+    await page.getByTestId('show-tutorial').click();
+    await expect(page.getByTestId('mechanic-tutorial')).toHaveAttribute('data-mechanic',kind);
+    await expect(page.getByTestId('mechanic-tutorial').getByRole('heading',{name:title,exact:true})).toBeVisible();
+    await page.getByTestId('tutorial-skip').click();
+    await openMap(page);
+  }
+});
+
+test('a previous generic sliding acknowledgement does not skip the new mode guides', async ({page}) => {
+  await fresh(page,true);
+  await page.evaluate(()=>{const save=JSON.parse(localStorage.getItem('genome-save')!);save.tutorialsSeen=['slide'];localStorage.setItem('genome-save',JSON.stringify(save));});
+  await page.goto('/?classic=1'); await openMap(page);
+  await page.getByTestId('cnode-ins-01').click();
+  await expect(page.getByTestId('mechanic-tutorial')).toHaveCount(0);
+  await openMap(page);
+  await page.getByTestId('cnode-ins-02').click();
+  await expect(page.getByTestId('mechanic-tutorial')).toHaveAttribute('data-mechanic','slide-splice');
+  await page.getByTestId('tutorial-skip').click();
+  const hint=await readHint(page);
+  await dragBy(page,hint.cell,hint.dir,hint.k);
+  await expect(page.getByTestId('action-undo')).toBeEnabled();
+  await page.getByTestId('action-undo').click();
+  await expect(page.getByTestId('action-undo')).toBeDisabled();
+  await dragBy(page,hint.cell,hint.dir,hint.k);
+  await page.getByTestId('action-restart').click();
+  await expect(page.getByTestId('moves')).toHaveText('0 moves');
+  await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
+});
