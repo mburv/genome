@@ -45,12 +45,12 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
   await expect(page.getByPlaceholder('Gene symbol or ID')).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Chromosomes',exact:true})).toBeVisible();
   await expect(page.getByTestId('bonus-continue')).toContainText('Continue · chr1');
-  await expect(page.getByTestId('bonus-nodes-chr1').locator('.cnode')).toHaveCount(24);
+  await expect(page.getByTestId('bonus-nodes-chr1').locator('.cnode')).toHaveCount(121);
   await expect(page.getByTestId('bonus-node-chr1-1')).toBeEnabled();
 });
 
 import {createHash} from 'node:crypto';
-import {CHROMOSOMES,CHUNK_BASES,REFERENCE} from '../src/campaign/bonus.ts';
+import {CHROMOSOMES,CHUNK_BASES,REFERENCE,genomeLevelInterval} from '../src/campaign/bonus.ts';
 test('automatically loads a chromosome, assembles an exact interval and restores coverage',async({page})=>{
   await page.setViewportSize({width:375,height:667});
   await installFeedbackProbe(page);
@@ -88,11 +88,15 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await page.getByTestId('bonus-win').getByRole('button',{name:'Bonus map'}).click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
+  await expect(page.getByTestId('bonus-nodes-chrM').locator('.cnode').first()).toHaveText('2');
+  await page.getByRole('button',{name:'Previous chrM levels'}).click();
   await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/\bdone\b/);
   await expect(page.getByTestId('bonus-node-chrM-1')).toContainText('✓');
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
+  await expect(page.getByTestId('bonus-nodes-chrM').locator('.cnode').first()).toHaveText('2');
+  await page.getByRole('button',{name:'Previous chrM levels'}).click();
   await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/\bdone\b/);
   await expect(page.getByTestId('bonus-node-chrM-1')).toContainText('✓');
   await page.getByTestId('bonus-node-chrM-1').click();
@@ -112,4 +116,38 @@ test('a missing chromosome download reports an error and can be retried',async({
   await button.click();
   await expect(page.getByRole('alert')).toContainText('Reference data could not be loaded');
   await expect(button).toBeEnabled();
+});
+
+
+test('chromosome grids start at the exact next unfinished level with eleven square columns and reversible paging',async({page})=>{
+  await page.setViewportSize({width:375,height:667});
+  const end=genomeLevelInterval(CHROMOSOMES.chr1!,129)[1];
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:CAMPAIGN_LEVELS.map(l=>l.id),genomeProgress:{chr1:[[0,end]]}}));
+  await page.getByTestId('open-bonus').click();
+  const grid=page.getByTestId('bonus-nodes-chr1');
+  await expect(grid.locator('.cnode')).toHaveCount(121);
+  await expect(grid.locator('.cnode').first()).toHaveText('130');
+  await expect(grid.locator('.cnode').last()).toHaveText('250');
+  await expect(page.getByTestId('bonus-node-chr1-130')).toHaveClass(/\bcurrent\b/);
+  const boxes=await grid.locator('li').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));
+  expect(boxes.filter(b=>Math.abs(b.y-boxes[0]!.y)<1)).toHaveLength(11);
+  expect(Math.abs(boxes[0]!.w-boxes[0]!.h)).toBeLessThan(1);
+  expect(Math.abs(boxes[120]!.y-boxes[0]!.y-10*boxes[0]!.h)).toBeLessThan(2);
+  await page.getByRole('button',{name:'Previous chr1 levels'}).click();
+  await expect(grid.locator('.cnode').first()).toHaveText('9✓');
+  await expect(grid.locator('.cnode').last()).toHaveText('129✓');
+  await page.getByRole('button',{name:'Previous chr1 levels'}).click();
+  await expect(grid.locator('.cnode')).toHaveCount(8);
+  await expect(grid.locator('.cnode').first()).toHaveText('1✓');
+  await expect(grid.locator('li')).toHaveCount(121);
+  await expect(page.getByRole('button',{name:'Previous chr1 levels'})).toBeDisabled();
+  await page.getByRole('button',{name:'Next chr1 levels'}).click();
+  await expect(grid.locator('.cnode').first()).toHaveText('9✓');
+  await page.getByRole('button',{name:'Next chr1 levels'}).click();
+  await expect(grid.locator('.cnode').first()).toHaveText('130');
+  await page.getByRole('button',{name:'Next chr1 levels'}).click();
+  await expect(grid.locator('.cnode').first()).toHaveText('251');
+  await expect(page.getByRole('button',{name:'Next unfinished',exact:true})).toHaveCount(0);
+  await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
+  await expect(grid.locator('.cnode').first()).toHaveText('130');
 });
