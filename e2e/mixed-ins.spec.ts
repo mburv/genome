@@ -357,7 +357,7 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
 });
 
 
-test('campaign Mutation Detective graphical hints retain toggle and repair the selected DNA base',async({page})=>{
+test('campaign Mutation Correction graphical hints retain toggle and repair the selected DNA base',async({page})=>{
   await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-06').click();await page.getByTestId('tutorial-skip').click();
   await page.getByTestId('action-hint').click();
   const square=page.locator('.mutation-hinted'), replacement=page.locator('.mutation-base-hinted');

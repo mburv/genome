@@ -805,7 +805,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .assembly-reference small { font: 9px var(--sans); color: var(--graphite); }
 .assembly-reference .assembled-match, .lab-cell.assembly-correct { box-shadow: inset 0 -3px 0 var(--green); }
 
-/* Mutation Detective: compact, numbered complementary targets and live repair feedback. */
+/* Mutation Correction: compact, numbered complementary targets and live repair feedback. */
 .mutation-reference { display: flex; flex-direction: column; gap: 3px; }
 .mutation-reference-row { display: grid; grid-template-columns: 44px repeat(7, minmax(0, 1fr)); gap: 2px; align-items: center; }
 .mutation-row-label { font-size: 10px; font-weight: 700; }
@@ -923,7 +923,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-crush-new { animation-name:crush-enter; }
 @media(prefers-reduced-motion:reduce){.tutorial-crush-swap,.tutorial-crush-clear,.tutorial-crush-fall{animation:none}.tutorial-crush-clear{opacity:0}}
 
-/* Mutation Detective: the active repair and its replacement button share a green cue. */
+/* Mutation Correction: the active repair and its replacement button share a green cue. */
 .mode-lab-mutation .lab-cell.mutation-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); z-index: 2; }
 .mixed-under-board .lab-base-picker button.mutation-base-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); }
 

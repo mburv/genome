@@ -301,7 +301,7 @@ Owner playtest request (14 Nov 2026): Hint is an on/off toggle, not a one-shot a
 
 ### D-LAB-01 — Six-mechanic experimental lab
 
-Owner approved all six new mechanics (14 Nov 2026): DNA Tracing, Codon Crush, Genome Assembly, Mutation Detective, DNA Connections and Restriction Enzyme. Each is a standalone, fixed 9×9 introductory challenge with reference INS data and deterministic solution fixtures. Gravity/refill is allowed only in Codon Crush. No campaign credit, no existing level replacement, no saved-progress migration; practice attempts are session-local and reset on navigation. Lab controls provide undo, replay and hints; they do not consume the campaign power economy. Full campaign integration, procedural generation, difficulty calibration and mechanic-specific powers require playtest feedback.
+Owner approved all six new mechanics (14 Nov 2026): DNA Tracing, Codon Crush, Genome Assembly, Mutation Correction, DNA Connections and Restriction Enzyme. Each is a standalone, fixed 9×9 introductory challenge with reference INS data and deterministic solution fixtures. Gravity/refill is allowed only in Codon Crush. No campaign credit, no existing level replacement, no saved-progress migration; practice attempts are session-local and reset on navigation. Lab controls provide undo, replay and hints; they do not consume the campaign power economy. Full campaign integration, procedural generation, difficulty calibration and mechanic-specific powers require playtest feedback.
 
 
 ### D-LAB-02 — Codon Crush visual feedback
@@ -311,7 +311,7 @@ Owner playtest: immediate swaps/refill are hard to follow. Drag previews move bo
 
 ### D-LAB-03 — Explicit mutation targets and coloured connections
 
-Owner playtest: Mutation Detective shows all 21 exact complementary targets by board row with live correct/mismatch feedback and selected-base guidance. DNA Connections uses matching mint, sky and butter fills for each numbered endpoint pair, its clue and occupied path cells. Empty cells remain white and holes remain grey. Undo and redraw derive the visual state from the existing board/routes; rules and saves are unchanged.
+Owner playtest: Mutation Correction shows all 21 exact complementary targets by board row with live correct/mismatch feedback and selected-base guidance. DNA Connections uses matching mint, sky and butter fills for each numbered endpoint pair, its clue and occupied path cells. Empty cells remain white and holes remain grey. Undo and redraw derive the visual state from the existing board/routes; rules and saves are unchanged.
 
 
 ### D-LAB-04 — Restriction target colour chips
@@ -351,7 +351,7 @@ Owner playtest: all six mixed mechanics use the original WinCard and SolvedBanne
 
 ### D-UI-36 — Shared play layout for every mechanic
 
-Owner playtest: extend DNA Tracing's traditional sliding screen chrome to Codon Crush, Genome Assembly, Mutation Detective, DNA Connections and Restriction Enzyme. All campaign and practice screens use the existing gene header, TargetShell, board-stage dimensions, under-board status and PowerTray icons. Mechanic-specific target colours, position labels, animations, and mutation replacement picker remain; tutorials carry the long instructions. Clue panels reserve height to avoid shifting during gestures; campaign Hint toggle persists between mechanics. No changes to rules, DNA, scores or saves.
+Owner playtest: extend DNA Tracing's traditional sliding screen chrome to Codon Crush, Genome Assembly, Mutation Correction, DNA Connections and Restriction Enzyme. All campaign and practice screens use the existing gene header, TargetShell, board-stage dimensions, under-board status and PowerTray icons. Mechanic-specific target colours, position labels, animations, and mutation replacement picker remain; tutorials carry the long instructions. Clue panels reserve height to avoid shifting during gestures; campaign Hint toggle persists between mechanics. No changes to rules, DNA, scores or saves.
 
 
 ### D-UI-37 — Grey placed assembly reads
@@ -369,9 +369,9 @@ Owner playtest: replace the generic before/after cell transitions with a slowed-
 Owner playtest: remove normal DNA Tracing status and hint copy under the toolbar. The enabled Hint toggle always outlines one actionable tile: the certified next base, a viable alternative continuation found by bounded deterministic search, or the preceding base to backtrack. A lone selected base can be tapped again to clear it, so even an incorrect start has a graphical recovery. Rejected actions leave the hint in place. Other mechanics are unchanged.
 
 
-### D-UI-39 — Graphical Mutation Detective hints
+### D-UI-39 — Graphical Mutation Correction hints
 
-Owner playtest: remove Mutation Detective status and selection text and all written hints. When Hint is enabled, highlight one actual mismatch and its corresponding replacement A/C/G/T button with a green outline, preserving the base palette. The highlighted mismatch is selected automatically; manually selecting another mismatch changes the cue, and each correct repair advances it. Correct cells cannot steal the cue while Hint is enabled. Turning Hint off returns to manual selection. No rule, reference, coverage or save changes.
+Owner playtest: remove Mutation Correction status and selection text and all written hints. When Hint is enabled, highlight one actual mismatch and its corresponding replacement A/C/G/T button with a green outline, preserving the base palette. The highlighted mismatch is selected automatically; manually selecting another mismatch changes the cue, and each correct repair advances it. Correct cells cannot steal the cue while Hint is enabled. Turning Hint off returns to manual selection. No rule, reference, coverage or save changes.
 
 
 ### D-UI-40 — Pre-connected tracing starter
@@ -387,3 +387,7 @@ Owner playtest: remove the written Connections hint below the toolbar. Outline t
 ### D-UI-42 — Graphical Codon Crush hints
 
 Owner playtest: remove written Codon Crush hints from beneath the toolbar. Outline both adjacent swap tiles in dashed green and place a small double arrow at their shared edge, with no automatic swap or palette changes. Recalculate after the actual swap/clear/fall sequence, suppress stale cues during motion, and restore them after Undo, Restart or resume. Prefer certified swaps when valid, use bounded lookahead for alternate boards, and graphically highlight Undo if no solution can be found. Keep existing gameplay and gene credit unchanged.
+
+### D-UI-43 — Mutation Correction naming
+
+Owner playtest: rename Mutation Detective to Mutation Correction in the campaign and Mechanics Lab. Preserve the existing `mutation` mechanic ID, rules, graphical hints and saved progress.
