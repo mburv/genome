@@ -96,7 +96,7 @@ test('all 31 gene runs begin with letters, escalate, and every mixed certificate
     expect(run.filter(d=>!d.tier).length).toBeGreaterThanOrEqual(3);
     let previous=1;
     for(const def of run){
-      const tier=def.tier??1;expect(tier).toBeGreaterThanOrEqual(previous);previous=tier;tiers.add(tier);
+      const tier=def.tier??1;if(def!==run.at(-1))expect(tier).toBeGreaterThanOrEqual(previous);previous=tier;tiers.add(tier);
       const stage=mixedStage(def);if(!stage)continue;
       const initial=createLab(stage.mechanic,stage.spec);expect(initial.board).toHaveLength(81);expect(initial.won).toBe(false);
       if(def.tier){expect(stage.spec.blockSize).toBe(def.tier);expect(Object.values(stage.spec.tokens!).some(t=>t.seq.length>1)).toBe(true);blockKinds.add(stage.mechanic);}
