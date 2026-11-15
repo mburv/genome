@@ -37,7 +37,9 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
   await page.getByTestId('open-bonus').click();
   await expect(page.getByTestId('bonus-map')).toBeVisible();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES));
-  await expect(page.getByRole('button',{name:'Install pack',exact:true})).toHaveCount(25);
+  await expect(page.getByRole('button',{name:'Assemble',exact:true})).toHaveCount(25);
+  await expect(page.getByRole('button',{name:'Install pack',exact:true})).toHaveCount(0);
+  await expect(page.getByTestId('chromosome-chr1').getByRole('button',{name:'Assemble'})).toBeEnabled();
   await expect(page.getByRole('heading',{name:'Reference data packs',exact:true})).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Gene catalogue',exact:true})).toHaveCount(0);
   await expect(page.getByPlaceholder('Gene symbol or ID')).toHaveCount(0);
@@ -46,7 +48,7 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
 
 import {createHash} from 'node:crypto';
 import {CHROMOSOMES,CHUNK_BASES,REFERENCE} from '../src/campaign/bonus.ts';
-test('installs a test-only pack, assembles an exact interval and restores coverage',async({page})=>{
+test('automatically loads a chromosome, assembles an exact interval and restores coverage',async({page})=>{
   await installFeedbackProbe(page);
   // Synthetic fixture exercises packing/UI; never part of the shipped reference.
   const length=CHROMOSOMES.chrM!,payload=Buffer.alloc(Math.ceil(length/4),0x1b);
@@ -56,11 +58,11 @@ test('installs a test-only pack, assembles an exact interval and restores covera
   await openCompleted(page,serializeSave({...save,settings:{...save.settings,sound:true,haptics:true},completed:CAMPAIGN_LEVELS.map(l=>l.id)}));
   await page.getByTestId('open-bonus').click();
   const row=page.getByTestId('chromosome-chrM');
-  const chooser=page.waitForEvent('filechooser');
-  await row.getByRole('button',{name:'Install pack',exact:true}).click();
-  await (await chooser).setFiles({name:'chrM.genome',mimeType:'application/octet-stream',buffer:Buffer.concat([prefix,header,payload])});
+  let requests=0;
+  await page.route('**/reference-data/chrM.genome',async route=>{requests++;await route.fulfill({status:200,contentType:'application/octet-stream',body:Buffer.concat([prefix,header,payload])});});
   await row.getByRole('button',{name:'Assemble',exact:true}).click();
   await expect(page.getByTestId('bonus-play')).toBeVisible();
+  expect(requests).toBe(1);
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
   await expect(page.getByTestId('bonus-win')).toBeVisible();
   const cues=await feedbackLog(page);
@@ -71,5 +73,16 @@ test('installs a test-only pack, assembles an exact interval and restores covera
   await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
-  await expect(page.getByRole('button',{name:'✓ Complete',exact:true})).toBeVisible();
+  await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
+});
+
+
+test('a missing chromosome download reports an error and can be retried',async({page})=>{
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:CAMPAIGN_LEVELS.map(l=>l.id)}));
+  await page.getByTestId('open-bonus').click();
+  await page.route('**/reference-data/chr1.genome',route=>route.fulfill({status:503,body:'Unavailable'}));
+  const button=page.getByTestId('chromosome-chr1').getByRole('button',{name:'Assemble'});
+  await button.click();
+  await expect(page.getByRole('alert')).toContainText('Reference data could not be loaded');
+  await expect(button).toBeEnabled();
 });

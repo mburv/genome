@@ -1,4 +1,4 @@
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useCallback,useEffect,useState } from 'react';
 import { CHROMOSOMES,GENOME_BASES,REFERENCE,addGenomeCredit,covered,genomeCovered,nextPuzzle,genomeStage,type BonusProgress,type Interval } from '../campaign/bonus.ts';
 import { openGenomePack,readGenomeSequence,type GenomePack } from '../genomics/genomePack.ts';
 import { loadGenomePacks,storeGenomePack } from '../genomics/genomeStorage.ts';
@@ -12,20 +12,23 @@ interface Scope{chrom:string;start:number;end:number;label:string}
 export function BonusScreen({progress,onProgress,onBack,reducedMotion,feedback}:Props){
   const [packs,setPacks]=useState<Record<string,GenomePack>>({});
   const [storageNote,setStorageNote]=useState('');
-  useEffect(()=>{let active=true;void loadGenomePacks().then(p=>{if(active)setPacks(old=>({...p,...old}));}).catch(()=>{if(active)setStorageNote('Offline storage is unavailable; selected packs work for this session.');});return()=>{active=false;};},[]);
-  const packInput=useRef<HTMLInputElement>(null);
+  useEffect(()=>{let active=true;void loadGenomePacks().then(p=>{if(active)setPacks(old=>({...p,...old}));}).catch(()=>{if(active)setStorageNote('Offline storage is unavailable; reference data will be loaded when needed.');});return()=>{active=false;};},[]);
   const [scope,setScope]=useState<Scope|null>(null),[stage,setStage]=useState<MixedStage|null>(null);
   const [hint,setHint]=useState<boolean|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const done=genomeCovered(progress);
-  const install=async(files:FileList|null)=>{
-    if(!files)return;setBusy(true);setError('');
-    try{for(const file of Array.from(files)){const p=await openGenomePack(file);setPacks(old=>({...old,[p.header.chromosome]:p}));try{await storeGenomePack(p);}catch{setStorageNote('Storage quota or browser restrictions prevented saving some packs. Reselect those packs after reopening.');}}}
-    catch(e){setError(String(e));}finally{setBusy(false);}
-  };
   const open=async(s:Scope)=>{
+    if(busy)return;
     setBusy(true);setError('');
     try{
-      const pack=packs[s.chrom];if(!pack)throw Error('Install this chromosome data pack first.');
+      let pack=packs[s.chrom];
+      if(!pack){
+        const response=await fetch(new URL('reference-data/'+s.chrom+'.genome',document.baseURI));
+        if(!response.ok)throw Error('Reference data could not be loaded. Please try again.');
+        pack=await openGenomePack(await response.blob());
+        if(pack.header.chromosome!==s.chrom)throw Error('Wrong chromosome reference data');
+        setPacks(old=>({...old,[s.chrom]:pack!}));
+        void storeGenomePack(pack).catch(()=>setStorageNote('Offline storage is unavailable; reference data may need to be loaded again.'));
+      }
       const iv=nextPuzzle(progress,s.chrom,s.start,s.end);
       if(!iv){setStage(null);setScope(null);return;}
       const seq=await readGenomeSequence(pack,iv);setScope(s);setStage(genomeStage(s.chrom,iv,seq));setHint(null);
@@ -54,12 +57,11 @@ export function BonusScreen({progress,onProgress,onBack,reducedMotion,feedback}:
     <p><b>{done.toLocaleString()} / {GENOME_BASES.toLocaleString()} bp assembled</b></p>
     <div className="progress thin" role="progressbar" aria-label="Genome bases assembled" aria-valuemin={0} aria-valuemax={GENOME_BASES} aria-valuenow={done}><i style={{width:100*done/GENOME_BASES+'%'}}/></div>
     {done===GENOME_BASES&&<p className="discovered assembled">Human reference genome assembled!</p>}
-    <div className="row-between"><h3>Chromosomes</h3><a className="small" href="https://github.com/mburv/genome/releases/tag/t2t-chm13-v2.0">Download chromosome packs</a></div>
-    <input ref={packInput} type="file" multiple accept=".genome" hidden disabled={busy} onChange={e=>{void install(e.target.files);e.target.value='';}} aria-label="Install chromosome packs"/>
+    <h3>Chromosomes</h3>
     {busy&&<p role="status">Reading reference data…</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
     <div className="panel catalogue">{Object.entries(CHROMOSOMES).map(([c,len])=>{
       const n=covered(progress[c]??[],0,len);return <div className="cat-gene" key={c} data-testid={'chromosome-'+c}>
-        <div className="row-between"><b>{c}</b><button type="button" disabled={busy||n===len} onClick={()=>{if(packs[c])void open({chrom:c,start:0,end:len,label:c});else packInput.current?.click();}}>{n===len?'Complete':packs[c]?'Assemble':'Install pack'}</button></div>
+        <div className="row-between"><b>{c}</b><button type="button" disabled={busy||n===len} onClick={()=>{void open({chrom:c,start:0,end:len,label:c});}}>{n===len?'Complete':'Assemble'}</button></div>
         <div className="progress thin"><i style={{width:100*n/len+'%'}}/></div><p className="muted tiny">{n.toLocaleString()} / {len.toLocaleString()} bp</p>
       </div>;
     })}</div>
