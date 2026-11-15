@@ -346,3 +346,18 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
   await hint.click();await at(next);
   await page.getByTestId('action-restart').click();await at(10);
 });
+
+
+test('campaign Mutation Detective graphical hints retain toggle and repair the selected DNA base',async({page})=>{
+  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-06').click();await page.getByTestId('tutorial-skip').click();
+  await page.getByTestId('action-hint').click();
+  const square=page.locator('.mutation-hinted'), replacement=page.locator('.mutation-base-hinted');
+  await expect(square).toHaveCount(1);await expect(replacement).toHaveCount(1);
+  const first=Number(await square.getAttribute('data-lab-cell'));
+  const want=await page.getByTestId('mutation-target-'+first).textContent();
+  await expect(replacement).toHaveText(want!);await replacement.tap();
+  await expect(tile(page,first)).toHaveAttribute('data-base',want!);
+  await expect(square).toHaveCount(1);await expect(tile(page,first)).not.toHaveClass(/mutation-hinted/);
+  await expect(page.locator('.lab-hint,[data-testid="lab-message"],[data-testid="mutation-selection"]')).toHaveCount(0);
+  await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
+});
