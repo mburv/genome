@@ -150,14 +150,19 @@ test('DNA tracing tutorial keeps all bases static while drawing its path once',a
     await expect(board.locator('.tutorial-before,.tutorial-after,.tutorial-change')).toHaveCount(0);
     const cells=await board.locator('.tutorial-base').evaluateAll(nodes=>nodes.map(n=>({opacity:getComputedStyle(n).opacity,animation:getComputedStyle(n).animationName})));
     expect(cells.every(c=>c.opacity==='1'&&c.animation==='none')).toBe(true);
+    const starter=board.locator('.tutorial-starter-path');
+    await expect(starter).toHaveCSS('animation-name','none');
     const path=board.locator('.tutorial-extension-path');
-    await expect(path).toHaveCSS('animation-iteration-count','1');
-    await path.evaluate(el=>{const a=el.getAnimations()[0]!;a.finish();});
-    await expect(path).toHaveCSS('stroke-dashoffset','0px');
+    if(step===1){await expect(path).toHaveCount(0);await expect(starter).toHaveAttribute('points','1.5,1.5 2.5,1.5');}
+    else {
+      await expect(path).toHaveCSS('animation-iteration-count','1');
+      await path.evaluate(el=>{const a=el.getAnimations()[0]!;a.finish();});
+      await expect(path).toHaveCSS('stroke-dashoffset','0px');
+    }
     if(step<3)await page.getByTestId('tutorial-next').click();
   }
   await page.getByRole('button',{name:'Replay animation'}).click();
-  await expect(board.locator('.tutorial-path polyline')).toHaveCSS('animation-iteration-count','1');
+  await expect(board.locator('.tutorial-extension-path')).toHaveCSS('animation-iteration-count','1');
 });
 
 test('DNA tracing shares classic play chrome, board sizing, clues and action toolbar',async({page})=>{
@@ -364,4 +369,26 @@ test('campaign Mutation Detective graphical hints retain toggle and repair the s
   await expect(square).toHaveCount(1);await expect(tile(page,first)).not.toHaveClass(/mutation-hinted/);
   await expect(page.locator('.lab-hint,[data-testid="lab-message"],[data-testid="mutation-selection"]')).toHaveCount(0);
   await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
+});
+
+
+test('old tracing attempts resume unchanged and restart with the free starter pair',async({page})=>{
+  await fresh(page,true);
+  await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('genome-save')!);s.mixedAttempts={'ins-02':[{type:'trace',cell:9}]};s.tutorialsSeen=['trace'];localStorage.setItem('genome-save',JSON.stringify(s));});
+  await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('1/9 bases');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await expect(tile(page,9)).toHaveClass(/traced/);
+  await page.getByTestId('action-restart').click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
+  await expect(page.getByTestId('moves')).toHaveText('0 moves');
+  await expect(page.getByTestId('trace-path')).toHaveAttribute('points','1.5,1.5 2.5,1.5');
+  await expect(page.getByTestId('action-undo')).toBeDisabled();
+  await tile(page,12).tap();
+  await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('3/9 bases');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await page.getByTestId('action-undo').click();
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
+  await expect(page.getByTestId('action-undo')).toBeDisabled();
 });
