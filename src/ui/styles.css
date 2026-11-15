@@ -482,6 +482,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .actions button + button, .solved-bar button + button, .card-actions button + button { border-left: 0; }
 .actions button { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12.5px; font-weight: 700; }
 .primary { background: var(--coral); color: var(--ink); border-color: var(--ink); font-weight: 700; }
+.map .continue-button { background: var(--mint); border-color: var(--ink); color: var(--ink); }
 .notice { background: var(--white); border: 1px solid var(--ink); border-left: 6px solid var(--butter-edge); border-radius: 0; padding: 8px 12px; font-size: 13px; }
 .notice p { margin: 4px 0; }
 .notice button { margin-top: 4px; padding: 5px 14px; }

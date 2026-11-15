@@ -8,6 +8,7 @@ test('map puts Human Genome after the catalogue and Mechanics Lab and describes 
   await openCompleted(page,serializeSave(newSave(LEVEL_PACK)));
   await expect(page.getByText('Famous Genes · main campaign',{exact:true})).toHaveCount(0);
   const map=page.getByTestId('level-map');
+  await expect(page.getByTestId('continue')).toHaveCSS('background-color','rgb(205, 235, 216)');
   const order=await map.locator(':scope > [data-testid]').evaluateAll(els=>els.map(el=>el.getAttribute('data-testid')));
   expect(order.indexOf('open-bonus')).toBeGreaterThan(order.indexOf('catalogue'));
   expect(order.indexOf('open-mechanics')).toBeGreaterThan(order.indexOf('catalogue'));

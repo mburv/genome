@@ -28,7 +28,7 @@ export function MapScreen({ completed, historicalCompleted=[], attempted, curren
   const catalogue = CAMPAIGN_GENES.map((symbol) => MANIFEST.included.find((g) => g.symbol === symbol)!);
   return (
     <section className="map" aria-label="Level map" data-testid="level-map">
-      <button type="button" className="primary big" onClick={() => onPlay(next.id)} data-testid="continue">
+      <button type="button" className="primary big continue-button" onClick={() => onPlay(next.id)} data-testid="continue">
         {completed.length === 0 ? 'Start' : !nextUnfinished ? 'Replay' : 'Continue'} · {next.symbol} {nextRun.part}/{nextRun.of}
       </button>
       <div className="panel catalogue" data-testid="catalogue">
