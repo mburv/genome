@@ -19,7 +19,7 @@ jobs:
       - run: pip install biopython==1.86
       - name: Download the published reference packs
         env:
-          GH_${{ github.token }}: TOKEN
+          GH_TOKEN: ${{ github.token }}
         run: gh run download 43729780128 --name genome-t2t-chromosome-packs --dir genome-packs
       - run: python3 scripts/extract-famous-t2t.py
       - name: Commit the small verified CDS coordinate index
