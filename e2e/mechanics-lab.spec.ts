@@ -66,8 +66,9 @@ test('Genome Assembly aligns overlapping reads on the board', async ({ page }) =
   await expect(reference.locator('.assembled-match')).toHaveCount(9);
 });
 
-test('Mutation Detective repairs each complementary mismatch', async ({ page }) => {
+test('Mutation Correction repairs each complementary mismatch', async ({ page }) => {
   await openLab(page, 'mutation');
+  await expect(page.getByTestId('target-panel').locator('.target-title')).toHaveText('Mutation Correction');
   await expect(page.locator('.mechanic-instructions')).toHaveCount(0);
   await expect(page.getByText('Target complementary strands · 3′ → 5′', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Green underline = correct · Red outline = needs repair', { exact: true })).toHaveCount(0);
@@ -196,7 +197,7 @@ test('Codon Crush rejected swap returns to the unchanged board; reduced motion s
 });
 
 
-test('Mutation Detective reclaims board space on a short phone', async ({ page }) => {
+test('Mutation Correction reclaims board space on a short phone', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openLab(page, 'mutation');
   const board = page.getByTestId('mechanics-board');
@@ -246,7 +247,7 @@ test('Genome Assembly greys only placed source reads and restores them on undo o
 });
 
 
-test('Mutation Detective hints highlight a mismatched square and its correct base without text', async ({page}) => {
+test('Mutation Correction hints highlight a mismatched square and its correct base without text', async ({page}) => {
   await openLab(page,'mutation');
   const board=page.getByTestId('mechanics-board'), hint=page.getByTestId('action-hint');
   const square=board.locator('.mutation-hinted'), replacement=page.locator('.mutation-base-hinted');
