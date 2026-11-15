@@ -6,7 +6,7 @@ type ProbeWindow = Window & { __feedback: Probe };
 /** Observe the real Web Audio and Vibration API calls without depending on host speakers. */
 export async function installFeedbackProbe(page: Page) {
   await page.addInitScript(() => {
-    const w = window as ProbeWindow;
+    const w = window as unknown as ProbeWindow;
     w.__feedback = { notes: [], vibration: [] };
     class MockAudioContext {
       currentTime = 0;
@@ -29,5 +29,5 @@ export async function installFeedbackProbe(page: Page) {
     } });
   });
 }
-export const feedbackLog = (page: Page) => page.evaluate(() => (window as ProbeWindow).__feedback);
-export const clearFeedback = (page: Page) => page.evaluate(() => { (window as ProbeWindow).__feedback = { notes: [], vibration: [] }; });
+export const feedbackLog = (page: Page) => page.evaluate(() => (window as unknown as ProbeWindow).__feedback);
+export const clearFeedback = (page: Page) => page.evaluate(() => { (window as unknown as ProbeWindow).__feedback = { notes: [], vibration: [] }; });
