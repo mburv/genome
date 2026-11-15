@@ -201,7 +201,7 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
   if (action.type === 'trace' && state.id === 'trace') {
     const c = action.cell, path = state.trace;
     if (!validCell(c) || state.board[c] === '.') return no('Stay on the DNA tiles.');
-    if (path.at(-1) === c) return no('');
+    if (path.at(-1) === c) return path.length === 1 ? yes({ trace: [] }, 'Backtracked.') : no('');
     if (path.length > 1 && path.at(-2) === c) return yes({ trace: path.slice(0, -1) }, 'Backtracked.');
     if (path.includes(c) || (path.length && !adjacent(path.at(-1)!, c))) return no('Follow neighbouring cells without reusing one.');
     if (state.board[c] !== TRACE_TARGET[path.length]) return no('Find the next base in the target.');
@@ -265,11 +265,50 @@ export function applyLab(state: LabState, action: LabAction): LabResult {
   return no('Choose an action for this challenge.');
 }
 
+/** A graphical hint always points to an actionable tile. Prefer the certified
+ * path, then search for a completion of the player's actual prefix. A bounded
+ * search keeps long traces responsive; if it cannot finish, backtrack safely. */
+export function traceHintCell(state: LabState): number | null {
+  if (state.id !== 'trace' || state.won) return null;
+  const { TRACE_PATH, TRACE_TARGET } = state.spec;
+  const path = state.trace;
+  if (path.every((c,i) => c === TRACE_PATH[i])) return TRACE_PATH[path.length] ?? null;
+  const used = new Set(path);
+  const neighbours = (c: number) => [c-9,c+9,c-1,c+1].filter(n => validCell(n) && adjacent(c,n));
+  let budget = 12000;
+  const finish = (cell: number, offset: number): boolean => {
+    if (offset === TRACE_TARGET.length) return true;
+    if (--budget < 0) return false;
+    const preferred = TRACE_PATH[offset];
+    const next = neighbours(cell).filter(n => !used.has(n) && state.board[n] === TRACE_TARGET[offset]);
+    next.sort((a,b) => Number(b===preferred)-Number(a===preferred) || a-b);
+    for (const n of next) {
+      used.add(n);
+      const solved = finish(n,offset+1);
+      used.delete(n);
+      if (solved) return true;
+      if (budget <= 0) break;
+    }
+    return false;
+  };
+  const last = path.at(-1)!;
+  for (const n of neighbours(last)) {
+    if (used.has(n) || state.board[n] !== TRACE_TARGET[path.length]) continue;
+    used.add(n);
+    const solved = finish(n,path.length+1);
+    used.delete(n);
+    if (solved) return n;
+    if (budget <= 0) break;
+  }
+  // A single selected base can be deselected by tapping it again.
+  return path.at(-2) ?? last;
+}
+
 export function labHint(state: LabState): string {
-  const { TRACE_PATH, CRUSH_SWAPS, READ_STARTS, CONNECTION_ROUTES, CUT_SOLUTION } = state.spec;
+  const { CRUSH_SWAPS, READ_STARTS, CONNECTION_ROUTES, CUT_SOLUTION } = state.spec;
   if (state.won) return 'Complete.';
   switch (state.id) {
-    case 'trace': return state.trace.every((c, i) => c === TRACE_PATH[i]) ? 'Try row ' + (Math.floor(TRACE_PATH[state.trace.length]! / 9) + 1) + ', column ' + (TRACE_PATH[state.trace.length]! % 9 + 1) + '.' : 'Backtrack to the start of the highlighted sequence, or replay.';
+    case 'trace': { const c = traceHintCell(state); return c === null ? 'Complete.' : 'Try row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
     case 'crush': { const move = findCrushSwap(state) ?? CRUSH_SWAPS[state.collected]; return move ? 'Swap row ' + (Math.floor(move[0] / 9) + 1) + ', column ' + (move[0] % 9 + 1) + ' with row ' + (Math.floor(move[1] / 9) + 1) + ', column ' + (move[1] % 9 + 1) + '.' : 'Undo the last collection or replay.'; }
     case 'assembly': return READ_STARTS.map((start, read) => 'Read ' + (read + 1) + ' → slot ' + (start + 1)).join(' · ');
     case 'mutation': { const c = state.board.findIndex((b, i) => mutationExpected(i, state.spec) !== null && mutationExpected(i, state.spec) !== b); return c < 0 ? 'All correct.' : 'Check row ' + (Math.floor(c / 9) + 1) + ', column ' + (c % 9 + 1) + '.'; }
