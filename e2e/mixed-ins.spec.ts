@@ -569,3 +569,36 @@ test('multi-base Genome Assembly hints advance and recover saved progress after 
   await expect(page.getByTestId('win')).toBeVisible();
   await expect(source).toHaveCount(0);await expect(destination).toHaveCount(0);
 });
+
+
+test('MC1R 6/13 Mutation Correction keeps all reference rows together on phones', async ({page}) => {
+  const level=CAMPAIGN_LEVELS.filter(l=>l.symbol==='MC1R')[5]!;
+  expect(mechanicOf(level)).toBe('mutation');
+  await page.setViewportSize({width:390,height:844});
+  await fresh(page);await openMap(page);
+  await page.getByTestId('cnode-'+level.id).click();
+  const panel=page.getByTestId('target-panel');
+  const rows=page.getByTestId('mutation-reference').locator('.mutation-reference-row');
+  const allRows=async()=>{
+    await expect(panel.locator('.clue-pagination')).toBeHidden();
+    await expect(rows).toHaveCount(3);
+    await expect(panel.locator('[data-clue-hidden]')).toHaveCount(0);
+    for(const row of await rows.all())await expect(row).toBeVisible();
+    expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+  };
+  await allRows();
+  await page.setViewportSize({width:320,height:568});
+  await allRows();
+  // Repair the first row; its matched clues must remain visible alongside the other rows.
+  const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('data-lab-cell'))).filter(c=>c>=18&&c<27));
+  expect(cells.length).toBeGreaterThan(0);
+  for(const c of cells){
+    const want=await page.getByTestId('mutation-target-'+c).getAttribute('data-symbol');
+    await tile(page,c).tap();
+    await page.getByTestId('lab-base-'+want).tap();
+  }
+  await expect(rows.first()).toHaveAttribute('data-clue-done','true');
+  await allRows();
+  await page.getByTestId('action-undo').click();
+  await allRows();
+});
