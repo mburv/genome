@@ -35,7 +35,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
       <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 new puzzles →</button>
       <p className="muted small">Famous Genes · main campaign</p>
       <button type="button" className="big" data-testid="open-bonus" disabled={!bonusUnlocked(completed)} onClick={onBonus}>Human Genome · {bonusUnlocked(completed)?'Bonus genes →':'Locked until main campaign complete'}</button>
-      <p className="muted tiny">{GENOME_BASES.toLocaleString()} reference DNA bases · separate post-campaign progress.</p>
+      <p className="muted tiny">{GENOME_BASES.toLocaleString()} reference DNA bases · shared reference progress; Famous Genes bases carry forward.</p>
       <div className="panel catalogue" data-testid="catalogue">
         <h2 className="gene">Gene catalogue</h2>
         {catalogue.map((m) => {

@@ -5,6 +5,7 @@ import type { LevelDefinition, Move } from '../engine/types.ts';
 import { INTRO_IDS, REPLACED_OPENERS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES } from '../genomics/genes.ts';
+import { creditFamousCompleted,legacyLevelExact,referenceLevelCovered } from '../campaign/sharedCoverage.ts';
 import { readGenomeProgress, type BonusProgress } from '../campaign/bonus.ts';
 import { mixedStage, replayMixed, SLIDE_TUTORIALS } from '../campaign/mixed.ts';
 import { LAB_IDS, type LabAction } from '../engine/mechanicsLab.ts';
@@ -443,7 +444,15 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const notices: string[] = [];
   const ids = new Set(pack.levels.map((l) => l.id));
   const rawCompleted = strings(data.completed);
-  const completed = [...new Set(rawCompleted.flatMap(id=>REPLACED_OPENERS[id]??[id]).filter(id=>ids.has(id)))];
+  let completed = [...new Set(rawCompleted.flatMap(id=>REPLACED_OPENERS[id]??[id]).filter(id=>ids.has(id)))];
+  const genomeProgress=readGenomeProgress(data.genomeProgress);
+  const oldReference=typeof data.datasets==='object'&&data.datasets!==null&&Object.values(data.datasets).some(id=>typeof id==='string'&&!id.startsWith('t2t-chm13v2.0-'));
+  if(oldReference){
+    const previous=completed;completed=completed.filter(id=>legacyLevelExact(id));
+    for(const def of pack.levels)if(referenceLevelCovered(genomeProgress,def)&&!completed.includes(def.id))completed.push(def.id);
+    const reset=previous.filter(id=>!completed.includes(id));
+    if(reset.length){adapter.backup(raw,'pre-t2t');notices.push('Famous Genes now uses the shared T2T reference. '+reset.length+' completed puzzle(s) had different reference DNA and require the new sequence; exact matching completions and all genome progress are retained. Your previous save is backed up.');}
+  }
   const discovered = [...new Set(
     Object.keys(pack.datasets).filter((g) => isDiscovered(completed, g)),
   )];
@@ -525,9 +534,9 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (retiredMixedLogs) { adapter.backup(raw,'unified-campaign'); notices.push('Some stages now use their assigned sliding puzzle. Older mixed attempts were backed up; completed levels are preserved.'); }
   if (updatedCrushLogs) { adapter.backup(raw,'crush-cascades'); notices.push('Codon Crush now chains automatically. Older attempts were kept up to the last valid swap; completed levels are preserved.'); }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
-  const genomeProgress=readGenomeProgress(data.genomeProgress);
+  const sharedProgress=creditFamousCompleted(genomeProgress,completed);
   return {
-    save: { ...fresh, ...(Object.keys(genomeProgress).length?{genomeProgress}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
+    save: { ...fresh, ...(Object.keys(sharedProgress).length?{genomeProgress:sharedProgress}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
     recovered: notices.length > 0,
   };
@@ -542,7 +551,9 @@ export function recordAssembly(save: SaveData, symbol: string, levels?: readonly
 
 /** Idempotent completion: a level is credited at most once. */
 export function recordCompletion(save: SaveData, levelId: string): SaveData {
-  return save.completed.includes(levelId) ? save : { ...save, completed: [...save.completed, levelId] };
+  if(save.completed.includes(levelId))return save;
+  const completed=[...save.completed,levelId];
+  return {...save,completed,genomeProgress:creditFamousCompleted(save.genomeProgress??{},[levelId])};
 }
 
 

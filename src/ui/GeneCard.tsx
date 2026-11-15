@@ -60,13 +60,13 @@ export function GeneCard({ gene, completed, onPlay, onBack }: Props) {
       )}
       <dl className="card-meta">
         <dt>Transcript</dt><dd><a href={gene.sourceUrl} target="_blank" rel="noopener noreferrer">{gene.transcript}</a> ({gene.keywords.replace(/\.$/, '')})</dd>
-        <dt>Protein</dt><dd>{gene.protein} · {gene.proteinLength} aa (translation verified)</dd>
+        <dt>Protein</dt><dd>{gene.protein} · {gene.proteinLength} aa ({gene.translationVerified?'reference translation verified':'RefSeq protein annotation'})</dd>
         <dt>CDS</dt><dd>{gene.cdsLocation} · {gene.cdsLength} bases incl. stop</dd>
         <dt>Gene ID</dt><dd>{gene.geneId}</dd>
         <dt>SHA-256</dt><dd className="mono" data-testid="card-checksum">{gene.sequenceSha256.slice(0, 20)}…{status.verified ? ' ✓ matches your assembly' : ''}</dd>
-        <dt>Retrieved</dt><dd>{gene.retrievedAt.slice(0, 10)} from NCBI RefSeq</dd>
+        <dt>Retrieved</dt><dd>{gene.retrievedAt.slice(0, 10)} annotation from NCBI RefSeq</dd>
       </dl>
-      <p className="muted tiny">Reference sequence, not anyone’s personal genome. No medical meaning.</p>
+      <p className="muted tiny">Coding sequence extracted from T2T-CHM13v2.0+Y, shared with Human Genome. Reference sequence, not anyone’s personal genome. No medical meaning.</p>
     </section>
   );
 }

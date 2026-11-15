@@ -2,6 +2,7 @@ import insAsset from './ins.generated.json' with { type: 'json' };
 import hbbAsset from './hbb.generated.json' with { type: 'json' };
 import catalogueAsset from './catalogue.generated.json' with { type: 'json' };
 import manifestAsset from './manifest.generated.json' with { type: 'json' };
+import {FAMOUS_REFERENCE,sharedDatasetId} from './sharedReference.ts';
 
 /**
  * Verified reference coding sequences, imported at build time from pinned RefSeq records by
@@ -69,11 +70,17 @@ export interface Manifest {
   counts: { included: number; excluded: number; totalCdsBases: number; byChromosome: Record<string, number>; byTheme: Record<string, number> };
 }
 
-export const MANIFEST: Manifest = manifestAsset;
-export const INS: GeneAsset = insAsset;
-export const HBB: GeneAsset = hbbAsset;
+export const LEGACY_GENES:Record<string,GeneAsset>=Object.fromEntries([insAsset,hbbAsset,...catalogueAsset.genes].map(g=>[g.symbol,g as GeneAsset]));
+function fromReference(g:GeneAsset):GeneAsset{
+ const r=FAMOUS_REFERENCE[g.symbol]!;
+ return {...g,datasetId:sharedDatasetId(g.symbol),chromosome:r.chromosome.slice(3),sequence:r.sequence,sequenceSha256:r.sequenceSha256,cdsLength:r.sequence.length,cdsLocation:r.chromosome+': '+r.intervals.map(([a,b])=>(a+1)+'–'+b).join(', '),translationVerified:g.sequence===r.sequence&&g.translationVerified,proteinLength:r.sequence.length/3-1};
+}
+export const GENES:Record<string,GeneAsset>=Object.fromEntries(Object.values(LEGACY_GENES).map(g=>[g.symbol,fromReference(g)]));
+export const INS=GENES.INS!;
+export const HBB=GENES.HBB!;
+export const MANIFEST:Manifest={...manifestAsset,release:'T2T-CHM13v2.0+Y / RefSeq Liftoff v5.3',included:manifestAsset.included.map(m=>({...m,cdsLength:GENES[m.symbol]!.cdsLength,sequenceSha256:GENES[m.symbol]!.sequenceSha256,datasetId:GENES[m.symbol]!.datasetId})),counts:{...manifestAsset.counts,totalCdsBases:Object.values(GENES).reduce((n,g)=>n+g.cdsLength,0)}};
 /** Every included catalogue gene by symbol (INS/HBB keep their M1/M2 assets). */
-export const GENES: Record<string, GeneAsset> = Object.fromEntries([INS, HBB, ...(catalogueAsset.genes as GeneAsset[])].map((g) => [g.symbol, g]));
+
 /** The two genes of the 12-level sample campaign. */
 export const GENE_ORDER = ['INS', 'HBB'] as const;
 /** Catalogue order (manifest order). The catalogue size is always derived from the manifest. */

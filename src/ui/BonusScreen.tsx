@@ -58,7 +58,7 @@ export function BonusScreen({progress,onProgress,onBack,reducedMotion}:Props){
     {done===GENOME_BASES&&<p className="discovered assembled">Human reference genome assembled!</p>}
     <div className="panel">
       <h3>Reference data packs</h3>
-      <p className="muted small">Install chromosome .genome files from the verified build. Packs stay local and are saved offline when browser storage permits. Your completed coordinates are saved separately.</p>
+      <p className="muted small">Install chromosome .genome files from the verified build. Packs stay local and are saved offline when browser storage permits. All campaign coordinates share one saved progress record.</p>
       <input type="file" multiple accept=".genome" disabled={busy} onChange={e=>{void install(e.target.files);}} aria-label="Install chromosome packs"/>
       <p className="muted tiny">{Object.keys(packs).length}/25 chromosome packs selected · <a href="https://github.com/mburv/genome/releases/tag/t2t-chm13-v2.0">Download chromosome packs</a> · <a href={REFERENCE_URL}>Reference source</a></p>
       {busy&&<p role="status">Reading reference data…</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
@@ -71,7 +71,7 @@ export function BonusScreen({progress,onProgress,onBack,reducedMotion}:Props){
       </div>;
     })}</div>
     <h3>Gene catalogue</h3>
-    <p className="muted small">Select any installed gene to assemble its entire genomic span, including introns. Overlapping genes share coordinate credit. The 31 original RefSeq coding campaigns remain separate from this reference.</p>
+    <p className="muted small">Select any installed gene to assemble its entire genomic span, including introns. Overlapping genes share coordinate credit. Famous Genes coding bases are already credited here; only unassembled reference coordinates remain.</p>
     <label className="bonus-filter">Find gene <input type="search" value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}} placeholder="Gene symbol or ID"/></label>
     <label className="bonus-filter">Chromosome <select value={chrom} onChange={e=>{setChrom(e.target.value);setPage(0);}}><option value="">All installed</option>{Object.keys(packs).map(c=><option key={c}>{c}</option>)}</select></label>
     <p className="muted small">{genes.length.toLocaleString()} matching annotated loci</p>

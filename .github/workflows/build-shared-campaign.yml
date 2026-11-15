@@ -1,0 +1,26 @@
+name: Build shared Famous Genes campaign
+on:
+  workflow_dispatch:
+  push:
+    branches: ['fix/full-human-genome']
+    paths: ['scripts/build-shared-campaign.ts','.github/workflows/build-shared-campaign.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: node scripts/build-shared-campaign.ts
+      - name: Commit generated campaign
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/campaign/shared.generated.json
+          git commit -m 'Build exact T2T Famous Genes puzzles' || exit 0
+          git push origin HEAD:fix/full-human-genome
