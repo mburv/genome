@@ -430,8 +430,8 @@ test('Mutation Correction is named consistently in map, practice menu, play and 
   await page.getByTestId('mechanic-mutation').click();
   await expect(page.getByTestId('mechanic-tutorial').getByRole('heading',{name:'Mutation Correction',exact:true})).toBeVisible();
   await page.getByTestId('tutorial-skip').click();
-  await expect(page.getByTestId('target-panel').locator('.target-title')).toHaveText('Mutation Correction');
+  await expect(page.getByTestId('target-panel').locator('.target-title').first()).toHaveText('Mutation Correction');
   await openMap(page);await page.getByTestId('cnode-ins-06').click();
-  await expect(page.getByTestId('target-panel').locator('.target-title')).toHaveText('Mutation Correction');
+  await expect(page.getByTestId('target-panel').locator('.target-title').first()).toHaveText('Mutation Correction');
   await expect(page.getByTestId('mechanic-tutorial')).toHaveCount(0);
 });
