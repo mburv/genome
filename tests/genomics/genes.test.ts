@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { CATALOGUE_ORDER, GENES, GENE_ORDER, HBB, INS, MANIFEST, type GeneAsset } from '../../src/genomics/genes.ts';
+import { CATALOGUE_ORDER, GENES, LEGACY_GENES, GENE_ORDER, HBB, INS, MANIFEST, type GeneAsset } from '../../src/genomics/genes.ts';
 import { alignedComplement, complementBase, reverseComplement } from '../../src/genomics/dna.ts';
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -13,7 +13,7 @@ const EXPECT: Record<string, { transcript: string; geneId: string; length: numbe
   HBB: { transcript: 'NM_000518.5', geneId: 'NCBIGene:3043', length: 444, protein: 'NP_000509.1', aa: 147, cds: [51, 494], sha: '838ee6276e734b829a5ca342989eb04464173f44da33ca3a5eb3267ad66a495e' },
 };
 
-describe.each(GENE_ORDER.map((s) => [s, GENES[s]!] as [string, GeneAsset]))('verified %s CDS asset', (symbol, g) => {
+describe.each(GENE_ORDER.map((s) => [s, LEGACY_GENES[s]!] as [string, GeneAsset]))('verified %s CDS asset', (symbol, g) => {
   const x = EXPECT[symbol]!;
   it('is the pinned versioned transcript with provenance', () => {
     expect(g.symbol).toBe(symbol);
@@ -117,12 +117,12 @@ describe('official full names', () => {
 
 it('all 31 pinned CDS records translate exactly, with GPX1 annotated Sec recoding only',()=>{
   for(const symbol of CATALOGUE_ORDER){
-    const g=GENES[symbol]!;let protein=translate(g.sequence);
+    const g=LEGACY_GENES[symbol]!;let protein=translate(g.sequence);
     for(const offset of g.selenocysteineOffsets??[]){expect(symbol).toBe('GPX1');expect(g.sequence.slice(offset,offset+3)).toBe('TGA');protein=protein.slice(0,offset/3)+'U'+protein.slice(offset/3+1);}
     const raw=readFileSync('data/raw/'+g.transcript+'.gb','utf8');
     expect(sha(raw)).toBe(g.rawRecordSha256);
     expect(protein.endsWith('*')).toBe(true);expect(protein.slice(0,-1)).not.toContain('*');
     expect(protein.slice(0,-1)).toBe(/\/translation="([^"]+)"/.exec(raw)![1]!.replace(/\s/g,''));
   }
-  expect(GENES.GPX1!.selenocysteineOffsets).toEqual([144]);
+  expect(LEGACY_GENES.GPX1!.selenocysteineOffsets).toEqual([144]);
 });

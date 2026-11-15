@@ -295,7 +295,7 @@ export function PlayScreen({ def, save, persist, reducedMotion, onPlay, onMap, o
   const assembly = assemblyStatus(save.completed, gene);
   const labIndex = LAB_LEVELS.findIndex((l) => l.id === def.id);
   const campaignIndex = CAMPAIGN_LEVELS.findIndex((l) => l.id === def.id);
-  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : campaignIndex >= 0 ? CAMPAIGN_LEVELS[campaignIndex + 1] : undefined;
+  const nextLevel = def.lab ? LAB_LEVELS[labIndex + 1] : campaignIndex >= 0 ? CAMPAIGN_LEVELS.slice(campaignIndex+1).find(l=>!save.legacyReferenceLevels?.includes(l.id)) : undefined;
   const powerPreview: PowerPreview | null = pending;
 
   const best = save.best[def.id];

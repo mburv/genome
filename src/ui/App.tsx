@@ -4,7 +4,7 @@ import { GENES } from '../genomics/genes.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
 import { mechanicOf, mixedStage, verifiedMixed, slidingTutorial, type TutorialId } from '../campaign/mixed.ts';
 import { MechanicTutorial } from './MechanicTutorial.tsx';
-import { recordAssembly, recordCompletion, clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
+import { recordAssembly, recordCompletion, recordGenomeProgress, clearProgressStorage, createLocalStorageAdapter, loadSave, resetProgress, serializeSave, type SaveData, type StorageAdapter } from '../persistence/save.ts';
 import { GeneCard } from './GeneCard.tsx';
 import { MapScreen } from './MapScreen.tsx';
 import { PlayScreen } from './PlayScreen.tsx';
@@ -23,6 +23,7 @@ type Screen = { kind: 'title' } | { kind: 'map' } | { kind: 'play' } | { kind: '
 export function App({ storage = createLocalStorageAdapter() }: { storage?: StorageAdapter }) {
   const initial = useMemo(() => loadSave(storage, LEVEL_PACK), [storage]);
   const [save, setSave] = useState<SaveData>(initial.save);
+  const progressed=[...save.completed,...(save.legacyReferenceLevels??[])];
   const saveRef = useRef(initial.save);
   const [tutorial, setTutorial] = useState<TutorialId | null>(null);
   const [notices, setNotices] = useState<string[]>(initial.notices);
@@ -77,7 +78,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
     }
     if (next !== saveRef.current) persist(next);
   }, [stage, persist]);
-  const persistBonus=useCallback((bonusProgress:BonusProgress)=>{if(bonusUnlocked(saveRef.current.completed))persist({...saveRef.current,genomeProgress:bonusProgress});},[persist]);
+  const persistBonus=useCallback((bonusProgress:BonusProgress)=>{if(bonusUnlocked([...saveRef.current.completed,...(saveRef.current.legacyReferenceLevels??[])]))persist(recordGenomeProgress(saveRef.current,bonusProgress));},[persist]);
   const settingsFrom = useRef<Screen>({ kind: 'title' });
   const go = (next: Screen) => {
     setTutorial(null);
@@ -149,23 +150,24 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         <MapScreen
           labs={LAB_LEVELS}
           completed={save.completed}
+          historicalCompleted={save.legacyReferenceLevels??[]}
           attempted={[...Object.keys(save.attempts).filter(id=>{const level=ALL_LEVELS.find(l=>l.id===id);return level && mechanicOf(level)==='slide';}), ...Object.keys(save.mixedAttempts ?? {})]}
           currentLevelId={save.currentLevelId}
           legacyM1={save.legacy.m1Completed}
           onPlay={play}
           onMechanics={() => go({ kind: 'mechanics' })}
-          onBonus={() => {if(bonusUnlocked(saveRef.current.completed))go({kind:'bonus'});}}
+          onBonus={() => {if(bonusUnlocked([...saveRef.current.completed,...(saveRef.current.legacyReferenceLevels??[])]))go({kind:'bonus'});}}
           onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
-      {screen.kind==='bonus' && bonusUnlocked(save.completed) && <BonusScreen progress={save.genomeProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onBack={()=>go({kind:'map'})}/>}
+      {screen.kind==='bonus' && bonusUnlocked(progressed) && <BonusScreen progress={save.genomeProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onBack={()=>go({kind:'map'})}/>}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
         def, completed: save.completed.includes(def.id), onCard: () => go({ kind: 'card', symbol: def.symbol }), hasNext: CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) < CAMPAIGN_LEVELS.length - 1,
         stage, initialActions: mixedActions, seedTrace: !save.mixedAttempts?.[def.id]?.length || !!save.traceStarterAttempts?.includes(def.id), part: runProgress(def)!.part, of: runProgress(def)!.of,
         covered: assemblyStatus(save.completed, GENES[def.symbol]!).covered, assembled: assemblyStatus(save.completed, GENES[def.symbol]!).verified,
-        onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1]; if (next) play(next.id); else go({ kind: 'map' }); }
+        onProgress: mixedProgress, onNext: () => { const next = CAMPAIGN_LEVELS.slice(CAMPAIGN_LEVELS.findIndex(l => l.id === def.id) + 1).find(l=>!saveRef.current.legacyReferenceLevels?.includes(l.id)); if (next) play(next.id); else go({ kind: 'map' }); }
       }} />}
       {screen.kind === 'play' && !useMixed && (
         <PlayScreen
@@ -193,7 +195,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         />
       )}
       {screen.kind === 'card' && (
-        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} onPlay={play} onBack={() => go({ kind: 'map' })} />
+        <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} historicalCompleted={save.legacyReferenceLevels??[]} onPlay={play} onBack={() => go({ kind: 'map' })} />
       )}
 
       {shownTutorial && <MechanicTutorial key={shownTutorial} mechanic={shownTutorial} stage={useMixed && screen.kind === 'play' ? stage : null} reducedMotion={reducedMotion} onClose={closeTutorial} />}

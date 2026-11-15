@@ -1,7 +1,9 @@
 import {test,expect} from '@playwright/test';
+import {GENES} from '../src/genomics/genes.ts';
 import {CAMPAIGN_LEVELS,LEVEL_PACK} from '../src/campaign/campaign.ts';
 import {newSave,serializeSave} from '../src/persistence/save.ts';
 import {openCompleted} from './helpers.ts';
+const FAMOUS_BASES=Object.values(GENES).reduce((n,g)=>n+g.cdsLength,0);
 test('whole genome is locked until the main campaign ends',async({page})=>{
   const save=newSave(LEVEL_PACK),completed=CAMPAIGN_LEVELS.map(l=>l.id);
   await openCompleted(page,serializeSave({...save,completed:completed.slice(0,-1)}));
@@ -9,7 +11,7 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
   await openCompleted(page,serializeSave({...save,completed}));
   await page.getByTestId('open-bonus').click();
   await expect(page.getByTestId('bonus-map')).toBeVisible();
-  await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow','0');
+  await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES));
   await expect(page.getByRole('button',{name:'Install pack',exact:true})).toHaveCount(25);
 });
 
@@ -29,10 +31,10 @@ test('installs a test-only pack, assembles an exact interval and restores covera
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
   await expect(page.getByTestId('bonus-win')).toBeVisible();
   await page.getByTestId('bonus-win').getByRole('button',{name:'Bonus map'}).click();
-  await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow','9');
+  await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await expect(page.getByRole('button',{name:'✓ Complete',exact:true})).toBeVisible();
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
-  await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow','9');
+  await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await page.getByPlaceholder('Gene symbol or ID').fill('TESTGENE');
   await expect(page.getByRole('button',{name:'✓ Complete',exact:true})).toBeVisible();
 });

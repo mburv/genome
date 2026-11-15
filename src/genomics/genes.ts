@@ -73,7 +73,7 @@ export interface Manifest {
 export const LEGACY_GENES:Record<string,GeneAsset>=Object.fromEntries([insAsset,hbbAsset,...catalogueAsset.genes].map(g=>[g.symbol,g as GeneAsset]));
 function fromReference(g:GeneAsset):GeneAsset{
  const r=FAMOUS_REFERENCE[g.symbol]!;
- return {...g,datasetId:sharedDatasetId(g.symbol),chromosome:r.chromosome.slice(3),sequence:r.sequence,sequenceSha256:r.sequenceSha256,cdsLength:r.sequence.length,cdsLocation:r.chromosome+': '+r.intervals.map(([a,b])=>(a+1)+'–'+b).join(', '),translationVerified:g.sequence===r.sequence&&g.translationVerified,proteinLength:r.sequence.length/3-1};
+ return {...g,datasetId:sharedDatasetId(g.symbol),chromosome:r.chromosome.slice(3),sequence:r.sequence,sequenceSha256:r.sequenceSha256,cdsLength:r.sequence.length,translationVerified:g.sequence===r.sequence&&g.translationVerified,selenocysteineOffsets:g.symbol==='GPX1'?[138]:g.selenocysteineOffsets};
 }
 export const GENES:Record<string,GeneAsset>=Object.fromEntries(Object.values(LEGACY_GENES).map(g=>[g.symbol,fromReference(g)]));
 export const INS=GENES.INS!;

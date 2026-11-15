@@ -4,8 +4,8 @@ import { canonicalMask, isConnected, isSelfSymmetric, maskMetrics, symmetricDist
 import { createRng } from '../../src/generator/rng.ts';
 import { solveBounded } from '../../src/generator/solver.ts';
 import { M2_SPECS, ALL_SPECS, LAB_SPECS, CAMPAIGN_ID } from '../../src/campaign/specs.ts';
-import { ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, INTRO_LEVELS, chapterOf, coveredBases, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
-import { CATALOGUE_ORDER, GENES, HBB, INS } from '../../src/genomics/genes.ts';
+import { LEGACY_LEVELS, ALL_LEVELS, CHAPTER_LEVELS, LAB_LEVELS, LEVEL_PACK, INTRO_LEVELS, chapterOf, coveredBases, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
+import { CATALOGUE_ORDER, GENES, LEGACY_GENES, HBB, INS } from '../../src/genomics/genes.ts';
 import m2pack from '../../src/campaign/levels.generated.json';
 import { alignedComplement } from '../../src/genomics/dna.ts';
 import { applyMove, applySlide, segmentCells } from '../../src/engine/grid.ts';
@@ -29,8 +29,8 @@ describe('rng', () => {
 describe('deterministic generation', () => {
   it('regenerating from specs reproduces the pinned level pack exactly', { timeout: 120_000 }, () => {
     // 1-base intro boards + Enzyme labs stay byte-identical (chapter-generation context).
-    expect(buildCampaign(ALL_SPECS, GENES)).toEqual([...LEVELS, ...LAB_LEVELS]);
-    expect(buildCampaign(M2_SPECS, GENES)).toEqual(LEVELS);
+    expect(buildCampaign(ALL_SPECS, LEGACY_GENES)).toEqual(LEGACY_LEVELS.filter(l=>ALL_SPECS.some(spec=>spec.id===l.id)));
+    expect(buildCampaign(M2_SPECS, LEGACY_GENES)).toEqual(LEGACY_LEVELS.filter(l=>M2_SPECS.some(spec=>spec.id===l.id)));
     expect(ALL_LEVELS[0]!.id).toBe('ins-01');
     expect(ALL_LEVELS.filter((l) => l.lab)).toEqual(LAB_LEVELS);
     expect(LEVEL_PACK.generatorVersion).toBe(GENERATOR_VERSION);

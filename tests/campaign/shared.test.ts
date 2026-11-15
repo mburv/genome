@@ -3,8 +3,8 @@ import {ALL_LEVELS,CAMPAIGN_LEVELS,LEVEL_PACK} from '../../src/campaign/campaign
 import {GENES,LEGACY_GENES} from '../../src/genomics/genes.ts';
 import {FAMOUS_REFERENCE} from '../../src/genomics/sharedReference.ts';
 import {codingCoordinates,creditFamousCompleted,referenceLevelCovered,legacyLevelExact} from '../../src/campaign/sharedCoverage.ts';
-import {genomeCovered,nextPuzzle,covered} from '../../src/campaign/bonus.ts';
-import {newSave,recordCompletion,loadSave,createMemoryAdapter,serializeSave} from '../../src/persistence/save.ts';
+import {genomeCovered,nextPuzzle,covered,addGenomeCredit,bonusUnlocked} from '../../src/campaign/bonus.ts';
+import {newSave,recordCompletion,recordGenomeProgress,loadSave,createMemoryAdapter,serializeSave} from '../../src/persistence/save.ts';
 describe('one shared reference',()=>{
  it('maps every coding base exactly to T2T chromosomes, on both strands',()=>{
   for(const [symbol,g] of Object.entries(FAMOUS_REFERENCE)){
@@ -37,4 +37,16 @@ describe('one shared reference',()=>{
   const r=FAMOUS_REFERENCE[l.symbol]!,iv=codingCoordinates(l.symbol,l.sourceIntervals[0]!.start,l.sourceIntervals[0]!.end)[0]!;
   expect(covered(loaded.genomeProgress![r.chromosome]!,...iv)).toBe(iv[1]-iv[0]);
  });
+});
+
+it('preserves completed legacy campaign and credits only exact matching bases; bonus fills the differences',()=>{
+ const old={...newSave(LEVEL_PACK),datasets:Object.fromEntries(Object.values(LEGACY_GENES).map(g=>[g.symbol,g.datasetId])),completed:CAMPAIGN_LEVELS.map(l=>l.id)};
+ const s=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK).save;
+ expect(bonusUnlocked([...s.completed,...s.legacyReferenceLevels??[]])).toBe(true);
+ expect(s.legacyReferenceLevels).toContain('hbb-01');
+ expect(genomeCovered(s.genomeProgress!)).toBeLessThan(Object.values(GENES).reduce((n,g)=>n+g.cdsLength,0));
+ const hbb=FAMOUS_REFERENCE.HBB!,coords=codingCoordinates('HBB',8,9)[0]!;
+ expect(covered(s.genomeProgress![hbb.chromosome]??[],...coords)).toBe(0);
+ const next=recordGenomeProgress(s,addGenomeCredit(s.genomeProgress!,hbb.chromosome,coords));
+ expect(next.completed).toContain('hbb-01');expect(next.legacyReferenceLevels).not.toContain('hbb-01');
 });

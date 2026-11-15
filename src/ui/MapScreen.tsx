@@ -13,6 +13,7 @@ import { POWER_COST } from '../engine/powers.ts';
 interface Props {
   labs: readonly LevelDefinition[];
   completed: readonly string[];
+  historicalCompleted?:readonly string[];
   attempted: readonly string[];
   currentLevelId: string;
   legacyM1: readonly string[];
@@ -22,8 +23,9 @@ interface Props {
   onCard: (symbol: string) => void;
 }
 
-export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, onMechanics, onBonus, onCard, legacyM1 }: Props) {
-  const nextUnfinished = CAMPAIGN_LEVELS.find((l) => !completed.includes(l.id));
+export function MapScreen({ labs, completed, historicalCompleted=[], attempted, currentLevelId, onPlay, onMechanics, onBonus, onCard, legacyM1 }: Props) {
+  const progressed=[...completed,...historicalCompleted];
+  const nextUnfinished = CAMPAIGN_LEVELS.find((l) => !progressed.includes(l.id));
   const next = nextUnfinished ?? CAMPAIGN_LEVELS[0]!;
   const nextRun = runProgress(next)!;
   const catalogue = CAMPAIGN_GENES.map((symbol) => MANIFEST.included.find((g) => g.symbol === symbol)!);
@@ -34,7 +36,8 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
       </button>
       <button type="button" className="big" onClick={onMechanics} data-testid="open-mechanics">Mechanics Lab · 6 new puzzles →</button>
       <p className="muted small">Famous Genes · main campaign</p>
-      <button type="button" className="big" data-testid="open-bonus" disabled={!bonusUnlocked(completed)} onClick={onBonus}>Human Genome · {bonusUnlocked(completed)?'Bonus genes →':'Locked until main campaign complete'}</button>
+      {historicalCompleted.length>0&&<p className="muted small">Your earlier Famous Genes completions are preserved. Any changed reference bases remain available in Human Genome.</p>}
+      <button type="button" className="big" data-testid="open-bonus" disabled={!bonusUnlocked(progressed)} onClick={onBonus}>Human Genome · {bonusUnlocked(progressed)?'Bonus genes →':'Locked until main campaign complete'}</button>
       <p className="muted tiny">{GENOME_BASES.toLocaleString()} reference DNA bases · shared reference progress; Famous Genes bases carry forward.</p>
       <div className="panel catalogue" data-testid="catalogue">
         <h2 className="gene">Gene catalogue</h2>
@@ -43,7 +46,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
               const intros = introOf(m.symbol);
               const run = runOf(m.symbol);
               const st = assemblyStatus(completed, gene);
-              const disc = isDiscovered(completed, m.symbol);
+              const disc = isDiscovered(progressed, m.symbol);
               const chapters = run.filter((l) => l.chapter);
               const tiers = [
                 ...(intros.length ? ['1-base tiles'] : []),
@@ -51,9 +54,10 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
               ];
               const countLabel = `${run.length} stages · ${new Set(run.map(mechanicOf)).size} mechanics`;
               const node = (l: LevelDefinition) => {
-                const done = completed.includes(l.id);
+                const done = progressed.includes(l.id);
                 const part = runProgress(l)!.part;
                 const mechanic = mechanicOf(l);
+                const historical=historicalCompleted.includes(l.id);
                 const label = mechanic === 'slide' ? MODE_LABEL[l.mode] : LAB_META[mechanic].title;
                 return (
                   <li key={l.id}>
@@ -61,7 +65,7 @@ export function MapScreen({ labs, completed, attempted, currentLevelId, onPlay, 
                       type="button"
                       className={`cnode ${l.chapter ? '' : 'intro '} ${done ? 'done' : ''} ${l.id === currentLevelId ? 'current' : ''} ${attempted.includes(l.id) && !done ? 'started' : ''}`.replace(/  +/g, ' ').trim()}
                       onClick={() => onPlay(l.id)}
-                      aria-label={`${m.symbol} ${part} of ${run.length}: ${label}, ${mechanic === 'slide' ? l.chapter ? `${l.tier}-base tiles` : '1-base tiles' : `${l.tier??1}-base tiles · mixed mechanic`}${done ? ', complete' : ''}`}
+                      aria-label={`${m.symbol} ${part} of ${run.length}: ${label}, ${mechanic === 'slide' ? l.chapter ? `${l.tier}-base tiles` : '1-base tiles' : `${l.tier??1}-base tiles · mixed mechanic`}${historical ? ', previously completed; remaining reference bases in Human Genome' : done ? ', complete' : ''}`}
                       data-testid={`cnode-${l.id}`}
                     >
                       <span className="node-number">{part}</span>{done && <span className="node-check" aria-hidden="true">✓</span>}

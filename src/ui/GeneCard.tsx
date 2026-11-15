@@ -1,4 +1,5 @@
 import type { GeneAsset } from '../genomics/genes.ts';
+import {FAMOUS_REFERENCE} from '../genomics/sharedReference.ts';
 import { MANIFEST } from '../genomics/genes.ts';
 import { runOf, isDiscovered } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
@@ -6,6 +7,7 @@ import { assemblyStatus } from '../campaign/assembly.ts';
 interface Props {
   gene: GeneAsset;
   completed: readonly string[];
+  historicalCompleted?:readonly string[];
   onPlay: (levelId: string) => void;
   onBack: () => void;
 }
@@ -14,11 +16,11 @@ interface Props {
  * Gene card. Discovery (the first puzzle of the gene's run) and assembly (every coding base
  * placed by the player, exact and SHA-256 verified) are separate states.
  */
-export function GeneCard({ gene, completed, onPlay, onBack }: Props) {
-  const discovered = isDiscovered(completed, gene.symbol);
+export function GeneCard({ gene, completed, historicalCompleted=[], onPlay, onBack }: Props) {
+  const discovered = isDiscovered([...completed,...historicalCompleted], gene.symbol);
   const status = assemblyStatus(completed, gene);
   const run = runOf(gene.symbol);
-  const nextPuzzle = run.find((l) => !completed.includes(l.id));
+  const nextPuzzle = run.find((l) => !completed.includes(l.id)&&!historicalCompleted.includes(l.id));
   const theme = MANIFEST.included.find((m) => m.symbol === gene.symbol)?.theme;
   const state = status.verified ? 'Assembled' : discovered ? 'Discovered' : 'Locked';
   return (
@@ -61,7 +63,7 @@ export function GeneCard({ gene, completed, onPlay, onBack }: Props) {
       <dl className="card-meta">
         <dt>Transcript</dt><dd><a href={gene.sourceUrl} target="_blank" rel="noopener noreferrer">{gene.transcript}</a> ({gene.keywords.replace(/\.$/, '')})</dd>
         <dt>Protein</dt><dd>{gene.protein} · {gene.proteinLength} aa ({gene.translationVerified?'reference translation verified':'RefSeq protein annotation'})</dd>
-        <dt>CDS</dt><dd>{gene.cdsLocation} · {gene.cdsLength} bases incl. stop</dd>
+        <dt>CDS</dt><dd>{FAMOUS_REFERENCE[gene.symbol]!.chromosome} · {gene.cdsLength} reference bases incl. stop</dd>
         <dt>Gene ID</dt><dd>{gene.geneId}</dd>
         <dt>SHA-256</dt><dd className="mono" data-testid="card-checksum">{gene.sequenceSha256.slice(0, 20)}…{status.verified ? ' ✓ matches your assembly' : ''}</dd>
         <dt>Retrieved</dt><dd>{gene.retrievedAt.slice(0, 10)} annotation from NCBI RefSeq</dd>
