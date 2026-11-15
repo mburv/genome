@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { fresh, openMap, solveWithHints } from './helpers';
-import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { fresh, openMap, openCompleted, solveWithHints } from './helpers';
+import { CAMPAIGN_LEVELS, LEVEL_PACK } from '../src/campaign/campaign.ts';
+import { newSave, serializeSave } from '../src/persistence/save.ts';
 import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 const tile=(page:import('@playwright/test').Page,c:number)=>page.getByTestId('lab-cell-'+c);
 test('first-use tutorials animate all seven mechanics, replay, and remember acknowledgement',async({page})=>{
@@ -655,4 +656,25 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
   await expect(page.getByTestId('win')).toBeVisible();
   await expect(chips.filter({visible:true})).toHaveCount(0);
   await expect(panel.locator('.clue-pagination')).toBeHidden();
+});
+
+
+test('a sliding solve that completes a gene also offers its completion card, without repeating on replay',async({page})=>{
+  // Complete the other INS levels first, then fill the last missing interval by sliding.
+  const ins=CAMPAIGN_LEVELS.filter(l=>l.symbol==='INS');
+  const opener=ins[0]!;
+  expect(mechanicOf(opener)).toBe('slide');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:ins.slice(1).map(l=>l.id)}));
+  await page.getByTestId('cnode-'+opener.id).click();
+  await solveWithHints(page);
+  await expect(page.getByTestId('assembled')).toContainText('INS assembled');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
+  await expect(page.getByTestId('card-continue')).toHaveText('Continue to HBB →');
+  await page.getByRole('button',{name:'← Map',exact:true}).click();
+  await page.getByTestId('cnode-'+opener.id).click();
+  await page.getByTestId('replay').click();
+  await solveWithHints(page);
+  await expect(page.getByTestId('assembled')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'View card',exact:true})).toHaveCount(0);
 });

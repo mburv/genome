@@ -62,10 +62,9 @@ test('long-token level: readable tiles, drag-solve with hints; finishing the cha
   await expect(page.getByTestId('win-meta')).toContainText('INS 13/13');
   await expect(page.getByTestId('assembled')).toContainText('INS assembled');
   await expect(page.getByTestId('assembled')).toContainText('SHA-256 verified');
-  await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'View card' })).toHaveCount(0);
-  await page.getByTestId('win-map').click();
-  await page.getByTestId('cat-card-INS').click();
+  await expect(page.getByRole('button', { name: 'View card' })).toBeVisible();
+  await page.getByRole('button', { name: 'View card' }).click();
+  await expect(page.getByTestId('gene-card')).toBeVisible();
   await expect(page.getByTestId('card-state')).toContainText('Assembled');
   await expect(page.getByTestId('card-coverage')).toContainText('333 of 333');
   await expect(page.getByTestId('card-checksum')).toContainText('matches your assembly');
