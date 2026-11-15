@@ -1,6 +1,6 @@
 import { useCallback,useEffect,useState } from 'react';
 import { CHROMOSOMES,GENOME_BASES,REFERENCE,addGenomeCredit,covered,genomeCovered,nextPuzzle,genomeStage,type BonusProgress,type Interval } from '../campaign/bonus.ts';
-import { openGenomePack,readGenomeSequence,type GenomePack } from '../genomics/genomePack.ts';
+import { openGenomePack,readGenomeDownload,readGenomeSequence,type GenomePack } from '../genomics/genomePack.ts';
 import { loadGenomePacks,storeGenomePack } from '../genomics/genomeStorage.ts';
 import { MechanicsPlay } from './MechanicsLab.tsx';
 import { labExtractedSequence,type LabState } from '../engine/mechanicsLab.ts';
@@ -15,20 +15,21 @@ export function BonusScreen({progress,onProgress,onBack,reducedMotion,feedback}:
   useEffect(()=>{let active=true;void loadGenomePacks().then(p=>{if(active)setPacks(old=>({...p,...old}));}).catch(()=>{if(active)setStorageNote('Offline storage is unavailable; reference data will be loaded when needed.');});return()=>{active=false;};},[]);
   const [scope,setScope]=useState<Scope|null>(null),[stage,setStage]=useState<MixedStage|null>(null);
   const [hint,setHint]=useState<boolean|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+  const [loadingPercent,setLoadingPercent]=useState(0),[loadingChrom,setLoadingChrom]=useState('');
   const done=genomeCovered(progress);
   const open=async(s:Scope)=>{
     if(busy)return;
-    setBusy(true);setError('');
+    setBusy(true);setError('');setLoadingPercent(0);setLoadingChrom(s.chrom);
     try{
       let pack=packs[s.chrom];
       if(!pack){
         const response=await fetch(new URL('reference-data/'+s.chrom+'.genome',document.baseURI));
-        if(!response.ok)throw Error('Reference data could not be loaded. Please try again.');
-        pack=await openGenomePack(await response.blob());
+        pack=await openGenomePack(await readGenomeDownload(response,s.chrom,setLoadingPercent));
         if(pack.header.chromosome!==s.chrom)throw Error('Wrong chromosome reference data');
         setPacks(old=>({...old,[s.chrom]:pack!}));
         void storeGenomePack(pack).catch(()=>setStorageNote('Offline storage is unavailable; reference data may need to be loaded again.'));
       }
+      setLoadingPercent(100);
       const iv=nextPuzzle(progress,s.chrom,s.start,s.end);
       if(!iv){setStage(null);setScope(null);return;}
       const seq=await readGenomeSequence(pack,iv);setScope(s);setStage(genomeStage(s.chrom,iv,seq));setHint(null);
@@ -58,10 +59,10 @@ export function BonusScreen({progress,onProgress,onBack,reducedMotion,feedback}:
     <div className="progress thin" role="progressbar" aria-label="Genome bases assembled" aria-valuemin={0} aria-valuemax={GENOME_BASES} aria-valuenow={done}><i style={{width:100*done/GENOME_BASES+'%'}}/></div>
     {done===GENOME_BASES&&<p className="discovered assembled">Human reference genome assembled!</p>}
     <h3>Chromosomes</h3>
-    {busy&&<p role="status">Reading reference data…</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
+    {busy&&<p role="status" data-testid="reference-loading">Reading reference data… {loadingPercent}%</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
     <div className="panel catalogue">{Object.entries(CHROMOSOMES).map(([c,len])=>{
       const n=covered(progress[c]??[],0,len);return <div className="cat-gene" key={c} data-testid={'chromosome-'+c}>
-        <div className="row-between"><b>{c}</b><button type="button" disabled={busy||n===len} onClick={()=>{void open({chrom:c,start:0,end:len,label:c});}}>{n===len?'Complete':'Assemble'}</button></div>
+        <div className="row-between"><b>{c}</b><button type="button" disabled={busy||n===len} onClick={()=>{void open({chrom:c,start:0,end:len,label:c});}}>{n===len?'Complete':busy&&loadingChrom===c?`Loading ${loadingPercent}%`:'Assemble'}</button></div>
         <div className="progress thin"><i style={{width:100*n/len+'%'}}/></div><p className="muted tiny">{n.toLocaleString()} / {len.toLocaleString()} bp</p>
       </div>;
     })}</div>

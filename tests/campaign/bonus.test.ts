@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import { CAMPAIGN_LEVELS,LEVEL_PACK } from '../../src/campaign/campaign.ts';
 import { CHROMOSOMES,GENOME_BASES,addGenomeCredit,bonusUnlocked,bonusVerified,covered,genomeCovered,genomeStage,nextPuzzle,readGenomeProgress } from '../../src/campaign/bonus.ts';
+import { readGenomeDownload } from '../../src/genomics/genomePack.ts';
 import { newSave,createMemoryAdapter,loadSave,serializeSave } from '../../src/persistence/save.ts';
 describe('full T2T genome',()=>{
   it('unlocks after the existing campaign',()=>{const ids=CAMPAIGN_LEVELS.map(l=>l.id);expect(bonusUnlocked(ids.slice(0,-1))).toBe(false);expect(bonusUnlocked(ids)).toBe(true);});
@@ -24,5 +25,27 @@ describe('full T2T genome',()=>{
     const s={...newSave(LEVEL_PACK),genomeProgress:addGenomeCredit({},'chr1',[0,9])};
     expect(loadSave(createMemoryAdapter(serializeSave(s)),LEVEL_PACK).save.genomeProgress).toEqual(s.genomeProgress);
     expect(readGenomeProgress({chr1:[[10,20],[0,15],[-1,2]],fake:[[0,1]]})).toEqual({chr1:[[0,20]]});
+  });
+});
+
+
+describe('chromosome download progress',()=>{
+  it('reports actual percentages even without a Content-Length header and with a split prefix',async()=>{
+    const bytes=new Uint8Array(4+4+Math.ceil(CHROMOSOMES.chrM!/4));
+    new DataView(bytes.buffer).setUint32(0,4,true);
+    const half=Math.ceil(bytes.length/2),progress:number[]=[];
+    const stream=new ReadableStream<Uint8Array>({start(controller){
+      for(const chunk of [bytes.slice(0,2),bytes.slice(2,half),bytes.slice(half)])controller.enqueue(chunk);
+      controller.close();
+    }});
+    const blob=await readGenomeDownload(new Response(stream),'chrM',p=>progress.push(p));
+    expect(blob.size).toBe(bytes.length);
+    expect(progress).toEqual([0,50,99,100]);
+  });
+  it('never reports completion for a truncated download',async()=>{
+    const bytes=new Uint8Array(8);new DataView(bytes.buffer).setUint32(0,4,true);
+    const progress:number[]=[];
+    await expect(readGenomeDownload(new Response(bytes),'chrM',p=>progress.push(p))).rejects.toThrow('Incomplete data pack');
+    expect(progress).not.toContain(100);
   });
 });

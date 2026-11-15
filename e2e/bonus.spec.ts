@@ -59,9 +59,16 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await page.getByTestId('open-bonus').click();
   const row=page.getByTestId('chromosome-chrM');
   let requests=0;
-  await page.route('**/reference-data/chrM.genome',async route=>{requests++;await route.fulfill({status:200,contentType:'application/octet-stream',body:Buffer.concat([prefix,header,payload])});});
+  let release!:()=>void;
+  const gate=new Promise<void>(resolve=>{release=resolve;});
+  await page.route('**/reference-data/chrM.genome',async route=>{requests++;await gate;await route.fulfill({status:200,contentType:'application/octet-stream',body:Buffer.concat([prefix,header,payload])});});
   await row.getByRole('button',{name:'Assemble',exact:true}).click();
+  try{
+    await expect(page.getByTestId('reference-loading')).toHaveText('Reading reference data… 0%');
+    await expect(row.getByRole('button',{name:'Loading 0%'})).toBeDisabled();
+  }finally{release();}
   await expect(page.getByTestId('bonus-play')).toBeVisible();
+  await expect(page.getByTestId('reference-loading')).toHaveCount(0);
   expect(requests).toBe(1);
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
   await expect(page.getByTestId('bonus-win')).toBeVisible();

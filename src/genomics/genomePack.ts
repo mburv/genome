@@ -3,6 +3,41 @@ const MAGIC='GENOME-T2T-1';
 const MD5='06caded0055ec647a69acb708e13beff';
 const ALPHABET='ACGT';
 export interface GenomePack {file:Blob; header:GenomeHeader; offset:number}
+/** Count decoded bytes against the exact pack size (header + packed DNA).
+ * This works even when HTTP Content-Length is missing or describes compressed bytes. */
+export async function readGenomeDownload(response:Response,chromosome:string,onProgress:(percent:number)=>void):Promise<Blob>{
+  const length=CHROMOSOMES[chromosome];
+  if(!length)throw Error('Unknown chromosome');
+  if(!response.ok)throw Error('Reference data could not be loaded. Please try again.');
+  onProgress(0);
+  if(!response.body){
+    const blob=await response.blob();onProgress(100);return blob;
+  }
+  const reader=response.body.getReader(),parts:BlobPart[]=[],prefix=new Uint8Array(4);
+  let received=0,total=0,last=0;
+  try{
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(received<4)prefix.set(value.subarray(0,4-received),received);
+      received+=value.byteLength;
+      if(!total&&received>=4){
+        const header=new DataView(prefix.buffer).getUint32(0,true);
+        if(header<1||header>20_000_000)throw Error('Invalid data pack header');
+        total=4+header+Math.ceil(length/4);
+      }
+      if(total&&received>total)throw Error('Wrong reference or damaged data pack');
+      parts.push(new Uint8Array(value).buffer);
+      if(total){
+        const percent=Math.min(99,Math.floor(100*received/total));
+        if(percent!==last){last=percent;onProgress(percent);}
+      }
+    }
+    if(!total||received!==total)throw Error('Incomplete data pack');
+    const blob=new Blob(parts);onProgress(100);return blob;
+  }catch(error){await reader.cancel().catch(()=>undefined);throw error;}
+  finally{reader.releaseLock();}
+}
 export async function openGenomePack(file:Blob):Promise<GenomePack>{
   const prefix=await file.slice(0,4).arrayBuffer();
   if(prefix.byteLength!==4)throw Error('Incomplete data pack');
