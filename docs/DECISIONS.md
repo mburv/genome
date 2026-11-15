@@ -382,3 +382,8 @@ Owner playtest: all new tracing attempts begin with the first two reference base
 ### D-UI-41 — Graphical DNA Connections hints
 
 Owner playtest: remove the written Connections hint below the toolbar. Outline the next actionable square with a dashed line in the suggested pair's colour. Follow the active route where possible, find viable alternate continuations on the actual board, and guide recovery from dead ends or a route blocking another pair's certified corridor. Automatically target the hinted pair when its suggested square is tapped, including after reload or Undo. Keep normal status feedback, rules, saves and gene credit unchanged.
+
+
+### D-UI-42 — Graphical Codon Crush hints
+
+Owner playtest: remove written Codon Crush hints from beneath the toolbar. Outline both adjacent swap tiles in dashed green and place a small double arrow at their shared edge, with no automatic swap or palette changes. Recalculate after the actual swap/clear/fall sequence, suppress stale cues during motion, and restore them after Undo, Restart or resume. Prefer certified swaps when valid, use bounded lookahead for alternate boards, and graphically highlight Undo if no solution can be found. Keep existing gameplay and gene credit unchanged.

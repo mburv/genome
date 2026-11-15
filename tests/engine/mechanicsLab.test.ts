@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { applyLab, createLab, traceHintCell, connectionHint, DEFAULT_LAB_SPEC, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SWAPS, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
+import { applyLab, createLab, traceHintCell, connectionHint, findCrushSwap, DEFAULT_LAB_SPEC, LAB_IDS, TRACE_PATH, TRACE_TARGET, CRUSH_SWAPS, CRUSH_TARGETS, READ_STARTS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATIONS, mutationExpected, mutationCount, CONNECTION_ROUTES, CUT_SITES, CUT_SOLUTION, CUT_STRANDS, CUT_SEQUENCES, CUT_TARGET, type LabAction, type LabState } from '../../src/engine/mechanicsLab.ts';
 import { INS } from '../../src/genomics/genes.ts';
 
 const run = (id: typeof LAB_IDS[number], actions: LabAction[]): LabState => actions.reduce((state, action) => applyLab(state, action).state, createLab(id));
@@ -168,5 +168,45 @@ describe('graphical connection hints', () => {
     expect(blocked.routes[0]!.at(-1)).toBe(44);
     expect(connectionHint(blocked,0)).toEqual({pair:0,cell:1});
     follow(blocked,0);
+  });
+});
+
+
+describe('graphical Codon Crush hints',()=>{
+  test('hints suggest certified swaps that finish the exact target',()=>{
+    const spec={...DEFAULT_LAB_SPEC,CRUSH_TARGETS:INS.sequence.slice(33,42).match(/.{3}/g)!,crushHoles:[...DEFAULT_LAB_SPEC.crushHoles,54]};
+    for(const s of [DEFAULT_LAB_SPEC,spec]){
+      let state=createLab('crush',s);
+      for(const [a,b] of CRUSH_SWAPS){
+        expect(findCrushSwap(state)).toEqual([a,b]);
+        state=applyLab(state,{type:'swap',a,b}).state;
+      }
+      expect(state.won).toBe(true);
+      expect(findCrushSwap(state)).toBeNull();
+    }
+  });
+  test('never suggests a stale or nonmatching swap on a dead board',()=>{
+    const state=createLab('crush');
+    const dead={...state,board:state.board.map(b=>b==='.'?'.':'A')};
+    expect(findCrushSwap(dead)).toBeNull();
+  });
+  test('a different accepted first swap is followed by a legal solution or recovery',()=>{
+    const start=createLab('crush');
+    let alternate:LabState|null=null;
+    for(let a=0;a<81&&!alternate;a++)for(const b of [a+1,a+9]){
+      if(a===12&&b===13)continue;
+      const result=applyLab(start,{type:'swap',a,b}).state;
+      if(result!==start){alternate=result;break;}
+    }
+    expect(alternate).not.toBeNull();
+    let state=alternate!;
+    for(let i=0;i<2&&!state.won;i++){
+      const next=findCrushSwap(state);
+      if(!next)break;
+      const result=applyLab(state,{type:'swap',a:next[0],b:next[1]}).state;
+      expect(result.collected).toBe(state.collected+1);
+      state=result;
+    }
+    expect(state.won||findCrushSwap(state)===null).toBe(true);
   });
 });
