@@ -74,7 +74,7 @@ function varyTrace(stage: MixedStage, rng: Rng): MixedStage {
   const spec = { ...stage.spec };
   spec.TRACE_PATH = walk(spec.TRACE_TARGET.length, rng);
   spec.traceHoles = holesOutside(rng, spec.TRACE_PATH, rng.range(8, 18));
-  return { ...stage, spec, certificate: spec.TRACE_PATH.slice(2).map(cell => ({ type: 'trace' as const, cell })) };
+  return { ...stage, spec, certificate: spec.TRACE_PATH.slice(Math.min(2,spec.TRACE_PATH.length-1)).map(cell => ({ type: 'trace' as const, cell })) };
 }
 
 function varyConnections(stage: MixedStage, rng: Rng): MixedStage {
