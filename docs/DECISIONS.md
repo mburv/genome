@@ -441,3 +441,5 @@ Moved the four replacement options from the unused left grid column to the unuse
 Mixed mechanics previously reused fixed board geometry despite differing gene sequences. Each level now derives a deterministic seeded trace, connection routes, assembly read placement order, mutation locations, restriction strand placement or Codon Crush swaps and refills. For genome-wide bonus levels, the chromosome and reference interval determine their stable seed; DNA content always comes from the downloaded T2T reference. Practice tutorials remain fixed teaching examples. A prospective solution must pass the actual gameplay rules before it is accepted.
 
 Retain previously started and completed main campaign geometry so absolute-cell action logs are valid; migrate a snapshot of pre-update bonus completion coverage so already completed chromosome puzzles also replay their former layout. Future unplayed levels get the new geometry. Do not reset progression or alter the 11×11 bonus map, downloads, clue positioning or mobile controls.
+
+This branch is verified against the full T2T/bonus implementation rather than the earlier main-only source snapshot.
