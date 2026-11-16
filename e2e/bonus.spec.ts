@@ -85,7 +85,20 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await expect(page.getByTestId('reference-loading')).toHaveCount(0);
   expect(requests).toBe(1);
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
-  await expect(page.getByTestId('bonus-win')).toBeVisible();
+  const win=page.getByTestId('bonus-win');
+  await expect(win).toBeVisible();
+  await expect(win.getByTestId('win-card')).toBeVisible();
+  await expect(win.getByTestId('win-meta')).toHaveText('chrM 1/23 COMPLETE · 7 moves');
+  await expect(win.getByTestId('win-bases')).toContainText('+9 chrM reference bases');
+  await expect(win.getByTestId('win-assembly')).toContainText('9 / 16,569 chrM reference bases assembled');
+  await expect(win.getByTestId('mixed-extracted').locator('.strip-cell')).toHaveCount(9);
+  await expect(win.locator('.win-strand')).not.toHaveClass(/\bskip\b/);
+  await expect(win.getByTestId('mixed-extracted').locator('.strip-cell').nth(1)).toHaveCSS('animation-delay','0.04s');
+  const rect=await win.getByTestId('win-card').boundingBox();
+  expect(rect).not.toBeNull();expect(Math.abs(rect!.x-(375-rect!.x-rect!.width))).toBeLessThanOrEqual(1);
+  await win.locator('.win-strand').click();
+  await expect(win.locator('.win-strand')).toHaveClass(/\bskip\b/);
+  await expect(win.getByRole('button',{name:'Next level →'})).toBeVisible();
   const cues=await feedbackLog(page);
   expect(cues.notes).toEqual([520,520,520,520,520,520,523,659,784,1047]);
   expect(cues.vibration).toEqual([8,8,8,8,8,8,[30,50,30,50,60]]);
@@ -98,6 +111,7 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await expect(page.getByTestId('bonus-node-chrM-1')).toContainText('✓');
   await expect(page.getByTestId('bonus-node-chrM-1')).toBeEnabled();
   await expect(page.getByTestId('bonus-node-chrM-1')).toHaveCSS('background-color','rgb(205, 235, 216)');
+  await page.emulateMedia({reducedMotion:'reduce'});
   await page.reload();await page.getByTestId('title-play').click();await page.getByTestId('open-bonus').click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
   await expect(page.getByTestId('chromosome-chrM')).toContainText('9 / '+length.toLocaleString()+' bp');
@@ -111,6 +125,8 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await expect(page.getByTestId('play-progress')).toHaveText('1/23');
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
   await expect(page.getByTestId('bonus-win')).toBeVisible();
+  await expect(page.getByTestId('bonus-win').getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('bonus-win').locator('.win-strand')).toHaveClass(/\bskip\b/);
   await page.getByTestId('bonus-win').getByRole('button',{name:'Bonus map'}).click();
   await expect(page.getByRole('progressbar',{name:'Genome bases assembled'})).toHaveAttribute('aria-valuenow',String(FAMOUS_BASES+9));
 });

@@ -48,7 +48,8 @@ export function BonusScreen({progress,onProgress,onBack,onPlaying,onSettings,red
   if(scope&&stage){
     const length=CHROMOSOMES[scope.chrom]!,total=genomeLevelCount(length);
     const iv:Interval=[stage.start,stage.end],remaining=nextGenomeLevel(addGenomeCredit(progress,scope.chrom,iv),scope.chrom);
-    const completed=covered(progress[scope.chrom]??[],...iv)===iv[1]-iv[0];
+    const newBases=iv[1]-iv[0]-covered(progress[scope.chrom]??[],...iv);
+    const completed=newBases===0;
     return <>
       <header className="top play-top" data-testid="play-top">
         <div className="top-collapse" data-testid="bonus-play"><div className="top-collapse-inner">
@@ -61,7 +62,7 @@ export function BonusScreen({progress,onProgress,onBack,onPlaying,onSettings,red
       </header>
       {error&&<p role="alert">{error}</p>}
       <MechanicsPlay feedback={feedback} key={stage.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hint} onHintModeChange={setHint} onBack={back} onNext={()=>undefined}
-        bonus={{stage,label:scope.chrom,hasNext:remaining!==null,completed,covered:covered(progress[scope.chrom]??[],0,length),length,onComplete:credit,onNext:()=>{if(remaining!==null)void open({chrom:scope.chrom,level:remaining});else back();}}}/>
+        bonus={{stage,label:scope.chrom,part:scope.level,of:total,hasNext:remaining!==null,completed,newBases,covered:covered(progress[scope.chrom]??[],0,length),length,onComplete:credit,onNext:()=>{if(remaining!==null)void open({chrom:scope.chrom,level:remaining});else back();}}}/>
     </>;
   }
   const first=Object.keys(CHROMOSOMES).find(c=>nextGenomeLevel(progress,c)!==null);

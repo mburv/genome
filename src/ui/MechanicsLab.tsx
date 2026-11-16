@@ -57,7 +57,7 @@ interface CampaignPlay {
   stage: MixedStage; seedTrace: boolean; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
-interface BonusPlay { stage: MixedStage; label:string; hasNext:boolean; completed:boolean; covered:number; length:number; onComplete:(state:LabState)=>void; onNext:()=>void }
+interface BonusPlay { stage: MixedStage; label:string; part:number; of:number; hasNext:boolean; completed:boolean; newBases:number; covered:number; length:number; onComplete:(state:LabState)=>void; onNext:()=>void }
 export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; feedback: FeedbackOptions; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
   const meta = LAB_META[id];
   const spec = campaign?.stage.spec ?? bonus?.stage.spec ?? DEFAULT_LAB_SPEC;
@@ -122,7 +122,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     return () => window.clearTimeout(timer);
   }, [state.won, gestureActive]);
   const credit: WinCredit = {
-    newBases: campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
+    newBases: bonus ? bonus.newBases : campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
     replayed: campaign?.completed ?? bonus?.completed ?? false,
     assembled: !!campaign && !campaign.assembled && !campaign.completed && campaign.covered + campaign.stage.sequence.length === gene.cdsLength,
   };
@@ -306,12 +306,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const extracted = state.won ? !campaign && !bonus && id==='connections'
     ? spec.CONNECTION_PAIRS.map(p=>p.seq).join('') : labExtractedSequence(state) : null;
   const closeWin = () => updateSession({...sessionRef.current,celebration:null});
-  const bonusPopup=bonus && state.won && winReady && session.celebration && extracted!==null && <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="bonus-win-title" data-testid="bonus-win"><div className="card win-card"><div className="card-head"><div className="card-head-copy"><p className="muted small">{bonus.label} · REFERENCE FRAGMENT COMPLETE</p><h3 id="bonus-win-title">{winTitle[id]}</h3></div><button type="button" className="win-close" onClick={closeWin} aria-label="Close and view board">×</button></div><p className="mono small" style={{overflowWrap:'anywhere'}}>{extracted}</p><p className="muted small">Reference fragment verified. {bonus.hasNext?'Continue assembling this region.':'Region fully assembled.'}</p><div className="card-actions"><button type="button" onClick={onBack}>Bonus map</button>{hasNext&&<button type="button" className="primary" onClick={advance}>Continue assembly →</button>}</div></div></div>;
-  const popup = !bonus && state.won && winReady && session.celebration && extracted !== null &&
-    <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel,...(campaign?{range:{start:campaign.stage.start,end:campaign.stage.end}}:{})}}
+  const stage = bonus?.stage ?? campaign?.stage;
+  const popup = state.won && winReady && session.celebration && extracted !== null &&
+    <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign&&!bonus,nextLabel,...(stage?{range:{start:stage.start,end:stage.end}}:{})}}
+      {...(bonus?{bonus:{label:bonus.label,part:bonus.part,of:bonus.of}}:{})}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
       replayed={session.celebration.replayed} assembled={!!campaign?.assembled && (session.celebration.assembled || campaign.part === campaign.of)}
-      assembledBases={campaign?.covered ?? 0} cdsLength={gene.cdsLength} reducedMotion={reducedMotion}
+      assembledBases={bonus?.covered ?? campaign?.covered ?? 0} cdsLength={bonus?.length ?? gene.cdsLength} reducedMotion={reducedMotion}
       hasNext={hasNext} onNext={advance} onMap={onBack} onCard={campaign?.onCard ?? onBack} onClose={closeWin} />;
   const solved = state.won && winReady && !session.celebration &&
     <SolvedBanner def={winDef} moves={state.moves} unranked pulse={false} hasNext={hasNext}
@@ -369,6 +370,5 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
       {!campaign && !bonus && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
     </div>
     {popup}
-    {bonusPopup}
   </>;
 }
