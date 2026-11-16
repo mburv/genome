@@ -51,7 +51,7 @@ describe('mixed INS campaign',()=>{
 });
 
  test('legacy trace logs retain their exact path and moves; new starter attempts remain distinct',()=>{
-  const def=runOf('INS')[1]!, stage=mixedStage(def)!;
+  const def=runOf('INS')[1]!, stage=mixedStage(def,true)!;
   const legacy=[9].map(cell=>({type:'trace' as const,cell}));
   const old={...newSave(LEVEL_PACK),mixedAttempts:{[def.id]:legacy}};
   const loaded=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK).save;
@@ -76,9 +76,9 @@ test('Codon Crush chapter collects twelve ordered codons with cascades and exact
 });
 
 test('legacy Codon Crush logs keep the valid prefix and a backup if a cascade supersedes a swap',()=>{
-  const stage=mixedStage(runOf('INS').find(d=>d.id==='ins-05')!)!;
+  const stage=mixedStage(runOf('INS').find(d=>d.id==='ins-05')!,true)!;
   const old=[{type:'swap' as const,a:12,b:13},{type:'swap' as const,a:39,b:40}];
-  const initial={...newSave(LEVEL_PACK),completed:['ins-01'],mixedAttempts:{[stage.id]:old}};
+  const initial={...newSave(LEVEL_PACK),mixedGeometryVersion:1,completed:['ins-01'],mixedAttempts:{[stage.id]:old}};
   const adapter=createMemoryAdapter(serializeSave(initial));
   const loaded=loadSave(adapter,LEVEL_PACK);
   expect(loaded.save.completed).toEqual(['ins-01']);
@@ -118,4 +118,44 @@ test('unified campaign retains all sliding modes and backs up old mixed attempts
   expect(restored.save.mixedAttempts?.['ins-c04']).toBeUndefined();
   expect(restored.notices.join(' ')).toContain('Older mixed attempts were backed up');
   expect(adapter.backups.length).toBeGreaterThan(0);
+});
+
+test('seeded varied geometries change spatial routes, target positions and swaps across genes',()=>{
+  const samples = CATALOGUE_ORDER.flatMap(symbol => runOf(symbol))
+    .map(def => mixedStage(def)).filter((s):s is NonNullable<typeof s> => s !== null);
+  const geometry = (s: (typeof samples)[number]): string => {
+    const p=s.spec;
+    switch(s.mechanic){
+      case 'trace': return JSON.stringify([p.TRACE_PATH,p.traceHoles]);
+      case 'connections': return JSON.stringify([p.CONNECTION_ROUTES,p.connectionHoles]);
+      case 'assembly': return JSON.stringify([p.READ_STARTS,p.READ_CELLS,p.READ_ORDER]);
+      case 'crush': return JSON.stringify([p.CRUSH_SWAPS,p.crushHoles]);
+      case 'mutation': return JSON.stringify([p.MUTATION_ROWS.map(r=>[r.top,r.bottom]),p.MUTATIONS]);
+      case 'restriction': return JSON.stringify([p.CUT_STRANDS,p.CUT_SITES]);
+    }
+  };
+  for(const kind of ['trace','connections','assembly','crush','mutation','restriction'] as const){
+    const stages=samples.filter(s=>s.mechanic===kind);
+    expect(stages.length,kind).toBeGreaterThan(3);
+    expect(new Set(stages.map(geometry)).size,kind).toBeGreaterThan(Math.floor(stages.length*.9));
+    for(const stage of stages.slice(0,20)){
+      const original=mixedStage(runOf(stage.symbol).find(d=>d.id===stage.id)!)!;
+      expect(geometry(original)).toEqual(geometry(stage));
+      expect(replayMixed(stage,stage.certificate).won,stage.id).toBe(true);
+    }
+  }
+});
+
+test('old mixed save geometry and in-progress cell logs are retained after upgrading',()=>{
+  const def=runOf('INS').find(d=>d.id==='ins-02')!,legacy=mixedStage(def,true)!;
+  const actions=legacy.certificate.slice(0,2);
+  const old={...newSave(LEVEL_PACK),mixedGeometryVersion:undefined,mixedAttempts:{[def.id]:actions},completed:['ins-03']};
+  const loaded=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK);
+  expect(loaded.save.legacyMixedLayouts).toContain(def.id);
+  expect(loaded.save.legacyMixedLayouts).toContain('ins-03');
+  expect(loaded.save.mixedGeometryVersion).toBe(2);
+  expect(loaded.save.mixedAttempts?.[def.id]).toEqual(actions);
+  expect(replayMixed(mixedStage(def,loaded.save.legacyMixedLayouts!.includes(def.id))!,actions).moves).toBe(actions.length);
+  const newRun=loadSave(createMemoryAdapter(serializeSave(loaded.save)),LEVEL_PACK);
+  expect(newRun.save.legacyMixedLayouts).toEqual(loaded.save.legacyMixedLayouts);
 });
