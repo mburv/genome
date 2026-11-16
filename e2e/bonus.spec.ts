@@ -52,7 +52,7 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
 });
 
 import {createHash} from 'node:crypto';
-import {CHROMOSOMES,CHUNK_BASES,REFERENCE,GENOME_BASES,genomeLevelInterval} from '../src/campaign/bonus.ts';
+import {CHROMOSOMES,CHUNK_BASES,REFERENCE,GENOME_BASES,genomeLevelInterval,genomeStage} from '../src/campaign/bonus.ts';
 test('automatically loads a chromosome, assembles an exact interval and restores coverage',async({page})=>{
   await page.setViewportSize({width:375,height:667});
   await installFeedbackProbe(page);
@@ -99,7 +99,7 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await page.evaluate(()=>window.scrollTo(0,0));
   await expect(page.getByTestId('reference-loading')).toHaveCount(0);
   expect(requests).toBe(1);
-  for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
+  for(const cell of genomeStage('chrM',[0,9],'A'.repeat(9)).spec.TRACE_PATH.slice(2))await page.getByTestId('lab-cell-'+cell).click();
   const win=page.getByTestId('bonus-win');
   await expect(win).toBeVisible();
   await expect(win.getByTestId('win-card')).toBeVisible();
@@ -138,7 +138,7 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await expect(page.getByTestId('bonus-node-chrM-1')).toHaveCSS('background-color','rgb(205, 235, 216)');
   await page.getByTestId('bonus-node-chrM-1').click();
   await expect(page.getByTestId('play-progress')).toHaveText('1/23');
-  for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();
+  for(const cell of genomeStage('chrM',[0,9],'A'.repeat(9)).spec.TRACE_PATH.slice(2))await page.getByTestId('lab-cell-'+cell).click();
   await expect(page.getByTestId('bonus-win')).toBeVisible();
   await expect(page.getByTestId('bonus-win').getByTestId('win-bases')).toContainText('Replay · no new bases');
   await expect(page.getByTestId('bonus-win').locator('.win-strand')).toHaveClass(/\bskip\b/);
