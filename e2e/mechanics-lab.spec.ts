@@ -393,3 +393,64 @@ test('Genome Assembly hint shows the next read and destination, updates on undo 
   await hint.click();
   await expect(source).toHaveAttribute('data-lab-cell','1');
 });
+
+test('Mutation Correction puts four replacements in the unused first grid column and animates a repair', async ({page}) => {
+  await page.setViewportSize({width:320,height:568});
+  await openLab(page,'mutation');
+  const board=page.getByTestId('mechanics-board');
+  await expect(board.locator('[data-lab-cell]')).toHaveCount(81);
+  await expect(page.getByTestId('under-board').locator('.lab-base-picker')).toHaveCount(0);
+  const geometry=await page.evaluate(()=>{
+    const board=document.querySelector('[data-testid="mechanics-board"]')!.getBoundingClientRect();
+    const buttons=[...document.querySelectorAll('.mutation-rail-button')].map(el=>{
+      const r=el.getBoundingClientRect();
+      return {x:r.x,y:r.y,width:r.width,height:r.height,cell:Number(el.getAttribute('data-lab-cell'))};
+    });
+    return {board:{x:board.x,width:board.width,height:board.height},buttons};
+  });
+  expect(geometry.board.x).toBe(0);
+  expect(geometry.board.width).toBe(320);
+  expect(geometry.board.height).toBe(320);
+  expect(geometry.buttons.map(b=>b.cell)).toEqual([18,27,36,45]);
+  for (const b of geometry.buttons) {
+    expect(b.x).toBeGreaterThanOrEqual(-.5);
+    expect(b.x+b.width).toBeLessThanOrEqual(320/9+1);
+    expect(Math.abs(b.width-b.height)).toBeLessThan(1.5);
+  }
+  const chosen=20;
+  const expected=await page.getByTestId('mutation-target-'+chosen).getAttribute('data-symbol');
+  await tile(page,chosen).tap();
+  const option=page.getByTestId('lab-base-'+expected);
+  await expect(option).toBeEnabled();
+  const flight=page.getByTestId('mutation-flight');
+  await Promise.all([flight.waitFor({state:'visible'}),option.tap()]);
+  await expect(flight).toHaveCSS('animation-name','mutation-slide');
+  await expect(board).toHaveAttribute('aria-busy','true');
+  await expect(flight).toHaveCount(0);
+  await expect(board).toHaveAttribute('aria-busy','false');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await expect(tile(page,chosen)).toHaveAttribute('data-base',expected!);
+  await expect(page.getByTestId('mutation-target-'+chosen)).toHaveClass(/matched/);
+});
+
+test('Mutation Correction first-use tutorial teaches the rail and shows its landing animation', async ({page}) => {
+  await page.setViewportSize({width:320,height:568});
+  await fresh(page,true);await openMap(page);
+  await page.getByTestId('cnode-ins-06').click();
+  const tutorial=page.getByTestId('mechanic-tutorial');
+  await expect(tutorial).toHaveAttribute('data-mechanic','mutation');
+  const board=page.getByTestId('tutorial-board');
+  for(let step=1;step<=3;step++){
+    await expect(board).toHaveAttribute('data-step',String(step));
+    await expect(board.getByTestId('tutorial-mutation-rail')).toHaveCount(4);
+    await expect(board.locator('.tutorial-cell')).toHaveCount(81);
+    if(step<3)await page.getByTestId('tutorial-next').click();
+  }
+  await expect(tutorial).toContainText('vertical column on the left');
+  await expect(board.getByTestId('tutorial-mutation-flight')).toHaveCSS('animation-name','tutorial-mutation-slide');
+  await page.getByRole('button',{name:'Replay animation'}).click();
+  await expect(board.getByTestId('tutorial-mutation-flight')).toHaveCount(1);
+  await page.getByTestId('tutorial-next').click();
+  await expect(tutorial).toHaveCount(0);
+  await expect(page.getByTestId('mechanics-board').locator('.mutation-rail-button')).toHaveCount(4);
+});

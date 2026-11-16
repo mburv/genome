@@ -1,11 +1,12 @@
 import { TokenFace,tierClass,tokenStyle } from './TokenFace.tsx';
+import { MUTATION_RAIL_CELLS } from './MechanicsLab.tsx';
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { ALL_LEVELS } from '../campaign/campaign.ts';
 import { isSlidingTutorial, type TutorialId, type MixedStage } from '../campaign/mixed.ts';
 import { MODE_LABEL } from './modes.ts';
 import type { LevelMode, Track } from '../engine/types.ts';
 import { applySlide, segmentCells } from '../engine/grid.ts';
-import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, labDecode,labLabel,type LabSpec,type LabAction, type LabState, type CrushTransition } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, DEFAULT_LAB_SPEC, LAB_META, mutationExpected, labReplacementOptions, labDecode,labLabel,type LabSpec,type LabAction, type LabState, type CrushTransition } from '../engine/mechanicsLab.ts';
 
 type CrushDemo = { phase: 'swap' | 'settle'; a: number; b: number; frame: CrushTransition };
 type Step = { tracks?: Track[]; repair?: {cell:number; expected:string}; crush?: CrushDemo; title: string; text: string; before: string[]; after: string[]; cells: number[]; path?: number[]; pathBefore?: number[]; cursor?: [number, number]; cut?: number[]; target?: string; motion?: { cells: number[]; axis: 'row' | 'col'; steps: number } };
@@ -83,7 +84,7 @@ function demonstration(mechanic: TutorialId, stage: MixedStage | null): Step[] {
     return [
       step('Compare the target','Each upper strand is the reference. The numbered target rows show the complementary strand you must repair: A pairs with T, C with G.',start,start,[c-9,c],undefined,undefined,want),
       step('Select the mismatch','Red outlines mark incorrect bases. Tap the lower-strand tile you want to repair.',start,start,[c],[c,c],undefined,want),
-      step('Choose the correct base','Tap the replacement letter below the board. Green underlines mark correct bases. Repair every mismatch to finish.',start,end,[c],[c,c],undefined,want),
+      step('Slide a replacement into place','Tap the correct coloured base in the vertical column on the left of the board. It slides into the selected square. Green underlines mark correct bases; repair every mismatch to finish.',start,end,[c],[c,c],undefined,want),
     ];
   }
   if (mechanic === 'connections') {
@@ -199,6 +200,13 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
   };
   const cursor=item.cursor;
   const from=cursor?xy(cursor[0]):null,to=cursor?xy(cursor[1]):null;
+  const exampleCell=spec.MUTATIONS[0]??-1;
+  const exampleBase=mechanic==='mutation'?mutationExpected(exampleCell,spec):null;
+  const railOptions=mechanic==='mutation'?labReplacementOptions(spec,exampleCell):[];
+  const railIndex=exampleBase===null?-1:railOptions.indexOf(exampleBase);
+  const railPosition=railIndex<0?-1:MUTATION_RAIL_CELLS[railIndex]!;
+  const railFrom=railPosition<0?null:xy(railPosition);
+  const railTo=exampleCell<0?null:xy(exampleCell);
   return <div className="overlay tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" data-testid="mechanic-tutorial" data-mechanic={mechanic} onKeyDown={onKey}>
     <div className="card tutorial-card">
       <div className="row-between"><span className="muted small">FIRST-USE GUIDE · {index+1}/{steps.length}</span><button type="button" onClick={onClose} autoFocus data-testid="tutorial-skip">Skip</button></div>
@@ -206,17 +214,31 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
       <h4>{item.title}</h4><p className="small">{spec.tokens?item.text.replace(/letters/g,'blocks').replace(/letter/g,'block').replace(/three-base codons/g,'three-block sequences').replace(/target base/g,'target block').replace(/replacement base/g,'replacement block'):item.text}</p>
       {item.target && <div className="tutorial-target" aria-label="Example target">{[...item.target].map((b,i)=><span key={i} className={cls(b)} style={style(b)} title={labDecode(spec,b)}>{face(b)}</span>)}</div>}
       {item.tracks && item.tracks.length>1 && <div className="tutorial-tracks" aria-label="Example targets">{item.tracks.map(t=><div className="tutorial-target tutorial-track" key={t.group} data-tutorial-group={t.group}><b>{t.group}{mechanic==='slide-replicate' ? (t.strand==='coding'?' · 5′→3′':' · 3′→5′') : ''}</b>{[...t.expected].map((b,i)=><span key={i} className={'b-'+b}>{b}</span>)}</div>)}</div>}
-      <div className={'tutorial-board'+(reducedMotion?' static':'')+(sliding?' slide-demo':mechanic==='crush'?' crush-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
+      <div className={'tutorial-board'+(reducedMotion?' static':'')+(sliding?' slide-demo':mechanic==='crush'?' crush-demo':mechanic==='mutation'?' mutation-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
         {sliding ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : mechanic==='crush' ? <CrushTutorialBoard item={item} reducedMotion={reducedMotion} spec={spec} def={def} /> : <>
         {item.before.map((b,c)=>{
+          const mutationRailIndex=mechanic==='mutation'?MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]):-1;
+          if(mutationRailIndex>=0 && railOptions[mutationRailIndex]!==undefined){
+            const candidate=railOptions[mutationRailIndex]!;
+            return <div key={c} className="tutorial-cell tutorial-mutation-rail" data-demo-cell={c} data-testid="tutorial-mutation-rail">
+              <span className={'tutorial-mutation-option '+cls(candidate)+(index===2&&candidate===exampleBase?' tutorial-mutation-choice':'')}
+                style={style(candidate)} data-base-option={candidate}>{face(candidate)}</span>
+            </div>;
+          }
           const after=item.after[c]!;
           const changed=b!==after && !reducedMotion;
           const shown=reducedMotion?after:b;
           return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')} data-demo-cell={c}>
             <span className={'tutorial-base '+cls(shown)} style={style(shown)}>{face(shown)}</span>
-            {changed && <span className={'tutorial-change '+cls(after)} style={style(after)}>{face(after)}</span>}
+            {changed && <span className={'tutorial-change '+cls(after)+(mechanic==='mutation'?' tutorial-mutation-correct':'')} style={style(after)}>{face(after)}</span>}
           </div>;
         })}
+        {mechanic==='mutation' && index===2 && railFrom && railTo && exampleBase && !reducedMotion && <span
+          className={'tutorial-mutation-flight '+cls(exampleBase)} data-testid="tutorial-mutation-flight" style={{
+            ...style(exampleBase),
+            '--fx':railFrom[0]/9*100+'%', '--fy':railFrom[1]/9*100+'%',
+            '--tx':railTo[0]/9*100+'%', '--ty':railTo[1]/9*100+'%'
+          } as CSSProperties}>{face(exampleBase)}</span>}
         {(item.path || item.pathBefore) && <svg viewBox="0 0 9 9" className="tutorial-path" aria-hidden="true">{item.pathBefore && <polyline className="tutorial-starter-path" points={points(item.pathBefore)} pathLength="1" />}{item.path && <polyline className="tutorial-extension-path" points={points(item.path)} pathLength="1" />}</svg>}
         {item.cut?.map(c=><span key={c} className="tutorial-cut" style={{left:(c%9+.5)/9*100+'%',top:(Math.floor(c/9)+.5)/9*100+'%'}}>✂</span>)}
         {from&&to&&<span className="tutorial-finger" aria-hidden="true" style={{'--fx':from[0]/9*100+'%','--fy':from[1]/9*100+'%','--tx':to[0]/9*100+'%','--ty':to[1]/9*100+'%'} as CSSProperties}>☝</span>}

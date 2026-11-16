@@ -30,6 +30,9 @@ type WinCredit = { newBases: number; replayed: boolean; assembled: boolean };
 type Session = { state: LabState; history: LabState[]; actions: LabAction[]; message: string; celebration: WinCredit | null };
 type CrushDrag = { a: number; b: number; fraction: number };
 type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; frame: number; result: LabResult; action: LabAction; credit: WinCredit };
+type MutationFlight = { base: string; x: number; y: number; dx: number; dy: number; width: number; height: number; result: LabResult; action: LabAction; credit: WinCredit };
+/** Mutation strands leave the first grid column free for the replacement rail. */
+export const MUTATION_RAIL_CELLS = [18, 27, 36, 45] as const;
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
 function acceptResult(prev: Session, result: LabResult, action: LabAction, credit: WinCredit | null = null): Session {
@@ -86,7 +89,9 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const gesture = useRef<{ pointer: number; start: number; last: number; pair: number; read: number; x: number; y: number; pitch: number } | null>(null);
   const [crushDrag, setCrushDrag] = useState<CrushDrag | null>(null);
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
-  const busy = crushAnimation !== null;
+  const [mutationFlight, setMutationFlight] = useState<MutationFlight | null>(null);
+  const mutationFlightActive = useRef(false);
+  const busy = crushAnimation !== null || mutationFlight !== null;
   const { state } = session;
   const traceHint = id === 'trace' && hint ? traceHintCell(state) : null;
   const routeHint = id === 'connections' && hint ? connectionHint(state, selected) : null;
@@ -155,6 +160,38 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     }, crushTiming[stage]);
     return () => window.clearTimeout(timer);
   }, [crushAnimation, commitResult]);
+  // An animated replacement is committed once, after landing, with unchanged engine semantics.
+  useEffect(() => {
+    if (!mutationFlight) return;
+    const timer = window.setTimeout(() => {
+      commitResult(mutationFlight.result, mutationFlight.action, mutationFlight.credit);
+      mutationFlightActive.current = false;
+      setMutationFlight(null);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [mutationFlight, commitResult]);
+  const startMutationRepair = (base: string, cell: number) => {
+    if (state.won || busy || mutationFlightActive.current) return;
+    const action: LabAction = { type:'edit', cell, base };
+    const result = applyLab(sessionRef.current.state, action);
+    prepareFeedback(feedback);
+    if (result.state === sessionRef.current.state) {
+      commitResult(result, action, credit);
+      return;
+    }
+    const root = boardRef.current;
+    const source = [...(root?.querySelectorAll<HTMLButtonElement>('.mutation-rail-button') ?? [])].find(el => el.dataset.baseOption === base);
+    const destination = root?.querySelector<HTMLElement>('[data-lab-cell="'+cell+'"]');
+    if (reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !root || !source || !destination) {
+      commitResult(result, action, credit);
+      return;
+    }
+    const origin = root.getBoundingClientRect(), from = source.getBoundingClientRect(), to = destination.getBoundingClientRect();
+    mutationFlightActive.current = true;
+    setMutationFlight({ base, x:from.left-origin.left, y:from.top-origin.top,
+      dx:to.left+to.width/2-from.left-from.width/2, dy:to.top+to.height/2-from.top-from.height/2,
+      width:from.width, height:from.height, result, action, credit });
+  };
   const startCrushSwap = (a: number, b: number) => {
     if (busy || state.won) return;
     setSelected(null);
@@ -176,8 +213,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
-  const undo = () => { setWinReady(false); const prev = sessionRef.current; const last = prev.history.at(-1); if (last) { updateSession({ state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null }); playCue('undo', feedback); } setSelected(null); };
+  const reset = () => { mutationFlightActive.current=false; setMutationFlight(null); setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
+  const undo = () => { if (mutationFlightActive.current) return; setWinReady(false); const prev = sessionRef.current; const last = prev.history.at(-1); if (last) { updateSession({ state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null }); playCue('undo', feedback); } setSelected(null); };
   const choose = (cell: number) => {
     if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
@@ -260,6 +297,15 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const board = (
     <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '')+(spec.tokens?' block-lab-board':'') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} data-crush-chain={crushAnimation ? crushAnimation.frame+1 : undefined} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
+        const railIndex = id === 'mutation' && !state.won ? MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]) : -1;
+        if (railIndex >= 0) {
+          const base = labReplacementOptions(spec, mutationSelection??spec.MUTATIONS[0]??-1)[railIndex];
+          if (base !== undefined) return <button key={c} type="button"
+            className={'mutation-rail-button '+chipClass(base)+(mutationHintBase===base?' mutation-base-hinted':'')}
+            style={chipStyle(base)} data-lab-cell={c} data-base-option={base} data-testid={'lab-base-'+base}
+            disabled={mutationSelection===null || busy} aria-label={'Replace with '+labDecode(spec,base)+(mutationHintBase===base?', suggested correction':'')}
+            onClick={() => {if(mutationSelection!==null)startMutationRepair(base,mutationSelection);}}>{face(base)}</button>;
+        }
         if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
         const placedRead = id === 'assembly' && read >= 0 && state.placements[read]! >= 0;
@@ -322,12 +368,14 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
 
     <div className="board-stage">
       {board}
+      {mutationFlight && <span className={'mutation-flight '+chipClass(mutationFlight.base)} data-testid="mutation-flight" aria-hidden="true"
+        style={{...chipStyle(mutationFlight.base), left:mutationFlight.x, top:mutationFlight.y, width:mutationFlight.width, height:mutationFlight.height,
+          '--flight-dx':mutationFlight.dx+'px', '--flight-dy':mutationFlight.dy+'px'} as CSSProperties}>{face(mutationFlight.base)}</span>}
       {solved}
     </div>
     <div className={'under-board mixed-under-board'+(crushRecovery||assemblyRecovery||cutRecovery?' crush-hint-recovery':'')} data-testid="under-board">
       <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/{gene.cdsLength} bp assembled</span>}{bonus&&<span className="muted" data-testid="bonus-coverage">{bonus.covered.toLocaleString()}/{bonus.length.toLocaleString()} bp</span>}</div>
       {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
-      {id==='mutation' && !state.won && <div className="base-picker lab-base-picker" aria-label="Choose replacement base">{labReplacementOptions(spec,mutationSelection??spec.MUTATIONS[0]??-1).map(b=><button type="button" style={chipStyle(b)} className={chipClass(b)+(mutationHintBase===b?' mutation-base-hinted':'')} key={b} disabled={mutationSelection===null} aria-label={'Replace with '+labDecode(spec,b)+(mutationHintBase===b?', suggested correction':'')} onClick={()=>{if(mutationSelection!==null) dispatch({type:'edit',cell:mutationSelection,base:b});}} data-testid={'lab-base-'+b}>{face(b)}</button>)}</div>}
       {!campaign && !bonus && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
       {!campaign && !bonus && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
     </div>

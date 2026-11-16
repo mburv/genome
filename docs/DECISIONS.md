@@ -425,3 +425,7 @@ Owner requested stable clue, board and action-row positions across every level. 
 
 ### Restore full-bleed square boards
 Owner requested the original edge-to-edge board after the shared tallest clue envelope reduced board width on shorter phones. Derive the board width from the available viewport/app width only, not viewport height or clue height. Sliding and mixed/extended puzzles use the same square board stage; keep the existing maximum app width on desktop, the shared clue envelope and the aligned toolbar. When the combined layout exceeds the viewport, allow vertical page scrolling rather than scaling down the tiles. Tests assert exact edge-to-edge square geometry at phone widths and reachable controls.
+
+
+### Mutation Correction replacement rail
+Owner requested A/C/G/T choices visible without scrolling past the bottom of the full-width board. Mutation board cells in column 1 are unused by the upper and lower DNA strands. Put its four stage-specific replacement choices in that same grid column, rows 3–6, retaining the full 9×9 square board. Do not place another picker beneath the toolbar. Selecting a target and tapping a choice animates a visual copy from the rail to the chosen square before committing the existing engine edit once; keep undo, scoring, completion and save semantics unchanged. Respect reduced-motion preferences. The graphical hint highlights the correct rail choice, and the first-use tutorial shows the same rail with a matching landing animation on its final step. Include tests for short-screen geometry, animation, and tutorial.

@@ -851,7 +851,33 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mutation-target-base.mismatch, .lab-cell.mutation-mismatch { outline: 2px solid var(--red); outline-offset: -2px; }
 .mutation-target-base.selected, .lab-cell.mutation-correct.selected, .lab-cell.mutation-mismatch.selected { box-shadow: inset 0 0 0 3px var(--ink); }
 .mutation-selection { font-weight: 700; }
-.mode-lab-mutation { width: min(100%, 420px, calc(100svh - 300px)); min-width: min(100%, 240px); }
+/* A/C/G/T, or four block alternatives, inhabit the otherwise-empty first column.
+   The nine-column board retains its full viewport width and square proportions. */
+.mode-lab-mutation .mutation-rail-button {
+  display:grid; place-items:center; position:relative; z-index:3;
+  min-width:0; min-height:0; width:100%; height:100%;
+  padding:1px; border:2px solid var(--ink); border-radius:0;
+  font:700 clamp(12px,3.3vw,18px) var(--mono);
+  touch-action:manipulation; box-sizing:border-box; overflow:hidden;
+}
+.mode-lab-mutation .mutation-rail-button:disabled { opacity:.7; }
+.mode-lab-mutation .mutation-rail-button.lab-token .tok-face { font-size:clamp(7px,2vw,10px); }
+.mode-lab-mutation .mutation-rail-button.lab-token .tok-row { max-width:100%; }
+.mutation-flight {
+  position:absolute; z-index:15; pointer-events:none;
+  display:grid; place-items:center; overflow:hidden; padding:1px;
+  border:2px solid var(--ink); box-sizing:border-box;
+  font:700 clamp(12px,3.3vw,18px) var(--mono);
+  animation:mutation-slide 300ms cubic-bezier(.24,.75,.2,1) both;
+}
+.mutation-flight .tok-face {font-size:clamp(7px,2vw,10px);}
+@keyframes mutation-slide {
+  0% {transform:translate(0,0) scale(1); opacity:1;}
+  88% {transform:translate(var(--flight-dx),var(--flight-dy)) scale(1.06);opacity:1;}
+  100% {transform:translate(var(--flight-dx),var(--flight-dy)) scale(1);opacity:1;}
+}
+.app.reduced-motion .mutation-flight {animation:none;}
+@media (prefers-reduced-motion:reduce){.mutation-flight{animation:none;}}
 
 /* DNA Connections: paired colours identify endpoints, routes and their matching clue. */
 .mode-lab-connections .lab-cell { background: var(--white); }
@@ -901,8 +927,28 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 @keyframes tutorial-cut { 0%,35%{opacity:0} 65%,100%{opacity:1} }
 .tutorial-actions { display:flex; gap:4px; }
 .tutorial-actions button { flex:1; min-height:40px; font-size:12px; padding:5px; }
+/* First-use guide: matching left-column rail and an animated replacement. */
+.tutorial-mutation-rail {background:var(--hole);}
+.tutorial-mutation-option { inset:0; border:1px solid var(--ink); z-index:2; }
+.tutorial-mutation-option.lab-token .tok-face {font-size:clamp(6px,1.5vw,9px);}
+.tutorial-mutation-choice {outline:2px solid var(--green);outline-offset:-2px;}
+.tutorial-mutation-flight {
+  position:absolute; z-index:9; width:calc(100% / 9 - 1px); height:calc(100% / 9 - 1px);
+  display:grid; place-items:center; border:1px solid var(--ink);
+  font:700 10px var(--mono); transform:translate(-50%,-50%);
+  pointer-events:none; animation:tutorial-mutation-slide 1.8s ease-in-out both;
+}
+.tutorial-mutation-flight.lab-token .tok-face {font-size:clamp(6px,1.5vw,9px);}
+@keyframes tutorial-mutation-slide {
+  0%,22% {left:var(--fx);top:var(--fy);opacity:0;}
+  23%,37% {left:var(--fx);top:var(--fy);opacity:1;}
+  82%,95% {left:var(--tx);top:var(--ty);opacity:1;}
+  100% {left:var(--tx);top:var(--ty);opacity:0;}
+}
+.tutorial-change.tutorial-mutation-correct {animation:tutorial-mutation-correct 1.8s steps(1,end) both;}
+@keyframes tutorial-mutation-correct {0%,81%{opacity:0}82%,100%{opacity:1}}
 .tutorial-board.static .tutorial-finger,.tutorial-board.static .tutorial-path polyline,.tutorial-board.static .tutorial-cut { animation:none; }
-@media(prefers-reduced-motion:reduce){.tutorial-change{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut{animation:none}}
+@media(prefers-reduced-motion:reduce){.tutorial-change{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut,.tutorial-mutation-flight{animation:none}}
 
 /* Sliding guide: one opaque strip, clipped to the exact playable segment. No board crossfade. */
 .slide-demo .tutorial-slide-static { opacity:1; animation:none; }
@@ -964,7 +1010,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 
 /* Mutation Detective: the active repair and its replacement button share a green cue. */
 .mode-lab-mutation .lab-cell.mutation-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); z-index: 2; }
-.mixed-under-board .lab-base-picker button.mutation-base-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); }
+.mode-lab-mutation .mutation-rail-button.mutation-base-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); }
 
 /* The pre-connected tracing prefix is visible even before tutorial animation starts. */
 .tutorial-path .tutorial-starter-path { animation:none; stroke-dasharray:none; stroke-dashoffset:0; }
