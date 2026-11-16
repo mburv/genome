@@ -1,5 +1,5 @@
 import { createRng, type Rng } from '../generator/rng.ts';
-import { applyLab, createLab, labExtractedSequence, type LabAction, type LabSpec } from '../engine/mechanicsLab.ts';
+import { applyLab, createLab, labExtractedSequence, mutationExpected, type LabAction, type LabSpec } from '../engine/mechanicsLab.ts';
 import type { LevelDefinition } from '../engine/types.ts';
 import type { MixedStage } from './mixed.ts';
 
@@ -127,12 +127,8 @@ function varyMutation(stage: MixedStage, rng: Rng): MixedStage {
     Object.entries(spec.mutationOptions).map(([cell, options]) => [mapping.get(Number(cell))!, options]));
   if (spec.mutationInitial) spec.mutationInitial = Object.fromEntries(
     Object.entries(spec.mutationInitial).map(([cell, initial]) => [mapping.get(Number(cell))!, initial]));
-  return { ...stage, spec, certificate: spec.MUTATIONS.map(cell => ({
-    type: 'edit' as const, cell,
-    base: spec.blockComplements
-      ? spec.blockComplements[spec.MUTATION_ROWS.find(r => cell >= r.bottom && cell < r.bottom + r.seq.length)!.seq[cell - spec.MUTATION_ROWS.find(r => cell >= r.bottom && cell < r.bottom + r.seq.length)!.bottom]!]!
-      : ({ A: 'T', T: 'A', C: 'G', G: 'C' } as Record<string, string>)[spec.MUTATION_ROWS.find(r => cell >= r.bottom && cell < r.bottom + r.seq.length)!.seq[cell - spec.MUTATION_ROWS.find(r => cell >= r.bottom && cell < r.bottom + r.seq.length)!.bottom]!]!,
-  })) };
+  return { ...stage, spec, certificate: spec.MUTATIONS.map(cell =>
+    ({ type: 'edit' as const, cell, base: mutationExpected(cell, spec)! })) };
 }
 
 function varyRestriction(stage: MixedStage, rng: Rng): MixedStage {
@@ -175,7 +171,6 @@ function varyCrush(stage: MixedStage, rng: Rng): MixedStage {
     let conflict = false;
     for (let i = 0; i < targets.length; i++) {
       const row = rows[i]!, col = rng.range(2, 7), a = row * 9 + col, b = a + 1, word = targets[i]!;
-      if (col === 7 && row === 8) { /* still inside the board */ }
       const cells = [a - 2, a - 1, a, b];
       if (cells.some(c => used.has(c))) { conflict = true; break; }
       cells.forEach(c => used.add(c));
