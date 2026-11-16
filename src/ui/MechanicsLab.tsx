@@ -89,7 +89,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const crushRecovery = id === 'crush' && hint && !busy && !crushDrag && !state.won && !crushHint && session.history.length > 0;
   // Prefer the selected read if it can be corrected; otherwise guide the next legal placement.
   const assemblyCandidates = id === 'assembly' && hint && !state.won
-    ? spec.READ_STARTS.map((offset, read) => ({ read, offset })).filter(({read, offset}) =>
+    ? (spec.READ_ORDER ?? spec.READ_STARTS.map((_, i) => i)).map(read => ({ read, offset: spec.READ_STARTS[read]! })).filter(({read, offset}) =>
         state.placements[read] !== offset && applyLab(state, {type:'place', read, offset}).state !== state)
     : [];
   const assemblyHint = assemblyCandidates.find(candidate => candidate.read === selected) ?? assemblyCandidates[0];
