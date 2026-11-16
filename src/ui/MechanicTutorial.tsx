@@ -220,15 +220,15 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
           const mutationRailIndex=mechanic==='mutation'?MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]):-1;
           if(mutationRailIndex>=0 && railOptions[mutationRailIndex]!==undefined){
             const candidate=railOptions[mutationRailIndex]!;
-            return <div key={c} className="tutorial-cell tutorial-mutation-rail" data-demo-cell={c} data-testid="tutorial-mutation-rail">
-              <span className={'tutorial-mutation-option '+cls(candidate)+(index===2&&candidate===exampleBase?' tutorial-mutation-choice':'')}
+            return <div key={c} className="tutorial-cell tutorial-mutation-rail tutorial-mutation-rail-slot" data-demo-cell={c} data-testid="tutorial-mutation-rail">
+              <span className={'tutorial-base tutorial-mutation-option '+cls(candidate)+(index===2&&candidate===exampleBase?' tutorial-mutation-choice':'')}
                 style={style(candidate)} data-base-option={candidate}>{face(candidate)}</span>
             </div>;
           }
           const after=item.after[c]!;
           const changed=b!==after && !reducedMotion;
           const shown=reducedMotion?after:b;
-          return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')} data-demo-cell={c}>
+          return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')+(mechanic==='mutation'&&c%9===8?' tutorial-mutation-rail-slot':'')} data-demo-cell={c}>
             <span className={'tutorial-base '+cls(shown)} style={style(shown)}>{face(shown)}</span>
             {changed && <span className={'tutorial-change '+cls(after)+(mechanic==='mutation'?' tutorial-mutation-correct':'')} style={style(after)}>{face(after)}</span>}
           </div>;
