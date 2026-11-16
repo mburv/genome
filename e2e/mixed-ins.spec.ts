@@ -550,7 +550,7 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
   expect(blockRail.font).toBe(blockRail.boardFont);
   expect(blockRail.faceSize).toBe(blockRail.boardFaceSize);
   expect(blockRail.background).toBe(blockRail.expectedBackground);
-  expect(blockRail.border).toBe('rgb(17, 17, 17)');
+  expect(blockRail.border).toBe('rgb(68, 68, 67)');
   expect(blockRail.opacity).toBe('1');
   await page.getByTestId('action-hint').click();
   const suggested=page.locator('.mutation-base-hinted');
