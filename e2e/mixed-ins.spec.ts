@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fresh, openMap, openCompleted, solveWithHints } from './helpers';
+import { fresh, openMap, openCompleted, solveWithHints, documentBox } from './helpers';
 import { CAMPAIGN_LEVELS, LEVEL_PACK } from '../src/campaign/campaign.ts';
 import { newSave, serializeSave } from '../src/persistence/save.ts';
 import { GENES } from '../src/genomics/genes.ts';
@@ -228,9 +228,9 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   const cap=await page.getByTestId('target-panel').evaluate(el=>el.scrollHeight-el.clientHeight);
   expect(cap).toBeLessThanOrEqual(1);
   await expect(page.getByTestId('icon-row')).toBeVisible();
-  const startY=(await page.getByTestId('mechanics-board').boundingBox())!.y;
+  const startY=(await documentBox(page.getByTestId('mechanics-board'))).y;
   for(const c of [15,14,13,12,11])await tile(page,c).tap();
-  expect(Math.abs((await page.getByTestId('mechanics-board').boundingBox())!.y-startY)).toBeLessThan(1);
+  expect(Math.abs((await documentBox(page.getByTestId('mechanics-board'))).y-startY)).toBeLessThan(1);
   await expect(page.getByTestId('lab-progress')).toHaveText('7/9 blocks');
 });
 
@@ -483,7 +483,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   const board=page.getByTestId('mechanics-board'),panel=page.getByTestId('target-panel');
   await expect(panel.locator('.mixed-codon-clues .clue-part')).toHaveCount(4);
   await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(4);
-  const y=(await board.boundingBox())!.y;
+  const y=(await documentBox(board)).y;
   await page.getByTestId('action-hint').click();
   await expect(tile(page,12)).toHaveClass(/crush-hinted/);
   await tile(page,12).tap();await tile(page,13).tap();
@@ -491,7 +491,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
   await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['3','4']);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
-  expect(Math.abs((await board.boundingBox())!.y-y)).toBeLessThan(1);
+  expect(Math.abs((await documentBox(board)).y-y)).toBeLessThan(1);
   const before=await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-c02').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
@@ -644,7 +644,7 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
   const panel=page.getByTestId('target-panel');
   const chips=page.getByTestId('assembly-reference').locator(':scope > [data-clue-unit]');
   const allSlots=Array.from({length:9},(_,i)=>String(i+1));
-  const positions=async()=>({panel:await panel.boundingBox(),board:await page.getByTestId('mechanics-board').boundingBox(),toolbar:await page.getByTestId('icon-row').boundingBox()});
+  const positions=async()=>({panel:await documentBox(panel),board:await documentBox(page.getByTestId('mechanics-board')),toolbar:await documentBox(page.getByTestId('icon-row'))});
   const assertClues=async(expected:string[])=>{
     await expect(panel.locator('.clue-pagination')).toBeHidden();
     await expect(chips).toHaveCount(9);
