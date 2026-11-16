@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {GENES} from '../src/genomics/genes.ts';
 import {CAMPAIGN_LEVELS,LEVEL_PACK} from '../src/campaign/campaign.ts';
 import {newSave,serializeSave} from '../src/persistence/save.ts';
-import {openCompleted} from './helpers.ts';
+import {openCompleted,openChapter} from './helpers.ts';
 import {installFeedbackProbe,feedbackLog} from './feedbackProbe';
 const FAMOUS_BASES=Object.values(GENES).reduce((n,g)=>n+g.cdsLength,0);
 test('map puts Mechanics Lab after Human Genome and describes every gene',async({page})=>{
@@ -56,6 +56,14 @@ import {CHROMOSOMES,CHUNK_BASES,REFERENCE,GENOME_BASES,genomeLevelInterval} from
 test('automatically loads a chromosome, assembles an exact interval and restores coverage',async({page})=>{
   await page.setViewportSize({width:375,height:667});
   await installFeedbackProbe(page);
+  await openChapter(page,'ins-01');
+  const sharedGeometry=async()=>page.evaluate(()=>{
+    const panel=document.querySelector('[data-testid="target-panel"]')!.getBoundingClientRect();
+    const board=document.querySelector('.board-stage')!.getBoundingClientRect();
+    const actions=document.querySelector('[data-testid="icon-row"]')!.getBoundingClientRect();
+    return {height:panel.height,boardY:board.y,boardWidth:board.width,actionY:actions.y};
+  });
+  const mainGeometry=await sharedGeometry();
   // Synthetic fixture exercises packing/UI; never part of the shipped reference.
   const length=CHROMOSOMES.chrM!,payload=Buffer.alloc(Math.ceil(length/4),0x1b);
   const header=Buffer.from(JSON.stringify({format:'GENOME-T2T-1',reference:REFERENCE,chromosome:'chrM',length,annotation:'test fixture',annotationSha256:'test',sourceMd5:'06caded0055ec647a69acb708e13beff',chunkBases:CHUNK_BASES,genes:[['test','TESTGENE','test',0,9,'+']],chunkSha256:[createHash('sha256').update(payload).digest('hex')]}));
@@ -82,6 +90,8 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await expect(page.getByTestId('play-progress')).toHaveText('1/23');
   await expect(page.getByTestId('action-hint')).toBeInViewport();
   await expect(page.getByTestId('action-undo')).toBeInViewport();
+  const bonusGeometry=await sharedGeometry();
+  for(const key of ['height','boardY','boardWidth','actionY'] as const)expect(Math.abs(bonusGeometry[key]-mainGeometry[key])).toBeLessThanOrEqual(1);
   await expect(page.getByTestId('reference-loading')).toHaveCount(0);
   expect(requests).toBe(1);
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();

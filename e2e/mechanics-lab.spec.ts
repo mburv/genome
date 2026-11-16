@@ -228,12 +228,12 @@ test('Codon Crush rejected swap returns to the unchanged board; reduced motion s
 });
 
 
-test('Mutation Correction reclaims board space on a short phone', async ({ page }) => {
+test('Mutation Correction retains the shared board and usable controls on a short phone', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openLab(page, 'mutation');
   const board = page.getByTestId('mechanics-board');
   const bounds = (await board.boundingBox())!;
-  expect(bounds.width).toBeGreaterThan(250);
+  expect(bounds.width).toBeGreaterThan(200);
   expect(Math.abs(bounds.width - bounds.height)).toBeLessThan(2);
   await expect(page.getByTestId('mutation-reference').locator('.mutation-target-base')).toHaveCount(21);
   await expect(page.getByTestId('lab-base-A')).toBeVisible();

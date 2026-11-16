@@ -54,13 +54,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 a { color: var(--blue); }
 .app {
   --app-gap: 10px;
-  /* Play chrome reserved so the clue cap leaves room for the board + energy + action row (D-UI-30). */
+  /* ClueSizing measures the tallest actual clue layout once per width. Every
+     puzzle reserves this same envelope, irrespective of its own remaining clues. */
   --play-header: 70px;
-  --play-under: 104px;
-  --clue-floor: 108px;
-  --board: min(100vw, var(--app-max), calc(100svh - var(--play-header) - var(--play-under) - (3 * var(--app-gap)) - var(--clue-floor)));
-  --play-reserved: calc(var(--play-header) + var(--play-under) + var(--board) + (3 * var(--app-gap)));
-  --clue-max: min(30svh, calc(100svh - var(--play-reserved)));
+  --play-under: 122px;
+  --clue-height: 150px;
+  --board: min(100vw, var(--app-max), max(180px, calc(100svh - var(--play-header) - var(--play-under) - (3 * var(--app-gap)) - var(--clue-height))));
+  position: relative;
   max-width: var(--app-max);
   overflow-x: clip;
   margin: 0 auto;
@@ -88,6 +88,11 @@ a { color: var(--blue); }
 }
 @media (max-height: 700px) {
   .app { --app-gap: 6px; }
+}
+/* Prioritise the shared toolbar and usable tiles on the shortest screens;
+   the mutation-only replacement picker follows it and may need page scroll. */
+@media (max-height: 600px) {
+  .app { --play-under: 76px; }
 }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color: var(--ink); }
@@ -212,9 +217,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   padding: 0;
   border-top: 0;
   position: relative;
-  /* Cap at 30svh, but never so large that the board, energy bar and action row leave the viewport. */
-  max-height: min(30vh, calc(100vh - var(--play-reserved)));
-  max-height: var(--clue-max);
+  height: var(--clue-height);
+  flex: none;
   overflow-x: hidden;
   overflow-y: hidden;
   overscroll-behavior: contain;
@@ -617,7 +621,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* ---------- Under-board tray + action icons (D-UI-15, D-UI-16) ---------- */
 /* Do not set width: 100% on a direct .app child — it already has margin-inline: var(--pad),
    and 100% + those margins overflow the right edge (visible on iPhone Safari). */
-.under-board { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.under-board { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.under-board .meta { height:17px; flex:none; align-items:center; flex-wrap:nowrap; gap:6px; }
+.under-board .meta > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .tray { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .energy { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; font-size: 13px; color: var(--ink); font-weight: 700; }
 .energy .bolt { display: grid; place-items: center; flex: none; color: var(--amber); }
@@ -939,7 +945,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .connection-pair.ok { box-shadow:inset 0 -4px 0 var(--ink); }
 .mixed-codon-clues .current-codon { box-shadow:inset 0 -3px 0 var(--mint-edge); }
 .mixed-under-board { gap:6px; }
-.mixed-under-board .meta { flex-wrap:wrap; gap:2px 6px; }
+
 .mixed-under-board .lab-base-picker { display:grid; gap:1px; }
 .mixed-under-board .lab-base-picker button { min-height:36px; padding:5px 0; }
 .mixed-under-board .lab-hint { margin:0; }
@@ -1055,13 +1061,12 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .app:has([data-testid="bonus-play"]) .win-card p { overflow-wrap: anywhere; }
 
 
-/* Long-fragment clues retain the compact original clue footprint, while fitting
-   two codons and the divider. Never paginate these; reserve their natural height. */
-.app:has(.target.long-clues) {
-  --clue-floor: max(108px, calc(var(--long-clue-height, 0px) + 4px));
-  --board: min(100vw, var(--app-max), max(180px, calc(100svh - var(--play-header) - var(--play-under) - (3 * var(--app-gap)) - var(--clue-floor))));
-}
-.target.long-clues { max-height: none; overflow: visible; flex-shrink: 0; }
+/* Hidden, natural-height copies use the exact same clue styles at the same
+   content width. They never participate in page layout or touch interaction. */
+.clue-size-probe { position:absolute; inset-inline:var(--pad); top:0; height:0; margin:0 !important; overflow:hidden; visibility:hidden; pointer-events:none; }
+.clue-size-probe > .target { height:auto; min-height:0; max-height:none; overflow:visible; }
+.target.long-clues { overflow-y:auto; }
+.clue-size-probe > .target.long-clues { overflow:visible; }
 .target :is(.tok-chip, .lab-token).tier-l,
 .target .tok-chip:has(> .tok-face.long) {
   box-sizing: border-box;

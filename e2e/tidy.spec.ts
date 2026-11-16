@@ -289,7 +289,7 @@ async function assertCluePanelClean(page: Page, width: number, height: number) {
   expect(gap).toBeLessThanOrEqual(16);
   expect(metrics.boardTop).toBeGreaterThan(metrics.target.y + 8);
   if (height >= 700) expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
-  else expect(metrics.boardWidth).toBeGreaterThan(27.5 * 9);
+  else expect(metrics.boardWidth).toBeGreaterThan(22 * 9);
 }
 
 for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
@@ -332,7 +332,7 @@ async function assertPlayScreenDecluttered(page: Page, width: number, height: nu
   if (height >= 700) expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
   else {
     expect(Math.abs(metrics.x - (width - (metrics.x + metrics.boardWidth)))).toBeLessThanOrEqual(1);
-    expect(metrics.boardWidth).toBeGreaterThan(27.5 * 9);
+    expect(metrics.boardWidth).toBeGreaterThan(22 * 9);
   }
   expect(metrics.pageOverflow).toBeLessThanOrEqual(0);
 }

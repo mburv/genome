@@ -14,6 +14,7 @@ import { MechanicsMenu, MechanicsPlay } from './MechanicsLab.tsx';
 import type { LabAction, LabId, LabState } from '../engine/mechanicsLab.ts';
 import { TitleScreen } from './TitleScreen.tsx';
 import { BonusScreen } from './BonusScreen.tsx';
+import { ClueSizing } from './ClueSizing.tsx';
 import { bonusUnlocked, type BonusProgress } from '../campaign/bonus.ts';
 
 const prefersReducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -208,6 +209,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
         <GeneCard gene={GENES[screen.symbol]!} completed={save.completed} historicalCompleted={save.legacyReferenceLevels??[]} onPlay={play} onBack={() => go({ kind: 'map' })} completion={screen.completion ?? false} onContinue={screen.nextLevelId ? () => play(screen.nextLevelId!) : undefined} nextGene={CAMPAIGN_LEVELS.find(l=>l.id===screen.nextLevelId)?.symbol} />
       )}
 
+      <ClueSizing active={playChrome || bonusPlaying}/>
       {shownTutorial && <MechanicTutorial key={shownTutorial} mechanic={shownTutorial} stage={useMixed && screen.kind === 'play' ? stage : null} reducedMotion={reducedMotion} onClose={closeTutorial} />}
       {screen.kind !== 'title' && (
         <footer className="muted small">{saveOk ? 'Progress is saved on this device.' : 'Progress cannot be saved in this browser (storage unavailable).'} · {screen.kind==='bonus'?'Human Genome bonus':'Famous Genes'}</footer>

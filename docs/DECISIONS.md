@@ -417,3 +417,7 @@ Owner requested the original single-base grey for multi-base DNA lettering. The 
 
 ### Codon Crush clue consumption
 Owner requested collected clues disappear. Always hide completed codon groups after each animated refill, not only when the panel is crowded. Keep the full initial panel height and original clue indices; the next remaining target is first. Undo, Restart and restored sessions reconstruct the remaining clue set from collection state.
+
+
+### Shared tallest clue envelope
+Owner requested stable clue, board and action-row positions across every level. Measure the natural height of each distinct shipped clue layout using the same rendered components, including practice and the extended chromosome layout families; retain the widest real header per shape. Cache the largest height at the current content width and remeasure only on responsive width changes. Clue consumption, undo, hinting, solving and navigation cannot shrink the reserved region. The shared board budget uses the same height, and the Undo/Hint/Restart toolbar sits directly after a uniform metadata row; the mutation-only replacement picker follows it. On very short phones prioritise usable tiles and the shared toolbar, with ordinary page scroll available for the extra picker. No DNA, puzzle rules, progression or save format changes.

@@ -9,6 +9,7 @@ interface Props {
   committedMatches: boolean[][];
   solved: boolean;
   custom?: CustomTokens;
+  measureOnly?: boolean;
 }
 
 const TokCtx = createContext<{ def: LevelDefinition; custom: CustomTokens } | null>(null);
@@ -79,15 +80,14 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
  * explicit pages rather than a scrolling box. DOM visibility is recalculated after
  * committed-match change; a drag preview never changes the committed completion flags.
  */
-export function TargetShell({ defId, label, solved, committedKey, children, reserveHeight = false, hideCompleted = false, longClues = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; reserveHeight?: boolean; hideCompleted?: boolean; longClues?: boolean }) {
+export function TargetShell({ defId, label, solved, committedKey, children, hideCompleted = false, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const page = useRef(0);
   const previous = useRef('');
   const refresh = useRef<((delta?: number) => void) | null>(null);
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    const app = el.closest<HTMLElement>('.app');
+    if (!el || measureOnly) return;
     const identity = hideCompleted ? defId + ':' + committedKey : defId;
     if (previous.current !== identity) { previous.current = identity; page.current = 0; }
     const nav = el.querySelector<HTMLElement>('.clue-pagination')!;
@@ -103,21 +103,11 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
       el.classList.remove('clues-compact');
       units.forEach(unit => setHidden(unit, false));
       el.scrollTop = 0;
-      // Tracing commits while the finger is still on the board. Keep its board position
-      // steady even when completed clues disappear; measure again after a resize.
-      el.style.minHeight = '';
-      if (reserveHeight) el.style.minHeight = el.clientHeight + 'px';
-      // Codon Crush and Genome Assembly always remove completed clues, even when solved.
-      // When reserveHeight is set, retain the full layout height during play.
+      // The shared campaign envelope never shrinks when a clue is consumed.
       if (hideCompleted) units.forEach(unit => setHidden(unit, unit.dataset.clueDone === 'true'));
-      // Long fragments use compact, content-sized clues. Keep every outstanding
-      // clue visible; on short screens reserve the actual height above the board.
-      if (longClues) {
-        app?.style.setProperty('--long-clue-height', Math.ceil(el.getBoundingClientRect().height) + 'px');
-        page.current = 0;
-        return;
-      }
-      if (fits()) { page.current = 0; return; }
+      // Long fragments never paginate. The shared height fits their full initial
+      // layout; allow scrolling only as a fallback for extreme font/viewport sizes.
+      if (longClues || fits()) { page.current = 0; return; }
       el.classList.add('clues-compact');
       const remaining = units.filter(unit => (!hideCompleted && solved) || unit.dataset.clueDone !== 'true');
       units.forEach(unit => setHidden(unit, !remaining.includes(unit)));
@@ -148,15 +138,18 @@ export function TargetShell({ defId, label, solved, committedKey, children, rese
     const onResize = () => update();
     window.addEventListener('resize', onResize);
     window.visualViewport?.addEventListener('resize', onResize);
+    // A shared-size measurement can change the envelope without a window resize.
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => update()) : null;
+    observer?.observe(el);
     return () => {
       refresh.current = null;
-      if (longClues) app?.style.removeProperty('--long-clue-height');
+      observer?.disconnect();
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [defId, solved, committedKey, reserveHeight, hideCompleted, longClues]);
+  }, [defId, solved, committedKey, hideCompleted, longClues, measureOnly]);
   return (
-    <section ref={ref} className={'target'+(longClues?' long-clues':'')} aria-label={label} data-testid="target-panel">
+    <section ref={ref} className={'target'+(longClues?' long-clues':'')} aria-label={label} data-testid={measureOnly ? undefined : "target-panel"} data-clue-measure-id={measureOnly ? defId : undefined}>
       <div className="clue-pagination" hidden>
         <button type="button" data-clue-back aria-label="Previous clues" onClick={() => refresh.current?.(-1)}>‹</button>
         <span className="clue-page-count" aria-live="polite" />
@@ -176,15 +169,18 @@ export function TargetPanel({ custom = {}, ...p }: Props) {
   );
 }
 
-function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Props & { custom: CustomTokens }) {
+export function slidingClueRange(def: LevelDefinition): string {
+  return `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}${def.tokens ? ` · ${def.tier}-base tiles` : ''}`;
+}
+
+function TargetPanelInner({ def, matches, committedMatches, solved, custom, measureOnly = false }: Props & { custom: CustomTokens }) {
   const committedKey = committedMatches.map(row => row.map(Number).join('')).join('|');
   const t0 = def.tracks[0]!;
   const toks = !!def.tokens;
-  const range = `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}`;
   const heading = (
     <div className="row-between small">
       <span className="target-title">{def.title}</span>
-      <span className="muted">{range}{toks ? ` · ${def.tier}-base tiles` : ''}</span>
+      <span className="muted">{slidingClueRange(def)}</span>
     </div>
   );
   const tier = toks ? def.tier : undefined;
@@ -192,7 +188,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
   if (def.mode === 'replicate') {
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target strands">
+      <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target strands">
         {heading}
         <div className={stackClass('replicate', tier)}>
           <div className="rep-start">
@@ -226,7 +222,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     const restoredSeq = symbolSequence(def, custom, def.repair.expected);
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
+      <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
         {heading}
         <div className={stackClass('repair', tier)}>
           <CluePart group={a.group} testId="clue-part-1" badgeTestId="clue-badge-1">
@@ -248,7 +244,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
   }
   if (def.mode === 'splice') {
     return (
-      <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target pieces">
+      <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target pieces">
         {heading}
         <div className={stackClass('splice', tier)}>
           {def.tracks.map((t, i) => (
@@ -267,7 +263,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     );
   }
   return (
-    <TargetShell longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence">
+    <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence">
       {heading}
       <div className={stackClass('sequence', tier)}>
         <CluePart group={t0.group} testId="clue-part-1" badgeTestId="clue-badge-1">

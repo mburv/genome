@@ -21,7 +21,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { wi
     expect(m.left).toBeGreaterThanOrEqual(-0.5);
     expect(m.right).toBeLessThanOrEqual(vp.width + 0.5);
     // On short viewports the board may shrink so the clue cap can stay readable (D-UI-30);
-    // it stays square, centred, and larger than the old M4 inset tiles (27.5 px at 320, 37.5 px at 390).
+    // it stays square and centred; the shared tallest clue envelope takes priority on short phones.
     if (vp.height >= 700) {
       expect(m.left).toBe(0);
       expect(m.right).toBe(vp.width);
@@ -29,7 +29,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { wi
       expect(m.tile).toBeGreaterThan(41);
     } else {
       expect(Math.abs(m.left - (vp.width - m.right))).toBeLessThanOrEqual(1);
-      expect(m.tile).toBeGreaterThan(27.5);
+      expect(m.tile).toBeGreaterThan(22); // The tallest clue envelope takes priority on short phones.
     }
   });
 }
@@ -258,6 +258,59 @@ test('long clue chips grow around both codons and their divider on narrow and st
       await expect(panel.locator('.clue-pagination')).toBeHidden();
       await expect(panel.locator('[data-clue-unit][data-clue-done="false"][data-clue-hidden]')).toHaveCount(0);
       await expect(page.getByTestId('icon-row')).toBeVisible();
+    }
+  }
+});
+
+test('all campaign mechanics share the tallest clue height, board origin and action row', async ({page})=>{
+  test.setTimeout(180_000);
+  const kinds=['trace','crush','assembly','mutation','connections','restriction'] as const;
+  const ids=[...new Set(['ins-01','hbb-c07','rho-c07','hbb-c08',
+    ...kinds.map(kind=>CAMPAIGN_LEVELS.find(def=>mechanicOf(def)===kind)!.id),
+    ...kinds.map(kind=>CAMPAIGN_LEVELS.find(def=>(def.tier??0)>=12&&mechanicOf(def)===kind)?.id).filter((id):id is string=>!!id)])];
+  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:430,height:932}]){
+    await page.setViewportSize(viewport);
+    await openChapter(page,'ins-01');
+    const geometry=()=>page.evaluate(()=>{
+      const box=(selector:string)=>document.querySelector(selector)!.getBoundingClientRect();
+      const panel=box('[data-testid="target-panel"]'), board=box('.board-stage'), actions=box('[data-testid="icon-row"]');
+      return {clue:panel.height,boardY:board.y,boardWidth:board.width,actionY:actions.y,actionBottom:actions.bottom};
+    });
+    const initial=await geometry();
+    expect(initial.actionBottom).toBeLessThanOrEqual(viewport.height+1);
+    expect(initial.clue).toBeGreaterThan(80);
+    let tallest=0;
+    for(const id of ids){
+      if(id!=='ins-01'){await openMap(page);await page.getByTestId('cnode-'+id).click();}
+      const panel=page.getByTestId('target-panel');
+      await expect(panel).toBeVisible();
+      const actual=await geometry();
+      for(const key of ['clue','boardY','boardWidth','actionY'] as const)expect(Math.abs(actual[key]-initial[key]),id+' '+key).toBeLessThanOrEqual(1);
+      await expect(panel.locator('.clue-pagination')).toBeHidden();
+      expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight),id).toBeLessThanOrEqual(1);
+      const natural=await panel.evaluate(el=>{
+        const saved=el.getAttribute('style');
+        el.style.height='auto';el.style.overflow='visible';
+        const h=el.getBoundingClientRect().height;
+        if(saved===null)el.removeAttribute('style');else el.setAttribute('style',saved);
+        return h;
+      });
+      tallest=Math.max(tallest,natural);
+      expect(initial.clue+1,id+' natural height').toBeGreaterThanOrEqual(natural);
+      await expect(page.getByTestId('icon-row')).toBeInViewport();
+    }
+    expect(tallest).toBeGreaterThan(80);
+    const source=await page.locator('.app').getAttribute('data-clue-height-source');
+    expect(source).toBeTruthy();
+    if(CAMPAIGN_LEVELS.some(def=>def.id===source&&def.mode!=='repair')){
+      await openMap(page);await page.getByTestId('cnode-'+source).click();
+      const intrinsic=await page.getByTestId('target-panel').evaluate(el=>{
+        const saved=el.getAttribute('style');el.style.height='auto';el.style.overflow='visible';
+        const h=Math.max(el.getBoundingClientRect().height,el.scrollHeight);
+        if(saved===null)el.removeAttribute('style');else el.setAttribute('style',saved);
+        return h;
+      });
+      expect(Math.abs(initial.clue-intrinsic)).toBeLessThanOrEqual(1);
     }
   }
 });

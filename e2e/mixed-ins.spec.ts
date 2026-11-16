@@ -644,6 +644,7 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
   const panel=page.getByTestId('target-panel');
   const chips=page.getByTestId('assembly-reference').locator(':scope > [data-clue-unit]');
   const allSlots=Array.from({length:9},(_,i)=>String(i+1));
+  const positions=async()=>({panel:await panel.boundingBox(),board:await page.getByTestId('mechanics-board').boundingBox(),toolbar:await page.getByTestId('icon-row').boundingBox()});
   const assertClues=async(expected:string[])=>{
     await expect(panel.locator('.clue-pagination')).toBeHidden();
     await expect(chips).toHaveCount(9);
@@ -653,6 +654,7 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
   await assertClues(allSlots);
   await page.setViewportSize({width:320,height:568});
   await assertClues(allSlots);
+  const anchored=await positions();
   const read=0, offset=stage.spec.READ_STARTS[read]!;
   const place=async()=>{
     await tile(page,stage.spec.READ_CELLS[read]![0]!).tap();
@@ -662,8 +664,10 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
   const remaining=allSlots.filter((_,i)=>i<offset||i>=offset+stage.spec.READS[read]!.length);
   expect(remaining.length).toBeGreaterThan(0);
   await assertClues(remaining);
+  expect(await positions()).toEqual(anchored);
   await page.getByTestId('action-undo').click();
   await assertClues(allSlots);
+  expect(await positions()).toEqual(anchored);
   await place();
   await page.reload();await openMap(page);await page.getByTestId('cnode-'+def.id).click();
   await assertClues(remaining);
