@@ -32,6 +32,10 @@ export interface SaveData {
   attempts: Record<string, PuzzleState>;
   /** Optional additive v7 fields: verified replay logs and first-use tutorial acknowledgements. */
   mixedAttempts?: Record<string, LabAction[]>;
+  /** New unplayed puzzles use distinct version-2 geometry. */
+  mixedGeometryVersion?: number;
+  /** Puzzles already started/finished before the geometry update retain their old board. */
+  legacyMixedLayouts?: string[];
   tutorialsSeen?: string[];
   /** Per-attempt marker: replay starts at the free two-base prefix rather than an empty path. */
   traceStarterAttempts?: string[];
@@ -108,6 +112,7 @@ export function createMemoryAdapter(initial: string | null = null): StorageAdapt
 export function newSave(pack: LevelPack): SaveData {
   return {
     schemaVersion: SCHEMA_VERSION,
+    mixedGeometryVersion: 2,
     campaignId: pack.campaignId,
     generatorVersion: pack.generatorVersion,
     tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '',
@@ -490,6 +495,12 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const current=ids.has(requested)?requested:nextCampaignId(completed);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
+  // Old action logs are cell-based; replay them against the exact old geometry.
+  // Do not reset unfinished boards or silently change completed replay layouts.
+  const oldGeometry = data.mixedGeometryVersion !== 2;
+  const legacyMixedLayouts = new Set(oldGeometry
+    ? [...completed, ...Object.keys(data.mixedAttempts && typeof data.mixedAttempts === 'object' ? data.mixedAttempts as Record<string, unknown> : {})]
+    : strings(data.legacyMixedLayouts));
   const mixedAttempts: Record<string, LabAction[]> = {};
   const traceStarterAttempts: string[] = [];
   let updatedCrushLogs = 0;
@@ -498,7 +509,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (sameContent && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
       const def = pack.levels.find(l => l.id === id);
-      const stage = def && mixedStage(def);
+      const stage = def && mixedStage(def, legacyMixedLayouts.has(id));
       if (!stage && def && !def.lab && Array.isArray(rawLog) && rawLog.length) { retiredMixedLogs++; continue; }
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
@@ -523,7 +534,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (updatedCrushLogs) { adapter.backup(raw,'crush-cascades'); notices.push('Codon Crush now chains automatically. Older attempts were kept up to the last valid swap; completed levels are preserved.'); }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
   return {
-    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
+    save: { ...fresh, legacyMixedLayouts: [...legacyMixedLayouts].filter(id => ids.has(id)), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
     recovered: notices.length > 0,
   };
