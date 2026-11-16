@@ -3,8 +3,21 @@ import { fresh, openMap, solveWithHints } from './helpers';
 import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
 import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 const tile=(page:import('@playwright/test').Page,c:number)=>page.getByTestId('lab-cell-'+c);
+const legacyInsIds = ['ins-02','ins-03','ins-04','ins-05','ins-06','ins-c01','ins-c02','ins-c03','ins-c06','ins-c07'];
+// Existing exact-coordinate regressions exercise the intentionally supported v1
+// layout. New randomized layouts are covered by the per-gene tests below.
+async function freshLegacyIns(page: import('@playwright/test').Page, mixed = false) {
+  await fresh(page,mixed);
+  await page.evaluate(ids => {
+    const data = JSON.parse(localStorage.getItem('genome-save')!);
+    data.legacyMixedLayouts = ids;
+    localStorage.setItem('genome-save', JSON.stringify(data));
+  },legacyInsIds);
+  await page.reload();
+}
+
 test('first-use tutorials animate all seven mechanics, replay, and remember acknowledgement',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const stages=[['ins-01','slide'],['ins-02','trace'],['ins-03','connections'],['ins-04','assembly'],['ins-05','crush'],['ins-06','mutation'],['ins-c07','restriction']];
   for(const [id,kind] of stages){
     await page.getByTestId('cnode-'+id).click();
@@ -34,7 +47,7 @@ test('first-use tutorials animate all seven mechanics, replay, and remember ackn
 });
 test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances to Connections',async({page})=>{
   page.on('pageerror',error=>console.log('TRACE PAGE ERROR',error.message));
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
   await page.getByTestId('tutorial-skip').click();await solveWithHints(page);
   await page.getByRole('button',{name:'Next level →'}).click();
   await page.getByTestId('tutorial-skip').click();
@@ -61,7 +74,7 @@ test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances 
 
 test('every mixed INS stage can be solved through the real game controls and reaches 333 bp',async({page})=>{
   test.setTimeout(120_000);
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const skip=async()=>{const guide=page.getByTestId('mechanic-tutorial');if(await guide.isVisible())await page.getByTestId('tutorial-skip').click();};
   const stages=[
     {id:'ins-01',kind:'slide',end:9},
@@ -107,7 +120,7 @@ test('every mixed INS stage can be solved through the real game controls and rea
 });
 
 test('sliding tutorial keeps stationary cells opaque and rotates the entire column with wrap',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
   const board=page.getByTestId('tutorial-board');
   await expect(board.locator('.tutorial-before,.tutorial-after')).toHaveCount(0);
   await expect(board.locator('.tutorial-slide-static').first()).toHaveCSS('animation-name','none');
@@ -149,7 +162,7 @@ test('sliding tutorial keeps stationary cells opaque and rotates the entire colu
 });
 
 test('DNA tracing tutorial keeps all bases static while drawing its path once',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();
   const board=page.getByTestId('tutorial-board');
   for(let step=1;step<=3;step++){
     await expect(board.locator('.tutorial-cell')).toHaveCount(81);
@@ -172,7 +185,7 @@ test('DNA tracing tutorial keeps all bases static while drawing its path once',a
 });
 
 test('DNA tracing shares classic play chrome, board sizing, clues and action toolbar',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   await page.setViewportSize({width:320,height:568});
   await page.getByTestId('cnode-ins-01').click();await page.getByTestId('tutorial-skip').click();
   const classic=await page.getByTestId('board').boundingBox();
@@ -206,7 +219,7 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
 });
 
  test('mixed completion shares sliding win card, close/replay, and no duplicate gene credit',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
   for(const c of [12,21,30,31,40,49,50])await tile(page,c).tap();
   const win=page.getByTestId('win');
   await expect(win).toBeVisible();
@@ -230,7 +243,7 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
 
 
 test('every new mechanic shares sliding layout, targets and toolbar on both phone sizes',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const stages=[['ins-02','trace'],['ins-03','connections'],['ins-04','assembly'],['ins-05','crush'],['ins-06','mutation'],['ins-c07','restriction']];
   for(const size of [{width:390,height:844},{width:320,height:568}]){
     await page.setViewportSize(size);await page.getByTestId('cnode-ins-01').click();
@@ -270,7 +283,7 @@ test('every new mechanic shares sliding layout, targets and toolbar on both phon
 
 
 test('INS Genome Assembly restores grey placed reads after a reload',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-04').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-04').click();await page.getByTestId('tutorial-skip').click();
   await tile(page,1).tap();await tile(page,67).tap();
   await expect(page.locator('.assembly-placed')).toHaveCount(5);
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-04').click();
@@ -282,7 +295,7 @@ test('INS Genome Assembly restores grey placed reads after a reload',async({page
 
 
 test('Codon Crush guide swaps real neighbours then clears and refills the exact gameplay board',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();
   const guide=page.getByTestId('tutorial-board'), actual=page.getByTestId('mechanics-board');
   const initial=await actual.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
   await expect(guide.locator('[data-demo-cell]')).toHaveCount(81);
@@ -336,7 +349,7 @@ test('Codon Crush guide swaps real neighbours then clears and refills the exact 
 });
 
 test('DNA tracing hints remain graphical through wrong taps, alternate paths and backtracking',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
   const board=page.getByTestId('mechanics-board'), dashed=board.locator('.hinted');
   const hint=page.getByTestId('action-hint');
   await hint.click();
@@ -369,7 +382,7 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
 
 
 test('campaign Mutation Correction graphical hints retain toggle and repair the selected DNA base',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-06').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-06').click();await page.getByTestId('tutorial-skip').click();
   await page.getByTestId('action-hint').click();
   const square=page.locator('.mutation-hinted'), replacement=page.locator('.mutation-base-hinted');
   await expect(square).toHaveCount(1);await expect(replacement).toHaveCount(1);
@@ -384,7 +397,7 @@ test('campaign Mutation Correction graphical hints retain toggle and repair the 
 
 
 test('old tracing attempts resume unchanged and restart with the free starter pair',async({page})=>{
-  await fresh(page,true);
+  await freshLegacyIns(page,true);
   await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('genome-save')!);s.mixedAttempts={'ins-02':[{type:'trace',cell:9}]};s.tutorialsSeen=['trace'];localStorage.setItem('genome-save',JSON.stringify(s));});
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('1/9 bases');
@@ -406,7 +419,7 @@ test('old tracing attempts resume unchanged and restart with the free starter pa
 
 
 test('campaign Connections graphical hint remains actionable after resuming a partial route',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-03').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-03').click();await page.getByTestId('tutorial-skip').click();
   await tile(page,1).tap();await tile(page,2).tap();
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-03').click();
   await page.getByTestId('action-hint').click();
@@ -419,7 +432,7 @@ test('campaign Connections graphical hint remains actionable after resuming a pa
 
 
 test('campaign Codon Crush hints match the saved board and remain graphical',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();await page.getByTestId('tutorial-skip').click();
   await page.getByTestId('action-hint').click();
   const board=page.getByTestId('mechanics-board'), dashed=board.locator('.crush-hinted');
   await expect(dashed).toHaveCount(2);await expect(tile(page,12)).toHaveClass(/crush-hinted/);await expect(tile(page,13)).toHaveClass(/crush-hinted/);
@@ -434,7 +447,7 @@ test('campaign Codon Crush hints match the saved board and remain graphical',asy
 
 
 test('Mutation Correction is named consistently in map, practice menu, play and tutorial',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   await expect(page.getByTestId('cnode-ins-06')).toHaveAttribute('aria-label',/Mutation Correction/);
   await page.getByTestId('open-mechanics').click();
   await expect(page.getByTestId('mechanic-mutation')).toContainText('Mutation Correction');
@@ -449,7 +462,7 @@ test('Mutation Correction is named consistently in map, practice menu, play and 
 
 
 test('twelve-codon chapter keeps targets readable on a small phone and saves a whole chain as one move',async({page})=>{
-  await fresh(page,true);await page.setViewportSize({width:320,height:568});await openMap(page);
+  await freshLegacyIns(page,true);await page.setViewportSize({width:320,height:568});await openMap(page);
   await page.getByTestId('cnode-ins-c02').click();await page.getByTestId('tutorial-skip').click();
   const board=page.getByTestId('mechanics-board'),panel=page.getByTestId('target-panel');
   await expect(panel.locator('.mixed-codon-clues .clue-part')).toHaveCount(4);
@@ -480,7 +493,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
 });
 
 test('new gene introductions and 96-base mixed mutation boards work in the browser',async({page})=>{
-  await fresh(page,true);await page.setViewportSize({width:390,height:844});await openMap(page);
+  await freshLegacyIns(page,true);await page.setViewportSize({width:390,height:844});await openMap(page);
   await page.getByTestId('cnode-gpx1-i02').click();await page.getByTestId('tutorial-skip').click();
   await expect(page.getByTestId('play-title')).toHaveText('GPX1');
   await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
@@ -501,7 +514,7 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
 
 
 test('multi-base assembly clues read horizontally and share graphite and palette with the board',async({page})=>{
-  await fresh(page,true);
+  await freshLegacyIns(page,true);
   await page.setViewportSize({width:320,height:568});
   await openMap(page);
   const stages=CAMPAIGN_LEVELS.filter(def=>def.tier && mechanicOf(def)==='assembly');
@@ -538,7 +551,7 @@ test('multi-base assembly clues read horizontally and share graphite and palette
 
 
 test('multi-base Genome Assembly hints advance and recover saved progress after reload',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const def=CAMPAIGN_LEVELS.find(def=>def.tier===6 && mechanicOf(def)==='assembly') ?? CAMPAIGN_LEVELS.find(def=>def.tier && mechanicOf(def)==='assembly')!;
   const stage=mixedStage(def)!;
   await page.getByTestId('cnode-'+def.id).click();
