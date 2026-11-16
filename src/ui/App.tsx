@@ -48,7 +48,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const labPlay = screen.kind === 'mechanic';
   const playChrome = screen.kind === 'play' || labPlay;
   const heading = labPlay ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
-  const stage = useMemo(() => mixedStage(def), [def]);
+  const stage = useMemo(() => mixedStage(def, save.legacyMixedLayouts?.includes(def.id) ?? false), [def, save.legacyMixedLayouts]);
   const useMixed = !!stage;
   // Completed legacy sliding alternatives retain their credit. Display the canonical
   // solved mixed puzzle when no mixed log exists; replays still award no new bases.
