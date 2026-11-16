@@ -297,12 +297,12 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
         if (railIndex >= 0) {
           const base = labReplacementOptions(spec, mutationSelection??spec.MUTATIONS[0]??-1)[railIndex];
           if (base !== undefined) return <button key={c} type="button"
-            className={'mutation-rail-button '+chipClass(base)+(mutationHintBase===base?' mutation-base-hinted':'')}
+            className={'lab-cell mutation-rail-button '+chipClass(base)+(mutationHintBase===base?' mutation-base-hinted':'')}
             style={chipStyle(base)} data-lab-cell={c} data-base-option={base} data-testid={'lab-base-'+base}
             disabled={mutationSelection===null || state.won} aria-label={'Replace with '+labDecode(spec,base)+(mutationHintBase===base?', suggested correction':'')}
             onClick={() => {if(mutationSelection!==null)startMutationRepair(base,mutationSelection);}}>{face(base)}</button>;
         }
-        if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
+        if (b === '.') return <div key={c} className={(id === 'trace' ? 'lab-hole cell hole' : 'lab-hole') + (id === 'mutation' && c % 9 === 8 ? ' mutation-rail-slot' : '')} data-lab-cell={c} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
         const placedRead = id === 'assembly' && read >= 0 && state.placements[read]! >= 0;
         const chosen = id === 'assembly' ? selected === read && read >= 0 : id === 'connections' ? selected === pair && pair >= 0 : id === 'mutation' ? mutationSelection === c : selected === c;
