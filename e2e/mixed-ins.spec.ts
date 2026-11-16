@@ -529,6 +529,29 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
   await expect(page.getByTestId('play-title')).toHaveText('DMD');
   await expect(page.getByTestId('mixed-range')).toContainText('96-base blocks');
   await expect(page.getByTestId('mechanics-board').locator('[data-seq]').first()).toHaveAttribute('data-seq',/^[ACGT]{96}$/);
+  const blockRail=await page.getByTestId('mechanics-board').evaluate(root=>{
+    const option=root.querySelector<HTMLElement>('.mutation-rail-button.lab-token')!;
+    const tile=root.querySelector<HTMLElement>('.lab-cell.lab-token:not(.mutation-rail-button)')!;
+    const replacement=getComputedStyle(option),board=getComputedStyle(tile);
+    const colourBlock=document.createElement('span');
+    colourBlock.style.backgroundColor=replacement.getPropertyValue('--tok-bg').trim();
+    document.body.append(colourBlock);
+    const expectedBackground=getComputedStyle(colourBlock).backgroundColor;
+    colourBlock.remove();
+    return {options:root.querySelectorAll('.mutation-rail-button.lab-cell.lab-token').length,
+      colour:replacement.color,boardColour:board.color,font:replacement.fontFamily,boardFont:board.fontFamily,
+      faceSize:getComputedStyle(option.querySelector('.tok-face')!).fontSize,
+      boardFaceSize:getComputedStyle(tile.querySelector('.tok-face')!).fontSize,
+      background:replacement.backgroundColor,expectedBackground,
+      border:replacement.borderTopColor,opacity:replacement.opacity};
+  });
+  expect(blockRail.options).toBe(4);
+  expect(blockRail.colour).toBe(blockRail.boardColour);
+  expect(blockRail.font).toBe(blockRail.boardFont);
+  expect(blockRail.faceSize).toBe(blockRail.boardFaceSize);
+  expect(blockRail.background).toBe(blockRail.expectedBackground);
+  expect(blockRail.border).toBe('rgb(17, 17, 17)');
+  expect(blockRail.opacity).toBe('1');
   await page.getByTestId('action-hint').click();
   const suggested=page.locator('.mutation-base-hinted');
   await expect(suggested).toHaveCount(1);
