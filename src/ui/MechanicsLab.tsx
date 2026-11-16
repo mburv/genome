@@ -261,9 +261,15 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     return Number(hit.dataset.labCell);
   };
   const pointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (state.won || busy || e.button !== 0 || gesture.current) return;
+    // A replacement flying into place must not block selection of the next
+    // mismatch. Choose() commits the pending edit exactly once before selecting.
+    if (state.won || (busy && !(id === 'mutation' && mutationFlightRef.current)) || e.button !== 0 || gesture.current) return;
     const cell = cellFromPoint(e);
     if (cell === null || state.board[cell] === '.') return;
+    if (id === 'mutation' && mutationFlightRef.current) {
+      choose(cell);
+      return;
+    }
     const pair = startAt(cell);
     const read = readAt(cell);
     const pitch = (e.currentTarget.getBoundingClientRect().width + 1) / 9;
