@@ -1,5 +1,6 @@
 import { CAMPAIGN_LEVELS } from './campaign.ts';
 import { blockStage } from './blockMixed.ts';
+import { variedStage } from './varied.ts';
 import { DEFAULT_LAB_SPEC, applyLab, createLab, labExtractedSequence } from '../engine/mechanicsLab.ts';
 import type { MixedStage } from './mixed.ts';
 
@@ -87,17 +88,18 @@ export function readGenomeProgress(value:unknown):BonusProgress{
   }return out;
 }
 /** Puzzles use the exact forward reference strand. DNA is never randomly generated except filler. */
-export function genomeStage(chrom:string,iv:Interval,sequence:string):MixedStage{
+export function genomeStage(chrom:string,iv:Interval,sequence:string,legacyLayout=false):MixedStage{
   const [start,end]=iv;if(sequence.length!==end-start||!/^[ACGT]{1,864}$/.test(sequence))throw Error('Invalid reference interval');
   const id='t2t-'+chrom+'-'+start+'-'+end,symbol=chrom;
   const k=Math.ceil(sequence.length/9);
   if(sequence.length>9){
     const mechanic=sequence.length<=27?'mutation':'assembly';
-    return blockStage({id,symbol,tier:k,index:start},mechanic,start,end,sequence);
+    return blockStage({id,symbol,tier:k,index:start},mechanic,start,end,sequence,legacyLayout);
   }
   const path=Array.from({length:sequence.length},(_,i)=>17-i);
   const spec={...DEFAULT_LAB_SPEC,TRACE_TARGET:sequence,TRACE_PATH:path,traceHoles:[0,8,27,44,53,72,80]};
-  return {id,symbol,mechanic:'trace',start,end,sequence,spec,certificate:path.slice(Math.min(2,path.length-1)).map(cell=>({type:'trace',cell}))};
+  const stage:MixedStage={id,symbol,mechanic:'trace',start,end,sequence,spec,certificate:path.slice(Math.min(2,path.length-1)).map(cell=>({type:'trace',cell}))};
+  return legacyLayout ? stage : variedStage({id},stage);
 }
 export function bonusVerified(stage:MixedStage):boolean{
   const state=stage.certificate.reduce((s,a)=>applyLab(s,a).state,createLab(stage.mechanic,stage.spec));
