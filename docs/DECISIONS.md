@@ -436,3 +436,8 @@ Mutation rail interaction refinement: engine edits, progress, and history update
 
 ### Right-hand Mutation Correction replacement rail
 Moved the four replacement options from the unused left grid column to the unused rightmost column, rows 3–6 (zero-based cells 26, 35, 44, 53). These cells are outside the complementary strands in current practice, campaign and bonus puzzles; no DNA cell indices, engine actions, target clues, stored attempts, board dimensions or completion logic change. The landing animation derives its source from the chosen button, so it now travels from the right. Updated the first-use guide and mobile regression checks to match.
+
+### November 2026 — spatial variety in both main and T2T Human Genome campaigns
+Mixed mechanics previously reused fixed board geometry despite differing gene sequences. Each level now derives a deterministic seeded trace, connection routes, assembly read placement order, mutation locations, restriction strand placement or Codon Crush swaps and refills. For genome-wide bonus levels, the chromosome and reference interval determine their stable seed; DNA content always comes from the downloaded T2T reference. Practice tutorials remain fixed teaching examples. A prospective solution must pass the actual gameplay rules before it is accepted.
+
+Retain previously started and completed main campaign geometry so absolute-cell action logs are valid; migrate a snapshot of pre-update bonus completion coverage so already completed chromosome puzzles also replay their former layout. Future unplayed levels get the new geometry. Do not reset progression or alter the 11×11 bonus map, downloads, clue positioning or mobile controls.
