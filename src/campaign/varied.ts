@@ -117,7 +117,8 @@ function varyMutation(stage: MixedStage, rng: Rng): MixedStage {
   const spec = { ...stage.spec }, mapping = new Map<number, number>();
   const topRows = [rng.int(2), 3 + rng.int(2), 6 + rng.int(2)];
   spec.MUTATION_ROWS = spec.MUTATION_ROWS.map((source, i) => {
-    const col = rng.range(0, 9 - source.seq.length);
+    // Column 9 is the Mutation Correction base-picker rail; never place DNA there.
+    const col = rng.range(0, 8 - source.seq.length);
     const top = topRows[i]! * 9 + col, bottom = top + 9;
     for (let j = 0; j < source.seq.length; j++) mapping.set(source.bottom + j, bottom + j);
     return { ...source, top, bottom };
