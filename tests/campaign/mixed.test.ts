@@ -60,6 +60,7 @@ describe('mixed INS campaign',()=>{
   expect(replayMixed(stage,legacy,false).trace).toEqual([9]);
   const seeded={...old,mixedAttempts:{[def.id]:stage.certificate.slice(0,1)},traceStarterAttempts:[def.id]};
   const restored=loadSave(createMemoryAdapter(serializeSave(seeded)),LEVEL_PACK).save;
+  console.log('DEBUG TRACE', JSON.stringify({legacy:stage.spec.TRACE_PATH, source:seeded, replay:replayMixed(stage,stage.certificate.slice(0,1)).moves, result:restored}));
   expect(restored.traceStarterAttempts).toEqual([def.id]);
   expect(replayMixed(stage,restored.mixedAttempts![def.id]!).trace).toEqual(stage.spec.TRACE_PATH.slice(0,3));
 });
@@ -155,6 +156,7 @@ test('old mixed save geometry and in-progress cell logs are retained after upgra
   expect(loaded.save.legacyMixedLayouts).toContain(def.id);
   expect(loaded.save.legacyMixedLayouts).toContain('ins-03');
   expect(loaded.save.mixedGeometryVersion).toBe(2);
+  console.log('DEBUG MIGRATE', JSON.stringify({actions,legacyPath:legacy.spec.TRACE_PATH,replay:replayMixed(legacy,actions).moves,loaded:loaded.save,notices:loaded.notices}));
   expect(loaded.save.mixedAttempts?.[def.id]).toEqual(actions);
   expect(replayMixed(mixedStage(def,loaded.save.legacyMixedLayouts!.includes(def.id))!,actions).moves).toBe(actions.length);
   const newRun=loadSave(createMemoryAdapter(serializeSave(loaded.save)),LEVEL_PACK);
