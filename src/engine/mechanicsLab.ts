@@ -58,7 +58,7 @@ const filled = (holes: readonly number[], seed: number): string[] => Array.from(
 export interface LabSpec {
   TRACE_TARGET: string; TRACE_PATH: readonly number[]; traceHoles: readonly number[];
   CRUSH_TARGETS: readonly string[]; CRUSH_SWAPS: readonly (readonly [number, number])[]; crushHoles: readonly number[]; crushSeed?: number;
-  ASSEMBLY_TARGET: string; READS: readonly string[]; READ_STARTS: readonly number[]; READ_CELLS: readonly (readonly number[])[]; ASSEMBLY_CELLS: readonly number[];
+  ASSEMBLY_TARGET: string; READS: readonly string[]; READ_STARTS: readonly number[]; READ_ORDER?: readonly number[]; READ_CELLS: readonly (readonly number[])[]; ASSEMBLY_CELLS: readonly number[];
   MUTATION_ROWS: readonly { top: number; bottom: number; seq: string }[]; MUTATIONS: readonly number[];
   CONNECTION_ROUTES: readonly (readonly number[])[]; CONNECTION_PAIRS: readonly { start: number; end: number; seq: string; complement?: string }[];
   connectionHoles: readonly number[];
