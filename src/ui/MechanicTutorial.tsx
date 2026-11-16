@@ -1,5 +1,6 @@
 import { TokenFace,tierClass,tokenStyle } from './TokenFace.tsx';
 import { MUTATION_RAIL_CELLS } from './MechanicsLab.tsx';
+import { mutationDisplayCell } from './mutationLayout.ts';
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { ALL_LEVELS } from '../campaign/campaign.ts';
 import { isSlidingTutorial, type TutorialId, type MixedStage } from '../campaign/mixed.ts';
@@ -199,14 +200,16 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
     }
   };
   const cursor=item.cursor;
-  const from=cursor?xy(cursor[0]):null,to=cursor?xy(cursor[1]):null;
+  const displayCell=(c:number)=>mechanic==='mutation'?mutationDisplayCell(c,spec.MUTATION_ROWS):c;
+  const visualXY=(c:number)=>xy(displayCell(c));
+  const from=cursor?visualXY(cursor[0]):null,to=cursor?visualXY(cursor[1]):null;
   const exampleCell=spec.MUTATIONS[0]??-1;
   const exampleBase=mechanic==='mutation'?mutationExpected(exampleCell,spec):null;
   const railOptions=mechanic==='mutation'?labReplacementOptions(spec,exampleCell):[];
   const railIndex=exampleBase===null?-1:railOptions.indexOf(exampleBase);
   const railPosition=railIndex<0?-1:MUTATION_RAIL_CELLS[railIndex]!;
-  const railFrom=railPosition<0?null:xy(railPosition);
-  const railTo=exampleCell<0?null:xy(exampleCell);
+  const railFrom=railPosition<0?null:visualXY(railPosition);
+  const railTo=exampleCell<0?null:visualXY(exampleCell);
   return <div className="overlay tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" data-testid="mechanic-tutorial" data-mechanic={mechanic} onKeyDown={onKey}>
     <div className="card tutorial-card">
       <div className="row-between"><span className="muted small">FIRST-USE GUIDE · {index+1}/{steps.length}</span><button type="button" onClick={onClose} autoFocus data-testid="tutorial-skip">Skip</button></div>
@@ -217,10 +220,13 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
       <div className={'tutorial-board'+(reducedMotion?' static':'')+(sliding?' slide-demo':mechanic==='crush'?' crush-demo':mechanic==='mutation'?' mutation-demo':'')} key={index+':'+replay} data-testid="tutorial-board" data-step={index+1}>
         {sliding ? <SlideTutorialBoard item={item} index={index} reducedMotion={reducedMotion} /> : mechanic==='crush' ? <CrushTutorialBoard item={item} reducedMotion={reducedMotion} spec={spec} def={def} /> : <>
         {item.before.map((b,c)=>{
+          const visualCell=displayCell(c);
+          const visualPos=mechanic==='mutation'?{gridRow:Math.floor(visualCell/9)+1,gridColumn:visualCell%9+1}:undefined;
+          const mutationGap=mechanic==='mutation'&&visualCell%9===7;
           const mutationRailIndex=mechanic==='mutation'?MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]):-1;
           if(mutationRailIndex>=0 && railOptions[mutationRailIndex]!==undefined){
             const candidate=railOptions[mutationRailIndex]!;
-            return <div key={c} className="tutorial-cell tutorial-mutation-rail tutorial-mutation-rail-slot" data-demo-cell={c} data-testid="tutorial-mutation-rail">
+            return <div key={c} className="tutorial-cell tutorial-mutation-rail tutorial-mutation-rail-slot" data-demo-cell={c} data-visual-cell={visualCell} style={visualPos} data-testid="tutorial-mutation-rail">
               <span className={'tutorial-base tutorial-mutation-option '+cls(candidate)+(index===2&&candidate===exampleBase?' tutorial-mutation-choice':'')}
                 style={style(candidate)} data-base-option={candidate}>{face(candidate)}</span>
             </div>;
@@ -228,7 +234,7 @@ export function MechanicTutorial({ mechanic, stage, reducedMotion, onClose }: { 
           const after=item.after[c]!;
           const changed=b!==after && !reducedMotion;
           const shown=reducedMotion?after:b;
-          return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')+(mechanic==='mutation'&&c%9===8?' tutorial-mutation-rail-slot':'')} data-demo-cell={c}>
+          return <div key={c} className={'tutorial-cell'+(shown==='.'?' hole':'')+(item.cells.includes(c)?' highlighted':'')+(mechanic==='mutation'&&c%9===8?' tutorial-mutation-rail-slot':'')+(mutationGap?' tutorial-mutation-gap':'')} data-demo-cell={c} data-visual-cell={mechanic==='mutation'?visualCell:undefined} style={visualPos}>
             <span className={'tutorial-base '+cls(shown)} style={style(shown)}>{face(shown)}</span>
             {changed && <span className={'tutorial-change '+cls(after)+(mechanic==='mutation'?' tutorial-mutation-correct':'')} style={style(after)}>{face(after)}</span>}
           </div>;
