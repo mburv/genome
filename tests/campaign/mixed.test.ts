@@ -149,7 +149,8 @@ test('seeded varied geometries change spatial routes, target positions and swaps
 test('old mixed save geometry and in-progress cell logs are retained after upgrading',()=>{
   const def=runOf('INS').find(d=>d.id==='ins-02')!,legacy=mixedStage(def,true)!;
   const actions=legacy.certificate.slice(0,2);
-  const old={...newSave(LEVEL_PACK),mixedGeometryVersion:undefined,mixedAttempts:{[def.id]:actions},completed:['ins-03']};
+  const old={...newSave(LEVEL_PACK),mixedAttempts:{[def.id]:actions},completed:['ins-03']};
+  delete old.mixedGeometryVersion;
   const loaded=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK);
   expect(loaded.save.legacyMixedLayouts).toContain(def.id);
   expect(loaded.save.legacyMixedLayouts).toContain('ins-03');
