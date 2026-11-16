@@ -421,6 +421,33 @@ test('Mutation Correction puts four replacements in the unused rightmost grid co
     expect(b.x+b.width).toBeLessThanOrEqual(320+1);
     expect(Math.abs(b.width-b.height)).toBeLessThan(1.5);
   }
+  // The palette, text and sizing must match ordinary board tiles even before a repair is selected.
+  // Only the dedicated rightmost-column border and hatch distinguish the replacement rail.
+  const visual=await board.evaluate(root=>{
+    const boardTile=root.querySelector<HTMLElement>('.lab-cell[data-base="A"]')!;
+    const option=root.querySelector<HTMLElement>('.mutation-rail-button[data-base-option="A"]')!;
+    const appearance=(el:HTMLElement)=>{
+      const style=getComputedStyle(el);
+      return {background:style.backgroundColor,colour:style.color,font:style.fontFamily,size:style.fontSize,opacity:style.opacity,border:style.borderTopColor};
+    };
+    const holes=[...root.querySelectorAll<HTMLElement>('.mutation-rail-slot')].map(el=>{
+      const style=getComputedStyle(el);
+      return {cell:Number(el.dataset.labCell),border:style.borderTopColor,hatch:style.backgroundImage};
+    });
+    return {boardTile:appearance(boardTile),option:appearance(option),holes};
+  });
+  expect(visual.option.background).toBe(visual.boardTile.background);
+  expect(visual.option.colour).toBe(visual.boardTile.colour);
+  expect(visual.option.font).toBe(visual.boardTile.font);
+  expect(visual.option.size).toBe(visual.boardTile.size);
+  expect(visual.option.opacity).toBe('1');
+  expect(visual.option.border).toBe('rgb(17, 17, 17)');
+  expect(visual.holes.map(h=>h.cell)).toEqual([8,17,62,71,80]);
+  for(const hole of visual.holes){
+    expect(hole.border).toBe('rgb(17, 17, 17)');
+    expect(hole.hatch).toContain('repeating-linear-gradient');
+    expect(hole.hatch).toContain('rgb(17, 17, 17)');
+  }
   const chosen=20;
   const expected=await page.getByTestId('mutation-target-'+chosen).getAttribute('data-symbol');
   await tile(page,chosen).tap();
@@ -457,6 +484,9 @@ test('Mutation Correction first-use tutorial teaches the right-side rail and sho
   for(let step=1;step<=3;step++){
     await expect(board).toHaveAttribute('data-step',String(step));
     await expect(board.getByTestId('tutorial-mutation-rail')).toHaveCount(4);
+    await expect(board.locator('.tutorial-mutation-rail-slot')).toHaveCount(9);
+    await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('border-top-color','rgb(17, 17, 17)');
+    await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('background-image',/repeating-linear-gradient/);
     await expect(board.locator('.tutorial-cell')).toHaveCount(81);
     if(step<3)await page.getByTestId('tutorial-next').click();
   }
