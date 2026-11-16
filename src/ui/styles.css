@@ -928,7 +928,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-actions { display:flex; gap:4px; }
 .tutorial-actions button { flex:1; min-height:40px; font-size:12px; padding:5px; }
 /* First-use guide: matching right-column rail and an animated replacement. */
-.tutorial-mutation-rail-slot {
+.tutorial-cell.tutorial-mutation-rail-slot {
   background:repeating-linear-gradient(135deg,var(--ink) 0 1px,transparent 1px 6px),var(--hole);
   border:1px solid var(--ink);
 }
