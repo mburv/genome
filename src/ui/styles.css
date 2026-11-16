@@ -56,10 +56,10 @@ a { color: var(--blue); }
   --app-gap: 10px;
   /* ClueSizing measures the tallest actual clue layout once per width. Every
      puzzle reserves this same envelope, irrespective of its own remaining clues. */
-  --play-header: 70px;
-  --play-under: 122px;
   --clue-height: 150px;
-  --board: min(100vw, var(--app-max), max(180px, calc(100svh - var(--play-header) - var(--play-under) - (3 * var(--app-gap)) - var(--clue-height))));
+  /* Width, not viewport height, determines the square board. On short
+     displays the page can scroll instead of shrinking the puzzle tiles. */
+  --board: min(100vw, var(--app-max));
   position: relative;
   max-width: var(--app-max);
   overflow-x: clip;
@@ -88,11 +88,6 @@ a { color: var(--blue); }
 }
 @media (max-height: 700px) {
   .app { --app-gap: 6px; }
-}
-/* Prioritise the shared toolbar and usable tiles on the shortest screens;
-   the mutation-only replacement picker follows it and may need page scroll. */
-@media (max-height: 600px) {
-  .app { --play-under: 76px; }
 }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color: var(--ink); }
@@ -221,7 +216,9 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   flex: none;
   overflow-x: hidden;
   overflow-y: hidden;
-  overscroll-behavior: contain;
+  /* Allow a swipe over the clue region to scroll the page on short displays. */
+  overscroll-behavior: auto;
+  touch-action: pan-y;
   min-height: 0;
 }
 /* Crowded clue panels omit committed matches and page any remaining overflow. */

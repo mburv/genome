@@ -61,7 +61,7 @@ test('automatically loads a chromosome, assembles an exact interval and restores
     const panel=document.querySelector('[data-testid="target-panel"]')!.getBoundingClientRect();
     const board=document.querySelector('.board-stage')!.getBoundingClientRect();
     const actions=document.querySelector('[data-testid="icon-row"]')!.getBoundingClientRect();
-    return {height:panel.height,boardY:board.y,boardWidth:board.width,actionY:actions.y};
+    return {height:panel.height,boardY:board.y+window.scrollY,boardWidth:board.width,boardHeight:board.height,boardX:board.x,actionY:actions.y+window.scrollY};
   });
   const mainGeometry=await sharedGeometry();
   // Synthetic fixture exercises packing/UI; never part of the shipped reference.
@@ -88,10 +88,15 @@ test('automatically loads a chromosome, assembles an exact interval and restores
   await expect(page.getByTestId('play-top')).toHaveCount(1);
   await expect(page.getByTestId('app-top')).toHaveCount(0);
   await expect(page.getByTestId('play-progress')).toHaveText('1/23');
+  const bonusGeometry=await sharedGeometry();
+  expect(bonusGeometry.boardWidth).toBe(375);
+  expect(bonusGeometry.boardHeight).toBe(375);
+  expect(bonusGeometry.boardX).toBe(0);
+  for(const key of ['height','boardY','boardWidth','boardHeight','boardX','actionY'] as const)expect(Math.abs(bonusGeometry[key]-mainGeometry[key])).toBeLessThanOrEqual(1);
+  await page.getByTestId('icon-row').scrollIntoViewIfNeeded();
   await expect(page.getByTestId('action-hint')).toBeInViewport();
   await expect(page.getByTestId('action-undo')).toBeInViewport();
-  const bonusGeometry=await sharedGeometry();
-  for(const key of ['height','boardY','boardWidth','actionY'] as const)expect(Math.abs(bonusGeometry[key]-mainGeometry[key])).toBeLessThanOrEqual(1);
+  await page.evaluate(()=>window.scrollTo(0,0));
   await expect(page.getByTestId('reference-loading')).toHaveCount(0);
   expect(requests).toBe(1);
   for(const cell of [15,14,13,12,11,10,9])await page.getByTestId('lab-cell-'+cell).click();

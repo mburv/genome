@@ -233,7 +233,8 @@ test('Mutation Correction retains the shared board and usable controls on a shor
   await openLab(page, 'mutation');
   const board = page.getByTestId('mechanics-board');
   const bounds = (await board.boundingBox())!;
-  expect(bounds.width).toBeGreaterThan(200);
+  expect(bounds.width).toBe(320);
+  expect(bounds.x).toBe(0);
   expect(Math.abs(bounds.width - bounds.height)).toBeLessThan(2);
   await expect(page.getByTestId('mutation-reference').locator('.mutation-target-base')).toHaveCount(21);
   await expect(page.getByTestId('lab-base-A')).toBeVisible();

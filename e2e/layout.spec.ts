@@ -20,17 +20,10 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { wi
     expect(Math.abs(m.width - m.height)).toBeLessThan(1);
     expect(m.left).toBeGreaterThanOrEqual(-0.5);
     expect(m.right).toBeLessThanOrEqual(vp.width + 0.5);
-    // On short viewports the board may shrink so the clue cap can stay readable (D-UI-30);
-    // it stays square and centred; the shared tallest clue envelope takes priority on short phones.
-    if (vp.height >= 700) {
-      expect(m.left).toBe(0);
-      expect(m.right).toBe(vp.width);
-      expect(m.tile).toBeGreaterThanOrEqual((vp.width - 8) / 9 - 0.5);
-      expect(m.tile).toBeGreaterThan(41);
-    } else {
-      expect(Math.abs(m.left - (vp.width - m.right))).toBeLessThanOrEqual(1);
-      expect(m.tile).toBeGreaterThan(22); // The tallest clue envelope takes priority on short phones.
-    }
+    // Even short viewports keep full-width square tiles; the page may scroll vertically.
+    expect(m.left).toBe(0);
+    expect(m.right).toBe(vp.width);
+    expect(m.tile).toBeGreaterThanOrEqual((vp.width - 8) / 9 - 0.5);
   });
 }
 
@@ -47,8 +40,8 @@ test('a long-token chapter board is also full-bleed at 320px with no overflow', 
   await page.setViewportSize({ width: 320, height: 568 });
   await openChapter(page, 'hbb-c08');
   const r = await page.locator('.board').boundingBox();
-  expect(r!.x).toBeGreaterThanOrEqual(0);
-  expect(r!.x + r!.width).toBeLessThanOrEqual(320.5);
+  expect(r!.x).toBe(0);
+  expect(r!.width).toBe(320);
   expect(Math.abs(r!.width - r!.height)).toBeLessThan(1);
   expect(Math.abs(r!.x - (320 - (r!.x + r!.width)))).toBeLessThanOrEqual(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
@@ -274,10 +267,13 @@ test('all campaign mechanics share the tallest clue height, board origin and act
     const geometry=()=>page.evaluate(()=>{
       const box=(selector:string)=>document.querySelector(selector)!.getBoundingClientRect();
       const panel=box('[data-testid="target-panel"]'), board=box('.board-stage'), actions=box('[data-testid="icon-row"]');
-      return {clue:panel.height,boardY:board.y,boardWidth:board.width,actionY:actions.y,actionBottom:actions.bottom};
+      return {clue:panel.height,boardY:board.y+window.scrollY,boardWidth:board.width,boardHeight:board.height,boardX:board.x,actionY:actions.y+window.scrollY,actionBottom:actions.bottom+window.scrollY};
     });
     const initial=await geometry();
-    expect(initial.actionBottom).toBeLessThanOrEqual(viewport.height+1);
+    expect(initial.boardWidth).toBe(viewport.width);
+    expect(initial.boardHeight).toBe(viewport.width);
+    expect(initial.boardX).toBe(0);
+    if(viewport.height>=844)expect(initial.actionBottom).toBeLessThanOrEqual(viewport.height+1);
     expect(initial.clue).toBeGreaterThan(80);
     let tallest=0;
     for(const id of ids){
@@ -285,7 +281,7 @@ test('all campaign mechanics share the tallest clue height, board origin and act
       const panel=page.getByTestId('target-panel');
       await expect(panel).toBeVisible();
       const actual=await geometry();
-      for(const key of ['clue','boardY','boardWidth','actionY'] as const)expect(Math.abs(actual[key]-initial[key]),id+' '+key).toBeLessThanOrEqual(1);
+      for(const key of ['clue','boardY','boardWidth','boardHeight','boardX','actionY'] as const)expect(Math.abs(actual[key]-initial[key]),id+' '+key).toBeLessThanOrEqual(1);
       await expect(panel.locator('.clue-pagination')).toBeHidden();
       expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight),id).toBeLessThanOrEqual(1);
       const natural=await panel.evaluate(el=>{
@@ -297,7 +293,9 @@ test('all campaign mechanics share the tallest clue height, board origin and act
       });
       tallest=Math.max(tallest,natural);
       expect(initial.clue+1,id+' natural height').toBeGreaterThanOrEqual(natural);
-      await expect(page.getByTestId('icon-row')).toBeInViewport();
+      await page.getByTestId('icon-row').scrollIntoViewIfNeeded();
+      await expect(page.getByTestId('icon-row')).toBeInViewport({ratio:0.99});
+      await page.evaluate(()=>window.scrollTo(0,0));
     }
     expect(tallest).toBeGreaterThan(80);
     const source=await page.locator('.app').getAttribute('data-clue-height-source');
