@@ -2,6 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 import { fresh, openMap, solveWithHints } from './helpers';
 import { installFeedbackProbe, feedbackLog, clearFeedback } from './feedbackProbe';
 import { LAB_IDS } from '../src/engine/mechanicsLab.ts';
+import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { mixedStage } from '../src/campaign/mixed.ts';
 
 const move = { notes: [520], vibration: [8] };
 const reject = { notes: [180,150], vibration: [[12,40,12]] };
@@ -82,14 +84,15 @@ test('classic and mixed campaign use the same cues, including rejected actions a
   await solveWithHints(page); await log(page,win);
   await page.getByRole('button',{name:'Next level →'}).click();
   await clearFeedback(page);
-  // The starter pair is free. Clicking its last base does not change state or play a cue.
-  await tap(page,11); await log(page,silent);
-  await tap(page,50); await log(page,reject);
-  await clearFeedback(page); await tap(page,12); await log(page,move);
+  // Test the level's seeded geometry, not a hard-coded legacy route.
+  const route=mixedStage(CAMPAIGN_LEVELS.find(l=>l.id==='ins-02')!)!.spec.TRACE_PATH;
+  await tap(page,route[1]!); await log(page,silent);
+  await tap(page,route.at(-1)!); await log(page,reject);
+  await clearFeedback(page); await tap(page,route[2]!); await log(page,move);
   await page.reload(); await openMap(page); await page.getByTestId('cnode-ins-02').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('3/9 bases');
   await log(page,silent);
-  for(const c of [21,30,31,40,49,50]) await tap(page,c);
+  for(const c of route.slice(3)) await tap(page,c);
   await expect(page.getByTestId('win')).toBeVisible();
   const cues=await feedbackLog(page); expect(cues.notes.slice(-4)).toEqual(win.notes);
   expect(cues.vibration.at(-1)).toEqual(win.vibration[0]);

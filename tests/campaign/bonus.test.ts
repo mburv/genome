@@ -21,6 +21,33 @@ describe('full T2T genome',()=>{
       const s=genomeStage('chrM',[0,n],'A'.repeat(n));expect(bonusVerified(s),s.id).toBe(true);
     }
   });
+  it('uses distinct, reproducible spatial boards for chromosome bonus levels',()=>{
+    const seq='ACGT'.repeat(3).slice(0,9);
+    const tracing=Array.from({length:24},(_,i)=>{
+      const stage=genomeStage('chr1',[i*9,i*9+9],seq);
+      expect(bonusVerified(stage),stage.id).toBe(true);
+      expect(genomeStage('chr1',[i*9,i*9+9],seq)).toEqual(stage);
+      return JSON.stringify(stage.spec.TRACE_PATH);
+    });
+    expect(new Set(tracing).size).toBe(tracing.length);
+    const mutation=Object.keys(CHROMOSOMES).slice(0,12).map(chrom=>genomeStage(chrom,[9,36],'ACG'.repeat(9)));
+    expect(new Set(mutation.map(s=>JSON.stringify([s.spec.MUTATIONS,s.spec.MUTATION_ROWS]))).size).toBe(mutation.length);
+    const assembly=Object.keys(CHROMOSOMES).slice(0,12).map(chrom=>genomeStage(chrom,[90,954],'ACGT'.repeat(216)));
+    expect(new Set(assembly.map(s=>JSON.stringify([s.spec.READ_CELLS,s.spec.READ_STARTS,s.spec.READ_ORDER]))).size).toBe(assembly.length);
+    for(const stage of [...mutation,...assembly])expect(bonusVerified(stage),stage.id).toBe(true);
+    const historical=genomeStage('chr1',[0,9],seq,true);
+    expect(historical.spec.TRACE_PATH).toEqual([17,16,15,14,13,12,11,10,9]);
+  });
+  it('retains old bonus board geometry for already completed intervals on migration',()=>{
+    const progress=addGenomeCredit({},'chr1',[0,9]);
+    const old={...newSave(LEVEL_PACK),genomeProgress:progress};
+    delete old.mixedGeometryVersion;
+    const migrated=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK).save;
+    expect(migrated.legacyBonusGeometry).toEqual(progress);
+    expect(migrated.mixedGeometryVersion).toBe(2);
+    const reopened=loadSave(createMemoryAdapter(serializeSave(migrated)),LEVEL_PACK).save;
+    expect(reopened.legacyBonusGeometry).toEqual(progress);
+  });
   it('retains validated coordinate coverage on reload',()=>{
     const s={...newSave(LEVEL_PACK),genomeProgress:addGenomeCredit({},'chr1',[0,9])};
     expect(loadSave(createMemoryAdapter(serializeSave(s)),LEVEL_PACK).save.genomeProgress).toEqual(s.genomeProgress);

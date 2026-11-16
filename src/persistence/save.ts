@@ -34,6 +34,12 @@ export interface SaveData {
   attempts: Record<string, PuzzleState>;
   /** Optional additive v7 fields: verified replay logs and first-use tutorial acknowledgements. */
   mixedAttempts?: Record<string, LabAction[]>;
+  /** Version 2: distinct seeded spatial layouts for both campaigns. */
+  mixedGeometryVersion?: number;
+  /** Pre-update stages retain their absolute-cell solution paths and saved actions. */
+  legacyMixedLayouts?: string[];
+  /** Snapshot of formerly completed T2T intervals, for unchanged replay boards. */
+  legacyBonusGeometry?: BonusProgress;
   tutorialsSeen?: string[];
   /** Separate T2T reference coverage, zero-based half-open intervals per chromosome. */
   genomeProgress?: BonusProgress;
@@ -114,6 +120,7 @@ export function createMemoryAdapter(initial: string | null = null): StorageAdapt
 export function newSave(pack: LevelPack): SaveData {
   return {
     schemaVersion: SCHEMA_VERSION,
+    mixedGeometryVersion: 2,
     campaignId: pack.campaignId,
     generatorVersion: pack.generatorVersion,
     tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '',
@@ -509,6 +516,12 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const current=ids.has(requested)?requested:nextCampaignId([...completed,...legacyReferenceLevels]);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
+  // Action logs refer to absolute cells: existing boards must stay pinned to v1.
+  const oldGeometry=data.mixedGeometryVersion!==2;
+  const legacyMixedLayouts=new Set(oldGeometry
+    ? [...completed,...Object.keys(data.mixedAttempts && typeof data.mixedAttempts==='object' ? data.mixedAttempts as Record<string,unknown> : {})]
+    : strings(data.legacyMixedLayouts));
+  const legacyBonusGeometry=readGenomeProgress(oldGeometry ? data.genomeProgress : data.legacyBonusGeometry);
   const mixedAttempts: Record<string, LabAction[]> = {};
   const traceStarterAttempts: string[] = [];
   let updatedCrushLogs = 0;
@@ -518,7 +531,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
       const def = pack.levels.find(l => l.id === id);
       if(!compatible(id))continue;
-      const stage = def && mixedStage(def);
+      const stage = def && mixedStage(def,legacyMixedLayouts.has(id));
       if (!stage && def && !def.lab && Array.isArray(rawLog) && rawLog.length) { retiredMixedLogs++; continue; }
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
@@ -544,7 +557,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
   const sharedProgress=genomeProgress;
   return {
-    save: { ...fresh, ...(Object.keys(sharedProgress).length?{genomeProgress:sharedProgress}:{}), ...(legacyReferenceLevels.length?{legacyReferenceLevels}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
+    save: { ...fresh, legacyMixedLayouts:[...legacyMixedLayouts].filter(id=>ids.has(id)), ...(Object.keys(legacyBonusGeometry).length?{legacyBonusGeometry}:{}), ...(Object.keys(sharedProgress).length?{genomeProgress:sharedProgress}:{}), ...(legacyReferenceLevels.length?{legacyReferenceLevels}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
     recovered: notices.length > 0,
   };

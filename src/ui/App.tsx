@@ -53,7 +53,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
   const labPlay = screen.kind === 'mechanic';
   const playChrome = screen.kind === 'play' || labPlay;
   const heading = labPlay ? { ...playHeading(ALL_LEVELS.find(l=>l.id==='ins-01')!), progress:'PRACTICE' } : playHeading(def);
-  const stage = useMemo(() => mixedStage(def), [def]);
+  const stage = useMemo(() => mixedStage(def, save.legacyMixedLayouts?.includes(def.id) ?? false), [def, save.legacyMixedLayouts]);
   const useMixed = !!stage;
   // Completed legacy sliding alternatives retain their credit. Display the canonical
   // solved mixed puzzle when no mixed log exists; replays still award no new bases.
@@ -171,7 +171,7 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           onCard={(symbol) => go({ kind: 'card', symbol })}
         />
       )}
-      {screen.kind==='bonus' && bonusUnlocked(progressed) && <BonusScreen feedback={save.settings} progress={save.genomeProgress??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onPlaying={setBonusPlaying} onSettings={()=>go({kind:'settings'})} onBack={()=>go({kind:'map'})}/>}
+      {screen.kind==='bonus' && bonusUnlocked(progressed) && <BonusScreen feedback={save.settings} progress={save.genomeProgress??{}} legacyGeometry={save.legacyBonusGeometry??{}} onProgress={persistBonus} reducedMotion={reducedMotion} onPlaying={setBonusPlaying} onSettings={()=>go({kind:'settings'})} onBack={()=>go({kind:'map'})}/>}
       {screen.kind === 'mechanics' && <MechanicsMenu onPlay={id => go({ kind: 'mechanic', id })} onBack={() => go({ kind: 'map' })} />}
       {screen.kind === 'mechanic' && <MechanicsPlay feedback={save.settings} key={screen.id} id={screen.id} reducedMotion={reducedMotion} onBack={() => go({ kind: 'mechanics' })} onNext={id => go({ kind: 'mechanic', id })} />}
       {screen.kind === 'play' && useMixed && stage && <MechanicsPlay feedback={save.settings} key={def.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hintMode} onHintModeChange={setHintMode} onBack={() => go({ kind: 'map' })} onNext={() => undefined} campaign={{
