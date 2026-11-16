@@ -417,3 +417,8 @@ Owner requested the original single-base grey for multi-base DNA lettering. The 
 
 ### Codon Crush clue consumption
 Owner requested collected clues disappear. Always hide completed codon groups after each animated refill, not only when the panel is crowded. Keep the full initial panel height and original clue indices; the next remaining target is first. Undo, Restart and restored sessions reconstruct the remaining clue set from collection state.
+
+### Per-level geometry for non-sliding campaign modes (November 2026)
+Player feedback: repeated fixed templates across different genes make DNA Tracing, Genome Assembly, Restriction Enzyme, DNA Connections, Mutation Correction and Codon Crush predictable even when the reference bases vary. Derive deterministic layout geometry from each level's pinned seed and ID for both the main and bonus gene campaigns. Trace and connection routes must be contiguous, disjoint where appropriate and reproducible. Assembly reads must overlap and collectively reconstruct the target, with varied source positions and solution order. Restriction cut sites must still isolate the exact verified target. Codon Crush layouts are accepted only when the real engine replays a winning certificate through clears, gravity and refills. Keep the standalone mechanics-lab tutorials fixed so they remain clear teaching examples.
+
+Existing mixed move logs contain absolute cell indices. Preserve the old geometry for any already-started or completed level during migration; use varied geometry only for unstarted levels, recording the exceptions in the versioned save envelope. Never discard saved progress, coverage or achievements because of this change.
