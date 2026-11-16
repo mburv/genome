@@ -30,7 +30,7 @@ type WinCredit = { newBases: number; replayed: boolean; assembled: boolean };
 type Session = { state: LabState; history: LabState[]; actions: LabAction[]; message: string; celebration: WinCredit | null };
 type CrushDrag = { a: number; b: number; fraction: number };
 type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; frame: number; result: LabResult; action: LabAction; credit: WinCredit };
-type MutationFlight = { base: string; x: number; y: number; dx: number; dy: number; width: number; height: number; result: LabResult; action: LabAction; credit: WinCredit };
+type MutationFlight = { base: string; cell: number; before: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
 /** Mutation strands leave the first grid column free for the replacement rail. */
 export const MUTATION_RAIL_CELLS = [18, 27, 36, 45] as const;
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
@@ -90,9 +90,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const [crushDrag, setCrushDrag] = useState<CrushDrag | null>(null);
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
   const [mutationFlight, setMutationFlight] = useState<MutationFlight | null>(null);
-  const mutationFlightActive = useRef(false);
-  const mutationFlightRef = useRef<MutationFlight | null>(null);
-  const busy = crushAnimation !== null || mutationFlight !== null;
+  const busy = crushAnimation !== null;
   const { state } = session;
   const traceHint = id === 'trace' && hint ? traceHintCell(state) : null;
   const routeHint = id === 'connections' && hint ? connectionHint(state, selected) : null;
@@ -122,10 +120,10 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const [gestureActive, setGestureActive] = useState(false);
   const [winReady, setWinReady] = useState(state.won);
   useEffect(() => {
-    if (!state.won || gestureActive) return;
+    if (!state.won || gestureActive || mutationFlight) return;
     const timer = window.setTimeout(() => setWinReady(true), 180);
     return () => window.clearTimeout(timer);
-  }, [state.won, gestureActive]);
+  }, [state.won, gestureActive, mutationFlight]);
   const credit: WinCredit = {
     newBases: bonus ? bonus.newBases : campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
     replayed: campaign?.completed ?? bonus?.completed ?? false,
@@ -161,41 +159,31 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     }, crushTiming[stage]);
     return () => window.clearTimeout(timer);
   }, [crushAnimation, commitResult]);
-  // An animated replacement is committed once, after landing, with unchanged engine semantics.
+  // Engine updates immediately; the flying tile is presentation only. Fast
+  // selections and Undo cannot be blocked by an in-flight CSS animation.
   useEffect(() => {
     if (!mutationFlight) return;
-    const timer = window.setTimeout(() => {
-      if (mutationFlightRef.current !== mutationFlight) return;
-      mutationFlightRef.current = null;
-      commitResult(mutationFlight.result, mutationFlight.action, mutationFlight.credit);
-      mutationFlightActive.current = false;
-      setMutationFlight(null);
-    }, 300);
+    const timer = window.setTimeout(() => setMutationFlight(null), 300);
     return () => window.clearTimeout(timer);
-  }, [mutationFlight, commitResult]);
+  }, [mutationFlight]);
   const startMutationRepair = (base: string, cell: number) => {
-    if (state.won || busy || mutationFlightActive.current) return;
+    if (sessionRef.current.state.won) return;
     const action: LabAction = { type:'edit', cell, base };
-    const result = applyLab(sessionRef.current.state, action);
+    const prev = sessionRef.current.state;
+    const result = applyLab(prev, action);
     prepareFeedback(feedback);
-    if (result.state === sessionRef.current.state) {
-      commitResult(result, action, credit);
-      return;
-    }
     const root = boardRef.current;
     const source = [...(root?.querySelectorAll<HTMLButtonElement>('.mutation-rail-button') ?? [])].find(el => el.dataset.baseOption === base);
     const destination = root?.querySelector<HTMLElement>('[data-lab-cell="'+cell+'"]');
-    if (reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !root || !source || !destination) {
-      commitResult(result, action, credit);
-      return;
+    let nextFlight: MutationFlight | null = null;
+    if (result.state !== prev && !reducedMotion && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && root && source && destination) {
+      const origin = root.getBoundingClientRect(), from = source.getBoundingClientRect(), to = destination.getBoundingClientRect();
+      nextFlight = { base, cell, before:prev.board[cell]!, x:from.left-origin.left, y:from.top-origin.top,
+        dx:to.left+to.width/2-from.left-from.width/2, dy:to.top+to.height/2-from.top-from.height/2,
+        width:from.width, height:from.height };
     }
-    const origin = root.getBoundingClientRect(), from = source.getBoundingClientRect(), to = destination.getBoundingClientRect();
-    const flight: MutationFlight = { base, x:from.left-origin.left, y:from.top-origin.top,
-      dx:to.left+to.width/2-from.left-from.width/2, dy:to.top+to.height/2-from.top-from.height/2,
-      width:from.width, height:from.height, result, action, credit };
-    mutationFlightRef.current = flight;
-    mutationFlightActive.current = true;
-    setMutationFlight(flight);
+    commitResult(result, action, credit);
+    setMutationFlight(nextFlight);
   };
   const startCrushSwap = (a: number, b: number) => {
     if (busy || state.won) return;
@@ -212,30 +200,18 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   };
   const animationFrame = crushAnimation?.result.crushFrames?.[crushAnimation.frame];
   const displayBoard = crushAnimation?.stage === 'clear' && animationFrame ? animationFrame.swapped
-    : crushAnimation?.stage === 'fall' && animationFrame ? animationFrame.board : state.board;
+    : crushAnimation?.stage === 'fall' && animationFrame ? animationFrame.board
+    : mutationFlight ? state.board.map((b,c)=>c===mutationFlight.cell?mutationFlight.before:b) : state.board;
   const displayCollected = state.collected + (animationFrame && crushAnimation ? crushAnimation.frame + (crushAnimation.stage==='fall'?1:0) : 0);
   const swapMotion = crushAnimation && (crushAnimation.stage === 'swap' || crushAnimation.stage === 'return')
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { mutationFlightRef.current=null; mutationFlightActive.current=false; setMutationFlight(null); setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
+  const reset = () => { setMutationFlight(null); setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
   const undo = () => {
-    const flight = mutationFlightRef.current;
-    if (flight) {
-      mutationFlightRef.current=null; mutationFlightActive.current=false; setMutationFlight(null);
-      commitResult(flight.result,flight.action,flight.credit);
-    }
+    setMutationFlight(null);
     setWinReady(false); const prev = sessionRef.current; const last = prev.history.at(-1); if (last) { updateSession({ state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null }); playCue('undo', feedback); } setSelected(null); };
   const choose = (cell: number) => {
-    // On a rapid next-tile tap, land the previous edit immediately and then select
-    // the next cell. The history is still committed once and taps are never lost.
-    const flight = id === 'mutation' ? mutationFlightRef.current : null;
-    if (flight) {
-      mutationFlightRef.current=null; mutationFlightActive.current=false; setMutationFlight(null);
-      commitResult(flight.result,flight.action,flight.credit);
-      if (mutationExpected(cell)) setSelected(cell);
-      return;
-    }
     if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
     else if (id === 'crush') {
@@ -261,15 +237,9 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     return Number(hit.dataset.labCell);
   };
   const pointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    // A replacement flying into place must not block selection of the next
-    // mismatch. Choose() commits the pending edit exactly once before selecting.
-    if (state.won || (busy && !(id === 'mutation' && mutationFlightRef.current)) || e.button !== 0 || gesture.current) return;
+    if (state.won || busy || e.button !== 0 || gesture.current) return;
     const cell = cellFromPoint(e);
     if (cell === null || state.board[cell] === '.') return;
-    if (id === 'mutation' && mutationFlightRef.current) {
-      choose(cell);
-      return;
-    }
     const pair = startAt(cell);
     const read = readAt(cell);
     const pitch = (e.currentTarget.getBoundingClientRect().width + 1) / 9;
@@ -323,13 +293,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const board = (
     <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '')+(spec.tokens?' block-lab-board':'') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} data-crush-chain={crushAnimation ? crushAnimation.frame+1 : undefined} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
-        const railIndex = id === 'mutation' && !state.won ? MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]) : -1;
+        const railIndex = id === 'mutation' && (!state.won || mutationFlight) ? MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]) : -1;
         if (railIndex >= 0) {
           const base = labReplacementOptions(spec, mutationSelection??spec.MUTATIONS[0]??-1)[railIndex];
           if (base !== undefined) return <button key={c} type="button"
             className={'mutation-rail-button '+chipClass(base)+(mutationHintBase===base?' mutation-base-hinted':'')}
             style={chipStyle(base)} data-lab-cell={c} data-base-option={base} data-testid={'lab-base-'+base}
-            disabled={mutationSelection===null || busy} aria-label={'Replace with '+labDecode(spec,base)+(mutationHintBase===base?', suggested correction':'')}
+            disabled={mutationSelection===null || state.won} aria-label={'Replace with '+labDecode(spec,base)+(mutationHintBase===base?', suggested correction':'')}
             onClick={() => {if(mutationSelection!==null)startMutationRepair(base,mutationSelection);}}>{face(base)}</button>;
         }
         if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;

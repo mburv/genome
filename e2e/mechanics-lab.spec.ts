@@ -425,9 +425,10 @@ test('Mutation Correction puts four replacements in the unused first grid column
   const flight=page.getByTestId('mutation-flight');
   await Promise.all([flight.waitFor({state:'visible'}),option.tap()]);
   await expect(flight).toHaveCSS('animation-name','mutation-slide');
-  await expect(board).toHaveAttribute('aria-busy','true');
-  await expect(flight).toHaveCount(0);
+  // The engine and controls stay responsive throughout the decorative flight.
   await expect(board).toHaveAttribute('aria-busy','false');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await expect(flight).toHaveCount(0);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await expect(tile(page,chosen)).toHaveAttribute('data-base',expected!);
   await expect(page.getByTestId('mutation-target-'+chosen)).toHaveClass(/matched/);
