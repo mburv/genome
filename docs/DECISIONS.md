@@ -429,3 +429,6 @@ Owner requested the original edge-to-edge board after the shared tallest clue en
 
 ### Mutation Correction replacement rail
 Owner requested A/C/G/T choices visible without scrolling past the bottom of the full-width board. Mutation board cells in column 1 are unused by the upper and lower DNA strands. Put its four stage-specific replacement choices in that same grid column, rows 3–6, retaining the full 9×9 square board. Do not place another picker beneath the toolbar. Selecting a target and tapping a choice animates a visual copy from the rail to the chosen square before committing the existing engine edit once; keep undo, scoring, completion and save semantics unchanged. Respect reduced-motion preferences. The graphical hint highlights the correct rail choice, and the first-use tutorial shows the same rail with a matching landing animation on its final step. Include tests for short-screen geometry, animation, and tutorial.
+
+
+Mutation rail interaction refinement: if a user selects the next repair while the previous chip is still flying, finish and commit the earlier edit immediately, then select the new target. No touch is dropped and no edit is committed twice; the undo history remains one action per replacement. Restart cancels an unfinished flight.

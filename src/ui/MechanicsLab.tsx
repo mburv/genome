@@ -91,6 +91,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
   const [mutationFlight, setMutationFlight] = useState<MutationFlight | null>(null);
   const mutationFlightActive = useRef(false);
+  const mutationFlightRef = useRef<MutationFlight | null>(null);
   const busy = crushAnimation !== null || mutationFlight !== null;
   const { state } = session;
   const traceHint = id === 'trace' && hint ? traceHintCell(state) : null;
@@ -164,6 +165,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   useEffect(() => {
     if (!mutationFlight) return;
     const timer = window.setTimeout(() => {
+      if (mutationFlightRef.current !== mutationFlight) return;
+      mutationFlightRef.current = null;
       commitResult(mutationFlight.result, mutationFlight.action, mutationFlight.credit);
       mutationFlightActive.current = false;
       setMutationFlight(null);
@@ -187,10 +190,12 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
       return;
     }
     const origin = root.getBoundingClientRect(), from = source.getBoundingClientRect(), to = destination.getBoundingClientRect();
-    mutationFlightActive.current = true;
-    setMutationFlight({ base, x:from.left-origin.left, y:from.top-origin.top,
+    const flight: MutationFlight = { base, x:from.left-origin.left, y:from.top-origin.top,
       dx:to.left+to.width/2-from.left-from.width/2, dy:to.top+to.height/2-from.top-from.height/2,
-      width:from.width, height:from.height, result, action, credit });
+      width:from.width, height:from.height, result, action, credit };
+    mutationFlightRef.current = flight;
+    mutationFlightActive.current = true;
+    setMutationFlight(flight);
   };
   const startCrushSwap = (a: number, b: number) => {
     if (busy || state.won) return;
@@ -213,9 +218,24 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { mutationFlightActive.current=false; setMutationFlight(null); setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
-  const undo = () => { if (mutationFlightActive.current) return; setWinReady(false); const prev = sessionRef.current; const last = prev.history.at(-1); if (last) { updateSession({ state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null }); playCue('undo', feedback); } setSelected(null); };
+  const reset = () => { mutationFlightRef.current=null; mutationFlightActive.current=false; setMutationFlight(null); setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
+  const undo = () => {
+    const flight = mutationFlightRef.current;
+    if (flight) {
+      mutationFlightRef.current=null; mutationFlightActive.current=false; setMutationFlight(null);
+      commitResult(flight.result,flight.action,flight.credit);
+    }
+    setWinReady(false); const prev = sessionRef.current; const last = prev.history.at(-1); if (last) { updateSession({ state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null }); playCue('undo', feedback); } setSelected(null); };
   const choose = (cell: number) => {
+    // On a rapid next-tile tap, land the previous edit immediately and then select
+    // the next cell. The history is still committed once and taps are never lost.
+    const flight = id === 'mutation' ? mutationFlightRef.current : null;
+    if (flight) {
+      mutationFlightRef.current=null; mutationFlightActive.current=false; setMutationFlight(null);
+      commitResult(flight.result,flight.action,flight.credit);
+      if (mutationExpected(cell)) setSelected(cell);
+      return;
+    }
     if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
     else if (id === 'crush') {

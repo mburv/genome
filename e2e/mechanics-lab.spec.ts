@@ -431,6 +431,15 @@ test('Mutation Correction puts four replacements in the unused first grid column
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await expect(tile(page,chosen)).toHaveAttribute('data-base',expected!);
   await expect(page.getByTestId('mutation-target-'+chosen)).toHaveClass(/matched/);
+  // The next tile must still be selectable if its predecessor is mid-flight.
+  for (const c of [23,48]) {
+    const nextBase=await page.getByTestId('mutation-target-'+c).getAttribute('data-symbol');
+    await tile(page,c).tap();
+    await expect(tile(page,c)).toHaveAttribute('aria-pressed','true');
+    await page.getByTestId('lab-base-'+nextBase).tap();
+  }
+  for (const c of [23,48]) await expect(page.getByTestId('mutation-target-'+c)).toHaveClass(/matched/);
+  await expect(page.getByTestId('moves')).toHaveText('3 moves');
 });
 
 test('Mutation Correction first-use tutorial teaches the rail and shows its landing animation', async ({page}) => {
