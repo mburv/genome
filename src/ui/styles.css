@@ -909,6 +909,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-board { position:relative; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); grid-template-rows:repeat(9,minmax(0,1fr)); gap:1px; width:min(100%,300px,calc(100svh - 350px)); min-width:min(100%,175px); aspect-ratio:1; margin:0 auto 10px; background:var(--rule); overflow:hidden; }
 .tutorial-cell { position:relative; min-width:0; min-height:0; background:var(--white); font:700 11px var(--mono); }
 .tutorial-cell.hole { background:var(--hole); }
+/* A quiet, unhatched eighth column separates the Mutation Correction DNA from the palette. */
+.tutorial-cell.tutorial-mutation-gap { background:var(--paper); border:0; }
 .tutorial-cell > span { position:absolute; inset:0; display:grid; place-items:center; }
 .tutorial-cell.highlighted { outline:2px solid var(--blue); outline-offset:-2px; z-index:2; }
 .tutorial-base { opacity:1; }
@@ -982,6 +984,8 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* Shared play chrome: every new mechanic uses the classic full-width board stage. */
 .mechanics-board.mixed-board { width:100%; min-width:0; max-width:var(--board); aspect-ratio:1; margin:0; align-self:auto; gap:var(--gap); box-shadow:0 -1px 0 var(--ink),0 1px 0 var(--ink); }
 .mixed-board .lab-hole { background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole); }
+/* Keep the 9×9 board square. Column 8 is a clean spacer; column 9 retains the graphite replacement rail. */
+.mixed-board.mode-lab-mutation .lab-hole.mutation-spacer { background:var(--paper); border:0; }
 .mixed-board .lab-cell { font-family:var(--sans); font-size:calc(var(--board) / 15); color:var(--tile-ink); font-weight:700; }
 .mixed-board.mode-lab-connections .lab-cell { font-size:clamp(8px,2.4vw,12px); }
 .mixed-board .lab-cell:disabled { opacity:.78; }
