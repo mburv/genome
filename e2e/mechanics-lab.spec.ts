@@ -441,12 +441,12 @@ test('Mutation Correction puts four replacements in the unused rightmost grid co
   expect(visual.option.font).toBe(visual.boardTile.font);
   expect(visual.option.size).toBe(visual.boardTile.size);
   expect(visual.option.opacity).toBe('1');
-  expect(visual.option.border).toBe('rgb(17, 17, 17)');
+  expect(visual.option.border).toBe(visual.boardTile.colour);
   expect(visual.holes.map(h=>h.cell)).toEqual([8,17,62,71,80]);
   for(const hole of visual.holes){
-    expect(hole.border).toBe('rgb(17, 17, 17)');
+    expect(hole.border).toBe(visual.boardTile.colour);
     expect(hole.hatch).toContain('repeating-linear-gradient');
-    expect(hole.hatch).toContain('rgb(17, 17, 17)');
+    expect(hole.hatch).toContain('rgb(68, 68, 67)');
   }
   const chosen=20;
   const expected=await page.getByTestId('mutation-target-'+chosen).getAttribute('data-symbol');
@@ -485,7 +485,7 @@ test('Mutation Correction first-use tutorial teaches the right-side rail and sho
     await expect(board).toHaveAttribute('data-step',String(step));
     await expect(board.getByTestId('tutorial-mutation-rail')).toHaveCount(4);
     await expect(board.locator('.tutorial-mutation-rail-slot')).toHaveCount(9);
-    await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('border-top-color','rgb(17, 17, 17)');
+    await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('border-top-color','rgb(68, 68, 67)');
     await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('background-image',/repeating-linear-gradient/);
     await expect(board.locator('.tutorial-cell')).toHaveCount(81);
     if(step<3)await page.getByTestId('tutorial-next').click();
