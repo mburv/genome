@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fresh, openMap } from './helpers';
+import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
+import { genomeStage } from '../src/campaign/bonus.ts';
+import { DEFAULT_LAB_SPEC } from '../src/engine/mechanicsLab.ts';
 
 async function openLab(page: Page, id: string) {
   await fresh(page);
@@ -394,7 +398,7 @@ test('Genome Assembly hint shows the next read and destination, updates on undo 
   await expect(source).toHaveAttribute('data-lab-cell','1');
 });
 
-test('Mutation Correction puts four replacements in the unused first grid column and animates a repair', async ({page}) => {
+test('Mutation Correction puts four replacements in the unused rightmost grid column and animates a repair', async ({page}) => {
   await page.setViewportSize({width:320,height:568});
   await openLab(page,'mutation');
   const board=page.getByTestId('mechanics-board');
@@ -411,10 +415,10 @@ test('Mutation Correction puts four replacements in the unused first grid column
   expect(geometry.board.x).toBe(0);
   expect(geometry.board.width).toBe(320);
   expect(geometry.board.height).toBe(320);
-  expect(geometry.buttons.map(b=>b.cell)).toEqual([18,27,36,45]);
+  expect(geometry.buttons.map(b=>b.cell)).toEqual([26,35,44,53]);
   for (const b of geometry.buttons) {
-    expect(b.x).toBeGreaterThanOrEqual(-.5);
-    expect(b.x+b.width).toBeLessThanOrEqual(320/9+1);
+    expect(b.x).toBeGreaterThanOrEqual(320*8/9-1);
+    expect(b.x+b.width).toBeLessThanOrEqual(320+1);
     expect(Math.abs(b.width-b.height)).toBeLessThan(1.5);
   }
   const chosen=20;
@@ -443,7 +447,7 @@ test('Mutation Correction puts four replacements in the unused first grid column
   await expect(page.getByTestId('moves')).toHaveText('3 moves');
 });
 
-test('Mutation Correction first-use tutorial teaches the rail and shows its landing animation', async ({page}) => {
+test('Mutation Correction first-use tutorial teaches the right-side rail and shows its landing animation', async ({page}) => {
   await page.setViewportSize({width:320,height:568});
   await fresh(page,true);await openMap(page);
   await page.getByTestId('cnode-ins-06').click();
@@ -456,11 +460,25 @@ test('Mutation Correction first-use tutorial teaches the rail and shows its land
     await expect(board.locator('.tutorial-cell')).toHaveCount(81);
     if(step<3)await page.getByTestId('tutorial-next').click();
   }
-  await expect(tutorial).toContainText('vertical column on the left');
+  await expect(tutorial).toContainText('vertical column on the right');
   await expect(board.getByTestId('tutorial-mutation-flight')).toHaveCSS('animation-name','tutorial-mutation-slide');
   await page.getByRole('button',{name:'Replay animation'}).click();
   await expect(board.getByTestId('tutorial-mutation-flight')).toHaveCount(1);
   await page.getByTestId('tutorial-next').click();
   await expect(tutorial).toHaveCount(0);
   await expect(page.getByTestId('mechanics-board').locator('.mutation-rail-button')).toHaveCount(4);
+});
+
+test('the right mutation rail stays outside all reference and repair cells', () => {
+  const stages=CAMPAIGN_LEVELS.filter(def=>mechanicOf(def)==='mutation').map(def=>mixedStage(def)!.spec);
+  stages.push(DEFAULT_LAB_SPEC);
+  // The bonus campaign generates Mutation Correction for its 27-base ramp.
+  stages.push(genomeStage('chrM',[9,36],'ACGT'.repeat(7).slice(0,27)).spec);
+  expect(stages.length).toBeGreaterThan(2);
+  for(const spec of stages){
+    const occupied=new Set(spec.MUTATION_ROWS.flatMap(({top,bottom,seq})=>
+      [...seq].flatMap((_,i)=>[top+i,bottom+i])));
+    for(const cell of [26,35,44,53]) expect(occupied.has(cell)).toBe(false);
+    for(const row of spec.MUTATION_ROWS) expect(row.seq.length).toBeLessThanOrEqual(7);
+  }
 });

@@ -432,3 +432,7 @@ Owner requested A/C/G/T choices visible without scrolling past the bottom of the
 
 
 Mutation rail interaction refinement: engine edits, progress, and history update synchronously on tap; flight is a visual overlay only. No input is disabled while it flies. Selecting the next mismatch, Undo, or Restart can proceed immediately, cancelling or replacing the visual copy as needed. Delay the final completion dialog until the last flight clears. Each edit appears exactly once in the undo history.
+
+
+### Right-hand Mutation Correction replacement rail
+Moved the four replacement options from the unused left grid column to the unused rightmost column, rows 3–6 (zero-based cells 26, 35, 44, 53). These cells are outside the complementary strands in current practice, campaign and bonus puzzles; no DNA cell indices, engine actions, target clues, stored attempts, board dimensions or completion logic change. The landing animation derives its source from the chosen button, so it now travels from the right. Updated the first-use guide and mobile regression checks to match.

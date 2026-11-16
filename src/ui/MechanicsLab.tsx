@@ -31,8 +31,8 @@ type Session = { state: LabState; history: LabState[]; actions: LabAction[]; mes
 type CrushDrag = { a: number; b: number; fraction: number };
 type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; frame: number; result: LabResult; action: LabAction; credit: WinCredit };
 type MutationFlight = { base: string; cell: number; before: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
-/** Mutation strands leave the first grid column free for the replacement rail. */
-export const MUTATION_RAIL_CELLS = [18, 27, 36, 45] as const;
+/** Mutation strands occupy columns 2–8, leaving column 9 free for the replacement rail. */
+export const MUTATION_RAIL_CELLS = [26, 35, 44, 53] as const;
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
 function acceptResult(prev: Session, result: LabResult, action: LabAction, credit: WinCredit | null = null): Session {

@@ -84,7 +84,7 @@ function demonstration(mechanic: TutorialId, stage: MixedStage | null): Step[] {
     return [
       step('Compare the target','Each upper strand is the reference. The numbered target rows show the complementary strand you must repair: A pairs with T, C with G.',start,start,[c-9,c],undefined,undefined,want),
       step('Select the mismatch','Red outlines mark incorrect bases. Tap the lower-strand tile you want to repair.',start,start,[c],[c,c],undefined,want),
-      step('Slide a replacement into place','Tap the correct coloured base in the vertical column on the left of the board. It slides into the selected square. Green underlines mark correct bases; repair every mismatch to finish.',start,end,[c],[c,c],undefined,want),
+      step('Slide a replacement into place','Tap the correct coloured base in the vertical column on the right of the board. It slides into the selected square. Green underlines mark correct bases; repair every mismatch to finish.',start,end,[c],[c,c],undefined,want),
     ];
   }
   if (mechanic === 'connections') {
