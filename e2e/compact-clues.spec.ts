@@ -57,12 +57,11 @@ test('overflowing multi-base tracing clues advance into the single visible row',
 
   // Simulate a committed match without changing the board, so this tests
   // the shared clue-shell advancement independently from a mechanic's input.
-  const first = before[0]!;
-  await panel.locator('[data-clue-index="' + first + '"]').evaluate(el => {
-    el.setAttribute('data-clue-done', 'true');
+  await panel.locator('[data-clue-unit]:visible').evaluateAll(elements => {
+    elements.forEach(el => el.setAttribute('data-clue-done', 'true'));
     window.dispatchEvent(new Event('resize'));
   });
-  await expect(panel.locator('[data-clue-index="' + first + '"]')).toBeHidden();
+  for (const index of before) await expect(panel.locator('[data-clue-index="' + index + '"]')).toBeHidden();
   const after = await visibleIndices();
   expect(after.some(index => !before.includes(index))).toBe(true);
   await oneVisibleRow(panel);
