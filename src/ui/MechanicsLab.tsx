@@ -406,7 +406,7 @@ export function MechanicClues({ state, defId, range, def, displayCollected = sta
   const mutationExpected = (c:number) => expectedMutation(c,spec);
   const {TRACE_TARGET,CRUSH_TARGETS,ASSEMBLY_TARGET,ASSEMBLY_CELLS,MUTATION_ROWS,CONNECTION_PAIRS,CUT_TARGET} = spec;
   return (
-    <TargetShell longClues={id==='mutation'||id==='assembly'||Object.values(spec.tokens??{}).some(t=>t.seq.length>6)} measureOnly={measureOnly} hideCompleted={id==='crush'||id==='assembly'} defId={defId} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
+    <TargetShell longClues={id==='mutation'||id==='assembly'||Object.values(spec.tokens??{}).some(t=>t.seq.length>6)} measureOnly={measureOnly} hideCompleted defId={defId} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
         <span className="target-title">{LAB_META[id].title}</span>
         <span className="muted" data-testid="mixed-range">{range}</span>
