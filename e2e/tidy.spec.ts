@@ -3,7 +3,7 @@ import pack from '../src/campaign/chapters.generated.json' with { type: 'json' }
 import {CAMPAIGN_LEVELS} from '../src/campaign/campaign.ts';
 import {mechanicOf} from '../src/campaign/mixed.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted, openMap } from './helpers';
+import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted, openMap, solveWithHints } from './helpers';
 
 const ALL_LEVEL_IDS = CAMPAIGN_LEVELS.filter(l=>mechanicOf(l)==='slide').map(l=>l.id);
 
@@ -504,6 +504,20 @@ test('replication clues pair template over complement and wrap in matched chunks
   expect(await page.getByTestId('target-panel').evaluate(el => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
   await expectActionRowInView(page);
   await page.screenshot({ path: 'test-results/screenshots/genome-hbb13-replication-320x568.png', animations: 'disabled' });
+});
+
+
+test('hexamers replication completion omits the explanatory base-pair caption', async ({ page }) => {
+  test.setTimeout(90_000);
+  await openChapter(page, 'hbb-c07');
+  await expect(page.locator('.target-title')).toHaveText(/hexamers · replication/i);
+  await solveWithHints(page);
+  const win=page.getByTestId('win');
+  await expect(win).toBeVisible();
+  await expect(win.locator('.win-pair')).toBeVisible();
+  await expect(win).not.toContainText('Complementary pairs A–T and C–G.');
+  await expect(win).not.toContainText('Only the template strand counts.');
+  await expect(win.getByTestId('win-bases')).toBeVisible();
 });
 
 test('sequencing clues keep labels with their pieces at 320–430', async ({ page }) => {
