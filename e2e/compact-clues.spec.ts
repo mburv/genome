@@ -1,7 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
 import { openChapter, readHint, dragBy, documentBox } from './helpers';
-import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
-import { mixedStage } from '../src/campaign/mixed.ts';
 
 // The reserved envelope is tall enough for a replication pair, but must never
 // display a second logical row of shorter chips beneath the first.
@@ -43,36 +41,33 @@ test('replication consumes completed pairs without moving the board or controls'
   expect(await documentBox(page.getByTestId('icon-row'))).toEqual(toolbar);
 });
 
-test('overflowing multi-base tracing clues advance into the single visible row', async ({ page }) => {
+test('queued Codon Crush clues advance automatically after the first row is completed', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await openChapter(page, 'ins-c06');
+  await openChapter(page, 'ins-c02');
   const panel = page.getByTestId('target-panel');
-  const chips = panel.locator('[data-clue-unit]');
-  await expect(chips).toHaveCount(9);
+  const board = page.getByTestId('mechanics-board');
+  const groups = panel.locator('.mixed-codon-clues .clue-part');
+  await expect(groups).toHaveCount(4);
+  await expect(groups.filter({ visible: true }).locator('.badge')).toHaveText(['1','2']);
+  await expect(panel.locator('.clue-pagination, [data-clue-next], [data-clue-back]')).toHaveCount(0);
   await oneVisibleRow(panel);
 
-  const stage=mixedStage(CAMPAIGN_LEVELS.find(level=>level.id==='ins-c06')!)!;
-  const TRACE_PATH=stage.spec.TRACE_PATH;
-  const visibleIndices = () => panel.locator('[data-clue-unit]:visible').evaluateAll(elements =>
-    elements.map(el => Number(el.getAttribute('data-clue-index'))));
-  const before = await visibleIndices();
-  expect(before.length).toBeGreaterThan(0);
-  expect(before.length).toBeLessThan(9);
-  const board = await documentBox(page.getByTestId('mechanics-board'));
-  const clue = await documentBox(panel);
-
-  // Commit the actual trace cells so React updates target and board state
-  // together. Manually mutating DOM attributes does not model a game move.
-  for(const index of before) {
-    const cell=TRACE_PATH[index - 1];
-    if(cell !== undefined) await page.getByTestId('lab-cell-' + cell).tap();
-  }
-  for (const index of before) await expect(panel.locator('[data-clue-index="' + index + '"]')).toBeHidden();
-  const after = await visibleIndices();
-  expect(after.some(index => !before.includes(index))).toBe(true);
+  const beforePanel = await documentBox(panel);
+  const beforeBoard = await documentBox(board);
+  await page.getByTestId('lab-cell-12').tap();
+  await page.getByTestId('lab-cell-13').tap();
+  await expect(board).toHaveAttribute('data-crush-phase', 'idle');
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
+  await expect(groups.filter({ visible: true }).locator('.badge')).toHaveText(['3','4']);
   await oneVisibleRow(panel);
-  expect(await documentBox(panel)).toEqual(clue);
-  expect(await documentBox(page.getByTestId('mechanics-board'))).toEqual(board);
+  expect(await documentBox(panel)).toEqual(beforePanel);
+  expect(await documentBox(board)).toEqual(beforeBoard);
+
+  await page.getByTestId('action-undo').click();
+  await expect(groups.filter({ visible: true }).locator('.badge')).toHaveText(['1','2']);
+  await oneVisibleRow(panel);
+  expect(await documentBox(panel)).toEqual(beforePanel);
+  expect(await documentBox(board)).toEqual(beforeBoard);
 });
 
 test('the responsive clue envelope remains one row wide on a large phone', async ({ page }) => {
