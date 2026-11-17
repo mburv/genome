@@ -446,3 +446,7 @@ This branch is verified against the full T2T/bonus implementation rather than th
 
 ### 17 November 2026 — progressive single-row clue strip
 Supersedes the shared tallest *complete-panel* envelope. At each content width, measure the tallest single clue row across the shipped campaign, practice, and bonus mechanics, including the two-strand replication pair as one unit. Reserve that one-row height for every level. Completed clue units disappear immediately, and the remaining unfinished units flow forward into the visible row. Only one logical row may display, even if shorter units would physically fit in two rows. There are no previous/next controls or manual pagination: unfinished clues beyond the visible row automatically move forward as preceding ones are completed. Undo restores the earlier unfinished clues and reflows the strip from the beginning. The board and controls remain anchored. No puzzle or save-format changes.
+
+
+### 17 November 2026 — settings screen chrome
+Remove the redundant How to Play and About the DNA accordions, and the device-saving/no-tracking note, from Settings. Retain the existing accessibility, sound, haptics, map and reset controls. Remove the inline Done action; the header's settings cog becomes an equally sized, accessible X that restores the prior screen. Reserve the same invisible second-line space as gameplay in the GENOME wordmark header, so its title and bottom divider do not shift when navigating between gameplay, map and settings. No persistence, puzzle or campaign changes.
