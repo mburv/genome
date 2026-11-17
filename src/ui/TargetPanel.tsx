@@ -79,7 +79,7 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
  * are visible; newly solved ones disappear and later ones automatically flow in.
  * Visibility is recomputed after committed moves, undo and viewport changes.
  */
-export function TargetShell({ defId, label, solved, committedKey, children, hideCompleted = true, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
+export function TargetShell({ defId, label, children, hideCompleted = true, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     const el = ref.current;
