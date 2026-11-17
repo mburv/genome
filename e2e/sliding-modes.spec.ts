@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fresh, openMap, readHint, dragBy } from './helpers';
+import { fresh, openMap, readHint, dragBy, openChapter, solveWithHints } from './helpers';
 
 test('four classic sliding modes have their own first-use guide, real target groups and persistent acknowledgement', async ({page}) => {
   await fresh(page,true);
@@ -66,3 +66,18 @@ test('a previous generic sliding acknowledgement does not skip the new mode guid
   await expect(page.getByTestId('moves')).toHaveText('0 moves');
   await expect(page.getByTestId('icon-row').locator('button')).toHaveCount(3);
 });
+
+
+test('hexamers replication completion omits the explanatory base-pair caption', async ({ page }) => {
+  test.setTimeout(90_000);
+  await openChapter(page, 'hbb-c07');
+  await expect(page.locator('.target-title')).toHaveText(/hexamers · replication/i);
+  await solveWithHints(page);
+  const win=page.getByTestId('win');
+  await expect(win).toBeVisible();
+  await expect(win.locator('.win-pair')).toBeVisible();
+  await expect(win).not.toContainText('Complementary pairs A–T and C–G.');
+  await expect(win).not.toContainText('Only the template strand counts.');
+  await expect(win.getByTestId('win-bases')).toBeVisible();
+});
+
