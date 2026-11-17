@@ -11,6 +11,7 @@ import { Barcode,SeqLetters,TokenFace,tierClass,tokenStyle } from './TokenFace.t
 import { labExtractedSequence } from '../engine/mechanicsLab.ts';
 import { type MixedStage } from '../campaign/mixed.ts';
 import { playCue, prepareFeedback, type FeedbackOptions } from './feedback.ts';
+import { mutationDisplayCell } from './mutationLayout.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">
@@ -31,7 +32,7 @@ type Session = { state: LabState; history: LabState[]; actions: LabAction[]; mes
 type CrushDrag = { a: number; b: number; fraction: number };
 type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; frame: number; result: LabResult; action: LabAction; credit: WinCredit };
 type MutationFlight = { base: string; cell: number; before: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
-/** Mutation strands occupy columns 2–8, leaving column 9 free for the replacement rail. */
+/** Column 9 holds replacement bases; Mutation Correction reserves visible column 8 as a blank separator. */
 export const MUTATION_RAIL_CELLS = [26, 35, 44, 53] as const;
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
@@ -293,16 +294,23 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const board = (
     <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '')+(spec.tokens?' block-lab-board':'') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} data-crush-chain={crushAnimation ? crushAnimation.frame+1 : undefined} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
+        const visualCell = id === 'mutation' ? mutationDisplayCell(c, MUTATION_ROWS) : c;
+        const visualPos: CSSProperties | undefined = id === 'mutation'
+          ? { gridRow: Math.floor(visualCell / 9) + 1, gridColumn: visualCell % 9 + 1 }
+          : undefined;
+        const mutationGap = id === 'mutation' && visualCell % 9 === 7;
         const railIndex = id === 'mutation' && (!state.won || mutationFlight) ? MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]) : -1;
         if (railIndex >= 0) {
           const base = labReplacementOptions(spec, mutationSelection??spec.MUTATIONS[0]??-1)[railIndex];
           if (base !== undefined) return <button key={c} type="button"
             className={'lab-cell mutation-rail-button '+chipClass(base)+(mutationHintBase===base?' mutation-base-hinted':'')}
-            style={chipStyle(base)} data-lab-cell={c} data-base-option={base} data-testid={'lab-base-'+base}
+            style={{...chipStyle(base), ...visualPos}} data-lab-cell={c} data-visual-cell={visualCell} data-base-option={base} data-testid={'lab-base-'+base}
             disabled={mutationSelection===null || state.won} aria-label={'Replace with '+labDecode(spec,base)+(mutationHintBase===base?', suggested correction':'')}
             onClick={() => {if(mutationSelection!==null)startMutationRepair(base,mutationSelection);}}>{face(base)}</button>;
         }
-        if (b === '.') return <div key={c} className={(id === 'trace' ? 'lab-hole cell hole' : 'lab-hole') + (id === 'mutation' && c % 9 === 8 ? ' mutation-rail-slot' : '')} data-lab-cell={c} aria-hidden="true" />;
+        if (b === '.') return <div key={c}
+          className={(id === 'trace' ? 'lab-hole cell hole' : 'lab-hole') + (id === 'mutation' && c % 9 === 8 ? ' mutation-rail-slot' : '') + (mutationGap ? ' mutation-spacer' : '')}
+          data-lab-cell={c} data-visual-cell={id === 'mutation' ? visualCell : undefined} style={visualPos} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
         const placedRead = id === 'assembly' && read >= 0 && state.placements[read]! >= 0;
         const chosen = id === 'assembly' ? selected === read && read >= 0 : id === 'connections' ? selected === pair && pair >= 0 : id === 'mutation' ? mutationSelection === c : selected === c;
@@ -318,8 +326,8 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
         const connectionColor = id === 'connections' ? (endpoint ? pair : route) : -1;
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
         const badge = id === 'mutation' && MUTATION_ROWS.some(r => r.top === c || r.bottom === c) ? (isTop ? 'REF' : 'R' + (Math.floor(c / 9) + 1)) : endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
-        const motionStyle: CSSProperties = { ...chipStyle(b), transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}), ...(routeHint?.cell === c ? { '--connection-hint-color': pathColors[routeHint.pair] } : {}) } as CSSProperties;
-        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-seq={labDecode(spec,b)} title={spec.tokens?.[b] && labDecode(spec,b).length > 6 ? labDecode(spec,b) : undefined} data-read-placed={id === 'assembly' && read >= 0 ? String(placedRead) : undefined} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : labDecode(spec,b)) + (badge ? ', ' + badge : '') + (traceHint === c ? ', suggested next move' : '') + (routeHint?.cell === c ? ', suggested move for pair ' + (routeHint.pair + 1) : '') + (crushHint?.includes(c) ? ', suggested swap tile' : '') + (id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? ', starter base' : '') + (mutationHint === c ? ', suggested repair' : '') + (cutHint === c ? ', suggested cut' : '') + (assemblySource ? ', suggested read to select' : '') + (assemblyDestination ? ', suggested destination slot' : '') + (placedRead ? ', read ' + (read + 1) + ' placed at slot ' + (state.placements[read]! + 1) : '')} aria-pressed={chosen} disabled={state.won && !gestureActive} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 && !spec.tokens?.[b] ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
+        const motionStyle: CSSProperties = { ...chipStyle(b), ...visualPos, transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}), ...(routeHint?.cell === c ? { '--connection-hint-color': pathColors[routeHint.pair] } : {}) } as CSSProperties;
+        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-seq={labDecode(spec,b)} title={spec.tokens?.[b] && labDecode(spec,b).length > 6 ? labDecode(spec,b) : undefined} data-read-placed={id === 'assembly' && read >= 0 ? String(placedRead) : undefined} data-testid={'lab-cell-' + c} data-visual-cell={id === 'mutation' ? visualCell : undefined} aria-label={'Row ' + (Math.floor(visualCell / 9) + 1) + ' column ' + (visualCell % 9 + 1) + ': ' + (b === '·' ? 'empty' : labDecode(spec,b)) + (badge ? ', ' + badge : '') + (traceHint === c ? ', suggested next move' : '') + (routeHint?.cell === c ? ', suggested move for pair ' + (routeHint.pair + 1) : '') + (crushHint?.includes(c) ? ', suggested swap tile' : '') + (id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? ', starter base' : '') + (mutationHint === c ? ', suggested repair' : '') + (cutHint === c ? ', suggested cut' : '') + (assemblySource ? ', suggested read to select' : '') + (assemblyDestination ? ', suggested destination slot' : '') + (placedRead ? ', read ' + (read + 1) + ' placed at slot ' + (state.placements[read]! + 1) : '')} aria-pressed={chosen} disabled={state.won && !gestureActive} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 && !spec.tokens?.[b] ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
           {spec.tokens?.[b]?face(b):<span className={id === 'trace' ? 'letter' : undefined}>{b === '·' ? '' : b}</span>}{badge && <small style={connectionColor >= 0 && spec.tokens?.[b] ? { color: pathColors[connectionColor] } : undefined}>{badge}</small>}
         </button>;
       })}
@@ -416,9 +424,9 @@ export function MechanicClues({ state, defId, range, def, displayCollected = sta
           return <div className="mutation-reference-row" key={bottom} data-clue-unit="" data-clue-done={String([...seq].every((_,i)=>state.board[bottom+i]===mutationExpected(bottom+i)))}>
             <span className="mutation-row-label">Row {row}</span>
             {[...seq].map((_, i) => {
-              const cell = bottom + i, want = mutationExpected(cell)!;
+              const cell = bottom + i, want = mutationExpected(cell)!, visualCell = mutationDisplayCell(cell, MUTATION_ROWS);
               const ok = state.board[cell] === want;
-              return <span key={cell} className={'mutation-target-base '+chipClass(want)+(ok ? ' matched' : ' mismatch') + (mutationSelection === cell ? ' selected' : '')} data-testid={'mutation-target-' + cell} data-symbol={want} style={chipStyle(want)} aria-label={'Row ' + row + ', column ' + (cell % 9 + 1) + ': target ' + labDecode(spec,want) + ', ' + (ok ? 'correct' : 'needs repair')}>{face(want)}</span>;
+              return <span key={cell} className={'mutation-target-base '+chipClass(want)+(ok ? ' matched' : ' mismatch') + (mutationSelection === cell ? ' selected' : '')} data-testid={'mutation-target-' + cell} data-symbol={want} style={chipStyle(want)} aria-label={'Row ' + row + ', column ' + (visualCell % 9 + 1) + ': target ' + labDecode(spec,want) + ', ' + (ok ? 'correct' : 'needs repair')}>{face(want)}</span>;
             })}
           </div>;
         })}

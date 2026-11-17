@@ -416,6 +416,26 @@ test('Mutation Correction puts four replacements in the unused rightmost grid co
   expect(geometry.board.width).toBe(320);
   expect(geometry.board.height).toBe(320);
   expect(geometry.buttons.map(b=>b.cell)).toEqual([26,35,44,53]);
+  // Nine square columns remain; the DNA shifts left and the entire eighth
+  // column is deliberately blank between it and the rightmost rail.
+  const layout=await board.evaluate(root=>{
+    const spacers=[...root.querySelectorAll<HTMLElement>('.mutation-spacer')].map(el=>{
+      const style=getComputedStyle(el),r=el.getBoundingClientRect();
+      return {visible:Number(el.dataset.visualCell), background:style.backgroundColor, image:style.backgroundImage, x:r.x};
+    });
+    return {spacers,
+      shifted:root.querySelector<HTMLElement>('[data-lab-cell="20"]')!.dataset.visualCell,
+      dnaInGap:root.querySelectorAll('.lab-cell[data-visual-cell="7"],.lab-cell[data-visual-cell="16"],.lab-cell[data-visual-cell="25"],.lab-cell[data-visual-cell="34"],.lab-cell[data-visual-cell="43"],.lab-cell[data-visual-cell="52"],.lab-cell[data-visual-cell="61"],.lab-cell[data-visual-cell="70"],.lab-cell[data-visual-cell="79"]').length};
+  });
+  expect(layout.shifted).toBe('19');
+  expect(layout.spacers.map(c=>c.visible).sort((a,b)=>a-b)).toEqual([7,16,25,34,43,52,61,70,79]);
+  expect(layout.dnaInGap).toBe(0);
+  for(const spacer of layout.spacers){
+    expect(spacer.image).toBe('none');
+    expect(spacer.background).toBe('rgb(247, 247, 245)');
+    expect(spacer.x).toBeGreaterThanOrEqual(320*7/9-1);
+    expect(spacer.x).toBeLessThan(320*8/9+1);
+  }
   for (const b of geometry.buttons) {
     expect(b.x).toBeGreaterThanOrEqual(320*8/9-1);
     expect(b.x+b.width).toBeLessThanOrEqual(320+1);
@@ -485,6 +505,9 @@ test('Mutation Correction first-use tutorial teaches the right-side rail and sho
     await expect(board).toHaveAttribute('data-step',String(step));
     await expect(board.getByTestId('tutorial-mutation-rail')).toHaveCount(4);
     await expect(board.locator('.tutorial-mutation-rail-slot')).toHaveCount(9);
+    await expect(board.locator('.tutorial-mutation-gap')).toHaveCount(9);
+    await expect(board.locator('.tutorial-mutation-gap').first()).toHaveCSS('background-image','none');
+    await expect(board.locator('.tutorial-mutation-gap').first()).toHaveCSS('background-color','rgb(247, 247, 245)');
     await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('border-top-color','rgb(68, 68, 67)');
     await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('background-image',/repeating-linear-gradient/);
     await expect(board.locator('.tutorial-cell')).toHaveCount(81);
