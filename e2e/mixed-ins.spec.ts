@@ -531,7 +531,7 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
   await expect(page.getByTestId('mechanics-board').locator('[data-seq]').first()).toHaveAttribute('data-seq',/^[ACGT]{96}$/);
   const dnaBoard=page.getByTestId('mechanics-board');
   await expect(dnaBoard.locator('.mutation-spacer')).toHaveCount(9);
-  await expect(dnaBoard.locator('.mutation-spacer').first()).toHaveCSS('background-image','none');
+  await expect(dnaBoard.locator('.mutation-spacer').first()).toHaveCSS('background-image',/repeating-linear-gradient.*rgb\(217, 217, 210\)/);
   const occupiedGap=await dnaBoard.locator('.lab-cell[data-base]').evaluateAll(nodes=>
     nodes.filter(el=>Number(el.getAttribute('data-visual-cell'))%9===7).length);
   expect(occupiedGap).toBe(0);
