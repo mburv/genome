@@ -96,7 +96,15 @@ export function TargetShell({ defId, label, solved, committedKey, children, hide
     const next = nav.querySelector<HTMLButtonElement>('[data-clue-next]')!;
     const units = Array.from(el.querySelectorAll<HTMLElement>('[data-clue-unit]'));
     const setHidden = (unit: HTMLElement, hidden: boolean) => unit.toggleAttribute('data-clue-hidden', hidden);
-    const fits = () => el.scrollHeight <= el.clientHeight + 1;
+    const fits = () => {
+      if (el.scrollHeight > el.clientHeight + 1) return false;
+      // Even two short rows can fit within the height of one tall replication
+      // pair. Keep exactly one logical row on screen across all mechanics.
+      const visible = units.filter(unit => !unit.hasAttribute('data-clue-hidden'));
+      if (visible.length < 2) return true;
+      const tops = visible.map(unit => unit.getBoundingClientRect().top);
+      return Math.max(...tops) - Math.min(...tops) < 2;
+    };
     const update = (delta = 0) => {
       // Measure the complete layout first, even if a previous render hid a clue.
       nav.hidden = true;
