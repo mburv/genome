@@ -223,7 +223,7 @@ test('pre-update assembly attempt logs and bonus replay geometry are retained on
     ...newSave(LEVEL_PACK),
     currentLevelId:def.id,
     mixedAttempts:{[def.id]:before.certificate.slice(0,2)},
-    completed:[def.id],
+    completed:[],
     genomeProgress:{chr22:[[90,126] as [number,number]]},
   };
   delete old.assemblyReadVersion;
@@ -238,4 +238,16 @@ test('pre-update assembly attempt logs and bonus replay geometry are retained on
   expect(replay.spec.READS).toEqual(before.spec.READS);
   expect(replayMixed(replay,restored.mixedAttempts![def.id]!).moves).toBe(2);
   expectThreeEssentialReads(mixedStage(def)!);
+
+  // Completed levels retain their credit but replay the corrected geometry;
+  // obsolete completed action logs are archived rather than applied to it.
+  const solved={...old,completed:[def.id],mixedAttempts:{[def.id]:before.certificate}};
+  const adapter=createMemoryAdapter(serializeSave(solved));
+  const replaySave=loadSave(adapter,LEVEL_PACK).save;
+  expect(replaySave.completed).toContain(def.id);
+  expect(replaySave.legacyAssemblyLayouts).not.toContain(def.id);
+  expect(replaySave.mixedAttempts?.[def.id]).toBeUndefined();
+  expect(adapter.labels).toContain('assembly-read-layouts');
+  expectThreeEssentialReads(mixedStage(def,replaySave.legacyMixedLayouts?.includes(def.id),
+    replaySave.legacyAssemblyLayouts?.includes(def.id))!);
 });
