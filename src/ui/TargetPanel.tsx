@@ -76,11 +76,11 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
 }
 
 /** Measure the actual wrapped clues, not an assumed phone width.
- * Only crowded panels hide committed matches. If unmatched clues still overflow, use
- * explicit pages rather than a scrolling box. DOM visibility is recalculated after
+ * Completed clues are removed from the visible strip. If the remaining clues
+ * exceed the single-row envelope, show them in ordered pages. DOM visibility is recalculated after
  * committed-match change; a drag preview never changes the committed completion flags.
  */
-export function TargetShell({ defId, label, solved, committedKey, children, hideCompleted = false, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
+export function TargetShell({ defId, label, solved, committedKey, children, hideCompleted = true, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const page = useRef(0);
   const previous = useRef('');
@@ -103,18 +103,15 @@ export function TargetShell({ defId, label, solved, committedKey, children, hide
       el.classList.remove('clues-compact');
       units.forEach(unit => setHidden(unit, false));
       el.scrollTop = 0;
-      // The shared campaign envelope never shrinks when a clue is consumed.
+      // A completed unit leaves the strip, so the next unsolved unit can move
+      // into the single visible row. Undo naturally restores that unit.
       if (hideCompleted) units.forEach(unit => setHidden(unit, unit.dataset.clueDone === 'true'));
-      // Long fragments never paginate. The shared height fits their full initial
-      // layout; allow scrolling only as a fallback for extreme font/viewport sizes.
-      if (longClues || fits()) { page.current = 0; return; }
-      el.classList.add('clues-compact');
-      const remaining = units.filter(unit => (!hideCompleted && solved) || unit.dataset.clueDone !== 'true');
-      units.forEach(unit => setHidden(unit, !remaining.includes(unit)));
-      if (fits()) { page.current = 0; return; }
+      const remaining = units.filter(unit => !hideCompleted || unit.dataset.clueDone !== 'true');
+      if (!remaining.length || fits()) { page.current = 0; return; }
 
-      // Greedily fit whole chips/pairs on each page, retaining their original indices.
-      // Keep the page controls mounted while measuring so their height is reserved.
+      // Overflowing clues are available in one-row pages. Page controls are
+      // optional: ordinary progress always returns to the earliest unsolved row.
+      el.classList.add('clues-compact');
       nav.hidden = false;
       const pages: HTMLElement[][] = [];
       const show = (visible: HTMLElement[]) => units.forEach(unit => setHidden(unit, !visible.includes(unit)));
