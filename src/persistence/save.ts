@@ -7,7 +7,7 @@ import { assemblyStatus } from '../campaign/assembly.ts';
 import { GENES,LEGACY_GENES } from '../genomics/genes.ts';
 import { creditFamousCompleted,creditLegacyCompleted,legacyLevelExact,legacyBoardCompatible,referenceLevelCovered } from '../campaign/sharedCoverage.ts';
 import { readGenomeProgress, type BonusProgress } from '../campaign/bonus.ts';
-import { mixedStage, replayMixed, SLIDE_TUTORIALS } from '../campaign/mixed.ts';
+import { mechanicOf, mixedStage, replayMixed, SLIDE_TUTORIALS } from '../campaign/mixed.ts';
 import { LAB_IDS, type LabAction } from '../engine/mechanicsLab.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
 
@@ -532,20 +532,32 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   // Preserve exact read intervals for every stage with prior actions or completion.
   // New/unplayed assembly puzzles use the three-essential-read generator.
   const oldAssemblyReads=data.assemblyReadVersion!==2;
-  const legacyAssemblyLayouts=new Set(oldAssemblyReads
-    ? [...completed,...Object.keys(data.mixedAttempts && typeof data.mixedAttempts==='object' ? data.mixedAttempts as Record<string,unknown> : {})]
-    : strings(data.legacyAssemblyLayouts));
+  // Only unfinished attempts need their original read positions to remain usable.
+  // Completed levels keep their completion credit and replay the improved layout.
+  const oldAssemblyAttempts=Object.keys(data.mixedAttempts && typeof data.mixedAttempts==='object'
+    ? data.mixedAttempts as Record<string,unknown> : {}).filter(id=>!completed.includes(id));
+  const legacyAssemblyLayouts=new Set(oldAssemblyReads ? oldAssemblyAttempts : strings(data.legacyAssemblyLayouts));
+  if(oldAssemblyReads)for(const id of completed){
+    const def=pack.levels.find(l=>l.id===id);
+    if(def&&mechanicOf(def)==='assembly')legacyMixedLayouts.delete(id);
+  }
   const legacyBonusAssemblyGeometry=readGenomeProgress(oldAssemblyReads ? data.genomeProgress : data.legacyBonusAssemblyGeometry);
   const mixedAttempts: Record<string, LabAction[]> = {};
   const traceStarterAttempts: string[] = [];
   let updatedCrushLogs = 0;
   let retiredMixedLogs = 0;
+  let replacedCompletedAssemblyLogs = 0;
   const seededTraces = new Set(strings(data.traceStarterAttempts));
   if ((sameContent||oldReference) && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
       const def = pack.levels.find(l => l.id === id);
       if(!compatible(id))continue;
       const stage = def && mixedStage(def,legacyMixedLayouts.has(id),legacyAssemblyLayouts.has(id));
+      if (oldAssemblyReads && stage?.mechanic==='assembly' && completed.includes(id)) {
+        // A solved game replays the new layout; keep old moves in a backup.
+        if(Array.isArray(rawLog)&&rawLog.length)replacedCompletedAssemblyLogs++;
+        continue;
+      }
       if (!stage && def && !def.lab && Array.isArray(rawLog) && rawLog.length) { retiredMixedLogs++; continue; }
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
@@ -566,6 +578,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
       }
     }
   }
+  if (replacedCompletedAssemblyLogs) adapter.backup(raw,'assembly-read-layouts');
   if (retiredMixedLogs) { adapter.backup(raw,'unified-campaign'); notices.push('Some stages now use their assigned sliding puzzle. Older mixed attempts were backed up; completed levels are preserved.'); }
   if (updatedCrushLogs) { adapter.backup(raw,'crush-cascades'); notices.push('Codon Crush now chains automatically. Older attempts were kept up to the last valid swap; completed levels are preserved.'); }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
