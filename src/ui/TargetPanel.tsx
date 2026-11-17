@@ -127,15 +127,22 @@ export function TargetShell({ defId, label, solved, committedKey, children, hide
     const onResize = () => update();
     window.addEventListener('resize', onResize);
     window.visualViewport?.addEventListener('resize', onResize);
-    // A shared-size measurement can change the envelope without a window resize.
+    // Changing fonts or a clue container's intrinsic height may rewrap the
+    // tiles without resizing the fixed-height target itself.
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => update()) : null;
     observer?.observe(el);
+    for (const child of el.children) observer?.observe(child);
+    const frame = window.requestAnimationFrame(() => update());
+    let active = true;
+    document.fonts?.ready.then(() => { if (active) update(); });
     return () => {
+      active = false;
+      window.cancelAnimationFrame(frame);
       observer?.disconnect();
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [defId, solved, committedKey, hideCompleted, longClues, measureOnly]);
+  });
   return (
     <section ref={ref} className={'target'+(longClues?' long-clues':'')} aria-label={label} data-testid={measureOnly ? undefined : "target-panel"} data-clue-measure-id={measureOnly ? defId : undefined}>
       {children}
