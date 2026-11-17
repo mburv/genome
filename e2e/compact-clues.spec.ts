@@ -17,6 +17,7 @@ test('replication consumes completed pairs without moving the board or controls'
   const pairs = panel.locator('.rep-pair');
   const pair5 = panel.locator('.rep-pair[data-clue-index="5"]');
   await expect(pairs).toHaveCount(6);
+  await expect(panel.locator('.clue-pagination, [data-clue-next], [data-clue-back]')).toHaveCount(0);
   await oneVisibleRow(panel);
 
   const initial = await documentBox(panel);
