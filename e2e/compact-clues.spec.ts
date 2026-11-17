@@ -1,13 +1,16 @@
 import { expect, test, type Locator } from '@playwright/test';
 import { openChapter, readHint, dragBy, documentBox } from './helpers';
+import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { mixedStage } from '../src/campaign/mixed.ts';
 
 // The reserved envelope is tall enough for a replication pair, but must never
 // display a second logical row of shorter chips beneath the first.
 async function oneVisibleRow(panel: Locator): Promise<void> {
   const tops = await panel.locator('[data-clue-unit]:visible').evaluateAll(elements =>
-    elements.map(el => Math.round(el.getBoundingClientRect().top)));
+    elements.map(el => el.getBoundingClientRect().top));
   expect(tops.length).toBeGreaterThan(0);
-  expect(new Set(tops).size).toBe(1);
+  // Unit faces of differing height can sit one pixel apart in the same flex row.
+  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(2);
 }
 
 test('replication consumes completed pairs without moving the board or controls', async ({ page }) => {
@@ -48,6 +51,8 @@ test('overflowing multi-base tracing clues advance into the single visible row',
   await expect(chips).toHaveCount(9);
   await oneVisibleRow(panel);
 
+  const stage=mixedStage(CAMPAIGN_LEVELS.find(level=>level.id==='ins-c06')!)!;
+  const TRACE_PATH=stage.spec.TRACE_PATH;
   const visibleIndices = () => panel.locator('[data-clue-unit]:visible').evaluateAll(elements =>
     elements.map(el => Number(el.getAttribute('data-clue-index'))));
   const before = await visibleIndices();
@@ -56,12 +61,12 @@ test('overflowing multi-base tracing clues advance into the single visible row',
   const board = await documentBox(page.getByTestId('mechanics-board'));
   const clue = await documentBox(panel);
 
-  // Simulate a committed match without changing the board, so this tests
-  // the shared clue-shell advancement independently from a mechanic's input.
-  await panel.locator('[data-clue-unit]:visible').evaluateAll(elements => {
-    elements.forEach(el => el.setAttribute('data-clue-done', 'true'));
-    window.dispatchEvent(new Event('resize'));
-  });
+  // Commit the actual trace cells so React updates target and board state
+  // together. Manually mutating DOM attributes does not model a game move.
+  for(const index of before) {
+    const cell=TRACE_PATH[index - 1];
+    if(cell !== undefined) await page.getByTestId('lab-cell-' + cell).tap();
+  }
   for (const index of before) await expect(panel.locator('[data-clue-index="' + index + '"]')).toBeHidden();
   const after = await visibleIndices();
   expect(after.some(index => !before.includes(index))).toBe(true);
