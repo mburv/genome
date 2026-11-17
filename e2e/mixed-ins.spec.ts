@@ -660,8 +660,7 @@ test('MC1R Mutation Correction shows one target row, promoting the next after re
     expect(visible.length).toBe(remaining.length?1:0);
     if(remaining.length)expect(visible[0]!.index).toBe(remaining[0]!.index);
     expect(states.filter(row=>row.done).every(row=>!row.visible)).toBe(true);
-    if(remaining.length>1)await expect(panel.locator('.clue-pagination')).toBeVisible();
-    else await expect(panel.locator('.clue-pagination')).toBeHidden();
+    await expect(panel.locator('.clue-pagination')).toHaveCount(0);
     expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
   };
   await checkRows();
@@ -710,8 +709,7 @@ test('KRAS Genome Assembly promotes remaining clues and restores completed ones 
     expect(visible.every(s=>expected.includes(s.id))).toBe(true);
     if(expected.length)expect(visible.length).toBeGreaterThan(0);
     expect(new Set(visible.map(s=>s.top)).size).toBeLessThanOrEqual(1);
-    if(states.some(s=>!s.done&&s.hidden))await expect(panel.locator('.clue-pagination')).toBeVisible();
-    else await expect(panel.locator('.clue-pagination')).toBeHidden();
+    await expect(panel.locator('.clue-pagination')).toHaveCount(0);
     expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
   };
   await assertClues(allSlots);
@@ -740,7 +738,7 @@ test('KRAS Genome Assembly promotes remaining clues and restores completed ones 
   }
   await expect(page.getByTestId('win')).toBeVisible();
   await expect(chips.filter({visible:true})).toHaveCount(0);
-  await expect(panel.locator('.clue-pagination')).toBeHidden();
+  await expect(panel.locator('.clue-pagination')).toHaveCount(0);
 });
 
 test('a sliding solve that completes a gene offers its card, but replaying a non-final level does not',async({page})=>{
