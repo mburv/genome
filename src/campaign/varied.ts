@@ -130,8 +130,10 @@ function varyAssembly(stage: MixedStage, rng: Rng): MixedStage {
   } else if (n === 4) {
     intervals = rng.int(2) ? [[0, 2], [1, 3], [3, 4]] : [[0, 1], [1, 3], [2, 4]];
   } else {
-    const leftEnd = rng.range(2, n - 3);
-    const rightStart = rng.range(leftEnd + 1, n - 2);
+    // With >=7 target pieces, no pair of reads can cover the target even
+    // if the player tries different legal offsets (their lengths sum to < n).
+    const leftEnd = n >= 7 ? rng.range(3, n - 4) : rng.range(2, n - 3);
+    const rightStart = n >= 7 ? rng.range(leftEnd + 1, n - 3) : rng.range(leftEnd + 1, n - 2);
     intervals = [[0, leftEnd], [leftEnd - 1, rightStart + 1], [rightStart, n]];
   }
   const reads = shuffle(intervals, rng);
