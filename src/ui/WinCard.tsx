@@ -92,7 +92,6 @@ export function WinCard(p: Props) {
           </button>
         </div>
         <div className={`win-strand ${skipped ? 'skip' : ''} ${p.mechanic ? p.mechanic.sequence.length>27?'tok':'' : def.tokens ? 'tok' : ''}`} onClick={() => setSkipped(true)} title="Tap to skip">{strand}</div>
-        {!p.mechanic && def.mode === 'replicate' && <p className="muted tiny">Complementary pairs A–T and C–G. Only the template strand counts.</p>}
         {!p.mechanic && def.mode === 'repair' && def.repair && <p className="muted tiny">Restored {restored.length > 1 ? `${restored.length} bases` : restored} at CDS position {def.repair.sourceOffset + 1}{restored.length > 1 ? `–${def.repair.sourceOffset + restored.length}` : ''}.</p>}
         {practice ? (
           <p data-testid="win-bases"><b>Lab complete</b> <span className="muted">— practice only, no coverage added.</span></p>
