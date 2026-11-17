@@ -343,18 +343,15 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     }
     await page.getByTestId('open-settings').click();
     await expect(page.getByTestId('settings')).toBeVisible();
-    await expect(page.getByTestId('help-how-to-play')).toBeVisible();
-    await expect(page.getByTestId('help-about-dna')).toBeVisible();
+    await expect(page.getByTestId('help-how-to-play')).toHaveCount(0);
+    await expect(page.getByTestId('help-about-dna')).toHaveCount(0);
+    await expect(page.getByText('Settings are saved on this device. No timers, accounts or tracking.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Done' })).toHaveCount(0);
     if (size.width === 390) {
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: 'test-results/screenshots/genome-settings-390x844.png' });
     }
-    await page.getByTestId('help-how-to-play').locator('summary').click();
-    await expect(page.getByTestId('help-how-to-play')).toContainText('Drag a tile left/right');
-    await expect(page.getByTestId('help-how-to-play')).not.toContainText('arrow buttons');
-    await page.getByTestId('help-about-dna').locator('summary').click();
-    await expect(page.getByTestId('help-about-dna')).toContainText('NM_000207.3');
-    await page.getByRole('button', { name: 'Done' }).click();
+    await page.getByTestId('close-settings').click();
     await expect(page.getByTestId('board')).toBeVisible();
     await expect(page.getByTestId('settings')).toHaveCount(0);
     await assertPlayScreenDecluttered(page, size.width);
