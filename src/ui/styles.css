@@ -982,7 +982,10 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* Shared play chrome: every new mechanic uses the classic full-width board stage. */
 .mechanics-board.mixed-board { width:100%; min-width:0; max-width:var(--board); aspect-ratio:1; margin:0; align-self:auto; gap:var(--gap); box-shadow:0 -1px 0 var(--ink),0 1px 0 var(--ink); }
 .mixed-board .lab-hole { background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole); }
-/* Column 8 inherits the ordinary empty-square hatching; column 9 keeps its graphite rail. */
+/* Match the gap explicitly, so an older blank-gap override cannot regress it on a future publish. */
+.mixed-board.mode-lab-mutation .lab-hole.mutation-spacer {
+  background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole);
+}
 .mixed-board .lab-cell { font-family:var(--sans); font-size:calc(var(--board) / 15); color:var(--tile-ink); font-weight:700; }
 .mixed-board.mode-lab-connections .lab-cell { font-size:clamp(8px,2.4vw,12px); }
 .mixed-board .lab-cell:disabled { opacity:.78; }
