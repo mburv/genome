@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
-import { openChapter, readHint, dragBy, documentBox } from './helpers';
+import { openChapter, fresh, goToChapter, readHint, dragBy, documentBox } from './helpers';
 
 // The reserved envelope is tall enough for a replication pair, but must never
 // display a second logical row of shorter chips beneath the first.
@@ -43,7 +43,16 @@ test('replication consumes completed pairs without moving the board or controls'
 
 test('queued Codon Crush clues advance automatically after the first row is completed', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await openChapter(page, 'ins-c02');
+  await fresh(page);
+  // Replay the original deterministic INS layout; newly seeded layouts may
+  // have different valid swaps, which this clue-layout test does not target.
+  await page.evaluate(() => {
+    const save=JSON.parse(localStorage.getItem('genome-save')!);
+    save.legacyMixedLayouts=['ins-c02'];
+    localStorage.setItem('genome-save',JSON.stringify(save));
+  });
+  await page.reload();
+  await goToChapter(page, 'ins-c02');
   const panel = page.getByTestId('target-panel');
   const board = page.getByTestId('mechanics-board');
   const groups = panel.locator('.mixed-codon-clues .clue-part');
