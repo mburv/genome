@@ -7,11 +7,11 @@ import { labExtractedSequence,type LabState } from '../engine/mechanicsLab.ts';
 import type { MixedStage } from '../campaign/mixed.ts';
 import type { FeedbackOptions } from './feedback.ts';
 
-interface Props{feedback:FeedbackOptions;progress:BonusProgress;legacyGeometry:BonusProgress;onProgress:(next:BonusProgress)=>void;onBack:()=>void;onPlaying:(playing:boolean)=>void;onSettings:()=>void;reducedMotion:boolean}
+interface Props{feedback:FeedbackOptions;progress:BonusProgress;legacyGeometry:BonusProgress;legacyAssemblyGeometry:BonusProgress;onProgress:(next:BonusProgress)=>void;onBack:()=>void;onPlaying:(playing:boolean)=>void;onSettings:()=>void;reducedMotion:boolean}
 interface Scope{chrom:string;level:number}
 const PAGE=11*11;
 
-export function BonusScreen({progress,legacyGeometry,onProgress,onBack,onPlaying,onSettings,reducedMotion,feedback}:Props){
+export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onProgress,onBack,onPlaying,onSettings,reducedMotion,feedback}:Props){
   const [packs,setPacks]=useState<Record<string,GenomePack>>({});
   const [storageNote,setStorageNote]=useState('');
   useEffect(()=>{let active=true;void loadGenomePacks().then(p=>{if(active)setPacks(old=>({...p,...old}));}).catch(()=>{if(active)setStorageNote('Offline storage is unavailable; reference data will be loaded when needed.');});return()=>{active=false;};},[]);
@@ -36,7 +36,7 @@ export function BonusScreen({progress,legacyGeometry,onProgress,onBack,onPlaying
       setLoadingPercent(100);
       const iv=genomeLevelInterval(CHROMOSOMES[s.chrom]!,s.level);
       const seq=await readGenomeSequence(pack,iv);
-      setScope(s);setStage(genomeStage(s.chrom,iv,seq,covered(legacyGeometry[s.chrom]??[],...iv)===iv[1]-iv[0]));setSelected(s);setHint(null);
+      setScope(s);setStage(genomeStage(s.chrom,iv,seq,covered(legacyGeometry[s.chrom]??[],...iv)===iv[1]-iv[0],covered(legacyAssemblyGeometry[s.chrom]??[],...iv)===iv[1]-iv[0]));setSelected(s);setHint(null);
       onPlaying(true);window.scrollTo(0,0);
     }catch(e){setError(String(e));}finally{setBusy(false);}
   };

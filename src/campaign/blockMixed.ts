@@ -7,7 +7,7 @@ import type { MixedStage } from './mixed.ts';
 const snake=(n:number,row=1)=>Array.from({length:n},(_,i)=>{const r=Math.floor(i/9)+row;return r*9+(r%2?8-i%9:i%9);});
 /** Exact pieces at the same tier as the sliding alternative. Complement and
  * synthetic error/adapter pieces are explicitly separate from coding credit. */
-export function blockStage(def:Pick<LevelDefinition,'id'|'symbol'|'tier'|'tokens'|'index'> & {seed?:number},mechanic:LabId,start:number,end:number,sequence:string,legacyLayout=false):MixedStage{
+export function blockStage(def:Pick<LevelDefinition,'id'|'symbol'|'tier'|'tokens'|'index'> & {seed?:number},mechanic:LabId,start:number,end:number,sequence:string,legacyLayout=false,legacyAssembly=false):MixedStage{
   const k=def.tier!;
   const chunks=Array.from({length:Math.ceil(sequence.length/k)},(_,i)=>sequence.slice(i*k,(i+1)*k));
   const tokens:Record<string,TokenDef>={},bySeq=new Map<string,string>();
@@ -93,5 +93,5 @@ export function blockStage(def:Pick<LevelDefinition,'id'|'symbol'|'tier'|'tokens
     certificate=spec.CUT_SOLUTION.map(cell=>({type:'cut',cell}));
   }
   const stage={id:def.id,symbol:def.symbol,mechanic,start,end,sequence,spec,certificate};
-  return legacyLayout ? stage : variedStage(def,stage);
+  return legacyLayout ? stage : variedStage(def,stage,legacyAssembly);
 }

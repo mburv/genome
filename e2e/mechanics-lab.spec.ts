@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fresh, openMap } from './helpers';
+import { fresh, openMap, openChapter } from './helpers';
 import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
 import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 import { genomeStage } from '../src/campaign/bonus.ts';
@@ -537,4 +537,27 @@ test('the right mutation rail stays outside all reference and repair cells', () 
     for(const cell of [26,35,44,53]) expect(occupied.has(cell)).toBe(false);
     for(const row of spec.MUTATION_ROWS) expect(row.seq.length).toBeLessThanOrEqual(7);
   }
+});
+
+
+test('MB 3/11 leaves an unsolved gap after any two Genome Assembly reads',async({page})=>{
+  const def=CAMPAIGN_LEVELS.filter(l=>l.symbol==='MB')[2]!;
+  const stage=mixedStage(def)!;
+  expect(stage.mechanic).toBe('assembly');
+  await openChapter(page,def.id);
+  await expect(page.getByTestId('target-panel').locator('.target-title')).toHaveText('Genome Assembly');
+  const actions=stage.certificate;
+  for(const action of actions.slice(0,2)){
+    if(action.type!=='place')throw Error('Expected assembly placement');
+    await tap(page,stage.spec.READ_CELLS[action.read]![0]!);
+    await tap(page,stage.spec.ASSEMBLY_CELLS[action.offset]!);
+  }
+  await expect(page.getByTestId('lab-progress')).toHaveText('2/3 reads');
+  expect(await page.locator('.mechanics-board .assembly-slot[data-base="·"]').count()).toBeGreaterThan(0);
+  await expect(page.getByTestId('win')).toHaveCount(0);
+  const last=actions[2]!;
+  if(last.type!=='place')throw Error('Expected final assembly placement');
+  await tap(page,stage.spec.READ_CELLS[last.read]![0]!);
+  await tap(page,stage.spec.ASSEMBLY_CELLS[last.offset]!);
+  await expect(page.getByTestId('win')).toBeVisible();
 });

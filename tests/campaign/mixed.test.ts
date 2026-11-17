@@ -2,10 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { runOf, LEVEL_PACK } from '../../src/campaign/campaign.ts';
 import { assemblyStatus, levelContribution } from '../../src/campaign/assembly.ts';
 import { mechanicOf, mixedStage, replayMixed, verifiedMixed } from '../../src/campaign/mixed.ts';
-import { createLab, labExtractedSequence,labDecode } from '../../src/engine/mechanicsLab.ts';
+import { applyLab, createLab, labExtractedSequence,labDecode } from '../../src/engine/mechanicsLab.ts';
 import { GENES,CATALOGUE_ORDER,INS } from '../../src/genomics/genes.ts';
 import { createMemoryAdapter, loadSave, newSave, serializeSave } from '../../src/persistence/save.ts';
 import { applyCommand, createInitialState } from '../../src/engine/engine.ts';
+import { genomeStage } from '../../src/campaign/bonus.ts';
 
 describe('mixed INS campaign',()=>{
   test('all 13 stages cover exact consecutive CDS and all seven mechanics',()=>{
@@ -159,4 +160,94 @@ test('old mixed save geometry and in-progress cell logs are retained after upgra
   expect(replayMixed(mixedStage(def,loaded.save.legacyMixedLayouts!.includes(def.id))!,actions).moves).toBe(actions.length);
   const newRun=loadSave(createMemoryAdapter(serializeSave(loaded.save)),LEVEL_PACK);
   expect(newRun.save.legacyMixedLayouts).toEqual(loaded.save.legacyMixedLayouts);
+});
+
+
+/** Certificate geometry has a unique target position for every source read. */
+function expectThreeEssentialReads(stage: NonNullable<ReturnType<typeof mixedStage>>) {
+  expect(stage.mechanic).toBe('assembly');
+  const spec=stage.spec, n=spec.ASSEMBLY_TARGET.length;
+  expect(spec.READS).toHaveLength(3);
+  expect(spec.READ_STARTS).toHaveLength(3);
+  expect(spec.READ_CELLS).toHaveLength(3);
+  const coverage=spec.READ_STARTS.map((start,i)=>
+    Array.from({length:spec.READS[i]!.length},(_,j)=>start+j));
+  expect(coverage.flat().every(i=>i>=0&&i<n)).toBe(true);
+  expect(new Set(coverage.flat()).size).toBe(n);
+  for(let omitted=0;omitted<3;omitted++){
+    const unique=coverage[omitted]!.filter(pos=>coverage.every((cells,i)=>i===omitted||!cells.includes(pos)));
+    expect(unique.length,'read '+(omitted+1)+' must add unique positions in '+stage.id).toBeGreaterThan(0);
+    let state=createLab('assembly',spec);
+    for(const action of stage.certificate){
+      if(action.type!=='place'||action.read===omitted)continue;
+      state=applyLab(state,action).state;
+    }
+    expect(state.won).toBe(false);
+    expect(spec.ASSEMBLY_CELLS.some(cell=>state.board[cell]==='·'),
+      'two reads must not reconstruct '+stage.id).toBe(true);
+  }
+  const final=replayMixed(stage,stage.certificate);
+  expect(final.won,stage.id).toBe(true);
+  expect(labExtractedSequence(final),stage.id).toBe(stage.sequence);
+}
+
+test('MB 3/11 needs all three genome assembly reads (not just the two outer reads)',()=>{
+  const def=runOf('MB')[2]!;
+  expect(def.symbol).toBe('MB');
+  const stage=mixedStage(def)!;
+  expectThreeEssentialReads(stage);
+});
+
+test('all new Famous Genes and T2T bonus assembly reads contribute unique bases',()=>{
+  let examined=0;
+  for(const symbol of CATALOGUE_ORDER){
+    for(const def of runOf(symbol)){
+      const stage=mixedStage(def);
+      if(stage?.mechanic!=='assembly')continue;
+      expectThreeEssentialReads(stage);
+      examined++;
+    }
+  }
+  expect(examined).toBeGreaterThan(10);
+  for(const [chrom,start,n] of [['chr22',90,36],['chr1',126,72],['chrM',90,54]] as const){
+    const seq=('ATGCGATC'.repeat(110)).slice(0,n);
+    const stage=genomeStage(chrom,[start,start+n],seq);
+    expectThreeEssentialReads(stage);
+  }
+});
+
+test('pre-update assembly attempt logs and bonus replay geometry are retained on load',()=>{
+  const def=runOf('MB')[2]!;
+  const before=mixedStage(def,false,true)!;
+  const old={
+    ...newSave(LEVEL_PACK),
+    currentLevelId:def.id,
+    mixedAttempts:{[def.id]:before.certificate.slice(0,2)},
+    completed:[],
+    genomeProgress:{chr22:[[90,126] as [number,number]]},
+  };
+  delete old.assemblyReadVersion;
+  const restored=loadSave(createMemoryAdapter(serializeSave(old)),LEVEL_PACK).save;
+  expect(restored.assemblyReadVersion).toBe(2);
+  expect(restored.legacyAssemblyLayouts).toContain(def.id);
+  expect(restored.mixedAttempts?.[def.id]).toEqual(before.certificate.slice(0,2));
+  expect(restored.legacyBonusAssemblyGeometry?.chr22).toEqual([[90,126]]);
+  const replay=mixedStage(def,restored.legacyMixedLayouts?.includes(def.id),restored.legacyAssemblyLayouts?.includes(def.id))!;
+  expect(replay.spec.READ_STARTS).toEqual(before.spec.READ_STARTS);
+  expect(replay.spec.READ_CELLS).toEqual(before.spec.READ_CELLS);
+  expect(replay.spec.READS).toEqual(before.spec.READS);
+  expect(replayMixed(replay,restored.mixedAttempts![def.id]!).moves).toBe(2);
+  expectThreeEssentialReads(mixedStage(def)!);
+
+  // Completed levels retain their credit but replay the corrected geometry;
+  // obsolete completed action logs are archived rather than applied to it.
+  const solved={...old,completed:[def.id],mixedAttempts:{[def.id]:before.certificate}};
+  const adapter=createMemoryAdapter(serializeSave(solved));
+  const replaySave=loadSave(adapter,LEVEL_PACK).save;
+  expect(replaySave.completed).toContain(def.id);
+  expect(replaySave.legacyAssemblyLayouts).not.toContain(def.id);
+  expect(replaySave.mixedAttempts?.[def.id]).toBeUndefined();
+  expect(adapter.labels).toContain('assembly-read-layouts');
+  expectThreeEssentialReads(mixedStage(def,replaySave.legacyMixedLayouts?.includes(def.id),
+    replaySave.legacyAssemblyLayouts?.includes(def.id))!);
 });

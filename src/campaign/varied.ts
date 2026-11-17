@@ -95,7 +95,9 @@ function varyConnections(stage: MixedStage, rng: Rng): MixedStage {
   };
 }
 
-function varyAssembly(stage: MixedStage, rng: Rng): MixedStage {
+/** Replay the original seeded three-read geometry for saved campaign or bonus puzzles.
+ * Preserve the RNG call order and all read offsets, lengths, rows and certificate actions. */
+function varyAssemblyLegacy(stage: MixedStage, rng: Rng): MixedStage {
   const spec = { ...stage.spec }, n = spec.ASSEMBLY_TARGET.length;
   if (n < 3) return stage;
   const length = Math.min(n - 1, Math.max(2, Math.ceil(n * .56) + rng.int(2)));
@@ -111,6 +113,41 @@ function varyAssembly(stage: MixedStage, rng: Rng): MixedStage {
   });
   spec.READ_ORDER = shuffle([0, 1, 2], rng);
   return { ...stage, spec, certificate: spec.READ_ORDER.map(read => ({ type: 'place' as const, read, offset: offsets[read]! })) };
+}
+
+/** Every read contains at least one target position absent from the other two.
+ * For n >= 5, the central read bridges a gap between the outer reads and
+ * overlaps both, so it cannot be omitted even though the reads are shuffled.
+ * Very short targets (3-4 pieces) cannot have three individually essential,
+ * mutually overlapping reads; prefer essential coverage over impossible overlaps. */
+function varyAssembly(stage: MixedStage, rng: Rng): MixedStage {
+  const spec = { ...stage.spec }, n = spec.ASSEMBLY_TARGET.length;
+  if (n < 3) return stage;
+  type ReadInterval = readonly [start: number, end: number];
+  let intervals: ReadInterval[];
+  if (n === 3) {
+    intervals = [[0, 1], [1, 2], [2, 3]];
+  } else if (n === 4) {
+    intervals = rng.int(2) ? [[0, 2], [1, 3], [3, 4]] : [[0, 1], [1, 3], [2, 4]];
+  } else {
+    // With >=7 target pieces, no pair of reads can cover the target even
+    // if the player tries different legal offsets (their lengths sum to < n).
+    const leftEnd = n >= 7 ? rng.range(3, n - 4) : rng.range(2, n - 3);
+    const rightStart = n >= 7 ? rng.range(leftEnd + 1, n - 3) : rng.range(leftEnd + 1, n - 2);
+    intervals = [[0, leftEnd], [leftEnd - 1, rightStart + 1], [rightStart, n]];
+  }
+  const reads = shuffle(intervals, rng);
+  const rows = shuffle([0, 2, 4], rng);
+  spec.READ_STARTS = reads.map(([start]) => start);
+  spec.READS = reads.map(([start, end]) => spec.ASSEMBLY_TARGET.slice(start, end));
+  spec.READ_CELLS = reads.map(([start, end], i) => {
+    const length = end - start;
+    const first = rng.range(0, 9 - length);
+    return Array.from({ length }, (_, j) => rows[i]! * 9 + first + j);
+  });
+  spec.READ_ORDER = shuffle([0, 1, 2], rng);
+  return { ...stage, spec, certificate: spec.READ_ORDER.map(read =>
+    ({ type: 'place' as const, read, offset: spec.READ_STARTS[read]! })) };
 }
 
 function varyMutation(stage: MixedStage, rng: Rng): MixedStage {
@@ -204,12 +241,12 @@ function varyCrush(stage: MixedStage, rng: Rng): MixedStage {
   return stage;
 }
 
-export function variedStage(def: Pick<LevelDefinition,'id'> & { seed?: number }, stage: MixedStage): MixedStage {
+export function variedStage(def: Pick<LevelDefinition,'id'> & { seed?: number }, stage: MixedStage, legacyAssembly = false): MixedStage {
   const rng = createRng(((def.seed ?? hash(def.id)) ^ hash(def.id + ':' + stage.mechanic) ^ 0x4d584447) >>> 0);
   switch (stage.mechanic) {
     case 'trace': return varyTrace(stage, rng);
     case 'connections': return varyConnections(stage, rng);
-    case 'assembly': return varyAssembly(stage, rng);
+    case 'assembly': return legacyAssembly ? varyAssemblyLegacy(stage, rng) : varyAssembly(stage, rng);
     case 'mutation': return varyMutation(stage, rng);
     case 'restriction': return varyRestriction(stage, rng);
     case 'crush': return varyCrush(stage, rng);

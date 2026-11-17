@@ -43,12 +43,12 @@ const snake = (n: number, startRow = 0): number[] => Array.from({ length: n }, (
   const row = Math.floor(i / 9) + startRow, col = i % 9;
   return row * 9 + (row % 2 ? 8 - col : col);
 });
-export function mixedStage(def: LevelDefinition, legacyLayout = false): MixedStage | null {
+export function mixedStage(def: LevelDefinition, legacyLayout = false, legacyAssembly = false): MixedStage | null {
   const mechanic = mechanicOf(def);
   if (mechanic === 'slide') return null;
   const start = def.sourceIntervals[0]!.start, end = def.sourceIntervals.at(-1)!.end;
   const sequence = GENES[def.symbol]!.sequence.slice(start,end);
-  if(def.tier)return blockStage(def,mechanic,start,end,sequence,legacyLayout);
+  if(def.tier)return blockStage(def,mechanic,start,end,sequence,legacyLayout,legacyAssembly);
   const spec: LabSpec = { ...DEFAULT_LAB_SPEC };
   let certificate: LabAction[];
   if (mechanic === 'trace') {
@@ -91,7 +91,7 @@ export function mixedStage(def: LevelDefinition, legacyLayout = false): MixedSta
     certificate = spec.CUT_SOLUTION.map(cell => ({ type:'cut',cell }));
   }
   const stage = { id:def.id,symbol:def.symbol, mechanic, start,end,sequence,spec,certificate };
-  return legacyLayout ? stage : variedStage(def,stage);
+  return legacyLayout ? stage : variedStage(def,stage,legacyAssembly);
 }
 export function replayMixed(stage: MixedStage, actions: readonly LabAction[], seedTrace = true): LabState {
   return actions.reduce((state, action) => applyLab(state, action).state, createLab(stage.mechanic, stage.spec, seedTrace));
