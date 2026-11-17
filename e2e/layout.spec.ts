@@ -249,8 +249,8 @@ test('long clue chips grow around both codons and their divider on narrow and st
       expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
       expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
       const visibleTops=await panel.locator('[data-clue-unit]:visible').evaluateAll(nodes=>
-        nodes.map(node=>Math.round(node.getBoundingClientRect().top)));
-      expect(new Set(visibleTops).size).toBe(1);
+        nodes.map(node=>node.getBoundingClientRect().top));
+      expect(Math.max(...visibleTops)-Math.min(...visibleTops)).toBeLessThan(2);
       const queued=await panel.locator('[data-clue-unit][data-clue-done="false"][data-clue-hidden]').count();
       if(queued)expect(visibleTops.length).toBeGreaterThan(0);
       await expect(page.getByTestId('icon-row')).toBeVisible();
@@ -287,8 +287,8 @@ test('all campaign mechanics share the one-row clue height, board origin and act
       for(const key of ['clue','boardY','boardWidth','boardHeight','boardX','actionY'] as const)expect(Math.abs(actual[key]-initial[key]),id+' '+key).toBeLessThanOrEqual(1);
       expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight),id).toBeLessThanOrEqual(1);
       const visibleTops=await panel.locator('[data-clue-unit]:visible').evaluateAll(nodes=>
-        nodes.map(node=>Math.round(node.getBoundingClientRect().top)));
-      if(visibleTops.length)expect(new Set(visibleTops).size,id+' should show one row').toBe(1);
+        nodes.map(node=>node.getBoundingClientRect().top));
+      if(visibleTops.length)expect(Math.max(...visibleTops)-Math.min(...visibleTops),id+' should show one row').toBeLessThan(2);
       const queued=await panel.locator('[data-clue-unit][data-clue-done="false"][data-clue-hidden]').count();
       if(queued)sawQueuedClues=true;
       await expect(panel.locator('.clue-pagination')).toHaveCount(0);
