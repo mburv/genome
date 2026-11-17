@@ -221,14 +221,10 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   touch-action: pan-y;
   min-height: 0;
 }
-/* Crowded clue panels omit committed matches and page any remaining overflow. */
-.target [data-clue-hidden], .target .clue-pagination[hidden] { display: none !important; }
+/* Completed and queued clues are absent until the next unfinished row fits. */
+.target [data-clue-hidden] { display: none !important; }
 .target .clue-part:has([data-clue-unit]):not(:has([data-clue-unit]:not([data-clue-hidden]))) { display: none; }
 .target.clues-compact .rep-end { display: none; }
-.clue-pagination { position: absolute; top: 0; right: 0; z-index: 3; display: flex; align-items: center; gap: 4px; height: 26px; font-size: 11px; background: var(--paper); }
-.clue-pagination button { font-size: 17px; line-height: 1; padding: 3px 8px; min-width: 28px; min-height: 26px; }
-.target:has(.clue-pagination:not([hidden])) .row-between { min-height: 26px; padding-right: 100px; }
-.target:has(.clue-pagination:not([hidden])) .row-between > .muted { display: none; }
 .clues-compact [data-clue-index] { position: relative; }
 .clues-compact [data-clue-index]::before {
   content: attr(data-clue-index);
