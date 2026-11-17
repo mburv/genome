@@ -708,7 +708,15 @@ test('KRAS Genome Assembly promotes remaining clues and restores completed ones 
     const visible=states.filter(s=>!s.hidden);
     expect(visible.every(s=>expected.includes(s.id))).toBe(true);
     if(expected.length)expect(visible.length).toBeGreaterThan(0);
-    if(visible.length)expect(Math.max(...visible.map(s=>s.top)) - Math.min(...visible.map(s=>s.top))).toBeLessThan(2);
+    if(visible.length) {
+      // Font and container measurements can settle on the next animation frame.
+      await expect.poll(async()=>{
+        const tops=await chips.evaluateAll(nodes=>nodes
+          .filter(el=>!el.hasAttribute('data-clue-hidden'))
+          .map(el=>el.getBoundingClientRect().top));
+        return tops.length ? Math.max(...tops)-Math.min(...tops) : 0;
+      }).toBeLessThan(2);
+    }
     await expect(panel.locator('.clue-pagination')).toHaveCount(0);
     expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
   };
