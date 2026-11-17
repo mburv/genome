@@ -40,6 +40,12 @@ export interface SaveData {
   legacyMixedLayouts?: string[];
   /** Snapshot of formerly completed T2T intervals, for unchanged replay boards. */
   legacyBonusGeometry?: BonusProgress;
+  /** Version 2: each assembly read uniquely contributes to the reconstructed target. */
+  assemblyReadVersion?: number;
+  /** Previously started/completed levels retain original seeded read intervals. */
+  legacyAssemblyLayouts?: string[];
+  /** Previously completed bonus intervals retain their original assembly reads. */
+  legacyBonusAssemblyGeometry?: BonusProgress;
   tutorialsSeen?: string[];
   /** Separate T2T reference coverage, zero-based half-open intervals per chromosome. */
   genomeProgress?: BonusProgress;
@@ -121,6 +127,7 @@ export function newSave(pack: LevelPack): SaveData {
   return {
     schemaVersion: SCHEMA_VERSION,
     mixedGeometryVersion: 2,
+    assemblyReadVersion: 2,
     campaignId: pack.campaignId,
     generatorVersion: pack.generatorVersion,
     tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '',
@@ -522,6 +529,13 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     ? [...completed,...Object.keys(data.mixedAttempts && typeof data.mixedAttempts==='object' ? data.mixedAttempts as Record<string,unknown> : {})]
     : strings(data.legacyMixedLayouts));
   const legacyBonusGeometry=readGenomeProgress(oldGeometry ? data.genomeProgress : data.legacyBonusGeometry);
+  // Preserve exact read intervals for every stage with prior actions or completion.
+  // New/unplayed assembly puzzles use the three-essential-read generator.
+  const oldAssemblyReads=data.assemblyReadVersion!==2;
+  const legacyAssemblyLayouts=new Set(oldAssemblyReads
+    ? [...completed,...Object.keys(data.mixedAttempts && typeof data.mixedAttempts==='object' ? data.mixedAttempts as Record<string,unknown> : {})]
+    : strings(data.legacyAssemblyLayouts));
+  const legacyBonusAssemblyGeometry=readGenomeProgress(oldAssemblyReads ? data.genomeProgress : data.legacyBonusAssemblyGeometry);
   const mixedAttempts: Record<string, LabAction[]> = {};
   const traceStarterAttempts: string[] = [];
   let updatedCrushLogs = 0;
@@ -531,7 +545,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
       const def = pack.levels.find(l => l.id === id);
       if(!compatible(id))continue;
-      const stage = def && mixedStage(def,legacyMixedLayouts.has(id));
+      const stage = def && mixedStage(def,legacyMixedLayouts.has(id),legacyAssemblyLayouts.has(id));
       if (!stage && def && !def.lab && Array.isArray(rawLog) && rawLog.length) { retiredMixedLogs++; continue; }
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
@@ -557,7 +571,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
   const sharedProgress=genomeProgress;
   return {
-    save: { ...fresh, legacyMixedLayouts:[...legacyMixedLayouts].filter(id=>ids.has(id)), ...(Object.keys(legacyBonusGeometry).length?{legacyBonusGeometry}:{}), ...(Object.keys(sharedProgress).length?{genomeProgress:sharedProgress}:{}), ...(legacyReferenceLevels.length?{legacyReferenceLevels}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
+    save: { ...fresh, legacyMixedLayouts:[...legacyMixedLayouts].filter(id=>ids.has(id)), legacyAssemblyLayouts:[...legacyAssemblyLayouts].filter(id=>ids.has(id)), ...(Object.keys(legacyBonusGeometry).length?{legacyBonusGeometry}:{}), ...(Object.keys(legacyBonusAssemblyGeometry).length?{legacyBonusAssemblyGeometry}:{}), ...(Object.keys(sharedProgress).length?{genomeProgress:sharedProgress}:{}), ...(legacyReferenceLevels.length?{legacyReferenceLevels}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
     recovered: notices.length > 0,
   };
