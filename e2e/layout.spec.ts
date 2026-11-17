@@ -301,3 +301,43 @@ test('all campaign mechanics share the one-row clue height, board origin and act
     expect(source).toBeTruthy();
   }
 });
+
+
+test('settings shares the gameplay header position and replaces the cog with a same-size X', async ({ page }) => {
+  for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 430, height: 932 }]) {
+    await page.setViewportSize(viewport);
+    await openChapter(page, 'ins-01');
+    const playHeader = (await page.getByTestId('play-top').boundingBox())!;
+    const playTitle = (await page.getByTestId('play-title').boundingBox())!;
+    const cog = page.getByTestId('open-settings');
+    const cogBox = (await cog.boundingBox())!;
+    await cog.click();
+
+    await expect(page.getByTestId('settings')).toBeVisible();
+    await expect(page.getByTestId('open-settings')).toHaveCount(0);
+    await expect(page.getByTestId('help-how-to-play')).toHaveCount(0);
+    await expect(page.getByTestId('help-about-dna')).toHaveCount(0);
+    await expect(page.getByText('Settings are saved on this device. No timers, accounts or tracking.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Done' })).toHaveCount(0);
+    for (const toggle of ['toggle-motion', 'toggle-sound', 'toggle-haptics']) await expect(page.getByTestId(toggle)).toBeVisible();
+
+    const settingsHeader = (await page.getByTestId('app-top').boundingBox())!;
+    const wordmark = (await page.getByRole('heading', { name: 'GENOME' }).boundingBox())!;
+    const close = page.getByTestId('close-settings');
+    await expect(close).toHaveAttribute('aria-label', 'Close settings');
+    await expect(close).toHaveText('×');
+    const closeBox = (await close.boundingBox())!;
+
+    expect(Math.abs(settingsHeader.y - playHeader.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(settingsHeader.y + settingsHeader.height - playHeader.y - playHeader.height)).toBeLessThanOrEqual(1);
+    expect(Math.abs(wordmark.y - playTitle.y)).toBeLessThanOrEqual(1);
+    for (const key of ['x', 'y', 'width', 'height'] as const) {
+      expect(Math.abs(closeBox[key] - cogBox[key]), key + ' at ' + viewport.width).toBeLessThanOrEqual(1);
+    }
+
+    await close.click();
+    await expect(page.getByTestId('settings')).toHaveCount(0);
+    await expect(page.getByTestId('board')).toBeVisible();
+    await expect(page.getByTestId('open-settings')).toBeVisible();
+  }
+});

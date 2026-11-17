@@ -134,13 +134,18 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
             ) : (
               <div>
                 <h1>GENOME</h1>
+                <p className="play-locus" aria-hidden="true">{'\u00a0'}</p>
               </div>
             )}
             <div className="top-buttons">
               {activeMechanic && <button type="button" className="map-button" aria-label="Show mechanic tutorial" data-testid="show-tutorial" onClick={() => setTutorial(activeMechanic)}>?</button>}
-              {screen.kind !== 'settings' && (
-                <button type="button" className="map-button" onClick={() => go({ kind: 'settings' })} aria-label="Settings" data-testid="open-settings">⚙</button>
-              )}
+              <button
+                type="button"
+                className={`map-button${screen.kind === 'settings' ? ' settings-close' : ''}`}
+                onClick={() => screen.kind === 'settings' ? go(settingsFrom.current) : go({ kind: 'settings' })}
+                aria-label={screen.kind === 'settings' ? 'Close settings' : 'Settings'}
+                data-testid={screen.kind === 'settings' ? 'close-settings' : 'open-settings'}
+              >{screen.kind === 'settings' ? '×' : '⚙'}</button>
             </div>
           </div>
         </div>
@@ -202,7 +207,6 @@ export function App({ storage = createLocalStorageAdapter() }: { storage?: Stora
           onChange={(settings) => persist({ ...save, settings })}
           onReset={applyReset}
           onMap={() => go({ kind: 'map' })}
-          onBack={() => go(settingsFrom.current)}
         />
       )}
       {screen.kind === 'card' && (
