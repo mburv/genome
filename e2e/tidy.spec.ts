@@ -1,13 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import pack from '../src/campaign/chapters.generated.json' with { type: 'json' };
-import m2Pack from '../src/campaign/levels.generated.json' with { type: 'json' };
+import {CAMPAIGN_LEVELS} from '../src/campaign/campaign.ts';
+import {mechanicOf} from '../src/campaign/mixed.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
 import { completedLevelSave, expectChapterHeading, expectOpeningHeading, fresh, goToChapter, openChapter, openCompleted, openMap } from './helpers';
 
-const ALL_LEVEL_IDS = [
-  ...(m2Pack.levels as LevelDefinition[]).map((l) => l.id),
-  ...(pack.levels as LevelDefinition[]).map((l) => l.id),
-];
+const ALL_LEVEL_IDS = CAMPAIGN_LEVELS.filter(l=>mechanicOf(l)==='slide').map(l=>l.id);
 
 const def = (pack.levels as LevelDefinition[])[0]!;
 
@@ -116,14 +114,18 @@ async function expectReplicatePairs(page: Page): Promise<void> {
     const badge1 = panel.querySelector('[data-testid="clue-badge-1"]');
     const badge2 = panel.querySelector('[data-testid="clue-badge-2"]');
     const ends = [...panel.querySelectorAll('.rep-start .end, .rep-end .end')].map((e) => ({ text: (e.textContent ?? '').trim(), ...box(e) }));
+    const repEnd = panel.querySelector('.rep-end')!;
+    const endGap = parseFloat(getComputedStyle(repEnd).marginInlineStart);
     return {
       pairs,
       badge1: badge1 ? box(badge1) : null,
       badge2: badge2 ? box(badge2) : null,
       ends,
+      endGap,
     };
   });
   expect(data.pairs.length).toBeGreaterThan(0);
+  expect(data.endGap).toBeGreaterThanOrEqual(5);
   for (const p of data.pairs) {
     expect(p.template).toBeTruthy();
     expect(p.complement).toBeTruthy();
@@ -255,7 +257,7 @@ const NOTE_FRAGMENTS = [
   'Read top',
 ];
 
-async function assertCluePanelClean(page: Page, width: number, height: number) {
+async function assertCluePanelClean(page: Page, width: number) {
   const panel = page.getByTestId('target-panel');
   await expect(panel).toBeVisible();
   for (const text of NOTE_FRAGMENTS) await expect(panel).not.toContainText(text);
@@ -286,8 +288,7 @@ async function assertCluePanelClean(page: Page, width: number, height: number) {
   expect(gap).toBeGreaterThanOrEqual(6);
   expect(gap).toBeLessThanOrEqual(16);
   expect(metrics.boardTop).toBeGreaterThan(metrics.target.y + 8);
-  if (height >= 700) expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
-  else expect(metrics.boardWidth).toBeGreaterThan(27.5 * 9);
+  expect(metrics.boardWidth).toBe(width);
 }
 
 for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as const) {
@@ -298,16 +299,16 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await fresh(page);
     for (const id of ['ins-c01', 'ins-c02', 'ins-c03', 'ins-c04'] as const) {
       await goToChapter(page, id);
-      await assertCluePanelClean(page, size.width, size.height);
+      await assertCluePanelClean(page, size.width);
       if (size.width === 390 && id === 'ins-c02') {
         await page.screenshot({ path: 'test-results/screenshots/genome-clue-390x844.png' });
       }
     }
-    await assertCluePanelClean(page, size.width, size.height);
+    await assertCluePanelClean(page, size.width);
   });
 }
 
-async function assertPlayScreenDecluttered(page: Page, width: number, height: number) {
+async function assertPlayScreenDecluttered(page: Page, width: number) {
   await expect(page.locator('.dpad')).toHaveCount(0);
   await expect(page.getByTestId('status')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Slide (row|column)/ })).toHaveCount(0);
@@ -327,11 +328,8 @@ async function assertPlayScreenDecluttered(page: Page, width: number, height: nu
   expect(metrics.x).toBeGreaterThanOrEqual(0);
   expect(metrics.x + metrics.boardWidth).toBeLessThanOrEqual(width);
   expect(Math.abs(metrics.boardWidth - metrics.boardHeight)).toBeLessThan(2);
-  if (height >= 700) expect(metrics.boardWidth).toBeGreaterThanOrEqual(width - 1);
-  else {
-    expect(Math.abs(metrics.x - (width - (metrics.x + metrics.boardWidth)))).toBeLessThanOrEqual(1);
-    expect(metrics.boardWidth).toBeGreaterThan(27.5 * 9);
-  }
+  expect(metrics.x).toBe(0);
+  expect(metrics.boardWidth).toBe(width);
   expect(metrics.pageOverflow).toBeLessThanOrEqual(0);
 }
 
@@ -339,7 +337,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
   test(`puzzle screen has no pad, status or help links at ${size.width}x${size.height}; help lives in Settings`, async ({ page }) => {
     await page.setViewportSize(size);
     await openChapter(page, 'ins-01');
-    await assertPlayScreenDecluttered(page, size.width, size.height);
+    await assertPlayScreenDecluttered(page, size.width);
     if (size.width === 390) {
       await page.screenshot({ path: 'test-results/screenshots/genome-declutter-390x844.png' });
     }
@@ -359,7 +357,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }] as
     await page.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByTestId('board')).toBeVisible();
     await expect(page.getByTestId('settings')).toHaveCount(0);
-    await assertPlayScreenDecluttered(page, size.width, size.height);
+    await assertPlayScreenDecluttered(page, size.width);
   });
 }
 
@@ -598,10 +596,11 @@ test('clue chips size to their letters and wrap in columns at 320, 375, 390 and 
   }
 });
 
-/** The action row is fully on screen at scroll 0, with no horizontal page overflow. */
+/** The full-width board takes priority; the action row is reachable via vertical scroll. */
 async function expectActionRowInView(page: Page): Promise<void> {
   const row = page.getByTestId('icon-row');
   await expect(row).toBeVisible();
+  await row.scrollIntoViewIfNeeded();
   const report = await page.evaluate(() => {
     const row = document.querySelector('[data-testid="icon-row"]') as HTMLElement;
     const r = row.getBoundingClientRect();
@@ -616,7 +615,7 @@ async function expectActionRowInView(page: Page): Promise<void> {
       scrollY: window.scrollY,
     };
   });
-  expect(report.scrollY, 'page should not need a vertical scroll to reach the action row').toBe(0);
+  if(report.vh>=844)expect(report.scrollY, 'standard phone should fit the action row without scroll').toBe(0);
   expect(report.top).toBeGreaterThanOrEqual(0);
   expect(report.bottom).toBeLessThanOrEqual(report.vh + 0.5);
   expect(report.left).toBeGreaterThanOrEqual(-0.5);
@@ -624,27 +623,14 @@ async function expectActionRowInView(page: Page): Promise<void> {
   expect(report.pageOverflowX).toBeLessThanOrEqual(0);
 }
 
-const LAB_INDEX: Record<string, number> = { 'lab-crispr': 1, 'lab-ligase': 2, 'lab-scaffold': 3 };
-
-async function openAnyLevel(page: Page, id: string): Promise<void> {
-  const lab = LAB_INDEX[id];
-  if (lab != null) {
-    await openMap(page);
-    await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${lab}: `) }).click();
-    await page.getByTestId('board').waitFor();
-    return;
-  }
-  await goToChapter(page, id);
-}
-
-test('action row stays in the viewport on every level at 320×568 and 390×844', async ({ page }) => {
+test('action row is reachable on every level at 320×568 and 390×844', async ({ page }) => {
   test.setTimeout(240_000);
   expect(ALL_LEVEL_IDS.length).toBeGreaterThan(100);
   for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }] as const) {
     await page.setViewportSize(viewport);
     await fresh(page);
     for (const id of ALL_LEVEL_IDS) {
-      await openAnyLevel(page, id);
+      await goToChapter(page, id);
       await expect(page.getByTestId('board')).toBeVisible();
       try {
         await expectActionRowInView(page);

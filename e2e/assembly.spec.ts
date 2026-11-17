@@ -37,7 +37,8 @@ test('map shows the gene catalogue, chapter nodes and exclusions', async ({ page
   expect(manifest.excluded).toHaveLength(0);
   await expect(page.getByTestId('catalogue-excluded')).toHaveCount(0);
   await expect(page.locator('.node:not(.lab)')).toHaveCount(0);
-  await expect(page.locator('.node.lab')).toHaveCount(3);
+  await expect(page.locator('.node.lab')).toHaveCount(0);
+  await expect(page.getByTestId('open-mechanics')).toBeVisible();
 });
 
 test('long-token level: readable tiles, drag-solve with hints; finishing the chapter assembles INS', async ({ page }) => {
@@ -61,10 +62,9 @@ test('long-token level: readable tiles, drag-solve with hints; finishing the cha
   await expect(page.getByTestId('win-meta')).toContainText('INS 13/13');
   await expect(page.getByTestId('assembled')).toContainText('INS assembled');
   await expect(page.getByTestId('assembled')).toContainText('SHA-256 verified');
-  await expect(page.getByRole('button', { name: 'Next level →' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'View card' })).toHaveCount(0);
-  await page.getByTestId('win-map').click();
-  await page.getByTestId('cat-card-INS').click();
+  await expect(page.getByRole('button', { name: 'View card' })).toBeVisible();
+  await page.getByRole('button', { name: 'View card' }).click();
+  await expect(page.getByTestId('gene-card')).toBeVisible();
   await expect(page.getByTestId('card-state')).toContainText('Assembled');
   await expect(page.getByTestId('card-coverage')).toContainText('333 of 333');
   await expect(page.getByTestId('card-checksum')).toContainText('matches your assembly');
@@ -144,7 +144,7 @@ test('each multi-base combo has its own colour, identical on the board and in th
   await expect(page.getByTestId('token-inspector')).toHaveCount(0);
 });
 
-test('hexamer and longer barcode frames use the tile border colour, width and style', async ({ page }) => {
+test('hexamer barcode frames use the tile border colour, width and style; longer tiles use dividers', async ({ page }) => {
   const def = CHAPTERS.find((l) => l.tier === 6 && l.mode === 'sequence')!;
   expect(def.id).toBeTruthy();
   await openChapter(page, def.id);
@@ -176,12 +176,13 @@ test('hexamer and longer barcode frames use the tile border colour, width and st
   await assertMatched('.board .tile.tok .barcode');
   await assertMatched('[data-testid="target-panel"] .tok-chip .barcode');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: '/workspace/game/screenshots/genome-hexamer-border-390x844.png', animations: 'disabled' });
+  await page.screenshot({ path: 'test-results/screenshots/genome-hexamer-border-390x844.png', animations: 'disabled' });
   await page.locator('.board .tile.tok').first().click();
   await assertMatched('.board .tile.tok.selected .barcode');
 
   const longer = CHAPTERS.find((l) => (l.tier ?? 0) >= 12 && l.mode === 'sequence')!;
   expect(longer.id).toBeTruthy();
   await goToChapter(page, longer.id);
-  await assertMatched('.board .tile.tok .barcode');
+  await expect(page.locator('.board .tier-l .tok-divider').first()).toBeVisible();
+  await expect(page.locator('.board .tier-l .barcode')).toHaveCount(0);
 });

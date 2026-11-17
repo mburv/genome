@@ -22,21 +22,34 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- e2e/compact-clues.spec.ts e2e/layout.spec.ts e2e/hint-toggle.spec.ts e2e/mechanics-lab.spec.ts e2e/mixed-ins.spec.ts e2e/sliding-modes.spec.ts
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e -- e2e/compact-clues.spec.ts e2e/layout.spec.ts e2e/hint-toggle.spec.ts e2e/mechanics-lab.spec.ts e2e/mixed-ins.spec.ts e2e/sliding-modes.spec.ts e2e/bonus.spec.ts e2e/title.spec.ts e2e/feedback.spec.ts e2e/hint-rendering.spec.ts
       - run: npm run test:e2e -- e2e/tidy.spec.ts --grep 'replication clues pair|clue chips size'
-      - run: npm run test:e2e -- e2e/powers.spec.ts --grep 'campaign sliding levels|campaign control row|CRISPR recovery|CRISPR.*preview'
+      - run: npm run test:e2e -- e2e/powers.spec.ts --grep 'campaign sliding levels|campaign control row|map replaces retired Enzyme Lab'
       - run: npm run build
       # Stage only this verified change; the owner-facing Pages branch is untouched.
       # The connector fast-forwards gh-pages after inspecting the build and test results.
       - name: Stage verified Pages build
         if: startsWith(github.ref, 'refs/heads/fix/') && github.event_name == 'push'
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git fetch origin gh-pages
           git worktree add --detach "$RUNNER_TEMP/genome-site" FETCH_HEAD
           git -C "$RUNNER_TEMP/genome-site" rm -r --ignore-unmatch .
           cp -a dist/. "$RUNNER_TEMP/genome-site/"
+          # Serve verified chromosome assets on the same origin as the game. Preserve
+          # the immutable release files across UI deployments; no browser CORS or manual install.
+          site="$RUNNER_TEMP/genome-site"
+          if git -C "$site" cat-file -e HEAD:reference-data 2>/dev/null; then
+            git -C "$site" restore --source=HEAD --staged --worktree reference-data
+          else
+            mkdir -p "$site/reference-data"
+            gh release download t2t-chm13-v2.0 --repo "$GITHUB_REPOSITORY" --pattern "*.genome" --dir "$site/reference-data"
+          fi
+          test "$(find "$site/reference-data" -maxdepth 1 -name '*.genome' | wc -l)" -eq 25
+          test "$(du -sb "$site" | cut -f1)" -lt 1000000000
           touch "$RUNNER_TEMP/genome-site/.nojekyll"
           git -C "$RUNNER_TEMP/genome-site" config user.name "github-actions[bot]"
           git -C "$RUNNER_TEMP/genome-site" config user.email "41898282+github-actions[bot]@users.noreply.github.com"

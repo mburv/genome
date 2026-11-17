@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { LevelDefinition, Track } from '../engine/types.ts';
 import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
-import { Barcode, SeqLetters, tierClass, tokenStyle } from './TokenFace.tsx';
+import { Barcode, SeqLetters, TokenFace, tierClass, tokenStyle } from './TokenFace.tsx';
 
 interface Props {
   def: LevelDefinition;
@@ -9,6 +9,7 @@ interface Props {
   committedMatches: boolean[][];
   solved: boolean;
   custom?: CustomTokens;
+  measureOnly?: boolean;
 }
 
 const TokCtx = createContext<{ def: LevelDefinition; custom: CustomTokens } | null>(null);
@@ -21,8 +22,7 @@ function Chip({ track, index, ok, testId, done }: { track: Track; index: number;
     const seq = symbolSequence(tok.def, tok.custom, sym);
     return (
       <span className={`tok-chip ${tierClass(seq.length)} ${ok ? 'ok' : ''}`} data-seq={seq} {...unit} title={seq} style={tokenStyle(tok.def, sym)} data-testid={testId}>
-        <span className="chip-label">{seq.length <= 6 ? <SeqLetters seq={seq} /> : symbolLabel(tok.def, tok.custom, sym)}</span>
-        {seq.length > 3 && <Barcode seq={seq} />}
+        {seq.length > 6 ? <TokenFace seq={seq} label={symbolLabel(tok.def, tok.custom, sym)} /> : <><span className="chip-label"><SeqLetters seq={seq} /></span>{seq.length > 3 && <Barcode seq={seq} />}</>}
       </span>
     );
   }
@@ -75,85 +75,76 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
   return n > 0 ? `?×${n}` : '?';
 }
 
-/** Measure the actual wrapped clues, not an assumed phone width.
- * Only crowded panels hide committed matches. If unmatched clues still overflow, use
- * explicit pages rather than a scrolling box. DOM visibility is recalculated after
- * committed-match change; a drag preview never changes the committed completion flags.
+/** Keep a fixed one-row clue strip. Only the earliest unfinished clues that fit
+ * are visible; newly solved ones disappear and later ones automatically flow in.
+ * Visibility is recomputed after committed moves, undo and viewport changes.
  */
-export function TargetShell({ defId, label, solved, committedKey, children, reserveHeight = false, hideCompleted = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; reserveHeight?: boolean; hideCompleted?: boolean }) {
+export function TargetShell({ defId, label, children, hideCompleted = true, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
   const ref = useRef<HTMLElement>(null);
-  const page = useRef(0);
-  const previous = useRef('');
-  const refresh = useRef<((delta?: number) => void) | null>(null);
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    const identity = hideCompleted ? defId + ':' + committedKey : defId;
-    if (previous.current !== identity) { previous.current = identity; page.current = 0; }
-    const nav = el.querySelector<HTMLElement>('.clue-pagination')!;
-    const status = nav.querySelector<HTMLElement>('.clue-page-count')!;
-    const back = nav.querySelector<HTMLButtonElement>('[data-clue-back]')!;
-    const next = nav.querySelector<HTMLButtonElement>('[data-clue-next]')!;
+    if (!el || measureOnly) return;
     const units = Array.from(el.querySelectorAll<HTMLElement>('[data-clue-unit]'));
     const setHidden = (unit: HTMLElement, hidden: boolean) => unit.toggleAttribute('data-clue-hidden', hidden);
-    const fits = () => el.scrollHeight <= el.clientHeight + 1;
-    const update = (delta = 0) => {
-      // Measure the complete layout first, even if a previous render hid a clue.
-      nav.hidden = true;
+    const fits = () => {
+      if (el.scrollHeight > el.clientHeight + 1) return false;
+      // Even two short rows can fit within the height of one tall replication
+      // pair. Keep exactly one logical row on screen across all mechanics.
+      const visible = units.filter(unit => !unit.hasAttribute('data-clue-hidden'));
+      if (visible.length < 2) return true;
+      const tops = visible.map(unit => unit.getBoundingClientRect().top);
+      return Math.max(...tops) - Math.min(...tops) < 2;
+    };
+    const update = () => {
       el.classList.remove('clues-compact');
-      units.forEach(unit => setHidden(unit, false));
+      // Start with every unfinished unit visible so the wrapping measurement
+      // reflects the actual remaining clues, including units restored by Undo.
+      units.forEach(unit => setHidden(unit, hideCompleted && unit.dataset.clueDone === 'true'));
       el.scrollTop = 0;
-      // Tracing commits while the finger is still on the board. Keep its board position
-      // steady even when completed clues disappear; measure again after a resize.
-      el.style.minHeight = '';
-      if (reserveHeight) el.style.minHeight = el.clientHeight + 'px';
-      // Codon Crush always removes collected clues, even on a roomy or solved board.
-      // Measure the full set first so the board stays at the same vertical position.
-      if (hideCompleted) units.forEach(unit => setHidden(unit, unit.dataset.clueDone === 'true'));
-      if (fits()) { page.current = 0; return; }
-      el.classList.add('clues-compact');
-      const remaining = units.filter(unit => (!hideCompleted && solved) || unit.dataset.clueDone !== 'true');
-      units.forEach(unit => setHidden(unit, !remaining.includes(unit)));
-      if (fits()) { page.current = 0; return; }
+      const remaining = units.filter(unit => !unit.hasAttribute('data-clue-hidden'));
+      if (!remaining.length || fits()) return;
 
-      // Greedily fit whole chips/pairs on each page, retaining their original indices.
-      // Keep the page controls mounted while measuring so their height is reserved.
-      nav.hidden = false;
-      const pages: HTMLElement[][] = [];
-      const show = (visible: HTMLElement[]) => units.forEach(unit => setHidden(unit, !visible.includes(unit)));
-      let current: HTMLElement[] = [];
+      // A single logical row is visible, regardless of how many shorter rows
+      // would fit in the height of the tallest clue. There are no page controls.
+      el.classList.add('clues-compact');
+      const show = (visible: HTMLElement[]) => {
+        const keep = new Set(visible);
+        units.forEach(unit => setHidden(unit, !keep.has(unit)));
+      };
+      const visible: HTMLElement[] = [];
       for (const unit of remaining) {
-        show([...current, unit]);
-        if (current.length && !fits()) { pages.push(current); current = [unit]; }
-        else current.push(unit);
+        show([...visible, unit]);
+        if (visible.length && !fits()) {
+          show(visible);
+          break;
+        }
+        visible.push(unit);
       }
-      if (current.length) pages.push(current);
-      page.current = Math.max(0, Math.min(page.current + delta, pages.length - 1));
-      show(pages[page.current] ?? []);
-      status.textContent = `${page.current + 1}/${pages.length}`;
-      back.disabled = page.current === 0;
-      next.disabled = page.current >= pages.length - 1;
       el.scrollTop = 0;
     };
-    refresh.current = update;
     update();
     // Resize the layout for orientation changes and mobile browser chrome changes.
     const onResize = () => update();
     window.addEventListener('resize', onResize);
     window.visualViewport?.addEventListener('resize', onResize);
+    // Changing fonts or a clue container's intrinsic height may rewrap the
+    // tiles without resizing the fixed-height target itself.
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => update()) : null;
+    observer?.observe(el);
+    for (const child of el.children) observer?.observe(child);
+    const frame = window.requestAnimationFrame(() => update());
+    let active = true;
+    document.fonts?.ready.then(() => { if (active) update(); });
     return () => {
-      refresh.current = null;
+      active = false;
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [defId, solved, committedKey, reserveHeight, hideCompleted]);
+  });
   return (
-    <section ref={ref} className="target" aria-label={label} data-testid="target-panel">
-      <div className="clue-pagination" hidden>
-        <button type="button" data-clue-back aria-label="Previous clues" onClick={() => refresh.current?.(-1)}>‹</button>
-        <span className="clue-page-count" aria-live="polite" />
-        <button type="button" data-clue-next aria-label="Next clues" onClick={() => refresh.current?.(1)}>›</button>
-      </div>
+    <section ref={ref} className={'target'+(longClues?' long-clues':'')} aria-label={label} data-testid={measureOnly ? undefined : "target-panel"} data-clue-measure-id={measureOnly ? defId : undefined}>
       {children}
     </section>
   );
@@ -168,22 +159,26 @@ export function TargetPanel({ custom = {}, ...p }: Props) {
   );
 }
 
-function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Props & { custom: CustomTokens }) {
+export function slidingClueRange(def: LevelDefinition): string {
+  return `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}${def.tokens ? ` · ${def.tier}-base tiles` : ''}`;
+}
+
+function TargetPanelInner({ def, matches, committedMatches, solved, custom, measureOnly = false }: Props & { custom: CustomTokens }) {
   const committedKey = committedMatches.map(row => row.map(Number).join('')).join('|');
   const t0 = def.tracks[0]!;
   const toks = !!def.tokens;
-  const range = `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}`;
   const heading = (
     <div className="row-between small">
       <span className="target-title">{def.title}</span>
-      <span className="muted">{range}{toks ? ` · ${def.tier}-base tiles` : ''}</span>
+      <span className="muted">{slidingClueRange(def)}</span>
     </div>
   );
   const tier = toks ? def.tier : undefined;
+  const longClues = Object.values(def.tokens ?? {}).some(token => token.seq.length > 6);
   if (def.mode === 'replicate') {
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target strands">
+      <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target strands">
         {heading}
         <div className={stackClass('replicate', tier)}>
           <div className="rep-start">
@@ -214,16 +209,17 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     );
   }
   if (def.mode === 'repair' && def.repair) {
+    const restoredSeq = symbolSequence(def, custom, def.repair.expected);
     const [a, b] = def.tracks as [Track, Track];
     return (
-      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
+      <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence with a gap">
         {heading}
         <div className={stackClass('repair', tier)}>
           <CluePart group={a.group} testId="clue-part-1" badgeTestId="clue-badge-1">
             <TokenRow>
               <Strip track={a} ok={matches[0]!} done={committedMatches[0]!} testId="target-strip" />
               {toks
-                ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false" style={solved ? tokenStyle(def, def.repair.expected) : {}}>{gapLabel(def, custom, solved)}</span>
+                ? <span className={`tok-chip gap ${solved ? 'ok restored' : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false" style={solved ? tokenStyle(def, def.repair.expected) : {}} title={solved ? restoredSeq : undefined} aria-label={solved ? 'Restored ' + restoredSeq : undefined}>{solved && restoredSeq.length > 6 ? <TokenFace seq={restoredSeq} label={symbolLabel(def, custom, def.repair.expected)} /> : gapLabel(def, custom, solved)}</span>
                 : <span className={`strip-cell gap ${solved ? `b-${def.repair.expected} ok restored` : ''}`} data-testid="repair-slot" data-clue-unit="" data-clue-done="false">{gapLabel(def, custom, solved)}</span>}
             </TokenRow>
           </CluePart>
@@ -238,7 +234,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
   }
   if (def.mode === 'splice') {
     return (
-      <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target pieces">
+      <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target pieces">
         {heading}
         <div className={stackClass('splice', tier)}>
           {def.tracks.map((t, i) => (
@@ -257,7 +253,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom }: Pr
     );
   }
   return (
-    <TargetShell defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence">
+    <TargetShell measureOnly={measureOnly} longClues={longClues} defId={def.id} solved={solved} committedKey={committedKey} label="Target sequence">
       {heading}
       <div className={stackClass('sequence', tier)}>
         <CluePart group={t0.group} testId="clue-part-1" badgeTestId="clue-badge-1">

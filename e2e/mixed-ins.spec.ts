@@ -1,10 +1,23 @@
 import { expect, test } from '@playwright/test';
-import { fresh, openMap, solveWithHints } from './helpers';
-import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { fresh, openMap, openCompleted, solveWithHints, documentBox } from './helpers';
+import { CAMPAIGN_LEVELS, LEVEL_PACK } from '../src/campaign/campaign.ts';
+import { newSave, serializeSave } from '../src/persistence/save.ts';
+import { GENES } from '../src/genomics/genes.ts';
 import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 const tile=(page:import('@playwright/test').Page,c:number)=>page.getByTestId('lab-cell-'+c);
+const oldInsIds=['ins-02','ins-03','ins-04','ins-05','ins-06','ins-c01','ins-c02','ins-c03','ins-c06','ins-c07'];
+async function freshLegacyIns(page:import('@playwright/test').Page,mixed=false){
+  await fresh(page,mixed);
+  await page.evaluate(ids=>{
+    const save=JSON.parse(localStorage.getItem('genome-save')!);
+    save.legacyMixedLayouts=ids;
+    localStorage.setItem('genome-save',JSON.stringify(save));
+  },oldInsIds);
+  await page.reload();
+}
+
 test('first-use tutorials animate all seven mechanics, replay, and remember acknowledgement',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const stages=[['ins-01','slide'],['ins-02','trace'],['ins-03','connections'],['ins-04','assembly'],['ins-05','crush'],['ins-06','mutation'],['ins-c07','restriction']];
   for(const [id,kind] of stages){
     await page.getByTestId('cnode-'+id).click();
@@ -34,7 +47,7 @@ test('first-use tutorials animate all seven mechanics, replay, and remember ackn
 });
 test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances to Connections',async({page})=>{
   page.on('pageerror',error=>console.log('TRACE PAGE ERROR',error.message));
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
   await page.getByTestId('tutorial-skip').click();await solveWithHints(page);
   await page.getByRole('button',{name:'Next level →'}).click();
   await page.getByTestId('tutorial-skip').click();
@@ -61,7 +74,7 @@ test('INS mixed trace resumes mid-stage, adds exact coverage once, and advances 
 
 test('every mixed INS stage can be solved through the real game controls and reaches 333 bp',async({page})=>{
   test.setTimeout(120_000);
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const skip=async()=>{const guide=page.getByTestId('mechanic-tutorial');if(await guide.isVisible())await page.getByTestId('tutorial-skip').click();};
   const stages=[
     {id:'ins-01',kind:'slide',end:9},
@@ -104,10 +117,37 @@ test('every mixed INS stage can be solved through the real game controls and rea
     if(s.end===333){await expect(page.getByTestId('assembled')).toBeVisible();expect(saved.assembled).toContain('INS');}
     else {const next=page.getByRole('button',{name:'Next level →'});await expect(next).toBeVisible();await next.click();}
   }
+  // Completing a non-final gene now opens its full card, just as DMD did.
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.getByTestId('gene-card')).toBeVisible();
+  await expect(page.locator('#card-title')).toHaveText('INS');
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
+  await expect(page.getByTestId('card-coverage')).toContainText('333 of 333');
+  const sequence=page.getByTestId('assembled-sequence');
+  await expect(sequence.getByRole('heading',{name:'Your assembled sequence (333 bases)'})).toBeVisible();
+  await expect(sequence.locator('.seq-wrap')).toBeVisible();
+  expect(await sequence.locator('.seq-wrap').textContent()).toBe(GENES.INS!.sequence);
+  await expect(sequence.locator('summary')).toHaveCount(0);
+  const next=CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.findIndex(l=>l.id==='ins-c07')+1]!;
+  await expect(page.getByTestId('card-continue')).toHaveText('Continue to '+next.symbol+' →');
+  await page.getByTestId('card-continue').click();
+  await expect(page.getByTestId('play-title')).toHaveText(next.symbol);
+  // Replaying the final level must offer the same verified card without new credit.
+  await openMap(page);
+  await page.getByTestId('cnode-ins-c07').click();
+  await page.getByTestId('replay').click();
+  await tile(page,17).tap();await tile(page,10).tap();
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('win-assembly')).toHaveText('333 / 333 INS coding bases assembled.');
+  await expect(page.getByTestId('assembled')).toContainText('INS assembled');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
+  await expect(page.locator('#card-title')).toHaveText('INS');
+  await expect(page.getByTestId('card-continue')).toHaveText('Continue to '+next.symbol+' →');
 });
 
 test('sliding tutorial keeps stationary cells opaque and rotates the entire column with wrap',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-01').click();
   const board=page.getByTestId('tutorial-board');
   await expect(board.locator('.tutorial-before,.tutorial-after')).toHaveCount(0);
   await expect(board.locator('.tutorial-slide-static').first()).toHaveCSS('animation-name','none');
@@ -149,7 +189,7 @@ test('sliding tutorial keeps stationary cells opaque and rotates the entire colu
 });
 
 test('DNA tracing tutorial keeps all bases static while drawing its path once',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();
   const board=page.getByTestId('tutorial-board');
   for(let step=1;step<=3;step++){
     await expect(board.locator('.tutorial-cell')).toHaveCount(81);
@@ -172,7 +212,7 @@ test('DNA tracing tutorial keeps all bases static while drawing its path once',a
 });
 
 test('DNA tracing shares classic play chrome, board sizing, clues and action toolbar',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   await page.setViewportSize({width:320,height:568});
   await page.getByTestId('cnode-ins-01').click();await page.getByTestId('tutorial-skip').click();
   const classic=await page.getByTestId('board').boundingBox();
@@ -199,14 +239,14 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
   const cap=await page.getByTestId('target-panel').evaluate(el=>el.scrollHeight-el.clientHeight);
   expect(cap).toBeLessThanOrEqual(1);
   await expect(page.getByTestId('icon-row')).toBeVisible();
-  const startY=(await page.getByTestId('mechanics-board').boundingBox())!.y;
+  const startY=(await documentBox(page.getByTestId('mechanics-board'))).y;
   for(const c of [15,14,13,12,11])await tile(page,c).tap();
-  expect(Math.abs((await page.getByTestId('mechanics-board').boundingBox())!.y-startY)).toBeLessThan(1);
+  expect(Math.abs((await documentBox(page.getByTestId('mechanics-board'))).y-startY)).toBeLessThan(1);
   await expect(page.getByTestId('lab-progress')).toHaveText('7/9 blocks');
 });
 
  test('mixed completion shares sliding win card, close/replay, and no duplicate gene credit',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
   for(const c of [12,21,30,31,40,49,50])await tile(page,c).tap();
   const win=page.getByTestId('win');
   await expect(win).toBeVisible();
@@ -230,7 +270,7 @@ test('DNA tracing shares classic play chrome, board sizing, clues and action too
 
 
 test('every new mechanic shares sliding layout, targets and toolbar on both phone sizes',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const stages=[['ins-02','trace'],['ins-03','connections'],['ins-04','assembly'],['ins-05','crush'],['ins-06','mutation'],['ins-c07','restriction']];
   for(const size of [{width:390,height:844},{width:320,height:568}]){
     await page.setViewportSize(size);await page.getByTestId('cnode-ins-01').click();
@@ -270,7 +310,7 @@ test('every new mechanic shares sliding layout, targets and toolbar on both phon
 
 
 test('INS Genome Assembly restores grey placed reads after a reload',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-04').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-04').click();await page.getByTestId('tutorial-skip').click();
   await tile(page,1).tap();await tile(page,67).tap();
   await expect(page.locator('.assembly-placed')).toHaveCount(5);
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-04').click();
@@ -282,7 +322,7 @@ test('INS Genome Assembly restores grey placed reads after a reload',async({page
 
 
 test('Codon Crush guide swaps real neighbours then clears and refills the exact gameplay board',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();
   const guide=page.getByTestId('tutorial-board'), actual=page.getByTestId('mechanics-board');
   const initial=await actual.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
   await expect(guide.locator('[data-demo-cell]')).toHaveCount(81);
@@ -336,14 +376,14 @@ test('Codon Crush guide swaps real neighbours then clears and refills the exact 
 });
 
 test('DNA tracing hints remain graphical through wrong taps, alternate paths and backtracking',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-02').click();await page.getByTestId('tutorial-skip').click();
   const board=page.getByTestId('mechanics-board'), dashed=board.locator('.hinted');
   const hint=page.getByTestId('action-hint');
   await hint.click();
   const at=async(c:number)=>{
     await expect(dashed).toHaveCount(1);
     await expect(tile(page,c)).toHaveClass(/hinted/);
-    await expect(tile(page,c)).toHaveCSS('outline-style','dashed');
+    expect(await tile(page,c).evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
     await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
   };
   await at(12);
@@ -359,7 +399,7 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
   await expect(dashed).toHaveCount(1);
   const next=Number(await dashed.getAttribute('data-lab-cell'));
   expect([19,21]).toContain(next);
-  await expect(dashed).toHaveCSS('outline-style','dashed');
+  expect(await dashed.evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
   await tile(page,1).tap();await at(next);
   await hint.click();await expect(dashed).toHaveCount(0);
   await hint.click();await at(next);
@@ -369,7 +409,7 @@ test('DNA tracing hints remain graphical through wrong taps, alternate paths and
 
 
 test('campaign Mutation Correction graphical hints retain toggle and repair the selected DNA base',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-06').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-06').click();await page.getByTestId('tutorial-skip').click();
   await page.getByTestId('action-hint').click();
   const square=page.locator('.mutation-hinted'), replacement=page.locator('.mutation-base-hinted');
   await expect(square).toHaveCount(1);await expect(replacement).toHaveCount(1);
@@ -384,7 +424,7 @@ test('campaign Mutation Correction graphical hints retain toggle and repair the 
 
 
 test('old tracing attempts resume unchanged and restart with the free starter pair',async({page})=>{
-  await fresh(page,true);
+  await freshLegacyIns(page,true);
   await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('genome-save')!);s.mixedAttempts={'ins-02':[{type:'trace',cell:9}]};s.tutorialsSeen=['trace'];localStorage.setItem('genome-save',JSON.stringify(s));});
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-02').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('1/9 bases');
@@ -406,20 +446,20 @@ test('old tracing attempts resume unchanged and restart with the free starter pa
 
 
 test('campaign Connections graphical hint remains actionable after resuming a partial route',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-03').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-03').click();await page.getByTestId('tutorial-skip').click();
   await tile(page,1).tap();await tile(page,2).tap();
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-03').click();
   await page.getByTestId('action-hint').click();
   const dashed=page.locator('.connection-hinted');
   await expect(dashed).toHaveAttribute('data-lab-cell','3');
   await dashed.tap();await expect(dashed).toHaveAttribute('data-lab-cell','4');
-  await expect(page.locator('.lab-hint')).toHaveCount(0);
+  await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
   await expect(page.getByTestId('action-hint')).toHaveAttribute('aria-pressed','true');
 });
 
 
 test('campaign Codon Crush hints match the saved board and remain graphical',async({page})=>{
-  await fresh(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();await page.getByTestId('tutorial-skip').click();
+  await freshLegacyIns(page,true);await openMap(page);await page.getByTestId('cnode-ins-05').click();await page.getByTestId('tutorial-skip').click();
   await page.getByTestId('action-hint').click();
   const board=page.getByTestId('mechanics-board'), dashed=board.locator('.crush-hinted');
   await expect(dashed).toHaveCount(2);await expect(tile(page,12)).toHaveClass(/crush-hinted/);await expect(tile(page,13)).toHaveClass(/crush-hinted/);
@@ -434,7 +474,7 @@ test('campaign Codon Crush hints match the saved board and remain graphical',asy
 
 
 test('Mutation Correction is named consistently in map, practice menu, play and tutorial',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   await expect(page.getByTestId('cnode-ins-06')).toHaveAttribute('aria-label',/Mutation Correction/);
   await page.getByTestId('open-mechanics').click();
   await expect(page.getByTestId('mechanic-mutation')).toContainText('Mutation Correction');
@@ -449,12 +489,12 @@ test('Mutation Correction is named consistently in map, practice menu, play and 
 
 
 test('twelve-codon chapter keeps targets readable on a small phone and saves a whole chain as one move',async({page})=>{
-  await fresh(page,true);await page.setViewportSize({width:320,height:568});await openMap(page);
+  await freshLegacyIns(page,true);await page.setViewportSize({width:320,height:568});await openMap(page);
   await page.getByTestId('cnode-ins-c02').click();await page.getByTestId('tutorial-skip').click();
   const board=page.getByTestId('mechanics-board'),panel=page.getByTestId('target-panel');
   await expect(panel.locator('.mixed-codon-clues .clue-part')).toHaveCount(4);
-  await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(4);
-  const y=(await board.boundingBox())!.y;
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(2);
+  const y=(await documentBox(board)).y;
   await page.getByTestId('action-hint').click();
   await expect(tile(page,12)).toHaveClass(/crush-hinted/);
   await tile(page,12).tap();await tile(page,13).tap();
@@ -462,7 +502,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
   await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['3','4']);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
-  expect(Math.abs((await board.boundingBox())!.y-y)).toBeLessThan(1);
+  expect(Math.abs((await documentBox(board)).y-y)).toBeLessThan(1);
   const before=await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''));
   await page.reload();await openMap(page);await page.getByTestId('cnode-ins-c02').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('2/4 block matches');
@@ -470,17 +510,17 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   expect(await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''))).toBe(before);
   await page.getByTestId('action-undo').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/4 block matches');
-  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4']);
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2']);
   await expect(page.getByTestId('moves')).toHaveText('0 moves');
   await tile(page,12).tap();await tile(page,13).tap();
   await expect(board).toHaveAttribute('data-crush-phase','idle');
   await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['3','4']);
   await page.getByTestId('action-restart').click();
-  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4']);
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2']);
 });
 
 test('new gene introductions and 96-base mixed mutation boards work in the browser',async({page})=>{
-  await fresh(page,true);await page.setViewportSize({width:390,height:844});await openMap(page);
+  await freshLegacyIns(page,true);await page.setViewportSize({width:390,height:844});await openMap(page);
   await page.getByTestId('cnode-gpx1-i02').click();await page.getByTestId('tutorial-skip').click();
   await expect(page.getByTestId('play-title')).toHaveText('GPX1');
   await expect(page.getByTestId('lab-progress')).toHaveText('2/9 bases');
@@ -489,6 +529,35 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
   await expect(page.getByTestId('play-title')).toHaveText('DMD');
   await expect(page.getByTestId('mixed-range')).toContainText('96-base blocks');
   await expect(page.getByTestId('mechanics-board').locator('[data-seq]').first()).toHaveAttribute('data-seq',/^[ACGT]{96}$/);
+  const dnaBoard=page.getByTestId('mechanics-board');
+  await expect(dnaBoard.locator('.mutation-spacer')).toHaveCount(9);
+  await expect(dnaBoard.locator('.mutation-spacer').first()).toHaveCSS('background-image',/repeating-linear-gradient.*rgb\(217, 217, 210\)/);
+  const occupiedGap=await dnaBoard.locator('.lab-cell[data-base]').evaluateAll(nodes=>
+    nodes.filter(el=>Number(el.getAttribute('data-visual-cell'))%9===7).length);
+  expect(occupiedGap).toBe(0);
+  const blockRail=await page.getByTestId('mechanics-board').evaluate(root=>{
+    const option=root.querySelector<HTMLElement>('.mutation-rail-button.lab-token')!;
+    const tile=root.querySelector<HTMLElement>('.lab-cell.lab-token:not(.mutation-rail-button)')!;
+    const replacement=getComputedStyle(option),board=getComputedStyle(tile);
+    const colourBlock=document.createElement('span');
+    colourBlock.style.backgroundColor=replacement.getPropertyValue('--tok-bg').trim();
+    document.body.append(colourBlock);
+    const expectedBackground=getComputedStyle(colourBlock).backgroundColor;
+    colourBlock.remove();
+    return {options:root.querySelectorAll('.mutation-rail-button.lab-cell.lab-token').length,
+      colour:replacement.color,boardColour:board.color,font:replacement.fontFamily,boardFont:board.fontFamily,
+      faceSize:getComputedStyle(option.querySelector('.tok-face')!).fontSize,
+      boardFaceSize:getComputedStyle(tile.querySelector('.tok-face')!).fontSize,
+      background:replacement.backgroundColor,expectedBackground,
+      border:replacement.borderTopColor,opacity:replacement.opacity};
+  });
+  expect(blockRail.options).toBe(4);
+  expect(blockRail.colour).toBe(blockRail.boardColour);
+  expect(blockRail.font).toBe(blockRail.boardFont);
+  expect(blockRail.faceSize).toBe(blockRail.boardFaceSize);
+  expect(blockRail.background).toBe(blockRail.expectedBackground);
+  expect(blockRail.border).toBe('rgb(68, 68, 67)');
+  expect(blockRail.opacity).toBe('1');
   await page.getByTestId('action-hint').click();
   const suggested=page.locator('.mutation-base-hinted');
   await expect(suggested).toHaveCount(1);
@@ -501,7 +570,7 @@ test('new gene introductions and 96-base mixed mutation boards work in the brows
 
 
 test('multi-base assembly clues read horizontally and share graphite and palette with the board',async({page})=>{
-  await fresh(page,true);
+  await freshLegacyIns(page,true);
   await page.setViewportSize({width:320,height:568});
   await openMap(page);
   const stages=CAMPAIGN_LEVELS.filter(def=>def.tier && mechanicOf(def)==='assembly');
@@ -516,16 +585,23 @@ test('multi-base assembly clues read horizontally and share graphite and palette
     await expect(chips).toHaveCount(stage.spec.ASSEMBLY_TARGET.length);
     const geometry=await chips.evaluateAll(nodes=>nodes.filter(el=>!el.hasAttribute('data-clue-hidden')).map(el=>{
       const rect=el.getBoundingClientRect();
-      const letters=Array.from(el.querySelectorAll('.chip-label i'));
+      const letters=Array.from(el.querySelectorAll('.chip-label i, .tok-row i'));
       const positions=letters.map(l=>({x:l.getBoundingClientRect().x,y:l.getBoundingClientRect().y,colour:getComputedStyle(l).color}));
-      return {x:rect.x,y:rect.y,right:rect.right,bg:getComputedStyle(el).backgroundColor,positions,seq:el.getAttribute('aria-label')!.split(': ')[1]};
+      return {x:rect.x,y:rect.y,right:rect.right,bg:getComputedStyle(el).backgroundColor,positions,seq:el.getAttribute('aria-label')!.split(': ')[1]!,divider:el.querySelectorAll('.tok-divider').length,barcode:el.querySelectorAll('.barcode').length};
     }));
     expect(geometry[1]!.x).toBeGreaterThan(geometry[0]!.x);
     expect(geometry[1]!.y).toBe(geometry[0]!.y);
     for(const g of geometry){
       expect(g.right).toBeLessThanOrEqual(320);
-      expect(g.positions.every(p=>p.colour==='rgb(68, 68, 67)'&&p.y===g.positions[0]!.y)).toBe(true);
-      expect(g.positions.every((p,i)=>i===0||p.x>g.positions[i-1]!.x)).toBe(true);
+      expect(g.positions.every(p=>p.colour==='rgb(68, 68, 67)')).toBe(true);
+      if(g.seq.length>6){
+        expect(g.divider).toBe(1);expect(g.barcode).toBe(0);
+        expect(g.positions).toHaveLength(6);
+        expect(g.positions[3]!.y).toBeGreaterThan(g.positions[0]!.y);
+      }else{
+        expect(g.positions.every(p=>p.y===g.positions[0]!.y)).toBe(true);
+        expect(g.positions.every((p,i)=>i===0||p.x>g.positions[i-1]!.x)).toBe(true);
+      }
     }
     const tiles=await board.locator('.lab-token').evaluateAll(nodes=>nodes.map(el=>({seq:el.getAttribute('data-seq'),bg:getComputedStyle(el).backgroundColor,letters:Array.from(el.querySelectorAll('.tok-row i')).map(l=>getComputedStyle(l).color)})));
     for(const t of tiles)expect(t.letters.every(c=>c==='rgb(68, 68, 67)')).toBe(true);
@@ -538,7 +614,7 @@ test('multi-base assembly clues read horizontally and share graphite and palette
 
 
 test('multi-base Genome Assembly hints advance and recover saved progress after reload',async({page})=>{
-  await fresh(page,true);await openMap(page);
+  await freshLegacyIns(page,true);await openMap(page);
   const def=CAMPAIGN_LEVELS.find(def=>def.tier===6 && mechanicOf(def)==='assembly') ?? CAMPAIGN_LEVELS.find(def=>def.tier && mechanicOf(def)==='assembly')!;
   const stage=mixedStage(def)!;
   await page.getByTestId('cnode-'+def.id).click();
@@ -546,12 +622,13 @@ test('multi-base Genome Assembly hints advance and recover saved progress after 
   const hint=page.getByTestId('action-hint');
   await hint.click();
   const source=page.locator('.assembly-hint-source'), destination=page.locator('.assembly-hint-destination');
-  for(let read=0;read<stage.spec.READS.length;read++){
+  const readOrder=stage.spec.READ_ORDER??stage.spec.READS.map((_,i)=>i);
+  for(const read of readOrder){
     await expect(source).toHaveAttribute('data-lab-cell',String(stage.spec.READ_CELLS[read]![0]));
     await expect(destination).toHaveAttribute('data-lab-cell',String(stage.spec.ASSEMBLY_CELLS[stage.spec.READ_STARTS[read]!]));
     await expect(page.locator('.lab-hint')).toHaveCount(0);
     await source.tap();await destination.tap();
-    if(read===0){
+    if(read===readOrder[0]){
       await page.reload();await openMap(page);await page.getByTestId('cnode-'+def.id).click();
       await expect(page.getByTestId('lab-progress')).toHaveText('1/3 reads');
       // Hint mode is session-local across a full reload, as in the other mechanics.
@@ -561,4 +638,214 @@ test('multi-base Genome Assembly hints advance and recover saved progress after 
   }
   await expect(page.getByTestId('win')).toBeVisible();
   await expect(source).toHaveCount(0);await expect(destination).toHaveCount(0);
+});
+
+
+test('MC1R Mutation Correction shows one target row, promoting the next after repair', async ({page}) => {
+  const level=CAMPAIGN_LEVELS.filter(l=>l.symbol==='MC1R')[5]!;
+  expect(mechanicOf(level)).toBe('mutation');
+  await page.setViewportSize({width:390,height:844});
+  await fresh(page);await openMap(page);
+  await page.getByTestId('cnode-'+level.id).click();
+  const panel=page.getByTestId('target-panel');
+  const rows=page.getByTestId('mutation-reference').locator('.mutation-reference-row');
+  const checkRows=async()=>{
+    await expect(rows).toHaveCount(3);
+    const states=await rows.evaluateAll(nodes=>nodes.map((el,index)=>({
+      index,done:el.getAttribute('data-clue-done')==='true',
+      visible:!el.hasAttribute('data-clue-hidden'),
+    })));
+    const remaining=states.filter(row=>!row.done);
+    const visible=states.filter(row=>row.visible);
+    expect(visible.length).toBe(remaining.length?1:0);
+    if(remaining.length)expect(visible[0]!.index).toBe(remaining[0]!.index);
+    expect(states.filter(row=>row.done).every(row=>!row.visible)).toBe(true);
+    await expect(panel.locator('.clue-pagination')).toHaveCount(0);
+    expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+  };
+  await checkRows();
+  await page.setViewportSize({width:320,height:568});
+  await checkRows();
+  const firstBottom=mixedStage(level)!.spec.MUTATION_ROWS[0]!.bottom;
+  const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll((nodes,start)=>
+    nodes.map(n=>Number(n.getAttribute('data-lab-cell'))).filter(cell=>cell>=start&&cell<start+9),firstBottom);
+  expect(cells.length).toBeGreaterThan(0);
+  for(const cell of cells){
+    const want=await page.getByTestId('mutation-target-'+cell).getAttribute('data-symbol');
+    await tile(page,cell).tap();
+    await page.getByTestId('lab-base-'+want).tap();
+  }
+  await expect(rows.first()).toHaveAttribute('data-clue-done','true');
+  await expect(rows.first()).toBeHidden();
+  await checkRows();
+  await page.getByTestId('action-undo').click();
+  await expect(rows.first()).toHaveAttribute('data-clue-done','false');
+  await checkRows();
+});
+
+test('KRAS Genome Assembly promotes remaining clues and restores completed ones on Undo',async({page})=>{
+  const def=CAMPAIGN_LEVELS.filter(l=>l.symbol==='KRAS')[6]!;
+  expect(mechanicOf(def)).toBe('assembly');
+  const stage=mixedStage(def)!;
+  expect(stage.spec.ASSEMBLY_TARGET).toHaveLength(9);
+  await page.setViewportSize({width:390,height:844});
+  await fresh(page);await openMap(page);
+  await page.getByTestId('cnode-'+def.id).click();
+  const panel=page.getByTestId('target-panel');
+  const chips=page.getByTestId('assembly-reference').locator(':scope > [data-clue-unit]');
+  const allSlots=Array.from({length:9},(_,i)=>String(i+1));
+  const positions=async()=>({panel:await documentBox(panel),board:await documentBox(page.getByTestId('mechanics-board')),toolbar:await documentBox(page.getByTestId('icon-row'))});
+  const assertClues=async(expected:string[])=>{
+    await expect(chips).toHaveCount(9);
+    const states=await chips.evaluateAll(nodes=>nodes.map(el=>({
+      id:el.querySelector('small')?.textContent??'',
+      done:el.getAttribute('data-clue-done')==='true',
+      hidden:el.hasAttribute('data-clue-hidden'),
+      top:el.getBoundingClientRect().top,
+    })));
+    expect(states.filter(s=>s.done).length).toBe(9-expected.length);
+    expect(states.filter(s=>s.done).every(s=>s.hidden)).toBe(true);
+    const visible=states.filter(s=>!s.hidden);
+    expect(visible.every(s=>expected.includes(s.id))).toBe(true);
+    if(expected.length)expect(visible.length).toBeGreaterThan(0);
+    if(visible.length) {
+      // Font and container measurements can settle on the next animation frame.
+      await expect.poll(async()=>{
+        const tops=await chips.evaluateAll(nodes=>nodes
+          .filter(el=>!el.hasAttribute('data-clue-hidden'))
+          .map(el=>el.getBoundingClientRect().top));
+        return tops.length ? Math.max(...tops)-Math.min(...tops) : 0;
+      }).toBeLessThan(2);
+    }
+    await expect(panel.locator('.clue-pagination')).toHaveCount(0);
+    expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+  };
+  await assertClues(allSlots);
+  await page.setViewportSize({width:320,height:568});
+  await assertClues(allSlots);
+  const anchored=await positions();
+  const read=0, offset=stage.spec.READ_STARTS[read]!;
+  const place=async()=>{
+    await tile(page,stage.spec.READ_CELLS[read]![0]!).tap();
+    await tile(page,stage.spec.ASSEMBLY_CELLS[offset]!).tap();
+  };
+  await place();
+  const remaining=allSlots.filter((_,i)=>i<offset||i>=offset+stage.spec.READS[read]!.length);
+  expect(remaining.length).toBeGreaterThan(0);
+  await assertClues(remaining);
+  expect(await positions()).toEqual(anchored);
+  await page.getByTestId('action-undo').click();
+  await assertClues(allSlots);
+  expect(await positions()).toEqual(anchored);
+  await place();
+  await page.reload();await openMap(page);await page.getByTestId('cnode-'+def.id).click();
+  await assertClues(remaining);
+  for(let read=1;read<stage.spec.READS.length;read++){
+    await tile(page,stage.spec.READ_CELLS[read]![0]!).tap();
+    await tile(page,stage.spec.ASSEMBLY_CELLS[stage.spec.READ_STARTS[read]!]!).tap();
+  }
+  await expect(page.getByTestId('win')).toBeVisible();
+  await expect(chips.filter({visible:true})).toHaveCount(0);
+  await expect(panel.locator('.clue-pagination')).toHaveCount(0);
+});
+
+test('a sliding solve that completes a gene offers its card, but replaying a non-final level does not',async({page})=>{
+  // Complete the other INS levels first, then fill the last missing interval by sliding.
+  const ins=CAMPAIGN_LEVELS.filter(l=>l.symbol==='INS');
+  const opener=ins[0]!;
+  expect(mechanicOf(opener)).toBe('slide');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:ins.slice(1).map(l=>l.id)}));
+  await page.getByTestId('cnode-'+opener.id).click();
+  await solveWithHints(page);
+  await expect(page.getByTestId('assembled')).toContainText('INS assembled');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
+  await expect(page.getByTestId('card-continue')).toHaveText('Continue to HBB →');
+  await page.getByRole('button',{name:'← Map',exact:true}).click();
+  await page.getByTestId('cnode-'+opener.id).click();
+  await page.getByTestId('replay').click();
+  await solveWithHints(page);
+  await expect(page.getByTestId('assembled')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'View card',exact:true})).toHaveCount(0);
+});
+
+
+test('replaying a sliding final level shows the verified gene card without new bases',async({page})=>{
+  const last=CAMPAIGN_LEVELS.find((level,i)=>CAMPAIGN_LEVELS[i+1]?.symbol!==level.symbol&&mechanicOf(level)==='slide')!;
+  expect(last).toBeTruthy();
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol===last.symbol);
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.map(l=>l.id),assembled:[last.symbol],discovered:[last.symbol]}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();
+  await solveWithHints(page);
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('assembled')).toContainText(last.symbol+' assembled');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText(last.symbol);
+  await expect(page.getByTestId('card-state')).toContainText('Assembled');
+});
+
+
+test('the full DMD sequence is visible without expanding and wraps on a narrow card',async({page})=>{
+  await page.setViewportSize({width:320,height:700});
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='DMD');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.map(l=>l.id),assembled:['DMD'],discovered:['DMD']}));
+  await page.getByTestId('cat-card-DMD').click();
+  const sequence=page.getByTestId('assembled-sequence'),body=sequence.locator('.seq-wrap');
+  await expect(sequence.getByRole('heading',{name:'Your assembled sequence ('+GENES.DMD!.cdsLength+' bases)'})).toBeVisible();
+  await expect(body).toBeVisible();
+  expect(await body.textContent()).toBe(GENES.DMD!.sequence);
+  expect(await body.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+});
+
+
+test('NPY final replay opens the card even when earlier reference intervals are historical',async({page})=>{
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='NPY'),last=run.at(-1)!;
+  expect(last.id).toBe('npy-c08');
+  expect(mechanicOf(last)).toBe('slide');
+  const historical=run.filter(l=>l.id==='npy-c05'||l.id==='npy-c06').map(l=>l.id);
+  expect(historical).toHaveLength(2);
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.filter(l=>!historical.includes(l.id)).map(l=>l.id),legacyReferenceLevels:historical}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();await solveWithHints(page);
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await expect(page.getByTestId('assembled')).toHaveCount(0);
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText('NPY');
+  await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
+  await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
+  const partialSequence=page.getByTestId('assembled-sequence').locator('.seq-wrap');
+  await expect(partialSequence).toContainText('·');
+  expect(await partialSequence.textContent()).toMatch(/^[ACGT·]+$/);
+  await expect(page.getByTestId('card-continue')).toBeVisible();
+});
+
+test('TTR final replay opens the card even with a missing earlier level',async({page})=>{
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='TTR'),last=run.at(-1)!;
+  const stage=mixedStage(last)!;
+  expect(last.id).toBe('ttr-c09');expect(stage.mechanic).toBe('trace');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.slice(1).map(l=>l.id)}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();
+  for(const cell of stage.spec.TRACE_PATH.slice(2))await tile(page,cell).tap();
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText('TTR');
+  await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
+  await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
+});
+
+
+test('B2M final replay opens the completion card even with older incomplete assembly credit',async({page})=>{
+  const run=CAMPAIGN_LEVELS.filter(l=>l.symbol==='B2M'),last=run.at(-1)!;
+  expect(last.id).toBe('b2m-c08');expect(mechanicOf(last)).toBe('slide');
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:run.slice(1).map(l=>l.id),legacyReferenceLevels:[run[0]!.id]}));
+  await page.getByTestId('cnode-'+last.id).click();
+  await page.getByTestId('replay').click();await solveWithHints(page);
+  await expect(page.getByTestId('win-bases')).toContainText('Replay · no new bases');
+  await page.getByRole('button',{name:'View card',exact:true}).click();
+  await expect(page.locator('#card-title')).toHaveText('B2M');
+  await expect(page.getByTestId('card-state')).toHaveText('Final level complete');
+  await expect(page.getByTestId('card-coverage')).toContainText('Not yet assembled');
+  await expect(page.getByTestId('assembled-sequence').locator('.seq-wrap')).toBeVisible();
 });

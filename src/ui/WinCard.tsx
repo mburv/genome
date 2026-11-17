@@ -8,12 +8,14 @@ interface Props {
   def: LevelDefinition;
   /** Mixed mechanics display the verified coding fragment, not the legacy sliding tracks. */
   mechanic?: { title: string; sequence: string; practice: boolean; nextLabel?: string; range?: {start:number;end:number} };
+  /** Extended campaign uses chromosome coordinates rather than coding-gene credit. */
+  bonus?: { label: string; part: number; of: number };
   moves: number;
   powersUsed: number;
   newBases: number;
   /** True when this win is a replay of an already-completed puzzle. */
   replayed?: boolean;
-  /** M4: this solve completed an exact, checksum-verified assembly of the gene. */
+  /** The gene is newly assembled, or its final puzzle was solved again with the full CDS verified. */
   assembled?: boolean;
   assembledBases?: number;
   cdsLength: number;
@@ -42,6 +44,9 @@ export function WinCard(p: Props) {
   const restored = def.repair ? expand(def.repair.expected) : '';
   let strand;
   const practice = p.mechanic?.practice ?? !!def.lab;
+  const geneFinal = !p.bonus && !practice && !!run && run.part === run.of;
+  const rangeLabel = p.bonus ? `${p.bonus.label}:${(iv.start + 1).toLocaleString()}–${iv.end.toLocaleString()}` : `CDS ${iv.start + 1}–${iv.end}`;
+  const baseLabel = p.bonus ? `${p.bonus.label} reference bases` : `${def.symbol} coding bases`;
   if (p.mechanic) {
     strand = <div className="win-line" data-testid="mixed-extracted">{[...p.mechanic.sequence].map((b,i)=><span key={i} className={'strip-cell b-'+b+' ok'} style={{animationDelay:skipped?'0ms':(i*(p.mechanic!.sequence.length>27?4:40))+'ms'}}>{b}</span>)}</div>;
   } else if (def.mode === 'splice') {
@@ -71,11 +76,11 @@ export function WinCard(p: Props) {
     strand = <div className="win-line">{cells(def.tracks[0]!.expected, '', 0, skipped)}</div>;
   }
   return (
-    <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="win-title" data-testid="win">
+    <div className="overlay win-overlay" role="dialog" aria-modal="true" aria-labelledby="win-title" data-testid={p.bonus ? "bonus-win" : "win"}>
       <div className="card win-card" data-testid="win-card">
         <div className="card-head">
           <div className="card-head-copy">
-            <p className="muted small" data-testid="win-meta">{practice ? p.mechanic ? 'MECHANICS LAB' : 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'}{def.lab && !p.mechanic ? ` · ${p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}` : ''}</p>
+            <p className="muted small" data-testid="win-meta">{p.bonus ? `${p.bonus.label} ${p.bonus.part}/${p.bonus.of}` : practice ? p.mechanic ? 'MECHANICS LAB' : 'ENZYME LAB' : run ? `${def.symbol} ${run.part}/${run.of}` : `LEVEL ${def.index + 1}`} COMPLETE · {p.moves} {p.moves === 1 ? 'move' : 'moves'}{def.lab && !p.mechanic ? ` · ${p.powersUsed ? `${p.powersUsed} power${p.powersUsed > 1 ? 's' : ''} used` : 'no powers'}` : ''}</p>
             <h3 id="win-title">{p.mechanic?.title ?? MODE_WIN[def.mode]}</h3>
           </div>
           <button type="button" className="win-close" onClick={p.onClose} aria-label="Close and view board" data-testid="win-close">
@@ -95,22 +100,26 @@ export function WinCard(p: Props) {
         <>
         <p data-testid="win-bases">
           {p.replayed
-            ? <><b>Replay · no new bases</b> <span className="muted">(CDS {iv.start + 1}–{iv.end})</span></>
-            : <><b>+{p.newBases} {def.symbol} coding bases</b> <span className="muted">(CDS {iv.start + 1}–{iv.end})</span></>}
+            ? <><b>Replay · no new bases</b> <span className="muted">({rangeLabel})</span></>
+            : <><b>+{p.newBases} {baseLabel}</b> <span className="muted">({rangeLabel})</span></>}
         </p>
-        <p className="muted small" data-testid="win-assembly">{p.assembledBases ?? 0} / {p.cdsLength} {def.symbol} coding bases assembled.</p>
+        <p className="muted small" data-testid="win-assembly">{p.bonus ? (p.assembledBases ?? 0).toLocaleString() : p.assembledBases ?? 0} / {p.bonus ? p.cdsLength.toLocaleString() : p.cdsLength} {baseLabel} assembled.</p>
         </>
         )}
-        {p.assembled && (
+        {geneFinal && !p.assembled && (
+          <p className="muted small" data-testid="gene-final-complete">{def.symbol} final level complete. View the gene card for assembly progress.</p>
+        )}
+        {p.bonus && !p.hasNext && <p className="muted small">Chromosome fully assembled.</p>}
+        {!p.bonus && p.assembled && (
           <div className="discovered assembled" data-testid="assembled">
             <b>🧬 {def.symbol} assembled!</b> All {p.cdsLength} coding bases rebuilt from the pieces you placed — exact match, SHA-256 verified.
           </div>
         )}
         <div className="card-actions">
-          <button type="button" onClick={p.onMap} data-testid="win-map">{p.mechanic?.practice ? 'Lab menu' : 'Level map'}</button>
-          {p.assembled && !p.hasNext ? (
+          <button type="button" onClick={p.onMap} data-testid="win-map">{p.bonus ? 'Bonus map' : p.mechanic?.practice ? 'Lab menu' : 'Level map'}</button>
+          {!p.bonus && (p.assembled || geneFinal) ? (
             <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
-          ) : p.mechanic?.practice && !p.hasNext ? null : (
+          ) : (p.bonus || p.mechanic?.practice) && !p.hasNext ? null : (
             <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? p.mechanic?.nextLabel ?? 'Next level →' : p.mechanic?.practice ? 'Lab menu' : 'Map'}</button>
           )}
         </div>

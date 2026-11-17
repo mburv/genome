@@ -1,6 +1,7 @@
 import pack from './levels.generated.json' with { type: 'json' };
 import chapterPack from './chapters.generated.json' with { type: 'json' };
 import famousPack from './famous.generated.json' with { type: 'json' };
+import sharedPack from './shared.generated.json' with {type:'json'};
 import { CATALOGUE_ORDER,GENES,MANIFEST } from '../genomics/genes.ts';
 import type { Interval, LevelDefinition } from '../engine/types.ts';
 
@@ -25,13 +26,21 @@ const chapters = chapterPack as unknown as { catalogueId: string; generatorVersi
  */
 const famous=famousPack as unknown as {catalogueId:string;replaced:Record<string,string[]>;levels:LevelDefinition[]};
 export const REPLACED_OPENERS=famous.replaced;
-export const INTRO_LEVELS: readonly LevelDefinition[] = [...m2.levels.filter(l=>!l.lab),...famous.levels.filter(l=>!l.chapter)];
-export const INTRO_IDS: readonly string[] = INTRO_LEVELS.map((l) => l.id);
-const LABS: readonly LevelDefinition[] = m2.levels.filter((l) => l.lab);
+const legacyIntros=[...m2.levels.filter(l=>!l.lab),...famous.levels.filter(l=>!l.chapter)];
+const legacyLabs=m2.levels.filter(l=>l.lab);
 
 const GENE_ORDER=CATALOGUE_ORDER;
-const liveChapters=[...chapters.levels.filter(l=>!REPLACED_OPENERS[l.id]).map(l=>REPLACED_OPENERS[l.symbol.toLowerCase()+'-c01']&&l.chapter?{...l,chapter:{part:l.chapter.part-1,of:l.chapter.of-1}}:l),...famous.levels.filter(l=>l.chapter)];
+const legacyChapters=[...chapters.levels.filter(l=>!REPLACED_OPENERS[l.id]).map(l=>REPLACED_OPENERS[l.symbol.toLowerCase()+'-c01']&&l.chapter?{...l,chapter:{part:l.chapter.part-1,of:l.chapter.of-1}}:l),...famous.levels.filter(l=>l.chapter)];
 
+export const LEGACY_LEVELS:readonly LevelDefinition[]=[...legacyIntros,...legacyChapters,...legacyLabs];
+const shared=sharedPack as unknown as {changed:string[];levels:LevelDefinition[]};
+const replacements=new Map(shared.levels.map(l=>[l.id,l]));
+const remap=(l:LevelDefinition):LevelDefinition=>({...l,datasetId:GENES[l.symbol]!.datasetId,sequenceSha256:GENES[l.symbol]!.sequenceSha256});
+const replace=(ls:readonly LevelDefinition[])=>ls.flatMap(l=>shared.changed.includes(l.symbol)?(replacements.has(l.id)?[replacements.get(l.id)!]:[]):[remap(l)]);
+export const INTRO_LEVELS:readonly LevelDefinition[]=replace(legacyIntros);
+export const INTRO_IDS:readonly string[]=INTRO_LEVELS.map(l=>l.id);
+const LABS=replace(legacyLabs);
+const liveChapters=[...replace(legacyChapters),...shared.levels.filter(l=>l.chapter&&!LEGACY_LEVELS.some(old=>old.id===l.id))];
 export const CAMPAIGN_ID = 'genome-m4-assembly';
 /** First 1-base intro of the first catalogue gene; new players start here. */
 export const OPENING_LEVEL_ID = INTRO_LEVELS[0]!.id;
@@ -39,7 +48,7 @@ export const OPENING_LEVEL_ID = INTRO_LEVELS[0]!.id;
 function runFor(symbol: string): LevelDefinition[] {
   return [
     ...INTRO_LEVELS.filter((l) => l.symbol === symbol),
-    ...liveChapters.filter((l) => l.symbol === symbol),
+    ...liveChapters.filter((l) => l.symbol === symbol).sort((a,b)=>a.sourceIntervals[0]!.start-b.sourceIntervals[0]!.start),
   ];
 }
 

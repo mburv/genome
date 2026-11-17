@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { completedLevelSave, openCompleted, openChapter, openMap, solveWithHints } from './helpers';
 import m2 from '../src/campaign/levels.generated.json' with {type:'json'};
 import type { LevelDefinition } from '../src/engine/types.ts';
+import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
 
 // Swiss redesign (D-UI-01): the board is full-bleed on phones, with 1px hairline gutters.
 for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 430, height: 932 }]) {
@@ -18,17 +20,10 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { wi
     expect(Math.abs(m.width - m.height)).toBeLessThan(1);
     expect(m.left).toBeGreaterThanOrEqual(-0.5);
     expect(m.right).toBeLessThanOrEqual(vp.width + 0.5);
-    // On short viewports the board may shrink so the clue cap can stay readable (D-UI-30);
-    // it stays square, centred, and larger than the old M4 inset tiles (27.5 px at 320, 37.5 px at 390).
-    if (vp.height >= 700) {
-      expect(m.left).toBe(0);
-      expect(m.right).toBe(vp.width);
-      expect(m.tile).toBeGreaterThanOrEqual((vp.width - 8) / 9 - 0.5);
-      expect(m.tile).toBeGreaterThan(41);
-    } else {
-      expect(Math.abs(m.left - (vp.width - m.right))).toBeLessThanOrEqual(1);
-      expect(m.tile).toBeGreaterThan(27.5);
-    }
+    // Even short viewports keep full-width square tiles; the page may scroll vertically.
+    expect(m.left).toBe(0);
+    expect(m.right).toBe(vp.width);
+    expect(m.tile).toBeGreaterThanOrEqual((vp.width - 8) / 9 - 0.5);
   });
 }
 
@@ -45,8 +40,8 @@ test('a long-token chapter board is also full-bleed at 320px with no overflow', 
   await page.setViewportSize({ width: 320, height: 568 });
   await openChapter(page, 'hbb-c08');
   const r = await page.locator('.board').boundingBox();
-  expect(r!.x).toBeGreaterThanOrEqual(0);
-  expect(r!.x + r!.width).toBeLessThanOrEqual(320.5);
+  expect(r!.x).toBe(0);
+  expect(r!.width).toBe(320);
   expect(Math.abs(r!.width - r!.height)).toBeLessThan(1);
   expect(Math.abs(r!.x - (320 - (r!.x + r!.width)))).toBeLessThanOrEqual(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
@@ -144,5 +139,165 @@ test('three-base block lettering matches the original single-base graphite on bo
     const clues=page.getByTestId('target-panel').locator('.tok-chip.tier-3 .chip-label i, .lab-token.tier-3 .tok-row i');
     expect(await clues.count()).toBeGreaterThan(0);
     expect(await clues.evaluateAll(els=>[...new Set(els.map(el=>getComputedStyle(el).color))])).toEqual([grey]);
+  }
+});
+
+test('long DNA tiles show only first and last codons with a divider in sliding and mixed boards', async ({ page }) => {
+  const mixed = CAMPAIGN_LEVELS.find(l => (l.tier ?? 0) >= 12 && mechanicOf(l) !== 'slide')!;
+  expect(mixed).toBeDefined();
+  for (const id of ['hbb-c08', mixed.id]) {
+    await openChapter(page, id);
+    const tiles = page.locator('.board .tier-l[data-seq]');
+    expect(await tiles.count()).toBeGreaterThan(0);
+    for (const vp of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(vp);
+      const report = await tiles.evaluateAll(els => els.map(el => {
+        const seq = el.getAttribute('data-seq')!;
+        const face = el.querySelector('.tok-face.long')!;
+        const rows = [...face.querySelectorAll('.tok-row')].map(r => r.textContent);
+        const divider = face.querySelector('.tok-divider')!;
+        const box = el.getBoundingClientRect(), line = divider.getBoundingClientRect();
+        return {
+          seq, rows, title: el.getAttribute('title'), accessible: el.getAttribute('aria-label'),
+          extras: face.querySelectorAll('.ell,.tok-len,.barcode').length,
+          grey: getComputedStyle(face.querySelector('.tok-row i')!).color,
+          fits: [...face.children].every(c => { const r = c.getBoundingClientRect(); return r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1; }),
+          line: line.width > 0 && Math.abs(line.height - 1) < .5,
+        };
+      }));
+      for (const tile of report) {
+        expect(tile.seq.length).toBeGreaterThan(6);
+        expect(tile.rows).toEqual([tile.seq.slice(0,3),tile.seq.slice(-3)]);
+        expect(tile.title).toBe(tile.seq);
+        expect(tile.accessible).toContain(tile.seq);
+        expect(tile.extras).toBe(0);
+        expect(tile.grey).toBe('rgb(68, 68, 67)');
+        expect(tile.fits).toBe(true);
+        expect(tile.line).toBe(true);
+      }
+    }
+  }
+  await openChapter(page, 'hbb-c07');
+  const hex = page.locator('.board .tier-6 .tok-face').first();
+  await expect(hex.locator('.tok-row')).toHaveCount(2);
+  await expect(hex.locator('.barcode i')).toHaveCount(6);
+  await expect(hex.locator('.tok-divider')).toHaveCount(0);
+});
+
+test('all long fragments, including 36-base connection pieces, share the simplified face in boards and clues', async ({page})=>{
+  const longConnection=CAMPAIGN_LEVELS.find(l=>{
+    if(mechanicOf(l)!=='connections'||!l.tier)return false;
+    const stage=mixedStage(l)!;
+    return Object.values(stage.spec.tokens??{}).some(t=>t.seq.length===36);
+  });
+  expect(longConnection,'a real campaign connection level with a 36-base token').toBeDefined();
+  for(const id of ['hbb-c08',longConnection!.id]){
+    await page.setViewportSize({width:390,height:844});
+    await openChapter(page,id);
+    const faces=page.locator('.board .tok-face.long, .target .tok-face.long');
+    expect(await faces.count()).toBeGreaterThan(0);
+    const report=await faces.evaluateAll(nodes=>nodes.map(el=>{
+      const host=el.closest('[data-seq], [title], [aria-label]');
+      const seq=host?.getAttribute('data-seq')??host?.getAttribute('title');
+      return {seq,rows:[...el.querySelectorAll('.tok-row')].map(n=>n.textContent),divider:el.querySelectorAll('.tok-divider').length,old:el.querySelectorAll('.barcode,.ell,.tok-len').length};
+    }));
+    for(const r of report){
+      expect(r.divider).toBe(1);expect(r.old).toBe(0);
+      if(r.seq){expect(r.rows).toEqual([r.seq.slice(0,3),r.seq.slice(-3)]);}
+    }
+    await expect(page.locator('.target .tier-l .barcode,.board .tier-l .barcode,.target .tier-l .tok-len,.board .tier-l .tok-len')).toHaveCount(0);
+    if(id===longConnection!.id)expect(report.some(r=>r.seq?.length===36)).toBe(true);
+    const panel=page.getByTestId('target-panel');
+    expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+  }
+});
+
+
+test('long clue chips grow around both codons and their divider on narrow and standard phones', async ({page})=>{
+  test.setTimeout(180_000);
+  const kinds=['trace','crush','assembly','mutation','connections','restriction'] as const;
+  const replication=CAMPAIGN_LEVELS.filter(l=>(l.tier??0)>=12&&mechanicOf(l)==='slide'&&l.mode==='replicate');
+  expect(replication.length).toBeGreaterThan(0);
+  const ids=[...new Set(['hbb-c08','rho-c07','gpx1-c08',...replication.map(l=>l.id),...kinds.map(kind=>CAMPAIGN_LEVELS.find(l=>(l.tier??0)>=12&&mechanicOf(l)===kind)?.id).filter((id):id is string=>!!id)])].filter(id=>CAMPAIGN_LEVELS.some(l=>l.id===id));
+  expect(ids.length).toBeGreaterThan(3);
+  for(const id of ids){
+    await page.setViewportSize({width:390,height:844});
+    await openChapter(page,id);
+    for(const viewport of [{width:390,height:844},{width:320,height:568}]){
+      await page.setViewportSize(viewport);
+      const panel=page.getByTestId('target-panel');
+      await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+      const report=await panel.evaluate(root=>Array.from(root.querySelectorAll('.tok-face.long')).filter(face=>face.getBoundingClientRect().height>0).map(face=>{
+        const chip=face.parentElement!;
+        const bounds=chip.getBoundingClientRect();
+        const [a,b]=[...face.querySelectorAll('.tok-row')].map(el=>el.getBoundingClientRect());
+        const line=face.querySelector('.tok-divider')!.getBoundingClientRect();
+        const within=(r:DOMRect)=>r.left>=bounds.left-0.5&&r.right<=bounds.right+0.5&&r.top>=bounds.top-0.5&&r.bottom<=bounds.bottom+0.5;
+        return {label:face.textContent,chipHeight:bounds.height,rowsFit:within(a!)&&within(b!)&&within(line),
+          separated:a!.bottom<=line.top+0.5&&line.bottom<=b!.top+0.5,
+          lineVisible:line.height>=0.5&&line.width>0,
+          siblingsFit:[...chip.children].every(el=>within(el.getBoundingClientRect()))};
+      }));
+      expect(report.length,id+' should have visible long clue chips').toBeGreaterThan(0);
+      for(const chip of report){
+        expect(chip.chipHeight,id+' '+chip.label).toBeGreaterThanOrEqual(26);
+        expect(chip.rowsFit,id+' '+chip.label).toBe(true);
+        expect(chip.separated,id+' '+chip.label).toBe(true);
+        expect(chip.lineVisible).toBe(true);
+        expect(chip.siblingsFit,id+' '+chip.label).toBe(true);
+      }
+      expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+      expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+      const visibleTops=await panel.locator('[data-clue-unit]:visible').evaluateAll(nodes=>
+        nodes.map(node=>node.getBoundingClientRect().top));
+      expect(Math.max(...visibleTops)-Math.min(...visibleTops)).toBeLessThan(2);
+      const queued=await panel.locator('[data-clue-unit][data-clue-done="false"][data-clue-hidden]').count();
+      if(queued)expect(visibleTops.length).toBeGreaterThan(0);
+      await expect(page.getByTestId('icon-row')).toBeVisible();
+    }
+  }
+});
+
+test('all campaign mechanics share the one-row clue height, board origin and action row', async ({page})=>{
+  test.setTimeout(180_000);
+  const kinds=['trace','crush','assembly','mutation','connections','restriction'] as const;
+  const ids=[...new Set(['ins-01','hbb-c07','rho-c07','hbb-c08',
+    ...kinds.map(kind=>CAMPAIGN_LEVELS.find(def=>mechanicOf(def)===kind)!.id),
+    ...kinds.map(kind=>CAMPAIGN_LEVELS.find(def=>(def.tier??0)>=12&&mechanicOf(def)===kind)?.id).filter((id):id is string=>!!id)])];
+  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:430,height:932}]){
+    await page.setViewportSize(viewport);
+    await openChapter(page,'ins-01');
+    const geometry=()=>page.evaluate(()=>{
+      const box=(selector:string)=>document.querySelector(selector)!.getBoundingClientRect();
+      const panel=box('[data-testid="target-panel"]'), board=box('.board-stage'), actions=box('[data-testid="icon-row"]');
+      return {clue:panel.height,boardY:board.y+window.scrollY,boardWidth:board.width,boardHeight:board.height,boardX:board.x,actionY:actions.y+window.scrollY,actionBottom:actions.bottom+window.scrollY};
+    });
+    const initial=await geometry();
+    expect(initial.boardWidth).toBe(viewport.width);
+    expect(initial.boardHeight).toBe(viewport.width);
+    expect(initial.boardX).toBe(0);
+    if(viewport.height>=844)expect(initial.actionBottom).toBeLessThanOrEqual(viewport.height+1);
+    expect(initial.clue).toBeGreaterThan(50);
+    let sawQueuedClues=false;
+    for(const id of ids){
+      if(id!=='ins-01'){await openMap(page);await page.getByTestId('cnode-'+id).click();}
+      const panel=page.getByTestId('target-panel');
+      await expect(panel).toBeVisible();
+      const actual=await geometry();
+      for(const key of ['clue','boardY','boardWidth','boardHeight','boardX','actionY'] as const)expect(Math.abs(actual[key]-initial[key]),id+' '+key).toBeLessThanOrEqual(1);
+      expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight),id).toBeLessThanOrEqual(1);
+      const visibleTops=await panel.locator('[data-clue-unit]:visible').evaluateAll(nodes=>
+        nodes.map(node=>node.getBoundingClientRect().top));
+      if(visibleTops.length)expect(Math.max(...visibleTops)-Math.min(...visibleTops),id+' should show one row').toBeLessThan(2);
+      const queued=await panel.locator('[data-clue-unit][data-clue-done="false"][data-clue-hidden]').count();
+      if(queued)sawQueuedClues=true;
+      await expect(panel.locator('.clue-pagination')).toHaveCount(0);
+      await page.getByTestId('icon-row').scrollIntoViewIfNeeded();
+      await expect(page.getByTestId('icon-row')).toBeInViewport({ratio:0.99});
+      await page.evaluate(()=>window.scrollTo(0,0));
+    }
+    expect(sawQueuedClues).toBe(true);
+    const source=await page.locator('.app').getAttribute('data-clue-height-source');
+    expect(source).toBeTruthy();
   }
 });

@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fresh, openMap } from './helpers';
+import { CAMPAIGN_LEVELS } from '../src/campaign/campaign.ts';
+import { mechanicOf, mixedStage } from '../src/campaign/mixed.ts';
+import { genomeStage } from '../src/campaign/bonus.ts';
+import { DEFAULT_LAB_SPEC } from '../src/engine/mechanicsLab.ts';
 
 async function openLab(page: Page, id: string) {
   await fresh(page);
@@ -47,25 +51,33 @@ test('mechanics menu exposes six separate games and leaves campaign save untouch
 
 test('Codon Crush swaps, refills, and supports undo', async ({ page }) => {
   await openLab(page, 'crush');
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
   await trace(page, [12,13]);
   await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase','idle');
   await expect(page.getByTestId('lab-progress')).toHaveText('4/6 codons');
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
+  await expect(page.getByText(/tiles refilled|Chain reaction ×/)).toHaveCount(0);
   await expect(page.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['5','6']);
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/6 codons');
-  await expect(page.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4','5','6']);
+  await expect(page.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3']);
   for (const [a,b] of [[12,13],[4,13]] as const) { await tap(page,a); await tap(page,b); await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase', 'idle'); }
   await won(page);
 });
 
 test('Genome Assembly aligns overlapping reads on the board', async ({ page }) => {
   await openLab(page, 'assembly');
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
   const reference = page.getByTestId('assembly-reference');
   await expect(reference.locator('span')).toHaveCount(9);
   expect(await reference.locator('span').evaluateAll(cells => cells.map(c => c.firstChild?.textContent).join(''))).toBe('ATGGCCCTG');
   await expect(reference.locator('.assembled-match')).toHaveCount(0);
-  for (const [read, slot] of [[1,67],[19,63],[37,65]] as const) { await tap(page,read); await tap(page,slot); }
+  for (const [read, slot] of [[1,67],[19,63],[37,65]] as const) {
+    await tap(page,read); await tap(page,slot);
+    await expect(page.getByTestId('lab-message')).toHaveCount(0);
+    await expect(page.getByText('Read placed. Align all three.',{exact:true})).toHaveCount(0);
+  }
   await won(page);
   await expect(reference.locator('.assembled-match')).toHaveCount(9);
 });
@@ -107,6 +119,7 @@ test('Mutation Correction repairs each complementary mismatch', async ({ page })
 
 test('DNA Connections draws three noncrossing touch paths', async ({ page }) => {
   await openLab(page, 'connections');
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
   const paths = [[1,2,3,4,5,6,7,16,25],[27,28,29,38,39,40,41,42,43,44,53],[55,64,73,74,75,76,77]];
   const color = (c: number) => tile(page,c).evaluate(el => getComputedStyle(el).backgroundColor);
   const colors = await Promise.all(paths.map(p => color(p[0]!)));
@@ -118,6 +131,7 @@ test('DNA Connections draws three noncrossing touch paths', async ({ page }) => 
     expect(await color(end)).toBe(colors[i]);
     expect(await color(middle)).not.toBe(colors[i]);
     await trace(page,path);
+    await expect(page.getByTestId('lab-message')).toHaveCount(0);
     await expect(tile(page,middle)).toHaveAttribute('data-connection-pair', String(i + 1));
     expect(await color(middle)).toBe(colors[i]);
   }
@@ -127,6 +141,7 @@ test('DNA Connections draws three noncrossing touch paths', async ({ page }) => 
   await expect(page.getByTestId('lab-progress')).toHaveText('2/3 pairs');
   // Re-start the third route: old path squares immediately lose their colour.
   await tap(page,55);
+  await expect(page.getByTestId('lab-message')).toHaveCount(0);
   await expect(tile(page,64)).not.toHaveAttribute('data-connection-pair', '3');
   expect(await color(64)).not.toBe(colors[2]);
 });
@@ -144,7 +159,21 @@ test('Restriction Enzyme isolates the fragment, and replay clears the cuts', asy
     expect(await chip.evaluate(style)).toEqual(await tile.evaluate(style));
     await expect(chip).toHaveCSS('font-size', '12px');
   }
+  const noText=async()=>await expect(page.locator('.lab-hint,[data-testid="lab-message"]')).toHaveCount(0);
+  const hint=page.getByTestId('action-hint'), suggested=page.locator('.restriction-hinted');
+  await noText();
+  await hint.click();
+  await expect(suggested).toHaveAttribute('data-lab-cell','10');
+  expect(await suggested.evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
+  await tap(page,10);
+  await expect(page.getByTestId('lab-progress')).toHaveText('1/2 cuts');
+  await noText();
+  await expect(suggested).toHaveAttribute('data-lab-cell','41');
+  await page.getByTestId('action-undo').click();
+  await expect(suggested).toHaveAttribute('data-lab-cell','10');
   await tap(page,10); await tap(page,41);
+  await noText();
+  await expect(suggested).toHaveCount(0);
   await won(page);
   await page.getByTestId('win-close').click();
   await page.getByTestId('replay').click();
@@ -203,12 +232,13 @@ test('Codon Crush rejected swap returns to the unchanged board; reduced motion s
 });
 
 
-test('Mutation Correction reclaims board space on a short phone', async ({ page }) => {
+test('Mutation Correction retains the shared board and usable controls on a short phone', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openLab(page, 'mutation');
   const board = page.getByTestId('mechanics-board');
   const bounds = (await board.boundingBox())!;
-  expect(bounds.width).toBeGreaterThan(250);
+  expect(bounds.width).toBe(320);
+  expect(bounds.x).toBe(0);
   expect(Math.abs(bounds.width - bounds.height)).toBeLessThan(2);
   await expect(page.getByTestId('mutation-reference').locator('.mutation-target-base')).toHaveCount(21);
   await expect(page.getByTestId('lab-base-A')).toBeVisible();
@@ -293,7 +323,7 @@ test('DNA Connections graphical hints follow routes and recover without written 
   const at=async(c:number)=>{
     await expect(dashed).toHaveCount(1);
     await expect(tile(page,c)).toHaveClass(/connection-hinted/);
-    await expect(dashed).toHaveCSS('outline-style','dashed');
+    expect(await dashed.evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
     await expect(page.locator('.lab-hint')).toHaveCount(0);
   };
   await expect(dashed).toHaveCount(0);await hint.click();await at(1);
@@ -321,8 +351,8 @@ test('Codon Crush hints show two dashed swap tiles and update after animations',
     await expect(dashed).toHaveCount(2);
     await expect(tile(page,a)).toHaveClass(/crush-hinted/);
     await expect(tile(page,b)).toHaveClass(/crush-hinted/);
-    await expect(tile(page,a)).toHaveCSS('outline-style','dashed');
-    await expect(tile(page,b)).toHaveCSS('outline-style','dashed');
+    expect(await tile(page,a).evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
+    expect(await tile(page,b).evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
     await expect(arrow).toBeVisible();
     await expect(page.locator('.lab-hint')).toHaveCount(0);
   };
@@ -350,7 +380,7 @@ test('Genome Assembly hint shows the next read and destination, updates on undo 
   await hint.click();
   await expect(source).toHaveAttribute('data-lab-cell','1');
   await expect(destination).toHaveAttribute('data-lab-cell','67');
-  await expect(source).toHaveCSS('outline-style','dashed');
+  expect(await source.evaluate(el=>getComputedStyle(el,'::after').backgroundImage)).toContain('repeating-linear-gradient');
   await expect(destination).toHaveCSS('outline-style','solid');
   await expect(page.locator('.lab-hint')).toHaveCount(0);
   await tap(page,19);
@@ -366,4 +396,145 @@ test('Genome Assembly hint shows the next read and destination, updates on undo 
   await expect(source).toHaveCount(0);await expect(destination).toHaveCount(0);
   await hint.click();
   await expect(source).toHaveAttribute('data-lab-cell','1');
+});
+
+test('Mutation Correction puts four replacements in the unused rightmost grid column and animates a repair', async ({page}) => {
+  await page.setViewportSize({width:320,height:568});
+  await openLab(page,'mutation');
+  const board=page.getByTestId('mechanics-board');
+  await expect(board.locator('[data-lab-cell]')).toHaveCount(81);
+  await expect(page.getByTestId('under-board').locator('.lab-base-picker')).toHaveCount(0);
+  const geometry=await page.evaluate(()=>{
+    const board=document.querySelector('[data-testid="mechanics-board"]')!.getBoundingClientRect();
+    const buttons=[...document.querySelectorAll('.mutation-rail-button')].map(el=>{
+      const r=el.getBoundingClientRect();
+      return {x:r.x,y:r.y,width:r.width,height:r.height,cell:Number(el.getAttribute('data-lab-cell'))};
+    });
+    return {board:{x:board.x,width:board.width,height:board.height},buttons};
+  });
+  expect(geometry.board.x).toBe(0);
+  expect(geometry.board.width).toBe(320);
+  expect(geometry.board.height).toBe(320);
+  expect(geometry.buttons.map(b=>b.cell)).toEqual([26,35,44,53]);
+  // Nine square columns remain; the DNA shifts left and the entire eighth
+  // column is deliberately blank between it and the rightmost rail.
+  const layout=await board.evaluate(root=>{
+    const spacers=[...root.querySelectorAll<HTMLElement>('.mutation-spacer')].map(el=>{
+      const style=getComputedStyle(el),r=el.getBoundingClientRect();
+      return {visible:Number(el.dataset.visualCell), background:style.backgroundColor, image:style.backgroundImage, x:r.x};
+    });
+    const standardHole=root.querySelector<HTMLElement>('.lab-hole:not(.mutation-spacer):not(.mutation-rail-slot)')!;
+    const standardStyle=getComputedStyle(standardHole);
+    return {spacers,standardHole:{image:standardStyle.backgroundImage,background:standardStyle.backgroundColor},
+      shifted:root.querySelector<HTMLElement>('[data-lab-cell="20"]')!.dataset.visualCell,
+      dnaInGap:root.querySelectorAll('.lab-cell[data-visual-cell="7"],.lab-cell[data-visual-cell="16"],.lab-cell[data-visual-cell="25"],.lab-cell[data-visual-cell="34"],.lab-cell[data-visual-cell="43"],.lab-cell[data-visual-cell="52"],.lab-cell[data-visual-cell="61"],.lab-cell[data-visual-cell="70"],.lab-cell[data-visual-cell="79"]').length};
+  });
+  expect(layout.shifted).toBe('19');
+  expect(layout.spacers.map(c=>c.visible).sort((a,b)=>a-b)).toEqual([7,16,25,34,43,52,61,70,79]);
+  expect(layout.dnaInGap).toBe(0);
+  for(const spacer of layout.spacers){
+    expect(spacer.image).toBe(layout.standardHole.image);
+    expect(spacer.background).toBe(layout.standardHole.background);
+    expect(spacer.image).toContain('repeating-linear-gradient');
+    expect(spacer.image).toContain('rgb(217, 217, 210)');
+    expect(spacer.x).toBeGreaterThanOrEqual(320*7/9-1);
+    expect(spacer.x).toBeLessThan(320*8/9+1);
+  }
+  for (const b of geometry.buttons) {
+    expect(b.x).toBeGreaterThanOrEqual(320*8/9-1);
+    expect(b.x+b.width).toBeLessThanOrEqual(320+1);
+    expect(Math.abs(b.width-b.height)).toBeLessThan(1.5);
+  }
+  // The palette, text and sizing must match ordinary board tiles even before a repair is selected.
+  // Only the dedicated rightmost-column border and hatch distinguish the replacement rail.
+  const visual=await board.evaluate(root=>{
+    const boardTile=root.querySelector<HTMLElement>('.lab-cell[data-base="A"]')!;
+    const option=root.querySelector<HTMLElement>('.mutation-rail-button[data-base-option="A"]')!;
+    const appearance=(el:HTMLElement)=>{
+      const style=getComputedStyle(el);
+      return {background:style.backgroundColor,colour:style.color,font:style.fontFamily,size:style.fontSize,opacity:style.opacity,border:style.borderTopColor};
+    };
+    const holes=[...root.querySelectorAll<HTMLElement>('.mutation-rail-slot')].map(el=>{
+      const style=getComputedStyle(el);
+      return {cell:Number(el.dataset.labCell),border:style.borderTopColor,hatch:style.backgroundImage};
+    });
+    return {boardTile:appearance(boardTile),option:appearance(option),holes};
+  });
+  expect(visual.option.background).toBe(visual.boardTile.background);
+  expect(visual.option.colour).toBe(visual.boardTile.colour);
+  expect(visual.option.font).toBe(visual.boardTile.font);
+  expect(visual.option.size).toBe(visual.boardTile.size);
+  expect(visual.option.opacity).toBe('1');
+  expect(visual.option.border).toBe(visual.boardTile.colour);
+  expect(visual.holes.map(h=>h.cell)).toEqual([8,17,62,71,80]);
+  for(const hole of visual.holes){
+    expect(hole.border).toBe(visual.boardTile.colour);
+    expect(hole.hatch).toContain('repeating-linear-gradient');
+    expect(hole.hatch).toContain('rgb(68, 68, 67)');
+  }
+  const chosen=20;
+  const expected=await page.getByTestId('mutation-target-'+chosen).getAttribute('data-symbol');
+  await tile(page,chosen).tap();
+  const option=page.getByTestId('lab-base-'+expected);
+  await expect(option).toBeEnabled();
+  const flight=page.getByTestId('mutation-flight');
+  await Promise.all([flight.waitFor({state:'visible'}),option.tap()]);
+  await expect(flight).toHaveCSS('animation-name','mutation-slide');
+  // The engine and controls stay responsive throughout the decorative flight.
+  await expect(board).toHaveAttribute('aria-busy','false');
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await expect(flight).toHaveCount(0);
+  await expect(page.getByTestId('moves')).toHaveText('1 move');
+  await expect(tile(page,chosen)).toHaveAttribute('data-base',expected!);
+  await expect(page.getByTestId('mutation-target-'+chosen)).toHaveClass(/matched/);
+  // The next tile must still be selectable if its predecessor is mid-flight.
+  for (const c of [23,48]) {
+    const nextBase=await page.getByTestId('mutation-target-'+c).getAttribute('data-symbol');
+    await tile(page,c).tap();
+    await expect(tile(page,c)).toHaveAttribute('aria-pressed','true');
+    await page.getByTestId('lab-base-'+nextBase).tap();
+  }
+  for (const c of [23,48]) await expect(page.getByTestId('mutation-target-'+c)).toHaveClass(/matched/);
+  await expect(page.getByTestId('moves')).toHaveText('3 moves');
+});
+
+test('Mutation Correction first-use tutorial teaches the right-side rail and shows its landing animation', async ({page}) => {
+  await page.setViewportSize({width:320,height:568});
+  await fresh(page,true);await openMap(page);
+  await page.getByTestId('cnode-ins-06').click();
+  const tutorial=page.getByTestId('mechanic-tutorial');
+  await expect(tutorial).toHaveAttribute('data-mechanic','mutation');
+  const board=page.getByTestId('tutorial-board');
+  for(let step=1;step<=3;step++){
+    await expect(board).toHaveAttribute('data-step',String(step));
+    await expect(board.getByTestId('tutorial-mutation-rail')).toHaveCount(4);
+    await expect(board.locator('.tutorial-mutation-rail-slot')).toHaveCount(9);
+    await expect(board.locator('.tutorial-mutation-gap')).toHaveCount(9);
+    await expect(board.locator('.tutorial-mutation-gap').first()).toHaveCSS('background-image',/repeating-linear-gradient.*rgb\(217, 217, 210\)/);
+    await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('border-top-color','rgb(68, 68, 67)');
+    await expect(board.locator('.tutorial-mutation-rail-slot').first()).toHaveCSS('background-image',/repeating-linear-gradient/);
+    await expect(board.locator('.tutorial-cell')).toHaveCount(81);
+    if(step<3)await page.getByTestId('tutorial-next').click();
+  }
+  await expect(tutorial).toContainText('vertical column on the right');
+  await expect(board.getByTestId('tutorial-mutation-flight')).toHaveCSS('animation-name','tutorial-mutation-slide');
+  await page.getByRole('button',{name:'Replay animation'}).click();
+  await expect(board.getByTestId('tutorial-mutation-flight')).toHaveCount(1);
+  await page.getByTestId('tutorial-next').click();
+  await expect(tutorial).toHaveCount(0);
+  await expect(page.getByTestId('mechanics-board').locator('.mutation-rail-button')).toHaveCount(4);
+});
+
+test('the right mutation rail stays outside all reference and repair cells', () => {
+  const stages=CAMPAIGN_LEVELS.filter(def=>mechanicOf(def)==='mutation').map(def=>mixedStage(def)!.spec);
+  stages.push(DEFAULT_LAB_SPEC);
+  // The bonus campaign generates Mutation Correction for its 27-base ramp.
+  stages.push(genomeStage('chrM',[9,36],'ACGT'.repeat(7).slice(0,27)).spec);
+  expect(stages.length).toBeGreaterThan(2);
+  for(const spec of stages){
+    const occupied=new Set(spec.MUTATION_ROWS.flatMap(({top,bottom,seq})=>
+      [...seq].flatMap((_,i)=>[top+i,bottom+i])));
+    for(const cell of [26,35,44,53]) expect(occupied.has(cell)).toBe(false);
+    for(const row of spec.MUTATION_ROWS) expect(row.seq.length).toBeLessThanOrEqual(7);
+  }
 });

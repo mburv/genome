@@ -4,3 +4,7 @@ dist-single
 test-results
 playwright-report
 *.tmp.mjs
+
+data/bonus-cache/
+
+genome-packs/

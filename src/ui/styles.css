@@ -54,13 +54,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 a { color: var(--blue); }
 .app {
   --app-gap: 10px;
-  /* Play chrome reserved so the clue cap leaves room for the board + energy + action row (D-UI-30). */
-  --play-header: 70px;
-  --play-under: 104px;
-  --clue-floor: 108px;
-  --board: min(100vw, var(--app-max), calc(100svh - var(--play-header) - var(--play-under) - (3 * var(--app-gap)) - var(--clue-floor)));
-  --play-reserved: calc(var(--play-header) + var(--play-under) + var(--board) + (3 * var(--app-gap)));
-  --clue-max: min(30svh, calc(100svh - var(--play-reserved)));
+  /* ClueSizing measures the tallest single clue row at this screen width.
+     Solved units vacate the row and later clues shift into view. */
+  --clue-height: 150px;
+  /* Width, not viewport height, determines the square board. On short
+     displays the page can scroll instead of shrinking the puzzle tiles. */
+  --board: min(100vw, var(--app-max));
+  position: relative;
   max-width: var(--app-max);
   overflow-x: clip;
   margin: 0 auto;
@@ -212,22 +212,19 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   padding: 0;
   border-top: 0;
   position: relative;
-  /* Cap at 30svh, but never so large that the board, energy bar and action row leave the viewport. */
-  max-height: min(30vh, calc(100vh - var(--play-reserved)));
-  max-height: var(--clue-max);
+  height: var(--clue-height);
+  flex: none;
   overflow-x: hidden;
   overflow-y: hidden;
-  overscroll-behavior: contain;
+  /* Allow a swipe over the clue region to scroll the page on short displays. */
+  overscroll-behavior: auto;
+  touch-action: pan-y;
   min-height: 0;
 }
-/* Crowded clue panels omit committed matches and page any remaining overflow. */
-.target [data-clue-hidden], .target .clue-pagination[hidden] { display: none !important; }
+/* Completed and queued clues are absent until the next unfinished row fits. */
+.target [data-clue-hidden] { display: none !important; }
 .target .clue-part:has([data-clue-unit]):not(:has([data-clue-unit]:not([data-clue-hidden]))) { display: none; }
 .target.clues-compact .rep-end { display: none; }
-.clue-pagination { position: absolute; top: 0; right: 0; z-index: 3; display: flex; align-items: center; gap: 4px; height: 26px; font-size: 11px; background: var(--paper); }
-.clue-pagination button { font-size: 17px; line-height: 1; padding: 3px 8px; min-width: 28px; min-height: 26px; }
-.target:has(.clue-pagination:not([hidden])) .row-between { min-height: 26px; padding-right: 100px; }
-.target:has(.clue-pagination:not([hidden])) .row-between > .muted { display: none; }
 .clues-compact [data-clue-index] { position: relative; }
 .clues-compact [data-clue-index]::before {
   content: attr(data-clue-index);
@@ -242,8 +239,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 }
 
 .clues-compact .rep-pair::before { top: 50%; transform: translateY(-50%); }
-.clues-compact .clue-tokens > [data-clue-index] { padding-top: 10px; }
-.target .row-between { flex-wrap: wrap; gap: 2px 8px; position: sticky; top: 0; z-index: 2; background: var(--paper); }
+.clues-compact .clue-tokens > [data-clue-index] { padding-top: 0; }
+.target .row-between { flex-wrap: wrap; gap: 2px 8px; min-height: 26px; position: sticky; top: 0; z-index: 2; background: var(--paper); }
 
 .target .row-between > span { min-width: 0; }
 .target-title { font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; }
@@ -274,7 +271,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 }
 .clue-stack.tier-3 { --chip-min: calc(3ch + 12px); }
 .clue-stack.tier-6 { --chip-min: calc(6ch + 14px); }
-.clue-stack.tier-12, .clue-stack.tier-24 { --chip-min: calc(9ch + 14px); }
+.clue-stack:has(.tok-chip.tier-l) { --chip-min: 29px; }
 .clue-part {
   display: flex;
   flex-wrap: nowrap;
@@ -337,6 +334,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   background: var(--ink);
 }
 .rep-end {
+  /* Clear the outer match outline before the 3′/5′ strand-end labels. */
+  margin-inline-start: 5px;
   display: grid;
   grid-template-columns: 14px auto;
   grid-template-rows: auto 6px auto;
@@ -397,8 +396,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .tile .tick::after { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--white); font-size: calc(var(--board) / 48); font-weight: 700; }
 .tile.goal.ok { box-shadow: inset 0 -4px 0 rgba(17, 17, 17, 0.55); }
 .tile.selected { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); z-index: 2; }
-.tile.hinted { outline: 2px dashed var(--ink); outline-offset: -5px; z-index: 1; }
-.tile.selected.hinted { outline-color: var(--white); }
+.tile.hinted { --tile-dash: var(--ink); z-index: 1; }
+.tile.selected.hinted { --tile-dash: var(--white); --tile-dash-inset: 2px; z-index: 2; }
 .track-outline { pointer-events: none; border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--white); border-radius: 0; margin: 0; z-index: 3; position: relative; }
 .track-outline.all-ok { border-color: var(--green); }
 .track-outline.strand-complement { border-style: dashed; border-color: var(--blue); }
@@ -469,7 +468,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .gap-target.row { margin: 18% 0; }
 .board.targeting .tile:not(.candidate) { opacity: 0.28; filter: grayscale(0.6); }
 .board.targeting .tile.candidate { cursor: pointer; }
-.board.target-crispr .tile.candidate:hover { outline: 2px dashed var(--ink); outline-offset: -4px; }
+.board.target-crispr .tile.candidate:hover { --tile-dash: var(--ink); }
 .board.target-ligase .tile.candidate { box-shadow: inset 0 0 0 3px var(--amber); }
 .tile.previewed { opacity: 1 !important; filter: none !important; box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); z-index: 2; }
 .tile.edit-target { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 5px var(--white); z-index: 3; opacity: 1 !important; filter: none !important; }
@@ -482,6 +481,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 .actions button + button, .solved-bar button + button, .card-actions button + button { border-left: 0; }
 .actions button { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12.5px; font-weight: 700; }
 .primary { background: var(--coral); color: var(--ink); border-color: var(--ink); font-weight: 700; }
+.map .continue-button, .title-screen .title-play { background: var(--mint); border-color: var(--ink); color: var(--ink); }
 .notice { background: var(--white); border: 1px solid var(--ink); border-left: 6px solid var(--butter-edge); border-radius: 0; padding: 8px 12px; font-size: 13px; }
 .notice p { margin: 4px 0; }
 .notice button { margin-top: 4px; padding: 5px 14px; }
@@ -614,7 +614,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* ---------- Under-board tray + action icons (D-UI-15, D-UI-16) ---------- */
 /* Do not set width: 100% on a direct .app child — it already has margin-inline: var(--pad),
    and 100% + those margins overflow the right edge (visible on iPhone Safari). */
-.under-board { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.under-board { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.under-board .meta { height:17px; flex:none; align-items:center; flex-wrap:nowrap; gap:6px; }
+.under-board .meta > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .tray { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .energy { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; font-size: 13px; color: var(--ink); font-weight: 700; }
 .energy .bolt { display: grid; place-items: center; flex: none; color: var(--amber); }
@@ -663,7 +665,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .bc-A { background: var(--A-edge); } .bc-C { background: var(--C-edge); } .bc-G { background: var(--G-edge); } .bc-T { background: var(--T-edge); }
 .tile.tok { --tok-bg: #e8e8e2; --tok-fg: #111111; --tok-soft: #3d3d3a; --tok-border: #8a8a84; background: var(--tok-bg); color: var(--tok-fg); border: 1px solid var(--tok-border); }
 /* CRISPR-created (non-reference) sequences: neutral hatching + dashed rule, never a palette colour. */
-.tile.tok.tok-custom { background: repeating-linear-gradient(135deg, #ffffff 0 4px, #e3e3dc 4px 8px); color: var(--ink); outline: 2px dashed var(--ink); outline-offset: -4px; }
+.tile.tok.tok-custom { background: repeating-linear-gradient(135deg, #ffffff 0 4px, #e3e3dc 4px 8px); color: var(--ink); --tile-dash: var(--ink); }
 /* In-play board letters match the softer solved-state ink. Clue chips stay carbon ink. */
 .tile,
 .tile.b-A, .tile.b-C, .tile.b-G, .tile.b-T,
@@ -682,7 +684,6 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
   color: var(--ink);
 }
 .tile.tok .tok-row i { color: inherit; }
-.tile.tok .tok-face .ell, .tile.tok .tok-len { color: var(--tok-soft); }
 /* Same edge as the tile (colour, width, style). Not inherit: the barcode's parent is .tok-face, which has no border. content-box keeps the 3px bars from shrinking under the global border-box rule. */
 .tile.tok .barcode {
   box-shadow: none;
@@ -698,9 +699,11 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tok-row i { font-style: normal; font-weight: 700; }
 .tier-3 .tok-face { font-size: calc(var(--board) / 27); }
 .tier-6 .tok-face { font-size: calc(var(--board) / 34); }
-.tier-l .tok-face { font-size: calc(var(--board) / 37); }
-.tok-face .ell { font-weight: 400; }
-.tok-len { font-size: calc(var(--board) / 52); font-weight: 700; font-family: var(--sans); }
+.tier-l .tok-face { font-size: calc(var(--board) / 34); }
+.tok-face.long { gap: 2px; }
+.tok-face.long .tok-row { justify-content: center; }
+.tok-chip .tok-face.long, .assembly-reference .tok-face.long { height: auto; font-size: 10.5px; min-width: 3ch; }
+.tok-divider { flex: 0 0 1px; width: 60%; height: 1px; background: var(--tok-border, var(--graphite)); }
 .barcode { display: flex; width: 76%; height: 3px; overflow: hidden; margin-top: 1px; }
 .barcode i { flex: 1; }
 .tok-ghost { inset: auto 3% 3% auto; padding: 1px 3px; font-size: calc(var(--board) / 38); border: 1px solid var(--ink); }
@@ -733,7 +736,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .pos-picker button { min-width: 24px; padding: 4px 3px; font: 700 13px var(--mono); background: var(--white); border: 0; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); border-radius: 0; }
 .pos-picker button.chosen { background: var(--ink); color: var(--white); }
 .pos-picker button.chosen i, .pos-picker button.chosen { color: var(--white); }
-.assembled-seq summary { cursor: pointer; font-weight: 700; }
+.assembled-seq { min-width: 0; }
+.assembled-seq h3 { font-size: inherit; font-weight: 700; margin: 0 0 6px; }
+.assembled-seq .seq-wrap { white-space: normal; overflow-wrap: anywhere; overflow-x: visible; margin: 0; }
 
 @media (max-width: 360px) {
   :root { --pad: 10px; }
@@ -833,7 +838,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .assembly-reference small { font: 9px var(--sans); color: var(--graphite); }
 .assembly-reference .assembled-match, .lab-cell.assembly-correct { box-shadow: inset 0 -3px 0 var(--green); }
 
-/* Mutation Detective: compact, numbered complementary targets and live repair feedback. */
+/* Mutation Correction: compact, numbered complementary targets and live repair feedback. */
 .mutation-reference { display: flex; flex-direction: column; gap: 3px; }
 .mutation-reference-row { display: grid; grid-template-columns: 44px repeat(7, minmax(0, 1fr)); gap: 2px; align-items: center; }
 .mutation-row-label { font-size: 10px; font-weight: 700; }
@@ -842,7 +847,33 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .mutation-target-base.mismatch, .lab-cell.mutation-mismatch { outline: 2px solid var(--red); outline-offset: -2px; }
 .mutation-target-base.selected, .lab-cell.mutation-correct.selected, .lab-cell.mutation-mismatch.selected { box-shadow: inset 0 0 0 3px var(--ink); }
 .mutation-selection { font-weight: 700; }
-.mode-lab-mutation { width: min(100%, 420px, calc(100svh - 300px)); min-width: min(100%, 240px); }
+/* A/C/G/T or four DNA blocks occupy the unused rightmost column.
+   Replacement buttons share .lab-cell typography, palette and token rendering.
+   Graphite hatching and rules match the board's DNA lettering, while separating the rail. */
+.mode-lab-mutation .mutation-rail-button {
+  z-index:3; width:100%; height:100%; padding:0;
+  touch-action:manipulation; overflow:hidden;
+}
+.mode-lab-mutation .lab-hole.mutation-rail-slot {
+  background:repeating-linear-gradient(135deg,var(--tile-ink) 0 1px,transparent 1px 6px),var(--hole);
+  border:1px solid var(--tile-ink);
+}
+.mutation-flight {
+  position:absolute; z-index:15; pointer-events:none;
+  display:grid; place-items:center; overflow:hidden; padding:1px;
+  border:1px solid var(--tile-ink); box-sizing:border-box; color:var(--tile-ink);
+  font:700 calc(var(--board) / 15) var(--sans);
+  animation:mutation-slide 300ms cubic-bezier(.24,.75,.2,1) both;
+}
+.mutation-flight.lab-token .tok-face {font-size:calc(var(--board) / 34);}
+.mutation-flight.lab-token.tier-3 .tok-face {font-size:calc(var(--board) / 27);}
+@keyframes mutation-slide {
+  0% {transform:translate(0,0) scale(1); opacity:1;}
+  88% {transform:translate(var(--flight-dx),var(--flight-dy)) scale(1.06);opacity:1;}
+  100% {transform:translate(var(--flight-dx),var(--flight-dy)) scale(1);opacity:1;}
+}
+.app.reduced-motion .mutation-flight {animation:none;}
+@media (prefers-reduced-motion:reduce){.mutation-flight{animation:none;}}
 
 /* DNA Connections: paired colours identify endpoints, routes and their matching clue. */
 .mode-lab-connections .lab-cell { background: var(--white); }
@@ -874,6 +905,10 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-board { position:relative; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); grid-template-rows:repeat(9,minmax(0,1fr)); gap:1px; width:min(100%,300px,calc(100svh - 350px)); min-width:min(100%,175px); aspect-ratio:1; margin:0 auto 10px; background:var(--rule); overflow:hidden; }
 .tutorial-cell { position:relative; min-width:0; min-height:0; background:var(--white); font:700 11px var(--mono); }
 .tutorial-cell.hole { background:var(--hole); }
+/* The eighth-column spacer uses the same pale grey hatching as ordinary empty board squares. */
+.tutorial-cell.tutorial-mutation-gap {
+  background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole);
+}
 .tutorial-cell > span { position:absolute; inset:0; display:grid; place-items:center; }
 .tutorial-cell.highlighted { outline:2px solid var(--blue); outline-offset:-2px; z-index:2; }
 .tutorial-base { opacity:1; }
@@ -892,8 +927,32 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 @keyframes tutorial-cut { 0%,35%{opacity:0} 65%,100%{opacity:1} }
 .tutorial-actions { display:flex; gap:4px; }
 .tutorial-actions button { flex:1; min-height:40px; font-size:12px; padding:5px; }
+/* First-use guide: matching right-column rail and an animated replacement. */
+.tutorial-cell.tutorial-mutation-rail-slot {
+  background:repeating-linear-gradient(135deg,var(--tile-ink) 0 1px,transparent 1px 6px),var(--hole);
+  border:1px solid var(--tile-ink);
+}
+.tutorial-mutation-rail {background:var(--hole);}
+.tutorial-mutation-option { inset:0; border:1px solid var(--tile-ink); z-index:2; }
+.tutorial-mutation-option.lab-token .tok-face {font-size:clamp(6px,1.5vw,9px);}
+.tutorial-mutation-choice {outline:2px solid var(--green);outline-offset:-2px;}
+.tutorial-mutation-flight {
+  position:absolute; z-index:9; width:calc(100% / 9 - 1px); height:calc(100% / 9 - 1px);
+  display:grid; place-items:center; border:1px solid var(--tile-ink);
+  font:700 10px var(--mono); transform:translate(-50%,-50%);
+  pointer-events:none; animation:tutorial-mutation-slide 1.8s ease-in-out both;
+}
+.tutorial-mutation-flight.lab-token .tok-face {font-size:clamp(6px,1.5vw,9px);}
+@keyframes tutorial-mutation-slide {
+  0%,22% {left:var(--fx);top:var(--fy);opacity:0;}
+  23%,37% {left:var(--fx);top:var(--fy);opacity:1;}
+  82%,95% {left:var(--tx);top:var(--ty);opacity:1;}
+  100% {left:var(--tx);top:var(--ty);opacity:0;}
+}
+.tutorial-change.tutorial-mutation-correct {animation:tutorial-mutation-correct 1.8s steps(1,end) both;}
+@keyframes tutorial-mutation-correct {0%,81%{opacity:0}82%,100%{opacity:1}}
 .tutorial-board.static .tutorial-finger,.tutorial-board.static .tutorial-path polyline,.tutorial-board.static .tutorial-cut { animation:none; }
-@media(prefers-reduced-motion:reduce){.tutorial-change{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut{animation:none}}
+@media(prefers-reduced-motion:reduce){.tutorial-change{opacity:1;animation:none}.tutorial-finger,.tutorial-path polyline,.tutorial-cut,.tutorial-mutation-flight{animation:none}}
 
 /* Sliding guide: one opaque strip, clipped to the exact playable segment. No board crossfade. */
 .slide-demo .tutorial-slide-static { opacity:1; animation:none; }
@@ -923,6 +982,10 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 /* Shared play chrome: every new mechanic uses the classic full-width board stage. */
 .mechanics-board.mixed-board { width:100%; min-width:0; max-width:var(--board); aspect-ratio:1; margin:0; align-self:auto; gap:var(--gap); box-shadow:0 -1px 0 var(--ink),0 1px 0 var(--ink); }
 .mixed-board .lab-hole { background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole); }
+/* Match the gap explicitly, so an older blank-gap override cannot regress it on a future publish. */
+.mixed-board.mode-lab-mutation .lab-hole.mutation-spacer {
+  background:repeating-linear-gradient(135deg,#d9d9d2 0 1px,transparent 1px 6px),var(--hole);
+}
 .mixed-board .lab-cell { font-family:var(--sans); font-size:calc(var(--board) / 15); color:var(--tile-ink); font-weight:700; }
 .mixed-board.mode-lab-connections .lab-cell { font-size:clamp(8px,2.4vw,12px); }
 .mixed-board .lab-cell:disabled { opacity:.78; }
@@ -933,7 +996,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .connection-pair.ok { box-shadow:inset 0 -4px 0 var(--ink); }
 .mixed-codon-clues .current-codon { box-shadow:inset 0 -3px 0 var(--mint-edge); }
 .mixed-under-board { gap:6px; }
-.mixed-under-board .meta { flex-wrap:wrap; gap:2px 6px; }
+
 .mixed-under-board .lab-base-picker { display:grid; gap:1px; }
 .mixed-under-board .lab-base-picker button { min-height:36px; padding:5px 0; }
 .mixed-under-board .lab-hint { margin:0; }
@@ -953,18 +1016,18 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-crush-new { animation-name:crush-enter; }
 @media(prefers-reduced-motion:reduce){.tutorial-crush-swap,.tutorial-crush-clear,.tutorial-crush-fall{animation:none}.tutorial-crush-clear{opacity:0}}
 
-/* Mutation Detective: the active repair and its replacement button share a green cue. */
+/* Mutation Correction: the active repair and its replacement button share a green cue. */
 .mode-lab-mutation .lab-cell.mutation-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); z-index: 2; }
-.mixed-under-board .lab-base-picker button.mutation-base-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); }
+.mode-lab-mutation .mutation-rail-button.mutation-base-hinted { outline: 3px solid var(--green); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--mint); }
 
 /* The pre-connected tracing prefix is visible even before tutorial animation starts. */
 .tutorial-path .tutorial-starter-path { animation:none; stroke-dasharray:none; stroke-dashoffset:0; }
 
 /* Connections hints stay on the board, with the active pair's colour. */
-.mode-lab-connections .lab-cell.connection-hinted { outline: 2px dashed var(--connection-hint-color); outline-offset: -5px; z-index: 2; }
+.mode-lab-connections .lab-cell.connection-hinted { --tile-dash: var(--connection-hint-color); z-index: 2; }
 
 /* Codon Crush: two dashed tiles and a double arrow show the exact swap. */
-.mode-lab-crush .lab-cell.crush-hinted { outline: 2px dashed var(--green); outline-offset: -5px; }
+.mode-lab-crush .lab-cell.crush-hinted { --tile-dash: var(--green); }
 .crush-hint-arrow rect { fill:var(--white); stroke:var(--green); stroke-width:.04; }
 .crush-hint-arrow path { fill:none; stroke:var(--green); stroke-width:.055; stroke-linecap:round; stroke-linejoin:round; }
 .crush-hint-recovery [data-testid="action-undo"] { outline: 2px dashed var(--green); outline-offset:-5px; }
@@ -976,7 +1039,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell[data-tutorial-group="2"], .tutorial-track[data-tutorial-group="2"] { outline-color:var(--green); border-color:var(--green); }
 .tutorial-cell[data-tutorial-group="3"], .tutorial-track[data-tutorial-group="3"] { outline-color:var(--amber); border-color:var(--amber); }
 .tutorial-group-mark { position:absolute; top:0; left:1px; z-index:3; font:700 8px var(--mono); background:var(--white); color:var(--ink); }
-.tutorial-cell.tutorial-repair-gap { outline:2px dashed var(--green); outline-offset:-2px; z-index:2; }
+.tutorial-cell.tutorial-repair-gap { --tile-dash: var(--green); --tile-dash-inset: 2px; z-index:2; }
 .tutorial-gap-mark { color:var(--green); font-weight:700; }
 .icon-row .recovery-hint { outline:2px dashed var(--green); outline-offset:-4px; background:var(--mint); }
 
@@ -1000,10 +1063,9 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .block-lab-board .lab-token .tok-row { justify-content:center; }
 .block-lab-board .lab-token.tier-3 .tok-face { font-size:calc(var(--board) / 27); }
 .block-lab-board .lab-token.tier-6 .tok-face { font-size:calc(var(--board) / 34); }
-.block-lab-board .lab-token.tier-l .tok-face { font-size:calc(var(--board) / 37); }
+.block-lab-board .lab-token.tier-l .tok-face { font-size:calc(var(--board) / 34); }
 .strip-cell.lab-token,.mutation-target-base.lab-token,.restriction-target-base.lab-token,.assembly-reference .lab-token { min-width:30px; width:auto; padding:2px; flex:0 0 auto; }
 .lab-token .tok-face { font-size:10px; line-height:1.05; min-width:0; }
-.lab-token .tok-len { font-size:9px; }
 .lab-token .barcode { min-width:0; max-width:100%; }
 .connection-pair:has(.tok-face) { display:flex; align-items:center; gap:4px; }
 .lab-base-picker .lab-token { min-width:0; min-height:42px; }
@@ -1028,6 +1090,127 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .tutorial-cell > .lab-token .tok-face { display: flex; }
 .tutorial-cell > .lab-token .tok-row { display: flex; }
 
+/* The graphite rail frame matches DNA lettering for single- and multi-base buttons, while
+   their filled faces and letter sizing remain identical to ordinary board cells. */
+.mode-lab-mutation .mutation-rail-button,
+.block-lab-board.mode-lab-mutation .mutation-rail-button.lab-token {
+  border:1px solid var(--tile-ink);
+}
+.mode-lab-mutation .mutation-rail-button:disabled { opacity:1; }
+
 /* Genome Assembly: one actionable source/destination pair, without changing DNA colours. */
-.mode-lab-assembly .lab-cell.assembly-hint-source { outline: 2px dashed var(--green); outline-offset: -4px; z-index: 2; }
+.mode-lab-assembly .lab-cell.assembly-hint-source { --tile-dash: var(--green); z-index: 2; }
 .mode-lab-assembly .lab-cell.assembly-hint-destination { outline: 3px solid var(--green); outline-offset: -4px; z-index: 2; }
+
+/* Human Genome uses campaign map tiles, bounded to a small window per chromosome. */
+.bonus-map .cat-gene .row-between { flex-wrap: wrap; gap: 4px; }
+.bonus-map .cat-gene .muted { overflow-wrap: anywhere; }
+.bonus-map .bonus-assemble { padding: 4px 8px; font-size: 11px; }
+.bonus-map .bonus-nodes { grid-template-columns: repeat(11, minmax(0, 1fr)); grid-template-rows: repeat(11, minmax(0, 1fr)); width: 100%; max-width: 330px; aspect-ratio: 1; container-type: inline-size; }
+.bonus-map .bonus-nodes li { width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.bonus-map .bonus-nodes .cnode { font-size: clamp(7px, 3.4cqw, 12px); flex-direction: column; gap: 1px; }
+.bonus-map .bonus-nodes .cnode[data-digits="4"] { font-size: clamp(7px, 2.8cqw, 10px); }
+.bonus-map .bonus-nodes .cnode[data-digits="5"] { font-size: clamp(6px, 2.4cqw, 9px); }
+.bonus-map .bonus-nodes .cnode[data-digits="6"] { font-size: clamp(6px, 2.1cqw, 8px); }
+.bonus-map .bonus-nodes .node-check { font-size: 9px; }
+.bonus-map .bonus-node-empty { background: var(--stone); border: 1px solid var(--rule); width: calc(100% + 1px); margin-right: -1px; margin-bottom: -1px; }
+.bonus-pagination { justify-content: flex-start; margin-top: 6px; }
+.bonus-pagination button { padding: 2px 8px; font-size: 12px; }
+.bonus-pagination .tiny { margin: 0; }
+.app:has([data-testid="bonus-play"]) .win-card p { overflow-wrap: anywhere; }
+
+
+/* Hidden, natural-height copies use the exact same clue styles at the same
+   content width. They never participate in page layout or touch interaction. */
+.clue-size-probe { position:absolute; inset-inline:var(--pad); top:0; height:0; margin:0 !important; overflow:hidden; visibility:hidden; pointer-events:none; }
+.clue-size-probe > .target { height:auto; min-height:0; max-height:none; overflow:visible; }
+.target.long-clues { overflow-y:hidden; }
+.clue-size-probe > .target.long-clues { overflow:visible; }
+.target :is(.tok-chip, .lab-token).tier-l,
+.target .tok-chip:has(> .tok-face.long) {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 28px;
+  min-width: 28px;
+  padding: 2px 3px;
+  align-items: center;
+  justify-content: center;
+}
+.target .clue-stack:not(.mode-replicate) .strip-cell.lab-token.tier-l {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+}
+.target .tok-face.long {
+  flex: 0 0 auto;
+  height: auto;
+  width: auto;
+  min-width: 3ch;
+  font-size: 9.5px;
+  line-height: 1;
+  gap: 1px;
+}
+.target .tok-face.long > .tok-row {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.target.clues-compact .clue-tokens > [data-clue-index].tier-l {
+  padding-top: 2px;
+}
+.target .assembly-reference .lab-token.tier-l { gap: 2px; padding: 2px 3px; }
+
+
+/* Draw each inset dash rail independently. Native dashed outlines/borders can
+   lose an edge on WebKit; four gradient strips never share a border path. */
+.tile.hinted::after,
+.tile.tok-custom::after,
+.board.target-crispr .tile.candidate:hover::after,
+.lab-cell.connection-hinted::after,
+.lab-cell.crush-hinted::after,
+.lab-cell.assembly-hint-source::after,
+.lab-cell.restriction-hinted::after,
+.tutorial-cell.tutorial-repair-gap::after {
+  content: '';
+  position: absolute;
+  inset: var(--tile-dash-inset, 4px);
+  color: var(--tile-dash, var(--ink));
+  background-image:
+    repeating-linear-gradient(to right, currentColor 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(to bottom, currentColor 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(to right, currentColor 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(to bottom, currentColor 0 4px, transparent 4px 8px);
+  background-position: top left, top right, bottom left, top left;
+  background-size: 100% 2px, 2px 100%, 100% 2px, 2px 100%;
+  background-repeat: no-repeat;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Keep both replication labels aligned with the taller split-fragment clues. */
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) {
+  --long-rep-chip-height: 28px;
+  gap: 2px;
+}
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) .rep-pair > .tok-chip {
+  min-height: var(--long-rep-chip-height);
+}
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) .rep-start,
+.clue-stack.mode-replicate:has(.tok-chip.tier-l) .rep-end {
+  grid-template-rows: var(--long-rep-chip-height) 6px var(--long-rep-chip-height);
+  align-items: start;
+}
+
+/* Restriction hints mark the next legal target bond using the shared inset cue. */
+.mode-lab-restriction .lab-cell.restriction-hinted { --tile-dash: var(--green); z-index: 2; }
+
+/* Human Genome entry doubles as an exact shared-reference completion meter. */
+.map .genome-progress-button { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f0f8f3; border-color: var(--mint-edge); font-weight: 700; min-width: 0; }
+.genome-progress-fill { position: absolute; inset: 0 auto 0 0; background: var(--mint); pointer-events: none; z-index: -1; }
+.genome-progress-label { min-width: 0; }
+.genome-progress-percent { flex: none; color: var(--green); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* Reference data must be present before a chromosome's puzzle tiles are playable.
+   Retain the numbers and completion ticks, but neutralise their colours until loaded. */
+.bonus-map .bonus-nodes.unavailable .cnode { background: var(--stone); color: #777771; border-color: #b6b6b0; opacity: 1; box-shadow: none; cursor: default; }
+.bonus-map .bonus-nodes.unavailable .cnode .node-check { color: #777771; }
+.bonus-map .bonus-nodes.unavailable .bonus-node-empty { background: var(--stone); border-color: #b6b6b0; }

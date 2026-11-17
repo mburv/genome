@@ -1,0 +1,50 @@
+name: Publish verified genome reference packs
+on:
+  workflow_dispatch:
+  push:
+    branches: ['fix/full-human-genome']
+    paths: ['.github/workflows/publish-genome-data.yml','scripts/annotate-mito.py']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install biopython==1.86
+      - name: Retrieve verified reference build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 43729780128 --name genome-t2t-chromosome-packs --dir genome-packs
+      - run: python3 scripts/annotate-mito.py
+      - name: Verify every packed chromosome and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import glob, hashlib, json, struct
+          paths=glob.glob('genome-packs/*.genome')
+          assert len(paths)==25
+          total=genes=0
+          for p in paths:
+              with open(p,'rb') as f:
+                  n=struct.unpack('<I',f.read(4))[0]
+                  h=json.loads(f.read(n)); total+=h['length'];genes+=len(h['genes'])
+                  for expected in h['chunkSha256']:
+                      block=f.read(h['chunkBases']//4)
+                      assert hashlib.sha256(block).hexdigest()==expected,p
+                  assert not f.read(1),p
+              if h['chromosome']=='chrM': assert len(h['genes'])==37
+          assert total==3117292070
+          print('Verified',total,'bases and',genes,'annotated loci')
+          PY
+          if ! gh release view t2t-chm13-v2.0 >/dev/null 2>&1; then
+            gh release create t2t-chm13-v2.0 --target "$GITHUB_SHA" --title 'GENOME — T2T human reference data' --notes 'All 3,117,292,070 reference bases in 25 individually installable chromosome packs. Includes JHU Liftoff v5.3 nuclear gene annotation and 37 mitochondrial genes mapped from NC_012920.1 to CP068254.1. Select .genome files in the post-campaign Human Genome map. Reference: https://github.com/marbl/CHM13. Not personal genetic data.' --draft
+          fi
+          gh release upload t2t-chm13-v2.0 genome-packs/*.genome --clobber
+          gh release edit t2t-chm13-v2.0 --draft=false

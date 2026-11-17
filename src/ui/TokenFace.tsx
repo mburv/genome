@@ -1,8 +1,7 @@
 /**
- * Faces for M4 multi-base tiles. Readability ladder (Q002): codons show all three letters, hexamers
- * two rows of three, longer pieces their first and last codon ("ATG…GCC") plus a length badge. Longer
- * multi-base tiles carry a per-base colour barcode so distinct sequences look distinct; tap a tile to
- * read its full sequence in the inspector.
+ * DNA tile faces: codons show three letters, hexamers two rows of three plus a barcode,
+ * and longer fragments show the first and last codons separated by a thin rule.
+ * The underlying sequence, accessible name and sequence-specific palette remain intact.
  */
 export function SeqLetters({ seq, group = 0 }: { seq: string; group?: number }) {
   return (
@@ -34,7 +33,7 @@ export function tokenStyle(def: LevelDefinition, symbol: string): CSSProperties 
 
 export const tierClass = (len: number): string => (len <= 3 ? 'tier-3' : len <= 6 ? 'tier-6' : 'tier-l');
 
-export function TokenFace({ seq, label }: { seq: string; label: string }) {
+export function TokenFace({ seq }: { seq: string; label: string }) {
   if (seq.length <= 3) {
     return (
       <span className="tok-face">
@@ -51,14 +50,11 @@ export function TokenFace({ seq, label }: { seq: string; label: string }) {
       </span>
     );
   }
-  const edited = label.startsWith('✎');
-  const suffix = /·\d+$/.exec(label)?.[0] ?? '';
   return (
     <span className="tok-face long">
-      <span className="tok-row"><SeqLetters seq={seq.slice(0, 3)} /><b className="ell">…</b></span>
-      <span className="tok-row"><b className="ell">…</b><SeqLetters seq={seq.slice(-3)} /></span>
-      <span className="tok-len">{edited ? '✎' : ''}{seq.length}{suffix}</span>
-      <Barcode seq={seq} />
+      <span className="tok-row"><SeqLetters seq={seq.slice(0, 3)} /></span>
+      <span className="tok-divider" aria-hidden="true" />
+      <span className="tok-row"><SeqLetters seq={seq.slice(-3)} /></span>
     </span>
   );
 }

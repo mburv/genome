@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type Locator } from '@playwright/test';
 import { applyCommand, createInitialState, type PuzzleState } from '../src/engine/engine.ts';
 import type { Axis, LevelDefinition } from '../src/engine/types.ts';
 import m2Pack from '../src/campaign/levels.generated.json' with { type: 'json' };
@@ -13,6 +13,14 @@ const PACK = {
   catalogueId: manifest.catalogueId,
   datasets: Object.fromEntries(manifest.included.map(g=>[g.symbol,g.datasetId])),
 };
+
+/** Measure the actual layout, independent of the browser scrolling a control into view. */
+export async function documentBox(locator: Locator) {
+  return locator.evaluate(el => {
+    const r = el.getBoundingClientRect();
+    return { x: r.x + window.scrollX, y: r.y + window.scrollY, width: r.width, height: r.height };
+  });
+}
 
 /** Real touch swipe via CDP so the app receives pointer events of type "touch". */
 export async function touchSwipe(page: Page, cell: number, dir: Dir, distance = 40): Promise<void> {
@@ -163,14 +171,6 @@ export async function solveWithHints(page: Page): Promise<number> {
   }
   await page.getByTestId('win').waitFor();
   return drags;
-}
-
-/** Open Enzyme lab n (1-based) through the level map. */
-export async function openLab(page: Page, n: number): Promise<void> {
-  await fresh(page);
-  await openMap(page);
-  await page.getByRole('button', { name: new RegExp(`^Enzyme lab ${n}: `) }).click();
-  await page.getByTestId('board').waitFor();
 }
 
 /** A valid v4 save with `levelId` already completed, a solved board, and a recorded best. */

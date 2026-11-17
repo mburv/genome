@@ -417,3 +417,32 @@ Owner requested the original single-base grey for multi-base DNA lettering. The 
 
 ### Codon Crush clue consumption
 Owner requested collected clues disappear. Always hide completed codon groups after each animated refill, not only when the panel is crowded. Keep the full initial panel height and original clue indices; the next remaining target is first. Undo, Restart and restored sessions reconstruct the remaining clue set from collection state.
+
+
+### Shared tallest clue envelope
+Owner requested stable clue, board and action-row positions across every level. Measure the natural height of each distinct shipped clue layout using the same rendered components, including practice and the extended chromosome layout families; retain the widest real header per shape. Cache the largest height at the current content width and remeasure only on responsive width changes. Clue consumption, undo, hinting, solving and navigation cannot shrink the reserved region. The shared board budget uses the same height, and the Undo/Hint/Restart toolbar sits directly after a uniform metadata row; the mutation-only replacement picker follows it. On very short phones prioritise usable tiles and the shared toolbar, with ordinary page scroll available for the extra picker. No DNA, puzzle rules, progression or save format changes.
+
+
+### Restore full-bleed square boards
+Owner requested the original edge-to-edge board after the shared tallest clue envelope reduced board width on shorter phones. Derive the board width from the available viewport/app width only, not viewport height or clue height. Sliding and mixed/extended puzzles use the same square board stage; keep the existing maximum app width on desktop, the shared clue envelope and the aligned toolbar. When the combined layout exceeds the viewport, allow vertical page scrolling rather than scaling down the tiles. Tests assert exact edge-to-edge square geometry at phone widths and reachable controls.
+
+
+### Mutation Correction replacement rail
+Owner requested A/C/G/T choices visible without scrolling past the bottom of the full-width board. Mutation board cells in column 1 are unused by the upper and lower DNA strands. Put its four stage-specific replacement choices in that same grid column, rows 3–6, retaining the full 9×9 square board. Do not place another picker beneath the toolbar. Selecting a target and tapping a choice commits the existing engine edit immediately and animates a visual copy from the rail to the chosen square. The destination briefly displays its old base until the flying copy lands. Keep undo, scoring, completion and save semantics unchanged. Respect reduced-motion preferences. The graphical hint highlights the correct rail choice, and the first-use tutorial shows the same rail with a matching landing animation on its final step. Include tests for short-screen geometry, animation, and tutorial.
+
+
+Mutation rail interaction refinement: engine edits, progress, and history update synchronously on tap; flight is a visual overlay only. No input is disabled while it flies. Selecting the next mismatch, Undo, or Restart can proceed immediately, cancelling or replacing the visual copy as needed. Delay the final completion dialog until the last flight clears. Each edit appears exactly once in the undo history.
+
+
+### Right-hand Mutation Correction replacement rail
+Moved the four replacement options from the unused left grid column to the unused rightmost column, rows 3–6 (zero-based cells 26, 35, 44, 53). These cells are outside the complementary strands in current practice, campaign and bonus puzzles; no DNA cell indices, engine actions, target clues, stored attempts, board dimensions or completion logic change. The landing animation derives its source from the chosen button, so it now travels from the right. Updated the first-use guide and mobile regression checks to match.
+
+### November 2026 — spatial variety in both main and T2T Human Genome campaigns
+Mixed mechanics previously reused fixed board geometry despite differing gene sequences. Each level now derives a deterministic seeded trace, connection routes, assembly read placement order, mutation locations, restriction strand placement or Codon Crush swaps and refills. For genome-wide bonus levels, the chromosome and reference interval determine their stable seed; DNA content always comes from the downloaded T2T reference. Practice tutorials remain fixed teaching examples. A prospective solution must pass the actual gameplay rules before it is accepted.
+
+Retain previously started and completed main campaign geometry so absolute-cell action logs are valid; migrate a snapshot of pre-update bonus completion coverage so already completed chromosome puzzles also replay their former layout. Future unplayed levels get the new geometry. Do not reset progression or alter the 11×11 bonus map, downloads, clue positioning or mobile controls.
+
+This branch is verified against the full T2T/bonus implementation rather than the earlier main-only source snapshot.
+
+### 17 November 2026 — progressive single-row clue strip
+Supersedes the shared tallest *complete-panel* envelope. At each content width, measure the tallest single clue row across the shipped campaign, practice, and bonus mechanics, including the two-strand replication pair as one unit. Reserve that one-row height for every level. Completed clue units disappear immediately, and the remaining unfinished units flow forward into the visible row. Only one logical row may display, even if shorter units would physically fit in two rows. There are no previous/next controls or manual pagination: unfinished clues beyond the visible row automatically move forward as preceding ones are completed. Undo restores the earlier unfinished clues and reflows the strip from the beginning. The board and controls remain anchored. No puzzle or save-format changes.

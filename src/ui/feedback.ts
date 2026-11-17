@@ -5,6 +5,8 @@
  */
 export type Cue = 'move' | 'reject' | 'power' | 'release' | 'expire' | 'energy' | 'win' | 'undo';
 
+export interface FeedbackOptions { sound: boolean; haptics: boolean }
+
 const VIBRATE: Record<Cue, number | number[]> = {
   move: 8, reject: [12, 40, 12], power: 25, release: 10, expire: [10, 30, 10], energy: 15, win: [30, 50, 30, 50, 60], undo: 6,
 };
@@ -30,14 +32,19 @@ function audio(): AudioContext | null {
       ?? (globalThis as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
     ctx ??= new AC();
-    if (ctx.state === 'suspended') void ctx.resume();
+    if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
     return ctx;
   } catch {
     return null;
   }
 }
 
-export function playCue(cue: Cue, opts: { sound: boolean; haptics: boolean }): void {
+/** Unlock audio during a user gesture before an animated move commits. */
+export function prepareFeedback(opts: FeedbackOptions): void {
+  if (opts.sound) audio();
+}
+
+export function playCue(cue: Cue, opts: FeedbackOptions): void {
   if (opts.haptics && hapticsSupported()) {
     try {
       navigator.vibrate(VIBRATE[cue]);
@@ -48,17 +55,19 @@ export function playCue(cue: Cue, opts: { sound: boolean; haptics: boolean }): v
   if (!opts.sound) return;
   const ac = audio();
   if (!ac) return;
-  const t0 = ac.currentTime + 0.005;
-  for (const [f, start, dur] of NOTES[cue]) {
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.type = cue === 'reject' ? 'triangle' : 'sine';
-    osc.frequency.value = f;
-    gain.gain.setValueAtTime(0.0001, t0 + start);
-    gain.gain.exponentialRampToValueAtTime(0.12, t0 + start + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
-    osc.connect(gain).connect(ac.destination);
-    osc.start(t0 + start);
-    osc.stop(t0 + start + dur + 0.02);
-  }
+  try {
+    const t0 = ac.currentTime + 0.005;
+    for (const [f, start, dur] of NOTES[cue]) {
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = cue === 'reject' ? 'triangle' : 'sine';
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.0001, t0 + start);
+      gain.gain.exponentialRampToValueAtTime(0.12, t0 + start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
+      osc.connect(gain).connect(ac.destination);
+      osc.start(t0 + start);
+      osc.stop(t0 + start + dur + 0.02);
+    }
+  } catch { /* optional feedback must never interrupt gameplay */ }
 }

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { applyLab, createLab, labHint, traceHintCell, connectionHint, findCrushSwap, LAB_IDS, LAB_META, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, labDecode,labLabel,labReplacementOptions, type LabResult, type LabId, type LabState, type LabAction } from '../engine/mechanicsLab.ts';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { applyLab, createLab, traceHintCell, connectionHint, findCrushSwap, LAB_IDS, LAB_META, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, labDecode,labLabel,labReplacementOptions, type LabResult, type LabId, type LabState, type LabAction } from '../engine/mechanicsLab.ts';
 import { TargetShell } from './TargetPanel.tsx';
 import { PowerTray } from './PowerTray.tsx';
 import { WinCard } from './WinCard.tsx';
@@ -10,6 +10,8 @@ import type { LevelDefinition } from '../engine/types.ts';
 import { Barcode,SeqLetters,TokenFace,tierClass,tokenStyle } from './TokenFace.tsx';
 import { labExtractedSequence } from '../engine/mechanicsLab.ts';
 import { type MixedStage } from '../campaign/mixed.ts';
+import { playCue, prepareFeedback, type FeedbackOptions } from './feedback.ts';
+import { mutationDisplayCell } from './mutationLayout.ts';
 
 export function MechanicsMenu({ onPlay, onBack }: { onPlay: (id: LabId) => void; onBack: () => void }) {
   return <section className="mechanics-menu" data-testid="mechanics-menu">
@@ -29,6 +31,9 @@ type WinCredit = { newBases: number; replayed: boolean; assembled: boolean };
 type Session = { state: LabState; history: LabState[]; actions: LabAction[]; message: string; celebration: WinCredit | null };
 type CrushDrag = { a: number; b: number; fraction: number };
 type CrushAnimation = { a: number; b: number; stage: 'swap' | 'return' | 'clear' | 'fall'; frame: number; result: LabResult; action: LabAction; credit: WinCredit };
+type MutationFlight = { base: string; cell: number; before: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
+/** Column 9 holds replacement bases; Mutation Correction reserves visible column 8 as a blank separator. */
+export const MUTATION_RAIL_CELLS = [26, 35, 44, 53] as const;
 const crushTiming = { swap: 145, return: 145, clear: 200, fall: 320 } as const;
 
 function acceptResult(prev: Session, result: LabResult, action: LabAction, credit: WinCredit | null = null): Session {
@@ -56,15 +61,15 @@ interface CampaignPlay {
   stage: MixedStage; seedTrace: boolean; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
-export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; campaign?: CampaignPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
-  const meta = LAB_META[id];
-  const spec = campaign?.stage.spec ?? DEFAULT_LAB_SPEC;
+interface BonusPlay { stage: MixedStage; label:string; part:number; of:number; hasNext:boolean; completed:boolean; newBases:number; covered:number; length:number; onComplete:(state:LabState)=>void; onNext:()=>void }
+export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; feedback: FeedbackOptions; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
+  const spec = campaign?.stage.spec ?? bonus?.stage.spec ?? DEFAULT_LAB_SPEC;
   const gene=campaign?GENES[campaign.def.symbol]!:INS;
-  const tokenDef=spec.tokens&&campaign?{...campaign.def,tokens:spec.tokens}:null;
+  const tokenDef=spec.tokens&&(campaign||bonus)?{...(campaign?.def??ALL_LEVELS[0]!),tokens:spec.tokens}:null;
   const face=(b:string)=>spec.tokens?.[b]?<TokenFace seq={labDecode(spec,b)} label={labLabel(spec,b)}/>:b==='·'?'':b;
   const chipClass=(b:string)=>spec.tokens?.[b]?'lab-token tok '+tierClass(labDecode(spec,b).length):'b-'+b;
   const chipStyle=(b:string)=>tokenDef?tokenStyle(tokenDef,b):undefined;
-  const { TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATION_ROWS, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES, CUT_TARGET } = spec;
+  const { TRACE_TARGET, CRUSH_TARGETS, READ_CELLS, ASSEMBLY_CELLS, ASSEMBLY_TARGET, MUTATION_ROWS, CONNECTION_PAIRS, CUT_STRANDS, CUT_SITES } = spec;
   const readAt = (c: number) => READ_CELLS.findIndex(row => row.includes(c));
   const endAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c || p.end === c);
   const startAt = (c: number) => CONNECTION_PAIRS.findIndex(p => p.start === c);
@@ -74,22 +79,29 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     const initial: Session = { state: createLab(id, spec, campaign?.seedTrace ?? true), history: [], actions: [], message: '', celebration: null };
     return (campaign?.initialActions ?? []).reduce((prev, action) => acceptResult(prev, applyLab(prev.state, action), action), initial);
   });
+  // The latest committed session is available to rapid pointer events before React rerenders.
+  // Feedback stays outside state updaters, so StrictMode and saved-action replay cannot duplicate it.
+  const sessionRef = useRef(session);
+  const updateSession = useCallback((next: Session) => { sessionRef.current = next; setSession(next); }, []);
   const [selected, setSelected] = useState<number | null>(null);
   const [localHint, setHint] = useState(false);
-  const hint = campaign ? hintMode === true : localHint;
-  const toggleHint = () => { if (campaign && onHintModeChange) onHintModeChange(!hint); else setHint(v => !v); };
+  const hint = campaign || bonus ? hintMode === true : localHint;
+  const toggleHint = () => { if ((campaign || bonus) && onHintModeChange) onHintModeChange(!hint); else setHint(v => !v); };
   const gesture = useRef<{ pointer: number; start: number; last: number; pair: number; read: number; x: number; y: number; pitch: number } | null>(null);
   const [crushDrag, setCrushDrag] = useState<CrushDrag | null>(null);
   const [crushAnimation, setCrushAnimation] = useState<CrushAnimation | null>(null);
+  const [mutationFlight, setMutationFlight] = useState<MutationFlight | null>(null);
   const busy = crushAnimation !== null;
   const { state } = session;
   const traceHint = id === 'trace' && hint ? traceHintCell(state) : null;
   const routeHint = id === 'connections' && hint ? connectionHint(state, selected) : null;
+  const cutHint = id === 'restriction' && hint && !state.won && state.cuts.length < 2 ? spec.CUT_SOLUTION.find(c => !state.cuts.includes(c)) : undefined;
+  const cutRecovery = id === 'restriction' && hint && !state.won && state.cuts.length >= 2;
   const crushHint = id === 'crush' && hint && !busy && !crushDrag ? findCrushSwap(state) : null;
   const crushRecovery = id === 'crush' && hint && !busy && !crushDrag && !state.won && !crushHint && session.history.length > 0;
   // Prefer the selected read if it can be corrected; otherwise guide the next legal placement.
   const assemblyCandidates = id === 'assembly' && hint && !state.won
-    ? spec.READ_STARTS.map((offset, read) => ({ read, offset })).filter(({read, offset}) =>
+    ? (spec.READ_ORDER ?? spec.READ_STARTS.map((_, i) => i)).map(read => ({ read, offset: spec.READ_STARTS[read]! })).filter(({read, offset}) =>
         state.placements[read] !== offset && applyLab(state, {type:'place', read, offset}).state !== state)
     : [];
   const assemblyHint = assemblyCandidates.find(candidate => candidate.read === selected) ?? assemblyCandidates[0];
@@ -109,22 +121,30 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const [gestureActive, setGestureActive] = useState(false);
   const [winReady, setWinReady] = useState(state.won);
   useEffect(() => {
-    if (!state.won || gestureActive) return;
+    if (!state.won || gestureActive || mutationFlight) return;
     const timer = window.setTimeout(() => setWinReady(true), 180);
     return () => window.clearTimeout(timer);
-  }, [state.won, gestureActive]);
+  }, [state.won, gestureActive, mutationFlight]);
   const credit: WinCredit = {
-    newBases: campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
-    replayed: campaign?.completed ?? false,
+    newBases: bonus ? bonus.newBases : campaign && !campaign.completed ? campaign.stage.sequence.length : 0,
+    replayed: campaign?.completed ?? bonus?.completed ?? false,
     assembled: !!campaign && !campaign.assembled && !campaign.completed && campaign.covered + campaign.stage.sequence.length === gene.cdsLength,
   };
   const onProgress = campaign?.onProgress;
   useEffect(() => { onProgress?.(session.actions, state); }, [onProgress, session.actions, state]);
+  const onBonusComplete=bonus?.onComplete;
+  useEffect(()=>{if(state.won)onBonusComplete?.(state);},[onBonusComplete,state]);
   const boardRef = useRef<HTMLDivElement>(null);
-  const dispatch = (action: LabAction) => setSession(prev => {
-    const result = applyLab(prev.state, action);
-    return acceptResult(prev, result, action, credit);
-  });
+  const commitResult = useCallback((result: LabResult, action: LabAction, earned: WinCredit) => {
+    const prev = sessionRef.current;
+    if (prev.state.won) return;
+    updateSession(acceptResult(prev, result, action, earned));
+    if (result.state !== prev.state) playCue(result.state.won ? 'win' : 'move', feedback);
+    else if (result.message) playCue('reject', feedback);
+  }, [feedback, updateSession]);
+  const dispatch = (action: LabAction) => {
+    commitResult(applyLab(sessionRef.current.state, action), action, credit);
+  };
   // Only presentation is delayed. Commit the exact engine result once, after the final frame.
   useEffect(() => {
     if (!crushAnimation) return;
@@ -134,34 +154,64 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       else if (stage === 'clear') setCrushAnimation({ ...crushAnimation, stage: 'fall' });
       else if (stage === 'fall' && crushAnimation.frame + 1 < (result.crushFrames?.length ?? 0)) setCrushAnimation({ ...crushAnimation, frame: crushAnimation.frame+1, stage:'clear' });
       else {
-        setSession(prev => acceptResult(prev, result, action, credit));
+        commitResult(result, action, credit);
         setCrushAnimation(null);
       }
     }, crushTiming[stage]);
     return () => window.clearTimeout(timer);
-  }, [crushAnimation]);
+  }, [crushAnimation, commitResult]);
+  // Engine updates immediately; the flying tile is presentation only. Fast
+  // selections and Undo cannot be blocked by an in-flight CSS animation.
+  useEffect(() => {
+    if (!mutationFlight) return;
+    const timer = window.setTimeout(() => setMutationFlight(null), 300);
+    return () => window.clearTimeout(timer);
+  }, [mutationFlight]);
+  const startMutationRepair = (base: string, cell: number) => {
+    if (sessionRef.current.state.won) return;
+    const action: LabAction = { type:'edit', cell, base };
+    const prev = sessionRef.current.state;
+    const result = applyLab(prev, action);
+    prepareFeedback(feedback);
+    const root = boardRef.current;
+    const source = [...(root?.querySelectorAll<HTMLButtonElement>('.mutation-rail-button') ?? [])].find(el => el.dataset.baseOption === base);
+    const destination = root?.querySelector<HTMLElement>('[data-lab-cell="'+cell+'"]');
+    let nextFlight: MutationFlight | null = null;
+    if (result.state !== prev && !reducedMotion && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && root && source && destination) {
+      const origin = root.getBoundingClientRect(), from = source.getBoundingClientRect(), to = destination.getBoundingClientRect();
+      nextFlight = { base, cell, before:prev.board[cell]!, x:from.left-origin.left, y:from.top-origin.top,
+        dx:to.left+to.width/2-from.left-from.width/2, dy:to.top+to.height/2-from.top-from.height/2,
+        width:from.width, height:from.height };
+    }
+    commitResult(result, action, credit);
+    setMutationFlight(nextFlight);
+  };
   const startCrushSwap = (a: number, b: number) => {
     if (busy || state.won) return;
     setSelected(null);
     setCrushDrag(null);
     const action: LabAction = { type: 'swap', a, b };
-    const result = applyLab(state, action);
+    prepareFeedback(feedback);
+    const result = applyLab(sessionRef.current.state, action);
     if (!adjacent(a, b) || state.board[b] === '.' || reducedMotion) {
-      setSession(prev => acceptResult(prev, result, action, credit));
+      commitResult(result, action, credit);
       return;
     }
     setCrushAnimation({ a, b, stage: 'swap', frame:0, result, action, credit });
   };
   const animationFrame = crushAnimation?.result.crushFrames?.[crushAnimation.frame];
   const displayBoard = crushAnimation?.stage === 'clear' && animationFrame ? animationFrame.swapped
-    : crushAnimation?.stage === 'fall' && animationFrame ? animationFrame.board : state.board;
+    : crushAnimation?.stage === 'fall' && animationFrame ? animationFrame.board
+    : mutationFlight ? state.board.map((b,c)=>c===mutationFlight.cell?mutationFlight.before:b) : state.board;
   const displayCollected = state.collected + (animationFrame && crushAnimation ? crushAnimation.frame + (crushAnimation.stage==='fall'?1:0) : 0);
   const swapMotion = crushAnimation && (crushAnimation.stage === 'swap' || crushAnimation.stage === 'return')
     ? { a: crushAnimation.a, b: crushAnimation.b, fraction: crushAnimation.stage === 'swap' ? 1 : 0 }
     : crushDrag;
   const falling = new Map(crushAnimation?.stage === 'fall' ? animationFrame?.falls.map(f => [f.to, f]) : []);
-  const reset = () => { setWinReady(false); setGestureActive(false); setSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
-  const undo = () => { setWinReady(false); setSession(prev => { const last = prev.history.at(-1); return last ? { state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null } : prev; }); setSelected(null); };
+  const reset = () => { setMutationFlight(null); setWinReady(false); setGestureActive(false); updateSession({ state: createLab(id, spec), history: [], actions: [], message: '', celebration: null }); setSelected(null); };
+  const undo = () => {
+    setMutationFlight(null);
+    setWinReady(false); const prev = sessionRef.current; const last = prev.history.at(-1); if (last) { updateSession({ state: last, history: prev.history.slice(0, -1), actions: prev.actions.slice(0, -1), message: 'Undone.', celebration: null }); playCue('undo', feedback); } setSelected(null); };
   const choose = (cell: number) => {
     if (state.won || busy || state.board[cell] === '.') return;
     if (id === 'trace') dispatch({ type: 'trace', cell });
@@ -215,6 +265,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const pointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || g.pointer !== e.pointerId) return;
+    prepareFeedback(feedback);
     if (id === 'crush') {
       const dx = e.clientX - g.x, dy = e.clientY - g.y;
       const motion = crushDirection(g.start, dx, dy, g.pitch, state.board);
@@ -243,7 +294,23 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
   const board = (
     <div ref={boardRef} className={'mechanics-board mode-lab-' + id + ' board mixed-board' + (id === 'trace' ? ' trace-board' : '')+(spec.tokens?' block-lab-board':'') + (crushDrag ? ' crush-dragging' : '') + (crushAnimation ? ' crush-' + crushAnimation.stage : '')} data-testid="mechanics-board" data-crush-phase={crushDrag ? 'drag' : crushAnimation?.stage ?? 'idle'} data-crush-chain={crushAnimation ? crushAnimation.frame+1 : undefined} aria-busy={busy} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }} onLostPointerCapture={() => { gesture.current = null; setCrushDrag(null); setGestureActive(false); }}>
       {displayBoard.map((b, c) => {
-        if (b === '.') return <div key={c} className={id === 'trace' ? "lab-hole cell hole" : "lab-hole"} data-lab-cell={c} aria-hidden="true" />;
+        const visualCell = id === 'mutation' ? mutationDisplayCell(c, MUTATION_ROWS) : c;
+        const visualPos: CSSProperties | undefined = id === 'mutation'
+          ? { gridRow: Math.floor(visualCell / 9) + 1, gridColumn: visualCell % 9 + 1 }
+          : undefined;
+        const mutationGap = id === 'mutation' && visualCell % 9 === 7;
+        const railIndex = id === 'mutation' && (!state.won || mutationFlight) ? MUTATION_RAIL_CELLS.indexOf(c as typeof MUTATION_RAIL_CELLS[number]) : -1;
+        if (railIndex >= 0) {
+          const base = labReplacementOptions(spec, mutationSelection??spec.MUTATIONS[0]??-1)[railIndex];
+          if (base !== undefined) return <button key={c} type="button"
+            className={'lab-cell mutation-rail-button '+chipClass(base)+(mutationHintBase===base?' mutation-base-hinted':'')}
+            style={{...chipStyle(base), ...visualPos}} data-lab-cell={c} data-visual-cell={visualCell} data-base-option={base} data-testid={'lab-base-'+base}
+            disabled={mutationSelection===null || state.won} aria-label={'Replace with '+labDecode(spec,base)+(mutationHintBase===base?', suggested correction':'')}
+            onClick={() => {if(mutationSelection!==null)startMutationRepair(base,mutationSelection);}}>{face(base)}</button>;
+        }
+        if (b === '.') return <div key={c}
+          className={(id === 'trace' ? 'lab-hole cell hole' : 'lab-hole') + (id === 'mutation' && c % 9 === 8 ? ' mutation-rail-slot' : '') + (mutationGap ? ' mutation-spacer' : '')}
+          data-lab-cell={c} data-visual-cell={id === 'mutation' ? visualCell : undefined} style={visualPos} aria-hidden="true" />;
         const pair = endAt(c), read = readAt(c), route = state.routes.findIndex(p => p.includes(c));
         const placedRead = id === 'assembly' && read >= 0 && state.placements[read]! >= 0;
         const chosen = id === 'assembly' ? selected === read && read >= 0 : id === 'connections' ? selected === pair && pair >= 0 : id === 'mutation' ? mutationSelection === c : selected === c;
@@ -254,13 +321,13 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
         const fall = falling.get(c);
         const assemblySource = assemblyHint !== undefined && READ_CELLS[assemblyHint.read]![0] === c;
         const assemblyDestination = assemblyHint !== undefined && ASSEMBLY_CELLS[assemblyHint.offset] === c;
-        const classes = ['lab-cell', assemblySource ? 'assembly-hint-source' : '', assemblyDestination ? 'assembly-hint-destination' : '', placedRead ? 'assembly-placed' : '', id === 'trace' ? 'cell tile' : '', traceHint === c ? 'hinted' : '', routeHint?.cell === c ? 'hinted connection-hinted' : '', crushHint?.includes(c) ? 'hinted crush-hinted' : '', mutationHint === c ? 'mutation-hinted' : '', mutationTarget ? (b === mutationTarget ? 'mutation-correct' : 'mutation-mismatch') : '', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', spec.tokens?.[b]?chipClass(b):/^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? 'trace-starter' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) && b === ASSEMBLY_TARGET[c - ASSEMBLY_CELLS[0]!] ? 'assembly-correct' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
+        const classes = ['lab-cell', assemblySource ? 'assembly-hint-source' : '', assemblyDestination ? 'assembly-hint-destination' : '', placedRead ? 'assembly-placed' : '', id === 'trace' ? 'cell tile' : '', traceHint === c ? 'hinted' : '', routeHint?.cell === c ? 'hinted connection-hinted' : '', crushHint?.includes(c) ? 'hinted crush-hinted' : '', mutationHint === c ? 'mutation-hinted' : '', cutHint === c ? 'restriction-hinted' : '', mutationTarget ? (b === mutationTarget ? 'mutation-correct' : 'mutation-mismatch') : '', moving ? 'crush-moving' : '', clear ? 'crush-clearing' : '', fall ? 'crush-falling' : '', fall?.from === null ? 'crush-new' : '', spec.tokens?.[b]?chipClass(b):/^[ACGT]$/.test(b) ? 'b-' + b : '', chosen ? 'selected' : '', state.trace.includes(c) ? 'traced' : '', id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? 'trace-starter' : '', route >= 0 ? 'routed' : '', isTop ? 'reference' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? 'assembly-slot' : '', id === 'assembly' && ASSEMBLY_CELLS.includes(c) && b === ASSEMBLY_TARGET[c - ASSEMBLY_CELLS[0]!] ? 'assembly-correct' : '', id !== 'crush' && state.fresh.includes(c) ? 'fresh' : '', state.cuts.includes(c) ? 'cut' : ''].filter(Boolean).join(' ');
         const endpoint = id === 'connections' && pair >= 0;
         const connectionColor = id === 'connections' ? (endpoint ? pair : route) : -1;
         const cutSite = id === 'restriction' && CUT_SITES.includes(c);
-        const badge = id === 'mutation' && c % 9 === 1 ? (isTop ? 'REF' : 'R' + (Math.floor(c / 9) + 1)) : endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
-        const motionStyle: CSSProperties = { ...chipStyle(b), transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}), ...(routeHint?.cell === c ? { '--connection-hint-color': pathColors[routeHint.pair] } : {}) } as CSSProperties;
-        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-seq={labDecode(spec,b)} data-read-placed={id === 'assembly' && read >= 0 ? String(placedRead) : undefined} data-testid={'lab-cell-' + c} aria-label={'Row ' + (Math.floor(c / 9) + 1) + ' column ' + (c % 9 + 1) + ': ' + (b === '·' ? 'empty' : labDecode(spec,b)) + (badge ? ', ' + badge : '') + (traceHint === c ? ', suggested next move' : '') + (routeHint?.cell === c ? ', suggested move for pair ' + (routeHint.pair + 1) : '') + (crushHint?.includes(c) ? ', suggested swap tile' : '') + (id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? ', starter base' : '') + (mutationHint === c ? ', suggested repair' : '') + (assemblySource ? ', suggested read to select' : '') + (assemblyDestination ? ', suggested destination slot' : '') + (placedRead ? ', read ' + (read + 1) + ' placed at slot ' + (state.placements[read]! + 1) : '')} aria-pressed={chosen} disabled={state.won && !gestureActive} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 && !spec.tokens?.[b] ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
+        const badge = id === 'mutation' && MUTATION_ROWS.some(r => r.top === c || r.bottom === c) ? (isTop ? 'REF' : 'R' + (Math.floor(c / 9) + 1)) : endpoint ? String(pair + 1) + (CONNECTION_PAIRS[pair]!.start === c ? '→' : '←') : cutSite ? (state.cuts.includes(c) ? '✓' : '✂') : id === 'assembly' && read >= 0 && READ_CELLS[read]![0] === c ? 'R' + (read + 1) : id === 'assembly' && ASSEMBLY_CELLS.includes(c) ? String(c - ASSEMBLY_CELLS[0]! + 1) : '';
+        const motionStyle: CSSProperties = { ...chipStyle(b), ...visualPos, transform: swapMotion ? swapTransform(c, swapMotion) : undefined, ...(fall ? { '--fall-rows': fall.rows } : {}), ...(routeHint?.cell === c ? { '--connection-hint-color': pathColors[routeHint.pair] } : {}) } as CSSProperties;
+        return <button key={c} type="button" className={classes} data-lab-cell={c} data-base={b} data-seq={labDecode(spec,b)} title={spec.tokens?.[b] && labDecode(spec,b).length > 6 ? labDecode(spec,b) : undefined} data-read-placed={id === 'assembly' && read >= 0 ? String(placedRead) : undefined} data-testid={'lab-cell-' + c} data-visual-cell={id === 'mutation' ? visualCell : undefined} aria-label={'Row ' + (Math.floor(visualCell / 9) + 1) + ' column ' + (visualCell % 9 + 1) + ': ' + (b === '·' ? 'empty' : labDecode(spec,b)) + (badge ? ', ' + badge : '') + (traceHint === c ? ', suggested next move' : '') + (routeHint?.cell === c ? ', suggested move for pair ' + (routeHint.pair + 1) : '') + (crushHint?.includes(c) ? ', suggested swap tile' : '') + (id === 'trace' && state.trace.slice(0,state.traceStarter).includes(c) ? ', starter base' : '') + (mutationHint === c ? ', suggested repair' : '') + (cutHint === c ? ', suggested cut' : '') + (assemblySource ? ', suggested read to select' : '') + (assemblyDestination ? ', suggested destination slot' : '') + (placedRead ? ', read ' + (read + 1) + ' placed at slot ' + (state.placements[read]! + 1) : '')} aria-pressed={chosen} disabled={state.won && !gestureActive} onClick={e => { if (e.detail === 0) choose(c); }} data-connection-pair={connectionColor >= 0 ? connectionColor + 1 : undefined} style={connectionColor >= 0 && !spec.tokens?.[b] ? { ...motionStyle, borderColor: pathColors[connectionColor], background: pathFills[connectionColor] } : motionStyle}>
           {spec.tokens?.[b]?face(b):<span className={id === 'trace' ? 'letter' : undefined}>{b === '·' ? '' : b}</span>}{badge && <small style={connectionColor >= 0 && spec.tokens?.[b] ? { color: pathColors[connectionColor] } : undefined}>{badge}</small>}
         </button>;
       })}
@@ -276,38 +343,73 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
     </div>
   );
   const winDef = campaign?.def ?? ALL_LEVELS.find(l=>l.id===OPENING_LEVEL_ID)!;
-  const hasNext = campaign?.hasNext ?? !!next;
-  const advance = campaign ? campaign.onNext : () => next ? onNext(next) : onBack();
-  const nextLabel = campaign ? 'Next level →' : 'Next mechanic →';
+  const hasNext = bonus ? bonus.hasNext : campaign?.hasNext ?? !!next;
+  const advance = bonus ? bonus.onNext : campaign ? campaign.onNext : () => next ? onNext(next) : onBack();
+  const nextLabel = campaign || bonus ? 'Next level →' : 'Next mechanic →';
   const winTitle: Record<LabId,string> = {
     trace:'Fragment traced', crush:'Codons collected', assembly:'Fragment assembled',
     mutation:'Mismatches repaired', connections:'Strands connected', restriction:'Fragment isolated',
   };
   // Lab connections are an abstract routing exercise: their complete pair sequences
   // are in the labels, whereas campaign endpoints encode the exact two-base fragment.
-  const extracted = state.won ? !campaign && id==='connections'
+  const extracted = state.won ? !campaign && !bonus && id==='connections'
     ? spec.CONNECTION_PAIRS.map(p=>p.seq).join('') : labExtractedSequence(state) : null;
-  const closeWin = () => setSession(prev=>({...prev,celebration:null}));
+  const closeWin = () => updateSession({...sessionRef.current,celebration:null});
+  const stage = bonus?.stage ?? campaign?.stage;
   const popup = state.won && winReady && session.celebration && extracted !== null &&
-    <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign,nextLabel,...(campaign?{range:{start:campaign.stage.start,end:campaign.stage.end}}:{})}}
+    <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign&&!bonus,nextLabel,...(stage?{range:{start:stage.start,end:stage.end}}:{})}}
+      {...(bonus?{bonus:{label:bonus.label,part:bonus.part,of:bonus.of}}:{})}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
-      replayed={session.celebration.replayed} assembled={session.celebration.assembled && !!campaign?.assembled}
-      assembledBases={campaign?.covered ?? 0} cdsLength={gene.cdsLength} reducedMotion={reducedMotion}
+      replayed={session.celebration.replayed} assembled={!!campaign?.assembled && (session.celebration.assembled || campaign.part === campaign.of)}
+      assembledBases={bonus?.covered ?? campaign?.covered ?? 0} cdsLength={bonus?.length ?? gene.cdsLength} reducedMotion={reducedMotion}
       hasNext={hasNext} onNext={advance} onMap={onBack} onCard={campaign?.onCard ?? onBack} onClose={closeWin} />;
   const solved = state.won && winReady && !session.celebration &&
     <SolvedBanner def={winDef} moves={state.moves} unranked pulse={false} hasNext={hasNext}
-      nextLabel={nextLabel} mapLabel={campaign?'Level map':'Lab menu'} onReplay={reset} onNext={advance} onMap={onBack} />;
-  // All mechanics use the same play-screen chrome as the traditional sliding puzzle.
-  // The target content, game board and mechanic-specific inputs remain independent.
-  const targetLength = campaign?.stage.sequence.length ?? (
-    id==='trace'?TRACE_TARGET.length : id==='crush'?CRUSH_TARGETS.join('').length :
-    id==='assembly'?ASSEMBLY_TARGET.length : id==='mutation'?MUTATION_ROWS.map(r=>r.seq).join('').length :
-    id==='connections'?CONNECTION_PAIRS.map(p=>p.seq).join('').length : CUT_TARGET.length);
+      nextLabel={nextLabel} mapLabel={bonus?'Bonus map':campaign?'Level map':'Lab menu'} onReplay={reset} onNext={advance} onMap={onBack} />;
   return <>
-    <TargetShell reserveHeight hideCompleted={id==='crush'} defId={campaign?.stage.id ?? 'lab-'+id} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
+    <MechanicClues state={state} defId={stage?.id ?? 'lab-'+id} range={mechanicClueRange(stage,!!bonus)}
+      def={campaign?.def} displayCollected={displayCollected} mutationSelection={mutationSelection}/>
+
+    <div className="board-stage">
+      {board}
+      {mutationFlight && <span className={'mutation-flight '+chipClass(mutationFlight.base)} data-testid="mutation-flight" aria-hidden="true"
+        style={{...chipStyle(mutationFlight.base), left:mutationFlight.x, top:mutationFlight.y, width:mutationFlight.width, height:mutationFlight.height,
+          '--flight-dx':mutationFlight.dx+'px', '--flight-dy':mutationFlight.dy+'px'} as CSSProperties}>{face(mutationFlight.base)}</span>}
+      {solved}
+    </div>
+    <div className={'under-board mixed-under-board'+(crushRecovery||assemblyRecovery||cutRecovery?' crush-hint-recovery':'')} data-testid="under-board">
+      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/{gene.cdsLength} bp assembled</span>}{bonus&&<span className="muted" data-testid="bonus-coverage">{bonus.covered.toLocaleString()}/{bonus.length.toLocaleString()} bp</span>}</div>
+      {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
+      {!campaign && !bonus && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
+      {!campaign && !bonus && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
+    </div>
+    {popup}
+  </>;
+}
+
+/** Pure clue view shared by gameplay and the responsive sizing reference. */
+export function mechanicClueRange(stage?: MixedStage, bonus = false): string {
+  if (!stage) return 'INS · practice';
+  const count = stage.sequence.length + ' bp' + (stage.spec.blockSize ? ' · ' + stage.spec.blockSize + '-base blocks' : '');
+  return bonus ? count : stage.symbol + ' CDS ' + (stage.start + 1) + '–' + stage.end + ' · ' + count;
+}
+
+export function MechanicClues({ state, defId, range, def, displayCollected = state.collected, mutationSelection = null, measureOnly = false }: {
+  state: LabState; defId: string; range: string; def?: LevelDefinition | undefined;
+  displayCollected?: number; mutationSelection?: number | null; measureOnly?: boolean;
+}) {
+  const {id, spec} = state;
+  const tokenDef = spec.tokens ? {...(def ?? ALL_LEVELS[0]!), tokens:spec.tokens} : null;
+  const face = (b:string) => spec.tokens?.[b] ? <TokenFace seq={labDecode(spec,b)} label={labLabel(spec,b)}/> : b==='·' ? '' : b;
+  const chipClass = (b:string) => spec.tokens?.[b] ? 'lab-token tok '+tierClass(labDecode(spec,b).length) : 'b-'+b;
+  const chipStyle = (b:string) => tokenDef ? tokenStyle(tokenDef,b) : undefined;
+  const mutationExpected = (c:number) => expectedMutation(c,spec);
+  const {TRACE_TARGET,CRUSH_TARGETS,ASSEMBLY_TARGET,ASSEMBLY_CELLS,MUTATION_ROWS,CONNECTION_PAIRS,CUT_TARGET} = spec;
+  return (
+    <TargetShell longClues={id==='mutation'||id==='assembly'||Object.values(spec.tokens??{}).some(t=>t.seq.length>6)} measureOnly={measureOnly} hideCompleted defId={defId} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
-        <span className="target-title">{meta.title}</span>
-        <span className="muted" data-testid="mixed-range">{campaign ? gene.symbol+' CDS ' + (campaign.stage.start + 1) + '–' + campaign.stage.end + ' · ' + targetLength + ' bp'+(spec.blockSize?' · '+spec.blockSize+'-base blocks':'') : 'INS · practice'}</span>
+        <span className="target-title">{LAB_META[id].title}</span>
+        <span className="muted" data-testid="mixed-range">{range}</span>
       </div>
       {id==='trace' && <div className="clue-stack mode-sequence">
         <div className="clue-part"><b className="badge">1</b><div className="clue-tokens">
@@ -315,16 +417,16 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
         </div></div>
       </div>}
       {id === 'crush' && <div className={"clue-stack mode-sequence mixed-codon-clues"+(CRUSH_TARGETS.length>6?" long-codon-clues":"")}>{CRUSH_TARGETS.map((c, i) => <div key={i} className="clue-part" data-clue-unit="" data-clue-done={String(i<displayCollected)}><b className="badge">{i+1}</b><div className="clue-tokens">{[...c].map((b,j)=><span key={j} className={'strip-cell '+chipClass(b)+(i<displayCollected?' ok':'')+(i===displayCollected?' current-codon':'')} style={chipStyle(b)} title={labDecode(spec,b)}>{face(b)}</span>)}</div></div>)}</div>}
-      {id === 'assembly' && <><div className={'lab-sequence assembly-reference mixed-clues'+(spec.tokens?' block-reference':'')} data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={chipClass(b)+(state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} style={chipStyle(b)} data-clue-unit="" data-clue-done={String(state.board[ASSEMBLY_CELLS[i]!] === b)} aria-label={'Slot ' + (i + 1) + ': ' + labDecode(spec,b)}>{spec.tokens?.[b] ? <><span className="chip-label">{labDecode(spec,b).length <= 6 ? <SeqLetters seq={labDecode(spec,b)} /> : labLabel(spec,b)}</span>{labDecode(spec,b).length > 3 && <Barcode seq={labDecode(spec,b)} />}</> : face(b)}<small>{i + 1}</small></span>)}</div></>}
+      {id === 'assembly' && <><div className={'lab-sequence assembly-reference mixed-clues'+(spec.tokens?' block-reference':'')} data-testid="assembly-reference">{[...ASSEMBLY_TARGET].map((b, i) => <span key={i} className={chipClass(b)+(state.board[ASSEMBLY_CELLS[i]!] === b ? ' assembled-match' : '')} style={chipStyle(b)} data-clue-unit="" data-clue-done={String(state.board[ASSEMBLY_CELLS[i]!] === b)} title={spec.tokens?.[b] ? labDecode(spec,b) : undefined} aria-label={'Slot ' + (i + 1) + ': ' + labDecode(spec,b)}>{spec.tokens?.[b] && labDecode(spec,b).length <= 6 ? <><span className="chip-label"><SeqLetters seq={labDecode(spec,b)} /></span>{labDecode(spec,b).length > 3 && <Barcode seq={labDecode(spec,b)} />}</> : face(b)}<small>{i + 1}</small></span>)}</div></>}
       {id === 'mutation' && <div className="mutation-reference mixed-clues" data-testid="mutation-reference" role="group" aria-label="Target complementary strands, 3 prime to 5 prime">
         {MUTATION_ROWS.map(({ bottom, seq }) => {
           const row = Math.floor(bottom / 9) + 1;
           return <div className="mutation-reference-row" key={bottom} data-clue-unit="" data-clue-done={String([...seq].every((_,i)=>state.board[bottom+i]===mutationExpected(bottom+i)))}>
             <span className="mutation-row-label">Row {row}</span>
             {[...seq].map((_, i) => {
-              const cell = bottom + i, want = mutationExpected(cell)!;
+              const cell = bottom + i, want = mutationExpected(cell)!, visualCell = mutationDisplayCell(cell, MUTATION_ROWS);
               const ok = state.board[cell] === want;
-              return <span key={cell} className={'mutation-target-base '+chipClass(want)+(ok ? ' matched' : ' mismatch') + (mutationSelection === cell ? ' selected' : '')} data-testid={'mutation-target-' + cell} data-symbol={want} style={chipStyle(want)} aria-label={'Row ' + row + ', column ' + (cell % 9 + 1) + ': target ' + labDecode(spec,want) + ', ' + (ok ? 'correct' : 'needs repair')}>{face(want)}</span>;
+              return <span key={cell} className={'mutation-target-base '+chipClass(want)+(ok ? ' matched' : ' mismatch') + (mutationSelection === cell ? ' selected' : '')} data-testid={'mutation-target-' + cell} data-symbol={want} style={chipStyle(want)} aria-label={'Row ' + row + ', column ' + (visualCell % 9 + 1) + ': target ' + labDecode(spec,want) + ', ' + (ok ? 'correct' : 'needs repair')}>{face(want)}</span>;
             })}
           </div>;
         })}
@@ -338,19 +440,5 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, campaign, hin
       })}</div>}
       {id === 'restriction' && <div className="mono small restriction-target mixed-clues" data-testid="restriction-target" aria-label={'Target sequence: ' + labDecode(spec,CUT_TARGET)}>{[...CUT_TARGET].map((b, i) => <span key={i} className={'restriction-target-base '+chipClass(b)} style={chipStyle(b)} data-base={b} data-clue-unit="" data-clue-done={String(state.won)}>{face(b)}</span>)}</div>}
     </TargetShell>
-    <div className="board-stage">
-      {board}
-      {solved}
-    </div>
-    <div className={'under-board mixed-under-board'+(crushRecovery||assemblyRecovery?' crush-hint-recovery':'')} data-testid="under-board">
-      <div className="row-between small meta"><span data-testid="moves">{state.moves} {state.moves===1?'move':'moves'}</span><span className="muted" data-testid="lab-progress">{progress}</span>{campaign&&<span className="muted" data-testid="mixed-coverage">{campaign.covered}/{gene.cdsLength} bp assembled</span>}</div>
-      {id==='mutation' && !state.won && <div className="base-picker lab-base-picker" aria-label="Choose replacement base">{labReplacementOptions(spec,mutationSelection??spec.MUTATIONS[0]??-1).map(b=><button type="button" style={chipStyle(b)} className={chipClass(b)+(mutationHintBase===b?' mutation-base-hinted':'')} key={b} disabled={mutationSelection===null} aria-label={'Replace with '+labDecode(spec,b)+(mutationHintBase===b?', suggested correction':'')} onClick={()=>{if(mutationSelection!==null) dispatch({type:'edit',cell:mutationSelection,base:b});}} data-testid={'lab-base-'+b}>{face(b)}</button>)}</div>}
-      {!state.won && <PowerTray energy={0} powersEnabled={false} freeUses={[]} locks={[]} scaffold={null} active={null} disabled={busy} highlightRelease={false} onPick={()=>undefined} onRelease={()=>undefined} canUndo={session.history.length>0} canRestart={state.moves>0} onUndo={undo} hintEnabled={hint} onHint={toggleHint} onRestart={reset} />}
-      {!campaign && state.won && !session.celebration && <button type="button" onClick={undo} disabled={!session.history.length}>Undo</button>}
-      {id!=='trace'&&id!=='mutation'&&id!=='connections'&&id!=='crush'&&id!=='assembly'&&hint&&!state.won&&<p className="lab-hint small" role="status">{labHint(state)}</p>}
-      {id!=='trace' && id!=='mutation' && <span className="trace-status muted small" role="status" data-testid="lab-message">{id==='crush'&&crushAnimation&&crushAnimation.frame>0 ? 'Chain reaction ×'+(crushAnimation.frame+1) : session.message || 'Ready.'}</span>}
-      {!campaign && <button type="button" className="trace-lab-back" onClick={onBack}>Back to Mechanics Lab</button>}
-    </div>
-    {popup}
-  </>;
+  );
 }

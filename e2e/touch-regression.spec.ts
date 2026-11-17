@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
+import {CAMPAIGN_LEVELS} from '../src/campaign/campaign.ts';
+import {mechanicOf} from '../src/campaign/mixed.ts';
 import { segmentCells } from '../src/engine/grid.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { lettersAt, openLab, rotated } from './helpers';
+import { lettersAt, openChapter, rotated } from './helpers';
 
 /**
  * Regression: rows/columns stopped dragging on iOS Safari. WebKit implicitly captures a touch pointer to the
@@ -11,8 +12,7 @@ import { lettersAt, openLab, rotated } from './helpers';
  * emulate WebKit's capture hand-over on top of genuine CDP touch input (touchstart → many touchmoves →
  * touchend, hasTouch/isMobile) and also check that the page never scrolls during a board gesture.
  */
-const LABS = (pack.levels as LevelDefinition[]).filter((l) => l.lab);
-const scaffold = LABS.find((l) => l.lab === 'scaffold')!;
+const slide = CAMPAIGN_LEVELS.find(l=>!l.tier&&!l.tutorial&&mechanicOf(l)==='slide'&&(['row','col'] as const).every(axis=>[...l.mask].some((ch,c)=>ch==='#'&&segmentCells(l.mask,c,axis).length>=4&&new Set(segmentCells(l.mask,c,axis).map(x=>l.initial[x])).size>2)))!;
 
 async function emulateWebKitImplicitCapture(page: Page) {
   await page.addInitScript(() => {
@@ -67,8 +67,8 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
 
     for (const axis of ['row', 'col'] as const) {
       test(`a ${axis} drags with the finger, commits one move, and the page does not scroll`, async ({ page }) => {
-        await openLab(page, LABS.indexOf(scaffold) + 1);
-        const def = scaffold;
+        await openChapter(page, slide.id);
+        const def = slide;
         const seg = segmentWith(def, axis, 4);
         const tile = page.locator(`[data-cell="${seg[1]}"]`);
         await tile.scrollIntoViewIfNeeded();
@@ -92,7 +92,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
     }
 
     test('a vertical swipe that starts off the board still scrolls the page normally', async ({ page }) => {
-      await openLab(page, LABS.indexOf(scaffold) + 1);
+      await openChapter(page, slide.id);
       const h = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
       test.skip(h < 40, 'page does not scroll at this size');
       const panel = (await page.getByTestId('target-panel').boundingBox())!;
@@ -113,8 +113,8 @@ for (const vp of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
 test('mouse drag still slides a row (explicit capture for mouse/pen)', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: false, isMobile: false });
   const page = await ctx.newPage();
-  await openLab(page, LABS.indexOf(scaffold) + 1);
-  const def = scaffold;
+  await openChapter(page, slide.id);
+  const def = slide;
   const seg = segmentWith(def, 'row', 4);
   const before = await lettersAt(page, seg);
   const box = (await page.locator(`[data-cell="${seg[1]}"]`).boundingBox())!;

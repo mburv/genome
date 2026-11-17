@@ -1,12 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
-import pack from '../src/campaign/levels.generated.json' with { type: 'json' };
+import {CAMPAIGN_LEVELS} from '../src/campaign/campaign.ts';
+import {mechanicOf} from '../src/campaign/mixed.ts';
 import { segmentCells } from '../src/engine/grid.ts';
 import type { LevelDefinition } from '../src/engine/types.ts';
-import { cellPitch, lettersAt, openChapter, openLab, rotated, touchDrag } from './helpers';
+import { cellPitch, lettersAt, openChapter, rotated, touchDrag } from './helpers';
 
-const LABS = (pack.levels as LevelDefinition[]).filter((l) => l.lab);
-const scaffold = LABS.find((l) => l.lab === 'scaffold')!;
-const crispr = LABS.find((l) => l.lab === 'crispr')!;
+const SLIDES = CAMPAIGN_LEVELS.filter(l=>!l.tier&&!l.tutorial&&mechanicOf(l)==='slide');
+const hasSegment=(def:LevelDefinition,axis:'row'|'col',min:number)=>[...def.mask].some((ch,c)=>ch==='#'&&segmentCells(def.mask,c,axis).length>=min&&new Set(segmentCells(def.mask,c,axis).map(x=>def.initial[x])).size>2);
+const horizontal = SLIDES.find(l=>hasSegment(l,'row',9))!;
+const vertical = SLIDES.find(l=>hasSegment(l,'col',6))!;
 
 /** First segment on `axis` with at least `min` cells whose letters are not all identical. */
 function segmentWith(def: LevelDefinition, axis: 'row' | 'col', min: number): number[] {
@@ -18,16 +20,16 @@ function segmentWith(def: LevelDefinition, axis: 'row' | 'col', min: number): nu
   throw new Error('no such segment');
 }
 
-async function openScaffold(page: Page) {
-  await openLab(page, LABS.indexOf(scaffold) + 1);
+async function openHorizontal(page: Page) {
+  await openChapter(page, horizontal.id);
 }
-async function openCrispr(page: Page) {
-  await openLab(page, LABS.indexOf(crispr) + 1);
+async function openVertical(page: Page) {
+  await openChapter(page, vertical.id);
 }
 
 test('horizontal touch drag across three cells commits one 3-step rotation (one move)', async ({ page }) => {
-  await openScaffold(page);
-  const def = scaffold;
+  await openHorizontal(page);
+  const def = horizontal;
   const seg = segmentWith(def, 'row', 9);
   expect(seg.length).toBe(9);
   const before = await lettersAt(page, seg);
@@ -41,22 +43,22 @@ test('horizontal touch drag across three cells commits one 3-step rotation (one 
   expect(await lettersAt(page, seg)).toBe(before);
 });
 
-async function openLabWithShortMixedRow(page: Page): Promise<{ def: LevelDefinition; seg: number[] }> {
-  for (const def of LABS) {
+async function openSlideWithShortMixedRow(page: Page): Promise<{ def: LevelDefinition; seg: number[] }> {
+  for (const def of SLIDES) {
     for (let c = 0; c < 81; c++) {
       if (def.mask[c] !== '#') continue;
       const seg = segmentCells(def.mask, c, 'row');
       if (seg[0] !== c || seg.length < 2 || seg.length >= 9) continue;
       if (new Set(seg.map((x) => def.initial[x])).size < 2) continue;
-      await openLab(page, LABS.indexOf(def) + 1);
+      await openChapter(page, def.id);
       return { def, seg };
     }
   }
-  throw new Error('no short mixed row in the labs');
+  throw new Error('no short mixed row in the sliding campaign');
 }
 
 test('segment follows the finger live, wraps, and is clipped to its own cells mid-drag', async ({ page }) => {
-  const { def, seg } = await openLabWithShortMixedRow(page);
+  const { def, seg } = await openSlideWithShortMixedRow(page);
   const before = await lettersAt(page, seg);
   const outside = [...Array(81).keys()].filter((c) => def.mask[c] === '#' && !seg.includes(c));
   const outsideBefore = await lettersAt(page, outside);
@@ -80,8 +82,8 @@ test('segment follows the finger live, wraps, and is clipped to its own cells mi
 });
 
 test('dragging out and back to the origin in one gesture is a no-op (no move counted)', async ({ page }) => {
-  await openScaffold(page);
-  const def = scaffold;
+  await openHorizontal(page);
+  const def = horizontal;
   const seg = segmentWith(def, 'row', 9);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
@@ -92,8 +94,8 @@ test('dragging out and back to the origin in one gesture is a no-op (no move cou
 });
 
 test('releasing between cells snaps to the nearest cell', async ({ page }) => {
-  await openScaffold(page);
-  const def = scaffold;
+  await openHorizontal(page);
+  const def = horizontal;
   const seg = segmentWith(def, 'row', 9);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
@@ -102,8 +104,8 @@ test('releasing between cells snaps to the nearest cell', async ({ page }) => {
 });
 
 test('vertical touch drag rotates the column segment by two', async ({ page }) => {
-  await openCrispr(page);
-  const def = crispr;
+  await openVertical(page);
+  const def = vertical;
   const seg = segmentWith(def, 'col', 6);
   const before = await lettersAt(page, seg);
   const p = await cellPitch(page);
@@ -113,10 +115,10 @@ test('vertical touch drag rotates the column segment by two', async ({ page }) =
 });
 
 test('a single-cell segment cannot be dragged on that axis', async ({ page }) => {
-  for (const def of LABS) {
+  for (const def of SLIDES) {
     const single = [...def.mask].findIndex((ch, c) => ch === '#' && segmentCells(def.mask, c, 'row').length === 1);
     if (single < 0) continue;
-    await openLab(page, LABS.indexOf(def) + 1);
+    await openChapter(page, def.id);
     const board = await page.locator('.board').innerText();
     const p = await cellPitch(page);
     await touchDrag(page, single, [{ dx: 2 * p, dy: 0 }], { holdMs: 80 });

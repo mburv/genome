@@ -1,6 +1,7 @@
 import { GENES } from '../genomics/genes.ts';
 import { DEFAULT_LAB_SPEC, createLab, applyLab, labExtractedSequence, mutationExpected, reverseComplement, type LabSpec, type LabId, type LabAction, type LabState } from '../engine/mechanicsLab.ts';
 import { blockStage } from './blockMixed.ts';
+import { variedStage } from './varied.ts';
 import type { LevelDefinition } from '../engine/types.ts';
 
 export type Mechanic = LabId | 'slide';
@@ -42,12 +43,12 @@ const snake = (n: number, startRow = 0): number[] => Array.from({ length: n }, (
   const row = Math.floor(i / 9) + startRow, col = i % 9;
   return row * 9 + (row % 2 ? 8 - col : col);
 });
-export function mixedStage(def: LevelDefinition): MixedStage | null {
+export function mixedStage(def: LevelDefinition, legacyLayout = false): MixedStage | null {
   const mechanic = mechanicOf(def);
   if (mechanic === 'slide') return null;
   const start = def.sourceIntervals[0]!.start, end = def.sourceIntervals.at(-1)!.end;
   const sequence = GENES[def.symbol]!.sequence.slice(start,end);
-  if(def.tier)return blockStage(def,mechanic,start,end,sequence);
+  if(def.tier)return blockStage(def,mechanic,start,end,sequence,legacyLayout);
   const spec: LabSpec = { ...DEFAULT_LAB_SPEC };
   let certificate: LabAction[];
   if (mechanic === 'trace') {
@@ -89,7 +90,8 @@ export function mixedStage(def: LevelDefinition): MixedStage | null {
     spec.CUT_SITES = [...spec.CUT_SOLUTION,decoy[6]!];
     certificate = spec.CUT_SOLUTION.map(cell => ({ type:'cut',cell }));
   }
-  return { id:def.id,symbol:def.symbol, mechanic, start,end,sequence,spec,certificate };
+  const stage = { id:def.id,symbol:def.symbol, mechanic, start,end,sequence,spec,certificate };
+  return legacyLayout ? stage : variedStage(def,stage);
 }
 export function replayMixed(stage: MixedStage, actions: readonly LabAction[], seedTrace = true): LabState {
   return actions.reduce((state, action) => applyLab(state, action).state, createLab(stage.mechanic, stage.spec, seedTrace));

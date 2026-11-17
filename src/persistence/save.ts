@@ -2,9 +2,11 @@ import { isCompatibleBoard, levelCodons, type PuzzleState, type Snapshot, HISTOR
 import { codonComplete, ENERGY_CAP, POWERS, START_ENERGY, scaffoldTrack, SCAFFOLD_TURNS, type Power } from '../engine/powers.ts';
 import { applyMove } from '../engine/grid.ts';
 import type { LevelDefinition, Move } from '../engine/types.ts';
-import { INTRO_IDS, REPLACED_OPENERS, isDiscovered, nextCampaignId, type LevelPack } from '../campaign/campaign.ts';
+import { INTRO_IDS, REPLACED_OPENERS, isDiscovered, nextCampaignId, ALL_LEVELS, type LevelPack } from '../campaign/campaign.ts';
 import { assemblyStatus } from '../campaign/assembly.ts';
-import { GENES } from '../genomics/genes.ts';
+import { GENES,LEGACY_GENES } from '../genomics/genes.ts';
+import { creditFamousCompleted,creditLegacyCompleted,legacyLevelExact,legacyBoardCompatible,referenceLevelCovered } from '../campaign/sharedCoverage.ts';
+import { readGenomeProgress, type BonusProgress } from '../campaign/bonus.ts';
 import { mixedStage, replayMixed, SLIDE_TUTORIALS } from '../campaign/mixed.ts';
 import { LAB_IDS, type LabAction } from '../engine/mechanicsLab.ts';
 import { isCustomSymbol, MAX_CUSTOM_TOKENS } from '../engine/tokens.ts';
@@ -32,7 +34,17 @@ export interface SaveData {
   attempts: Record<string, PuzzleState>;
   /** Optional additive v7 fields: verified replay logs and first-use tutorial acknowledgements. */
   mixedAttempts?: Record<string, LabAction[]>;
+  /** Version 2: distinct seeded spatial layouts for both campaigns. */
+  mixedGeometryVersion?: number;
+  /** Pre-update stages retain their absolute-cell solution paths and saved actions. */
+  legacyMixedLayouts?: string[];
+  /** Snapshot of formerly completed T2T intervals, for unchanged replay boards. */
+  legacyBonusGeometry?: BonusProgress;
   tutorialsSeen?: string[];
+  /** Separate T2T reference coverage, zero-based half-open intervals per chromosome. */
+  genomeProgress?: BonusProgress;
+  /** Historical completed puzzles whose old RefSeq sequence differed from T2T. Their matching bases are credited; remaining bases are playable in the genome map. */
+  legacyReferenceLevels?: string[];
   /** Per-attempt marker: replay starts at the free two-base prefix rather than an empty path. */
   traceStarterAttempts?: string[];
   /** Progress kept from earlier builds that has no exact equivalent in this campaign. */
@@ -108,6 +120,7 @@ export function createMemoryAdapter(initial: string | null = null): StorageAdapt
 export function newSave(pack: LevelPack): SaveData {
   return {
     schemaVersion: SCHEMA_VERSION,
+    mixedGeometryVersion: 2,
     campaignId: pack.campaignId,
     generatorVersion: pack.generatorVersion,
     tokenGeneratorVersion: pack.tokenGeneratorVersion ?? '',
@@ -440,19 +453,32 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   const notices: string[] = [];
   const ids = new Set(pack.levels.map((l) => l.id));
   const rawCompleted = strings(data.completed);
-  const completed = [...new Set(rawCompleted.flatMap(id=>REPLACED_OPENERS[id]??[id]).filter(id=>ids.has(id)))];
-  const discovered = [...new Set(
-    Object.keys(pack.datasets).filter((g) => isDiscovered(completed, g)),
-  )];
+  let completed = [...new Set(rawCompleted.flatMap(id=>REPLACED_OPENERS[id]??[id]).filter(id=>ids.has(id)))];
+  let genomeProgress=readGenomeProgress(data.genomeProgress);
+  let legacyReferenceLevels=[...new Set(strings(data.legacyReferenceLevels).filter(id=>ids.has(id)&&!completed.includes(id)))];
   const datasets = typeof data.datasets === 'object' && data.datasets !== null ? (data.datasets as Record<string, unknown>) : {};
+  const oldReference=Object.entries(datasets).some(([symbol,id])=>LEGACY_GENES[symbol]?.datasetId===id);
+  if(oldReference){
+    const previous=completed;
+    genomeProgress=creditLegacyCompleted(genomeProgress,previous);
+    completed=previous.filter(id=>legacyLevelExact(id));
+    legacyReferenceLevels=[...new Set([...legacyReferenceLevels,...previous.filter(id=>!completed.includes(id))])];
+    if(previous.length){adapter.backup(raw,'pre-t2t');notices.push('Famous Genes now uses the shared T2T reference. Your completed puzzles and matching DNA bases are retained; any differing bases can be assembled in Human Genome without replaying completed puzzles. Your previous save is backed up.');}
+  }
+  genomeProgress=creditFamousCompleted(genomeProgress,completed);
+  // Existing full-genome coverage can also satisfy a Famous Genes puzzle. No duplicate effort.
+  for(const def of pack.levels)if(referenceLevelCovered(genomeProgress,def)&&!completed.includes(def.id))completed.push(def.id);
+  legacyReferenceLevels=legacyReferenceLevels.filter(id=>!completed.includes(id));
+  const discovered = [...new Set(Object.keys(pack.datasets).filter(g=>isDiscovered([...completed,...legacyReferenceLevels],g)))];
   const sameContent = data.generatorVersion === pack.generatorVersion && (data.tokenGeneratorVersion ?? '') === (pack.tokenGeneratorVersion ?? '') && Object.entries(datasets).every(([g,id])=>pack.datasets[g]===id);
+  const compatible=(id:string)=>sameContent||(oldReference&&legacyBoardCompatible(id));
   const attempts: Record<string, PuzzleState> = {};
   let dropped = 0;
   let retiredPowers = 0;
   const rawAttempts = typeof data.attempts === 'object' && data.attempts !== null ? (data.attempts as Record<string, unknown>) : {};
   for (const [id, attempt] of Object.entries(rawAttempts)) {
     const def = pack.levels.find((l) => l.id === id);
-    if (def && sameContent && validAttempt(def, attempt)) {
+    if (def && compatible(id) && validAttempt(def, attempt)) {
       // Legacy powered campaign attempts cannot expose locks, edits or bridges now that
       // those controls are retired. Keep the last pre-power snapshot and its undo history.
       // Completed records and ordinary attempts are not changed. Enzyme Lab is separate.
@@ -469,7 +495,7 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     }
     else dropped++;
   }
-  if (!sameContent && Object.keys(rawAttempts).length) notices.push('Levels were updated since your last visit. Completed levels are kept; boards in progress were restarted.');
+  if (!sameContent && dropped) notices.push('Levels were updated since your last visit. Completed levels are kept; boards in progress were restarted.');
   else if (dropped) notices.push(`${dropped} saved board(s) were invalid and were restarted. Completed levels are kept.`);
   if (retiredPowers) notices.push(`${retiredPowers} powered sliding attempt(s) returned to the last unpowered board (or restarted if none remained). Completed levels are kept.`);
   // Assembly claims are re-verified from completed puzzles (exact reconstruction + checksum).
@@ -487,18 +513,25 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
     ? `GENOME updated: assembly chapters now continue from where the 1-base intros left off, so each puzzle adds new coding bases. Your intro, lab and other-gene progress, stars, best scores and preferences are kept. INS and HBB chapter completions (${droppedChapters.join(', ')}) were reset because those puzzles now cover different stretches of the gene.`
     : `GENOME updated: assembly chapters now continue from where the 1-base intros left off, so each puzzle adds new coding bases. Your progress, stars, best scores and preferences are kept.`);
   const requested=typeof data.currentLevelId==='string'?(REPLACED_OPENERS[data.currentLevelId]?.[0]??data.currentLevelId):'';
-  const current=ids.has(requested)?requested:nextCampaignId(completed);
+  const current=ids.has(requested)?requested:nextCampaignId([...completed,...legacyReferenceLevels]);
   const legacyRaw = typeof data.legacy === 'object' && data.legacy !== null ? (data.legacy as Record<string, unknown>) : {};
   const best = readBest(data.best, ids, attempts);
+  // Action logs refer to absolute cells: existing boards must stay pinned to v1.
+  const oldGeometry=data.mixedGeometryVersion!==2;
+  const legacyMixedLayouts=new Set(oldGeometry
+    ? [...completed,...Object.keys(data.mixedAttempts && typeof data.mixedAttempts==='object' ? data.mixedAttempts as Record<string,unknown> : {})]
+    : strings(data.legacyMixedLayouts));
+  const legacyBonusGeometry=readGenomeProgress(oldGeometry ? data.genomeProgress : data.legacyBonusGeometry);
   const mixedAttempts: Record<string, LabAction[]> = {};
   const traceStarterAttempts: string[] = [];
   let updatedCrushLogs = 0;
   let retiredMixedLogs = 0;
   const seededTraces = new Set(strings(data.traceStarterAttempts));
-  if (sameContent && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
+  if ((sameContent||oldReference) && data.mixedAttempts && typeof data.mixedAttempts === 'object') {
     for (const [id, rawLog] of Object.entries(data.mixedAttempts)) {
       const def = pack.levels.find(l => l.id === id);
-      const stage = def && mixedStage(def);
+      if(!compatible(id))continue;
+      const stage = def && mixedStage(def,legacyMixedLayouts.has(id));
       if (!stage && def && !def.lab && Array.isArray(rawLog) && rawLog.length) { retiredMixedLogs++; continue; }
       if (!stage || !Array.isArray(rawLog) || rawLog.length > 2000 || !rawLog.every(validMixedAction)) continue;
       // Replay from pinned definitions; only accepted commands can enter the log.
@@ -522,8 +555,9 @@ export function loadSave(adapter: StorageAdapter, pack: LevelPack): LoadResult {
   if (retiredMixedLogs) { adapter.backup(raw,'unified-campaign'); notices.push('Some stages now use their assigned sliding puzzle. Older mixed attempts were backed up; completed levels are preserved.'); }
   if (updatedCrushLogs) { adapter.backup(raw,'crush-cascades'); notices.push('Codon Crush now chains automatically. Older attempts were kept up to the last valid swap; completed levels are preserved.'); }
   const tutorialsSeen = [...new Set(strings(data.tutorialsSeen).filter(id => SLIDE_TUTORIALS.some(m => m === id) || LAB_IDS.some(m => m === id)))];
+  const sharedProgress=genomeProgress;
   return {
-    save: { ...fresh, currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
+    save: { ...fresh, legacyMixedLayouts:[...legacyMixedLayouts].filter(id=>ids.has(id)), ...(Object.keys(legacyBonusGeometry).length?{legacyBonusGeometry}:{}), ...(Object.keys(sharedProgress).length?{genomeProgress:sharedProgress}:{}), ...(legacyReferenceLevels.length?{legacyReferenceLevels}:{}), currentLevelId: current, completed, discovered, assembled, attempts, legacy: { m1Completed: strings(legacyRaw.m1Completed) }, settings: readSettings(data.settings), best, ...(Object.keys(mixedAttempts).length ? { mixedAttempts } : {}), ...(tutorialsSeen.length ? { tutorialsSeen } : {}), ...(traceStarterAttempts.length ? { traceStarterAttempts } : {}) },
     notices,
     recovered: notices.length > 0,
   };
@@ -538,7 +572,9 @@ export function recordAssembly(save: SaveData, symbol: string, levels?: readonly
 
 /** Idempotent completion: a level is credited at most once. */
 export function recordCompletion(save: SaveData, levelId: string): SaveData {
-  return save.completed.includes(levelId) ? save : { ...save, completed: [...save.completed, levelId] };
+  if(save.completed.includes(levelId))return save;
+  const completed=[...save.completed,levelId];
+  return {...save,completed,legacyReferenceLevels:(save.legacyReferenceLevels??[]).filter(id=>id!==levelId),genomeProgress:creditFamousCompleted(save.genomeProgress??{},[levelId])};
 }
 
 
@@ -611,4 +647,15 @@ function validMixedAction(value: unknown): value is LabAction {
     case 'edit': return cell(a.cell) && typeof a.base === 'string' && a.base.length===1 && (['A','C','G','T'].includes(a.base)||(a.base.charCodeAt(0)>=0x100&&a.base.charCodeAt(0)<0x300));
     default: return false;
   }
+}
+
+/** Shared genome progress may complete migrated reference puzzles without replay. */
+export function recordGenomeProgress(save:SaveData,genomeProgress:BonusProgress):SaveData{
+  if(!save.legacyReferenceLevels?.length)return {...save,genomeProgress};
+  const completed=[...save.completed],changed=new Set<string>();
+  for(const def of ALL_LEVELS)if(save.legacyReferenceLevels.includes(def.id)&&referenceLevelCovered(genomeProgress,def)&&!completed.includes(def.id)){completed.push(def.id);changed.add(def.symbol);}
+  const legacyReferenceLevels=save.legacyReferenceLevels.filter(id=>!completed.includes(id));
+  let next:SaveData={...save,genomeProgress,completed,legacyReferenceLevels};
+  for(const symbol of changed)next=recordAssembly(next,symbol);
+  return next;
 }

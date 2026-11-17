@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LEVELS, CAMPAIGN_GENES, CAMPAIGN_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS, LAB_LEVELS, chapterOf, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
+import { LEGACY_LEVELS, ALL_LEVELS, CAMPAIGN_GENES, CAMPAIGN_LEVELS, CHAPTER_LEVELS, INTRO_LEVELS, chapterOf, isDiscovered, runOf } from '../../src/campaign/campaign.ts';
 import { assemblyStatus, levelContribution } from '../../src/campaign/assembly.ts';
 import { MAX_ASSEMBLY_CDS, MAX_CHAPTER, MIN_CHAPTER, geneRunCoverageErrors, planChapter } from '../../src/campaign/chapters.ts';
-import { CATALOGUE_ORDER, CATALOGUE_SIZE, GENES, MANIFEST } from '../../src/genomics/genes.ts';
+import { CATALOGUE_ORDER, CATALOGUE_SIZE, GENES, LEGACY_GENES, MANIFEST } from '../../src/genomics/genes.ts';
 import { sha256Hex } from '../../src/genomics/sha256.ts';
 import { buildLevel, validateLevel } from '../../src/generator/level.ts';
 import { chapterSpecs } from '../../src/campaign/chapters.ts';
@@ -18,7 +18,7 @@ describe('catalogue manifest', () => {
     for (const m of MANIFEST.included) {
       const g = GENES[m.symbol]!;
       expect(g.keywords).toMatch(/MANE Select/);
-      expect(g.translationVerified).toBe(true);
+      expect(LEGACY_GENES[m.symbol]!.translationVerified).toBe(true);
       expect(g.sequence.slice(0, 3)).toBe('ATG');
       expect(g.sequence.length % 3).toBe(0);
       expect(sha256Hex(g.sequence)).toBe(m.sequenceSha256);
@@ -132,7 +132,7 @@ describe('full assembly', () => {
     const gi = MANIFEST.included.findIndex((m) => m.symbol === 'INS');
     const first = chapterOf('INS')[0]!;
     const specs = chapterSpecs({ symbol: 'INS', cdsLength: 333 }, gi, first.index, 51);
-    const prior = [...INTRO_LEVELS.filter(l=>l.symbol==='INS'||l.symbol==='HBB'), ...LAB_LEVELS];
+    const prior = LEGACY_LEVELS.filter(l=>l.lab||!l.chapter&&(l.symbol==='INS'||l.symbol==='HBB'));
     const rebuilt = { ...buildLevel(specs[0]!, GENES.INS!, prior), generatorVersion: first.generatorVersion };
     expect(rebuilt).toEqual(first);
   });
