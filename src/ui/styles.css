@@ -54,8 +54,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 a { color: var(--blue); }
 .app {
   --app-gap: 10px;
-  /* ClueSizing measures the tallest actual clue layout once per width. Every
-     puzzle reserves this same envelope, irrespective of its own remaining clues. */
+  /* ClueSizing measures the tallest single clue row at this screen width.
+     Solved units vacate the row and later clues shift into view. */
   --clue-height: 150px;
   /* Width, not viewport height, determines the square board. On short
      displays the page can scroll instead of shrinking the puzzle tiles. */
@@ -221,14 +221,10 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
   touch-action: pan-y;
   min-height: 0;
 }
-/* Crowded clue panels omit committed matches and page any remaining overflow. */
-.target [data-clue-hidden], .target .clue-pagination[hidden] { display: none !important; }
+/* Completed and queued clues are absent until the next unfinished row fits. */
+.target [data-clue-hidden] { display: none !important; }
 .target .clue-part:has([data-clue-unit]):not(:has([data-clue-unit]:not([data-clue-hidden]))) { display: none; }
 .target.clues-compact .rep-end { display: none; }
-.clue-pagination { position: absolute; top: 0; right: 0; z-index: 3; display: flex; align-items: center; gap: 4px; height: 26px; font-size: 11px; background: var(--paper); }
-.clue-pagination button { font-size: 17px; line-height: 1; padding: 3px 8px; min-width: 28px; min-height: 26px; }
-.target:has(.clue-pagination:not([hidden])) .row-between { min-height: 26px; padding-right: 100px; }
-.target:has(.clue-pagination:not([hidden])) .row-between > .muted { display: none; }
 .clues-compact [data-clue-index] { position: relative; }
 .clues-compact [data-clue-index]::before {
   content: attr(data-clue-index);
@@ -243,8 +239,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.24em; color
 }
 
 .clues-compact .rep-pair::before { top: 50%; transform: translateY(-50%); }
-.clues-compact .clue-tokens > [data-clue-index] { padding-top: 10px; }
-.target .row-between { flex-wrap: wrap; gap: 2px 8px; position: sticky; top: 0; z-index: 2; background: var(--paper); }
+.clues-compact .clue-tokens > [data-clue-index] { padding-top: 0; }
+.target .row-between { flex-wrap: wrap; gap: 2px 8px; min-height: 26px; position: sticky; top: 0; z-index: 2; background: var(--paper); }
 
 .target .row-between > span { min-width: 0; }
 .target-title { font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; }
@@ -1125,7 +1121,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
    content width. They never participate in page layout or touch interaction. */
 .clue-size-probe { position:absolute; inset-inline:var(--pad); top:0; height:0; margin:0 !important; overflow:hidden; visibility:hidden; pointer-events:none; }
 .clue-size-probe > .target { height:auto; min-height:0; max-height:none; overflow:visible; }
-.target.long-clues { overflow-y:auto; }
+.target.long-clues { overflow-y:hidden; }
 .clue-size-probe > .target.long-clues { overflow:visible; }
 .target :is(.tok-chip, .lab-token).tier-l,
 .target .tok-chip:has(> .tok-face.long) {
@@ -1156,7 +1152,7 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
   white-space: nowrap;
 }
 .target.clues-compact .clue-tokens > [data-clue-index].tier-l {
-  padding-top: 10px;
+  padding-top: 2px;
 }
 .target .assembly-reference .lab-token.tier-l { gap: 2px; padding: 2px 3px; }
 

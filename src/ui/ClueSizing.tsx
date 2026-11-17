@@ -90,9 +90,9 @@ function representatives(probe: HTMLDivElement): ReactNode[] {
   return Array.from(chosen.values(),entry=>entry.panel);
 }
 
-/** One offscreen measurement per available width, shared across all puzzles.
- * Probe nodes are discarded before paint; no duplicate visible controls, and
- * changing puzzle or committing a move cannot change the reserved height. */
+/** Measure the tallest *single* clue row for each browser width.
+ * Multiple rows remain in the DOM and advance into view as solved items leave.
+ * Probe nodes are discarded before paint, and the shared height stays fixed. */
 export function ClueSizing({active}:{active:boolean}){
   const probe=useRef<HTMLDivElement>(null);
   const measuredWidth=useRef(0);
@@ -119,7 +119,15 @@ export function ClueSizing({active}:{active:boolean}){
     if(!el||!panels.length)return;
     let height=0,source='';
     for(const panel of el.querySelectorAll<HTMLElement>(':scope > .target')){
-      const h=Math.ceil(Math.max(panel.getBoundingClientRect().height,panel.scrollHeight));
+      const origin=panel.getBoundingClientRect().top;
+      const units=Array.from(panel.querySelectorAll<HTMLElement>('[data-clue-unit]'));
+      if(!units.length)continue;
+      const rowTop=Math.min(...units.map(unit=>unit.getBoundingClientRect().top));
+      // A replication pair counts as one tall unit (both strands and their
+      // bond). Other units are a base, numbered fragment, or mutation row.
+      const tallest=Math.max(...units.map(unit=>unit.getBoundingClientRect().height),
+        ...Array.from(panel.querySelectorAll<HTMLElement>('.rep-end, .rep-start')).map(unit=>unit.getBoundingClientRect().height));
+      const h=Math.ceil(rowTop-origin+tallest+1);
       if(h>height){height=h;source=panel.dataset.clueMeasureId??'';}
     }
     if(height>0){

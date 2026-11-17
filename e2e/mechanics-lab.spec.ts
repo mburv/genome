@@ -61,7 +61,7 @@ test('Codon Crush swaps, refills, and supports undo', async ({ page }) => {
   await expect(page.getByTestId('moves')).toHaveText('1 move');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/6 codons');
-  await expect(page.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4','5','6']);
+  await expect(page.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3']);
   for (const [a,b] of [[12,13],[4,13]] as const) { await tap(page,a); await tap(page,b); await expect(page.getByTestId('mechanics-board')).toHaveAttribute('data-crush-phase', 'idle'); }
   await won(page);
 });

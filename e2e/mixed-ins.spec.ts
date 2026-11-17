@@ -493,7 +493,7 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   await page.getByTestId('cnode-ins-c02').click();await page.getByTestId('tutorial-skip').click();
   const board=page.getByTestId('mechanics-board'),panel=page.getByTestId('target-panel');
   await expect(panel.locator('.mixed-codon-clues .clue-part')).toHaveCount(4);
-  await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(4);
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible')).toHaveCount(2);
   const y=(await documentBox(board)).y;
   await page.getByTestId('action-hint').click();
   await expect(tile(page,12)).toHaveClass(/crush-hinted/);
@@ -510,13 +510,13 @@ test('twelve-codon chapter keeps targets readable on a small phone and saves a w
   expect(await board.locator('[data-lab-cell]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-base')??'.').join(''))).toBe(before);
   await page.getByTestId('action-undo').click();
   await expect(page.getByTestId('lab-progress')).toHaveText('0/4 block matches');
-  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4']);
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2']);
   await expect(page.getByTestId('moves')).toHaveText('0 moves');
   await tile(page,12).tap();await tile(page,13).tap();
   await expect(board).toHaveAttribute('data-crush-phase','idle');
   await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['3','4']);
   await page.getByTestId('action-restart').click();
-  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2','3','4']);
+  await expect(panel.locator('.mixed-codon-clues .clue-part:visible .badge')).toHaveText(['1','2']);
 });
 
 test('new gene introductions and 96-base mixed mutation boards work in the browser',async({page})=>{
@@ -641,7 +641,7 @@ test('multi-base Genome Assembly hints advance and recover saved progress after 
 });
 
 
-test('MC1R 6/13 Mutation Correction keeps all reference rows together on phones', async ({page}) => {
+test('MC1R Mutation Correction shows one target row, promoting the next after repair', async ({page}) => {
   const level=CAMPAIGN_LEVELS.filter(l=>l.symbol==='MC1R')[5]!;
   expect(mechanicOf(level)).toBe('mutation');
   await page.setViewportSize({width:390,height:844});
@@ -649,33 +649,41 @@ test('MC1R 6/13 Mutation Correction keeps all reference rows together on phones'
   await page.getByTestId('cnode-'+level.id).click();
   const panel=page.getByTestId('target-panel');
   const rows=page.getByTestId('mutation-reference').locator('.mutation-reference-row');
-  const allRows=async()=>{
-    await expect(panel.locator('.clue-pagination')).toBeHidden();
+  const checkRows=async()=>{
     await expect(rows).toHaveCount(3);
-    await expect(panel.locator('[data-clue-hidden]')).toHaveCount(0);
-    for(const row of await rows.all())await expect(row).toBeVisible();
+    const states=await rows.evaluateAll(nodes=>nodes.map((el,index)=>({
+      index,done:el.getAttribute('data-clue-done')==='true',
+      visible:!el.hasAttribute('data-clue-hidden'),
+    })));
+    const remaining=states.filter(row=>!row.done);
+    const visible=states.filter(row=>row.visible);
+    expect(visible.length).toBe(remaining.length?1:0);
+    if(remaining.length)expect(visible[0]!.index).toBe(remaining[0]!.index);
+    expect(states.filter(row=>row.done).every(row=>!row.visible)).toBe(true);
+    await expect(panel.locator('.clue-pagination')).toHaveCount(0);
     expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
   };
-  await allRows();
+  await checkRows();
   await page.setViewportSize({width:320,height:568});
-  await allRows();
-  // Repair the first row; its matched clues must remain visible alongside the other rows.
+  await checkRows();
   const firstBottom=mixedStage(level)!.spec.MUTATION_ROWS[0]!.bottom;
-  const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll((nodes,start)=>nodes.map(n=>Number(n.getAttribute('data-lab-cell'))).filter(c=>c>=start&&c<start+9),firstBottom);
+  const cells=await page.locator('.lab-cell.mutation-mismatch').evaluateAll((nodes,start)=>
+    nodes.map(n=>Number(n.getAttribute('data-lab-cell'))).filter(cell=>cell>=start&&cell<start+9),firstBottom);
   expect(cells.length).toBeGreaterThan(0);
-  for(const c of cells){
-    const want=await page.getByTestId('mutation-target-'+c).getAttribute('data-symbol');
-    await tile(page,c).tap();
+  for(const cell of cells){
+    const want=await page.getByTestId('mutation-target-'+cell).getAttribute('data-symbol');
+    await tile(page,cell).tap();
     await page.getByTestId('lab-base-'+want).tap();
   }
   await expect(rows.first()).toHaveAttribute('data-clue-done','true');
-  await allRows();
+  await expect(rows.first()).toBeHidden();
+  await checkRows();
   await page.getByTestId('action-undo').click();
-  await allRows();
+  await expect(rows.first()).toHaveAttribute('data-clue-done','false');
+  await checkRows();
 });
 
-
-test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination and restores them on undo',async({page})=>{
+test('KRAS Genome Assembly promotes remaining clues and restores completed ones on Undo',async({page})=>{
   const def=CAMPAIGN_LEVELS.filter(l=>l.symbol==='KRAS')[6]!;
   expect(mechanicOf(def)).toBe('assembly');
   const stage=mixedStage(def)!;
@@ -688,9 +696,28 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
   const allSlots=Array.from({length:9},(_,i)=>String(i+1));
   const positions=async()=>({panel:await documentBox(panel),board:await documentBox(page.getByTestId('mechanics-board')),toolbar:await documentBox(page.getByTestId('icon-row'))});
   const assertClues=async(expected:string[])=>{
-    await expect(panel.locator('.clue-pagination')).toBeHidden();
     await expect(chips).toHaveCount(9);
-    await expect(chips.filter({visible:true}).locator('small')).toHaveText(expected);
+    const states=await chips.evaluateAll(nodes=>nodes.map(el=>({
+      id:el.querySelector('small')?.textContent??'',
+      done:el.getAttribute('data-clue-done')==='true',
+      hidden:el.hasAttribute('data-clue-hidden'),
+      top:el.getBoundingClientRect().top,
+    })));
+    expect(states.filter(s=>s.done).length).toBe(9-expected.length);
+    expect(states.filter(s=>s.done).every(s=>s.hidden)).toBe(true);
+    const visible=states.filter(s=>!s.hidden);
+    expect(visible.every(s=>expected.includes(s.id))).toBe(true);
+    if(expected.length)expect(visible.length).toBeGreaterThan(0);
+    if(visible.length) {
+      // Font and container measurements can settle on the next animation frame.
+      await expect.poll(async()=>{
+        const tops=await chips.evaluateAll(nodes=>nodes
+          .filter(el=>!el.hasAttribute('data-clue-hidden'))
+          .map(el=>el.getBoundingClientRect().top));
+        return tops.length ? Math.max(...tops)-Math.min(...tops) : 0;
+      }).toBeLessThan(2);
+    }
+    await expect(panel.locator('.clue-pagination')).toHaveCount(0);
     expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
   };
   await assertClues(allSlots);
@@ -719,9 +746,8 @@ test('KRAS 7/13 Genome Assembly hides correctly placed clues without pagination 
   }
   await expect(page.getByTestId('win')).toBeVisible();
   await expect(chips.filter({visible:true})).toHaveCount(0);
-  await expect(panel.locator('.clue-pagination')).toBeHidden();
+  await expect(panel.locator('.clue-pagination')).toHaveCount(0);
 });
-
 
 test('a sliding solve that completes a gene offers its card, but replaying a non-final level does not',async({page})=>{
   // Complete the other INS levels first, then fill the last missing interval by sliding.

@@ -75,86 +75,76 @@ function gapLabel(def: LevelDefinition, custom: CustomTokens, solved: boolean): 
   return n > 0 ? `?×${n}` : '?';
 }
 
-/** Measure the actual wrapped clues, not an assumed phone width.
- * Only crowded panels hide committed matches. If unmatched clues still overflow, use
- * explicit pages rather than a scrolling box. DOM visibility is recalculated after
- * committed-match change; a drag preview never changes the committed completion flags.
+/** Keep a fixed one-row clue strip. Only the earliest unfinished clues that fit
+ * are visible; newly solved ones disappear and later ones automatically flow in.
+ * Visibility is recomputed after committed moves, undo and viewport changes.
  */
-export function TargetShell({ defId, label, solved, committedKey, children, hideCompleted = false, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
+export function TargetShell({ defId, label, children, hideCompleted = true, longClues = false, measureOnly = false }: { defId: string; label: string; solved: boolean; committedKey: string; children: ReactNode; hideCompleted?: boolean; longClues?: boolean; measureOnly?: boolean }) {
   const ref = useRef<HTMLElement>(null);
-  const page = useRef(0);
-  const previous = useRef('');
-  const refresh = useRef<((delta?: number) => void) | null>(null);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || measureOnly) return;
-    const identity = hideCompleted ? defId + ':' + committedKey : defId;
-    if (previous.current !== identity) { previous.current = identity; page.current = 0; }
-    const nav = el.querySelector<HTMLElement>('.clue-pagination')!;
-    const status = nav.querySelector<HTMLElement>('.clue-page-count')!;
-    const back = nav.querySelector<HTMLButtonElement>('[data-clue-back]')!;
-    const next = nav.querySelector<HTMLButtonElement>('[data-clue-next]')!;
     const units = Array.from(el.querySelectorAll<HTMLElement>('[data-clue-unit]'));
     const setHidden = (unit: HTMLElement, hidden: boolean) => unit.toggleAttribute('data-clue-hidden', hidden);
-    const fits = () => el.scrollHeight <= el.clientHeight + 1;
-    const update = (delta = 0) => {
-      // Measure the complete layout first, even if a previous render hid a clue.
-      nav.hidden = true;
+    const fits = () => {
+      if (el.scrollHeight > el.clientHeight + 1) return false;
+      // Even two short rows can fit within the height of one tall replication
+      // pair. Keep exactly one logical row on screen across all mechanics.
+      const visible = units.filter(unit => !unit.hasAttribute('data-clue-hidden'));
+      if (visible.length < 2) return true;
+      const tops = visible.map(unit => unit.getBoundingClientRect().top);
+      return Math.max(...tops) - Math.min(...tops) < 2;
+    };
+    const update = () => {
       el.classList.remove('clues-compact');
-      units.forEach(unit => setHidden(unit, false));
+      // Start with every unfinished unit visible so the wrapping measurement
+      // reflects the actual remaining clues, including units restored by Undo.
+      units.forEach(unit => setHidden(unit, hideCompleted && unit.dataset.clueDone === 'true'));
       el.scrollTop = 0;
-      // The shared campaign envelope never shrinks when a clue is consumed.
-      if (hideCompleted) units.forEach(unit => setHidden(unit, unit.dataset.clueDone === 'true'));
-      // Long fragments never paginate. The shared height fits their full initial
-      // layout; allow scrolling only as a fallback for extreme font/viewport sizes.
-      if (longClues || fits()) { page.current = 0; return; }
-      el.classList.add('clues-compact');
-      const remaining = units.filter(unit => (!hideCompleted && solved) || unit.dataset.clueDone !== 'true');
-      units.forEach(unit => setHidden(unit, !remaining.includes(unit)));
-      if (fits()) { page.current = 0; return; }
+      const remaining = units.filter(unit => !unit.hasAttribute('data-clue-hidden'));
+      if (!remaining.length || fits()) return;
 
-      // Greedily fit whole chips/pairs on each page, retaining their original indices.
-      // Keep the page controls mounted while measuring so their height is reserved.
-      nav.hidden = false;
-      const pages: HTMLElement[][] = [];
-      const show = (visible: HTMLElement[]) => units.forEach(unit => setHidden(unit, !visible.includes(unit)));
-      let current: HTMLElement[] = [];
+      // A single logical row is visible, regardless of how many shorter rows
+      // would fit in the height of the tallest clue. There are no page controls.
+      el.classList.add('clues-compact');
+      const show = (visible: HTMLElement[]) => {
+        const keep = new Set(visible);
+        units.forEach(unit => setHidden(unit, !keep.has(unit)));
+      };
+      const visible: HTMLElement[] = [];
       for (const unit of remaining) {
-        show([...current, unit]);
-        if (current.length && !fits()) { pages.push(current); current = [unit]; }
-        else current.push(unit);
+        show([...visible, unit]);
+        if (visible.length && !fits()) {
+          show(visible);
+          break;
+        }
+        visible.push(unit);
       }
-      if (current.length) pages.push(current);
-      page.current = Math.max(0, Math.min(page.current + delta, pages.length - 1));
-      show(pages[page.current] ?? []);
-      status.textContent = `${page.current + 1}/${pages.length}`;
-      back.disabled = page.current === 0;
-      next.disabled = page.current >= pages.length - 1;
       el.scrollTop = 0;
     };
-    refresh.current = update;
     update();
     // Resize the layout for orientation changes and mobile browser chrome changes.
     const onResize = () => update();
     window.addEventListener('resize', onResize);
     window.visualViewport?.addEventListener('resize', onResize);
-    // A shared-size measurement can change the envelope without a window resize.
+    // Changing fonts or a clue container's intrinsic height may rewrap the
+    // tiles without resizing the fixed-height target itself.
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => update()) : null;
     observer?.observe(el);
+    for (const child of el.children) observer?.observe(child);
+    const frame = window.requestAnimationFrame(() => update());
+    let active = true;
+    document.fonts?.ready.then(() => { if (active) update(); });
     return () => {
-      refresh.current = null;
+      active = false;
+      window.cancelAnimationFrame(frame);
       observer?.disconnect();
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [defId, solved, committedKey, hideCompleted, longClues, measureOnly]);
+  });
   return (
     <section ref={ref} className={'target'+(longClues?' long-clues':'')} aria-label={label} data-testid={measureOnly ? undefined : "target-panel"} data-clue-measure-id={measureOnly ? defId : undefined}>
-      <div className="clue-pagination" hidden>
-        <button type="button" data-clue-back aria-label="Previous clues" onClick={() => refresh.current?.(-1)}>‹</button>
-        <span className="clue-page-count" aria-live="polite" />
-        <button type="button" data-clue-next aria-label="Next clues" onClick={() => refresh.current?.(1)}>›</button>
-      </div>
       {children}
     </section>
   );
