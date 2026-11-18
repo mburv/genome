@@ -17,7 +17,13 @@ async function readAnnotations(chrom:string,pack?:GenomePack):Promise<CdsIndex|n
   try{
     const response=await fetch(new URL('cds-annotations/'+chrom+'.json',document.baseURI));
     if(!response.ok)return null;
-    return validateCdsIndex(await response.json(),pack?.header ?? chrom);
+    const raw:unknown=await response.json();
+    // The mitochondrion has a separately mapped gene annotation; Liftoff's
+    // nuclear CDS sidecar is empty there. Accept that verified empty index
+    // even when the downloaded chrM pack uses its own annotation checksum.
+    return validateCdsIndex(raw,pack?.header ?? chrom) ??
+      (chrom==='chrM' && Array.isArray((raw as CdsIndex)?.genes) &&
+        (raw as CdsIndex).genes.length===0 ? validateCdsIndex(raw,chrom) : null);
   }catch{return null;}
 }
 
