@@ -24,6 +24,7 @@ def attributes(s):
 
 def build(source, destination):
     genes = {}
+    descriptions = {}
     transcripts = {}
     fragments = defaultdict(list)
     with gzip.open(source, "rt") as stream:
@@ -49,6 +50,8 @@ def build(source, destination):
                 genes[(chrom, fid)] = [fid, at.get("gene", at.get("Name", fid)),
                                       at.get("gene_biotype", at.get("gene_type", at.get("biotype", kind))),
                                       start, end, strand]
+                # Human-readable name when supplied by the pinned gene feature.
+                descriptions[(chrom, fid)] = at.get("description", at.get("gene_name", at.get("Name", "")))[:180]
             elif kind in ("mRNA", "transcript") and fid and at.get("Parent"):
                 transcripts[fid] = (chrom, at["Parent"].split(",")[0], strand, at)
             elif kind == "CDS" and at.get("Parent"):
@@ -88,7 +91,7 @@ def build(source, destination):
                 continue
             _, transcript, exons = max(candidates, key=lambda item: item[0])
             gene = genes[(chrom, gid)]
-            records.append([*gene, transcript, [list(x) for x in exons]])
+            records.append([*gene, transcript, [list(x) for x in exons], descriptions.get((chrom, gid), "")])
         records.sort(key=lambda g: (g[3], g[4], g[0]))
         total += len(records)
         payload = {"format": "GENOME-CDS-1", "reference": REFERENCE,
