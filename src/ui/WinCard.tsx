@@ -9,7 +9,7 @@ interface Props {
   /** Mixed mechanics display the verified coding fragment, not the legacy sliding tracks. */
   mechanic?: { title: string; sequence: string; practice: boolean; nextLabel?: string; range?: {start:number;end:number} };
   /** Extended campaign uses chromosome coordinates rather than coding-gene credit. */
-  bonus?: { label: string; part: number; of: number };
+  bonus?: { label: string; part: number; of: number; geneCardAvailable?: boolean };
   moves: number;
   powersUsed: number;
   newBases: number;
@@ -116,8 +116,8 @@ export function WinCard(p: Props) {
         )}
         <div className="card-actions">
           <button type="button" onClick={p.onMap} data-testid="win-map">{p.bonus ? 'Bonus map' : p.mechanic?.practice ? 'Lab menu' : 'Level map'}</button>
-          {!p.bonus && (p.assembled || geneFinal) ? (
-            <button type="button" className="primary" onClick={p.onCard} autoFocus>View card</button>
+          {((!p.bonus && (p.assembled || geneFinal)) || p.bonus?.geneCardAvailable) ? (
+            <button type="button" className="primary" onClick={p.onCard} autoFocus>{p.bonus ? 'View gene card' : 'View card'}</button>
           ) : (p.bonus || p.mechanic?.practice) && !p.hasNext ? null : (
             <button type="button" className="primary" onClick={p.onNext} autoFocus>{p.hasNext ? p.mechanic?.nextLabel ?? 'Next level →' : p.mechanic?.practice ? 'Lab menu' : 'Map'}</button>
           )}
