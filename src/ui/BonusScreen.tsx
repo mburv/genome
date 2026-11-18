@@ -1,7 +1,9 @@
-import { useCallback,useEffect,useState } from 'react';
-import { CHROMOSOMES,GENOME_BASES,REFERENCE,addGenomeCredit,covered,genomeCovered,genomeLevelCount,genomeLevelInterval,nextGenomeLevel,genomeStage,type BonusProgress,type Interval } from '../campaign/bonus.ts';
+import { useCallback,useEffect,useRef,useState } from 'react';
+import { CHROMOSOMES,GENOME_BASES,REFERENCE,addGenomeCredit,covered,genomeCovered,genomeLevelCount,genomeLevelInterval,genomeLevelAt,nextGenomeLevel,genomeStage,type BonusProgress,type Interval } from '../campaign/bonus.ts';
 import { openGenomePack,readGenomeDownload,readGenomeSequence,type GenomePack } from '../genomics/genomePack.ts';
 import { loadGenomePacks,storeGenomePack } from '../genomics/genomeStorage.ts';
+import { bonusClueRange, cdsComplete, cdsLocus, newlyCompletedCds, validateCdsIndex, type CdsGene, type CdsIndex } from '../genomics/bonusAnnotations.ts';
+import { BonusGeneCard } from './BonusGeneCard.tsx';
 import { MechanicsPlay } from './MechanicsLab.tsx';
 import { labExtractedSequence,type LabState } from '../engine/mechanicsLab.ts';
 import type { MixedStage } from '../campaign/mixed.ts';
@@ -13,6 +15,10 @@ const PAGE=11*11;
 
 export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onProgress,onBack,onPlaying,onSettings,reducedMotion,feedback}:Props){
   const [packs,setPacks]=useState<Record<string,GenomePack>>({});
+  const [annotations,setAnnotations]=useState<Record<string,CdsIndex>>({});
+  const [milestones,setMilestones]=useState<CdsGene[]>([]);
+  const [viewMilestone,setViewMilestone]=useState<number|null>(null);
+  const requestedAnnotations=useRef(new Set<string>());
   const [storageNote,setStorageNote]=useState('');
   useEffect(()=>{let active=true;void loadGenomePacks().then(p=>{if(active)setPacks(old=>({...p,...old}));}).catch(()=>{if(active)setStorageNote('Offline storage is unavailable; reference data will be loaded when needed.');});return()=>{active=false;};},[]);
   const [scope,setScope]=useState<Scope|null>(null),[stage,setStage]=useState<MixedStage|null>(null);
@@ -21,6 +27,26 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
   const [pages,setPages]=useState<Record<string,number>>({});
   const [selected,setSelected]=useState<Scope|null>(null);
   const done=genomeCovered(progress);
+  const readAnnotations=async(chrom:string,pack:GenomePack):Promise<CdsIndex|null>=>{
+    try{
+      const response=await fetch(new URL('cds-annotations/'+chrom+'.json',document.baseURI));
+      if(!response.ok)return null;
+      return validateCdsIndex(await response.json(),pack.header);
+    }catch{return null;}
+  };
+  // Offline chromosome packs retain their original format. Annotations are
+  // lightweight, optional sidecars, loaded for every available map chromosome.
+  useEffect(()=>{
+    let active=true;
+    for(const [chrom,pack] of Object.entries(packs)){
+      if(requestedAnnotations.current.has(chrom))continue;
+      requestedAnnotations.current.add(chrom);
+      void readAnnotations(chrom,pack).then(index=>{
+        if(active&&index)setAnnotations(old=>({...old,[chrom]:index}));
+      });
+    }
+    return()=>{active=false;};
+  },[packs]);
   const open=async(s:Scope)=>{
     if(busy)return;
     setBusy(true);setError('');setLoadingPercent(0);setLoadingChrom(s.chrom);
@@ -36,20 +62,32 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
       setLoadingPercent(100);
       const iv=genomeLevelInterval(CHROMOSOMES[s.chrom]!,s.level);
       const seq=await readGenomeSequence(pack,iv);
+      // A newly downloaded pack can be played before the map's prefetch runs.
+      const index=annotations[s.chrom] ?? await readAnnotations(s.chrom,pack);
+      if(index)setAnnotations(old=>({...old,[s.chrom]:index}));
+      setMilestones([]);setViewMilestone(null);
       setScope(s);setStage(genomeStage(s.chrom,iv,seq,covered(legacyGeometry[s.chrom]??[],...iv)===iv[1]-iv[0],covered(legacyAssemblyGeometry[s.chrom]??[],...iv)===iv[1]-iv[0]));setSelected(s);setHint(null);
       onPlaying(true);window.scrollTo(0,0);
     }catch(e){setError(String(e));}finally{setBusy(false);}
   };
   const credit=useCallback((state:LabState)=>{
     if(!stage||!scope||!state.won||labExtractedSequence(state)!==stage.sequence)return;
-    const next=addGenomeCredit(progress,scope.chrom,[stage.start,stage.end]);if(next!==progress)onProgress(next);
-  },[stage,scope,progress,onProgress]);
-  const back=()=>{setScope(null);setStage(null);setHint(null);setPages({});onPlaying(false);window.scrollTo(0,0);};
+    const iv:Interval=[stage.start,stage.end];
+    const next=addGenomeCredit(progress,scope.chrom,iv);
+    if(next!==progress){
+      const awarded=newlyCompletedCds(annotations[scope.chrom],progress,next,scope.chrom,iv);
+      if(awarded.length)setMilestones(awarded);
+      onProgress(next);
+    }
+  },[stage,scope,progress,onProgress,annotations]);
+  const back=()=>{setScope(null);setStage(null);setHint(null);setPages({});setMilestones([]);setViewMilestone(null);onPlaying(false);window.scrollTo(0,0);};
   if(scope&&stage){
     const length=CHROMOSOMES[scope.chrom]!,total=genomeLevelCount(length);
     const iv:Interval=[stage.start,stage.end],remaining=nextGenomeLevel(addGenomeCredit(progress,scope.chrom,iv),scope.chrom);
     const newBases=iv[1]-iv[0]-covered(progress[scope.chrom]??[],...iv);
     const completed=newBases===0;
+    const clueRange=bonusClueRange(scope.chrom,iv,stage.spec.blockSize,annotations[scope.chrom]);
+    const advance=()=>{setViewMilestone(null);if(remaining!==null)void open({chrom:scope.chrom,level:remaining});else back();};
     return <>
       <header className="top play-top" data-testid="play-top">
         <div className="top-collapse" data-testid="bonus-play"><div className="top-collapse-inner">
@@ -62,7 +100,11 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
       </header>
       {error&&<p role="alert">{error}</p>}
       <MechanicsPlay feedback={feedback} key={stage.id} id={stage.mechanic} reducedMotion={reducedMotion} hintMode={hint} onHintModeChange={setHint} onBack={back} onNext={()=>undefined}
-        bonus={{stage,label:scope.chrom,part:scope.level,of:total,hasNext:remaining!==null,completed,newBases,covered:covered(progress[scope.chrom]??[],0,length),length,onComplete:credit,onNext:()=>{if(remaining!==null)void open({chrom:scope.chrom,level:remaining});else back();}}}/>
+        bonus={{stage,label:scope.chrom,part:scope.level,of:total,hasNext:remaining!==null,completed,newBases,covered:covered(progress[scope.chrom]??[],0,length),length,clueRange,geneCardAvailable:milestones.length>0,onCard:()=>setViewMilestone(0),onComplete:credit,onNext:advance}}/>
+      {viewMilestone!==null&&milestones[viewMilestone]&&
+        <BonusGeneCard gene={milestones[viewMilestone]} chromosome={scope.chrom} onMap={back}
+          hasNextGene={viewMilestone+1<milestones.length}
+          onContinue={()=>{if(viewMilestone+1<milestones.length)setViewMilestone(viewMilestone+1);else advance();}}/>}
     </>;
   }
   const first=Object.keys(CHROMOSOMES).find(c=>nextGenomeLevel(progress,c)!==null);
