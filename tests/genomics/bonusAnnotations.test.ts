@@ -53,7 +53,7 @@ describe('T2T CDS labeling', () => {
     expect(cdsCovered(gene, before, 'chr1')).toBe(20);
     expect(cdsComplete(gene, before, 'chr1')).toBe(false);
     expect(cdsComplete(gene, after, 'chr1')).toBe(true);
-    expect(newlyCompletedCds(index, before, after, 'chr1', [200, 220])).toEqual([gene]);
+    expect(newlyCompletedCds(index, before, after, 'chr1', [200, 220])).toEqual([gene, index.genes[2]!]); // one puzzle can finish two overlapping genes
     expect(newlyCompletedCds(index, after, after, 'chr1', [200, 220])).toEqual([]);
     expect(newlyCompletedCds(index, before, after, 'chr2', [200, 220])).toEqual([]);
   });
