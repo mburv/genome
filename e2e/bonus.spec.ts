@@ -29,6 +29,40 @@ test('map puts Mechanics Lab after Human Genome and describes every gene',async(
   await expect(page.locator('.mechanic-entry')).toHaveCount(6);
 });
 
+
+test('unlocked Human Genome replaces the top Replay action without duplicating the progress button',async({page})=>{
+  const completed=CAMPAIGN_LEVELS.map(l=>l.id);
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed}));
+  const map=page.getByTestId('level-map');
+  await expect(page.getByTestId('continue')).toHaveCount(0);
+  await expect(page.getByTestId('open-bonus')).toHaveCount(1);
+  await expect(map.locator(':scope > [data-testid]').first()).toHaveAttribute('data-testid','open-bonus');
+  await expect(page.getByTestId('open-bonus-percent')).toHaveText('<0.01%');
+  await page.getByTestId('open-bonus').click();
+  await expect(page.getByTestId('bonus-map')).toBeVisible();
+});
+
+test('named CDS genes are searchable above chromosome coordinates without installing chromosome DNA',async({page})=>{
+  test.setTimeout(90_000);
+  await page.setViewportSize({width:320,height:568});
+  const completed=CAMPAIGN_LEVELS.map(l=>l.id);
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed}));
+  await page.getByTestId('open-bonus').click();
+  const names=page.getByTestId('bonus-cds-catalogue');
+  await expect(names).toBeVisible();
+  await expect(page.getByTestId('bonus-coordinate-map')).toBeVisible();
+  await expect(names).toContainText('Named coding genes');
+  const query=names.getByRole('searchbox',{name:'Search CDS genes'});
+  await query.fill('GPX1');
+  await expect(names.getByTestId('bonus-cds-gene-'+ 'gene-not-real')).toHaveCount(0);
+  await expect(names.getByText('GPX1',{exact:true}).first()).toBeVisible({timeout:30_000});
+  await expect(names).toContainText('Glutathione');
+  await expect(names.getByRole('button',{name:'Download & play →'}).first()).toBeVisible();
+  await expect(page.getByTestId('bonus-cds-nodes-'+ 'gene-not-real')).toHaveCount(0);
+  expect(await names.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+  const rect=await names.boundingBox();
+  expect(rect!.width).toBeLessThanOrEqual(320);
+});
 test('whole genome is locked until the main campaign ends',async({page})=>{
   const save=newSave(LEVEL_PACK),completed=CAMPAIGN_LEVELS.map(l=>l.id);
   await openCompleted(page,serializeSave({...save,completed:completed.slice(0,-1)}));
@@ -43,8 +77,12 @@ test('whole genome is locked until the main campaign ends',async({page})=>{
   await expect(page.getByRole('heading',{name:'Reference data packs',exact:true})).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Gene catalogue',exact:true})).toHaveCount(0);
   await expect(page.getByPlaceholder('Gene symbol or ID')).toHaveCount(0);
-  await expect(page.getByRole('heading',{name:'Chromosomes',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'CDS genes',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Chromosome coordinates',exact:true})).toBeVisible();
+  const sections=await page.getByTestId('bonus-map').locator(':scope > [data-testid]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-testid')));
+  expect(sections.indexOf('bonus-cds-catalogue')).toBeLessThan(sections.indexOf('bonus-coordinate-map'));
   await expect(page.getByTestId('bonus-continue')).toContainText('Continue · chr1');
+  await expect(page.getByTestId('bonus-cds-catalogue')).toBeVisible();
   await expect(page.getByTestId('bonus-nodes-chr1').locator('.cnode')).toHaveCount(121);
   await expect(page.getByTestId('bonus-node-chr1-1')).toBeDisabled();
   await expect(page.getByTestId('bonus-nodes-chr1')).toHaveClass(/\bunavailable\b/);
@@ -230,7 +268,7 @@ test('bonus CDS completion shows the matching gene card and marks the chromosome
     status:200,contentType:'application/json',body:JSON.stringify({
       format:'GENOME-CDS-1',reference:REFERENCE,chromosome:chrom,
       annotationSha256:'test-annotation-sha',
-      genes:[['test-gene','TESTGENE','protein_coding',0,9,'+','NM_TEST.1',[[0,9]]]],
+      genes:[['test-gene','TESTGENE','protein_coding',0,9,'+','NM_TEST.1',[[0,9]],'Example DNA repair gene']],
     }),
   }));
   await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:CAMPAIGN_LEVELS.map(l=>l.id)}));
