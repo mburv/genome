@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { addGenomeCredit, type GenomeHeader } from '../../src/campaign/bonus.ts';
 import {
-  bonusClueRange, cdsComplete, cdsCovered, cdsLength, cdsLocus,
-  newlyCompletedCds, validateCdsIndex, type CdsIndex,
+  bonusClueRange, cdsComplete, cdsCovered, cdsGeneLevelCoverage, cdsGeneLevels,
+  cdsLength, cdsLocus, nextCdsGeneLevel, newlyCompletedCds, validateCdsIndex,
+  CDS_ANNOTATION_SHA256, type CdsIndex, type CdsGene,
 } from '../../src/genomics/bonusAnnotations.ts';
 
 const index: CdsIndex = {
@@ -56,6 +57,27 @@ describe('T2T CDS labeling', () => {
     expect(newlyCompletedCds(index, before, after, 'chr1', [200, 220])).toEqual([gene, index.genes[2]!]); // one puzzle can finish two overlapping genes
     expect(newlyCompletedCds(index, after, after, 'chr1', [200, 220])).toEqual([]);
     expect(newlyCompletedCds(index, before, after, 'chr2', [200, 220])).toEqual([]);
+  });
+
+  it('accepts only the pinned CDS annotation before DNA packs are downloaded', () => {
+    const independent={...index, annotationSha256:CDS_ANNOTATION_SHA256};
+    expect(validateCdsIndex(independent,'chr1')).toEqual(independent);
+    expect(validateCdsIndex(index,'chr1')).toBeNull();
+    expect(validateCdsIndex(independent,'chr2')).toBeNull();
+  });
+
+  it('groups coding exons under existing chromosome puzzle numbers, respecting transcript strand', () => {
+    const forward:CdsGene=['gene','LONG','protein_coding',900,1940,'+','NM_TEST',[[900,960],[1900,1940]],'A long coding gene'];
+    const reverse:CdsGene=['gene','LONG','protein_coding',900,1940,'-','NM_TEST',[[1900,1940],[900,960]],'A long coding gene'];
+    expect(cdsGeneLevels(forward,248387328)).toEqual([4,5,6]);
+    expect(cdsGeneLevels(reverse,248387328)).toEqual([6,5,4]);
+    expect(nextCdsGeneLevel(reverse,{},'chr1')).toBe(6);
+    const part=addGenomeCredit({},'chr1',[1900,1940]);
+    expect(nextCdsGeneLevel(reverse,part,'chr1')).toBe(4);
+    const earlier=addGenomeCredit(part,'chr1',[900,960]);
+    expect(nextCdsGeneLevel(reverse,earlier,'chr1')).toBeNull();
+    expect(cdsGeneLevelCoverage(forward,{chr1:[[900,920]]},'chr1',248387328,4))
+      .toEqual({covered:20,total:54});
   });
 
   it('rejects annotations not tied to the exact downloaded pack and reference', () => {
