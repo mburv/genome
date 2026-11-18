@@ -389,3 +389,42 @@ test('horizontally adjacent replication strands share a single horizontal frame 
   await expect(b).toHaveClass(/shared-top/);
   await expect(b).toHaveCSS('border-top-width', '0px');
 });
+
+
+test('Famous Genes clue headers use identical CDS, bp and block notation for every mechanic', async ({ page }) => {
+  test.setTimeout(180_000);
+  const kinds = [
+    'slide-sequence', 'slide-splice', 'slide-replicate', 'slide-repair',
+    'trace', 'crush', 'assembly', 'mutation', 'connections', 'restriction',
+  ] as const;
+  const candidates = kinds.map(kind => CAMPAIGN_LEVELS.find(def => {
+    const mechanic = mechanicOf(def);
+    return (mechanic === 'slide' ? 'slide-' + def.mode : mechanic) === kind && (def.tier ?? 0) >= 3;
+  }));
+  expect(candidates.every(Boolean)).toBe(true);
+
+  const ids = ['ins-01', ...candidates.map(def => def!.id), 'gpx1-c04'];
+  for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    for (const id of [...new Set(ids)]) {
+      const def = CAMPAIGN_LEVELS.find(level => level.id === id)!;
+      await openChapter(page, id);
+      const start = def.sourceIntervals[0]!.start;
+      const end = def.sourceIntervals.at(-1)!.end;
+      const mixed = mixedStage(def);
+      const size = mixed?.spec.blockSize ?? (def.tokens ? def.tier : undefined);
+      const expected = def.symbol + ' CDS ' + (start + 1) + '–' + end + ' · ' + (end - start) + ' bp' + (size ? ' · ' + size + '-base blocks' : '');
+      const panel = page.getByTestId('target-panel');
+      const clue = panel.locator('.clue-range');
+      await expect(clue, id).toHaveText(expected);
+      const limits = await clue.evaluate(el => {
+        const r = el.getBoundingClientRect();
+        const p = el.closest('[data-testid="target-panel"]')!.getBoundingClientRect();
+        return { left: r.left - p.left, right: p.right - r.right, scroll: el.scrollWidth - el.clientWidth };
+      });
+      expect(limits.left, id + ' at ' + viewport.width).toBeGreaterThanOrEqual(-1);
+      expect(limits.right, id + ' at ' + viewport.width).toBeGreaterThanOrEqual(-1);
+      expect(limits.scroll, id + ' at ' + viewport.width).toBeLessThanOrEqual(1);
+    }
+  }
+});
