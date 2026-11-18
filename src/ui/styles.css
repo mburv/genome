@@ -1254,3 +1254,26 @@ footer { text-align: left; padding-top: 8px; border-top: 1px solid var(--rule); 
 .bonus-gene-card { max-height: calc(100dvh - 28px); overflow-y: auto; border-top-color: var(--mint-edge); }
 .bonus-gene-card .card-summary { overflow-wrap: anywhere; }
 .bonus-gene-card .card-meta dd { overflow-wrap: anywhere; }
+
+/* Unlocked Human Genome becomes the first map action, replacing Replay,
+   with the same progress bar and a single accessible button instance. */
+.map .genome-progress-button.primary-entry { min-height: 52px; border-color: var(--ink); }
+
+/* Named coding genes appear before the numbered chromosome-coordinate maps.
+   Eight gene rows per page avoid rendering 20k annotation records at once. */
+.bonus-cds-catalogue { min-width: 0; }
+.bonus-cds-catalogue > .row-between { flex-wrap: wrap; gap: 4px 12px; }
+.bonus-cds-catalogue .bonus-cds-filters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.bonus-cds-filters > input { flex: 1 1 150px; min-width: 0; max-width: 100%; background: var(--white); }
+.bonus-cds-filters > select { flex: 1 1 115px; min-width: 0; max-width: 100%; background: var(--white); }
+.bonus-cds-gene .cat-name { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.bonus-cds-gene .cat-name b { font-size: 15px; }
+.bonus-cds-gene .cat-name span { font-weight: 400; }
+.bonus-cds-gene .row-between { flex-wrap: wrap; gap: 5px 10px; }
+.bonus-cds-gene .muted { overflow-wrap: anywhere; }
+.bonus-cds-gene .bonus-assemble { padding: 4px 8px; font-size: 11px; }
+.bonus-cds-gene .bonus-cds-nodes { grid-template-columns: repeat(auto-fill, 30px); width: 100%; }
+.bonus-cds-gene .bonus-cds-nodes li { width: 30px; height: 30px; }
+.bonus-cds-gene .bonus-cds-nodes.unavailable .cnode { background: var(--stone); color: #777771; border-color: #b6b6b0; opacity: 1; box-shadow: none; cursor: default; }
+.bonus-cds-gene .bonus-cds-nodes.unavailable .node-check { color: #777771; }
+.bonus-cds-pages { margin-top: 10px; justify-content: space-between; }
