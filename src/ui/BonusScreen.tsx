@@ -122,11 +122,15 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
     {busy&&<p role="status" data-testid="reference-loading">Reading reference data… {loadingPercent}%</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
     <div className="panel catalogue"><h3 className="gene">Chromosomes</h3>{Object.entries(CHROMOSOMES).map(([c,len])=>{
       const n=covered(progress[c]??[],0,len),total=genomeLevelCount(len),next=nextGenomeLevel(progress,c),available=!!packs[c];
+      const cds=annotations[c];
       // The default window starts exactly at the first unfinished puzzle. Relative
       // pages preserve that anchor when going back through completed levels.
       const anchor=next??Math.max(1,total-PAGE+1),firstPage=-Math.ceil((anchor-1)/PAGE),lastPage=Math.floor((total-anchor)/PAGE);
       const page=Math.max(firstPage,Math.min(lastPage,pages[c]??0)),start=Math.max(1,anchor+page*PAGE),end=Math.min(total,anchor+(page+1)*PAGE-1);
       const changePage=(p:number)=>setPages(old=>({...old,[c]:Math.max(firstPage,Math.min(lastPage,p))}));
+      const regionStart=genomeLevelInterval(len,start)[0],regionEnd=genomeLevelInterval(len,end)[1];
+      const visibleGenes=(cds?.genes??[]).filter(g=>g[3]<regionEnd&&g[4]>regionStart);
+      const geneRegions=(packs[c]?.header.genes??[]).filter(g=>g[3]<regionEnd&&g[4]>regionStart);
       return <div className={'cat-gene'+(n===len?' assembled':'')} key={c} data-testid={'chromosome-'+c}>
         <div className="row-between"><b>{c}</b><span className={'cat-state'+(n===len?' ok':'')}>{n===len?'🧬 Assembled':n?'In progress':'New'}</span></div>
         <div className="progress thin" role="progressbar" aria-label={c+' bases assembled'} aria-valuemin={0} aria-valuemax={len} aria-valuenow={n}><i style={{width:100*n/len+'%'}}/></div>
@@ -135,10 +139,36 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
           const level=start+i;
           if(level>end)return <li key={'empty-'+i} className="bonus-node-empty" aria-hidden="true"/>;
           const iv=genomeLevelInterval(len,level),amount=covered(progress[c]??[],...iv),complete=amount===iv[1]-iv[0];
-          return <li key={level}><button type="button" className={'cnode'+(complete?' done':amount?' started':'')+(level===next?' current':'')} disabled={busy||!available} onClick={()=>{void open({chrom:c,level});}} aria-label={c+' '+level+' of '+total+(complete?', complete':'')} data-testid={'bonus-node-'+c+'-'+level} data-digits={String(level).length}><span className="node-number">{level}</span>{complete&&<span className="node-check" aria-hidden="true">✓</span>}</button></li>;
+          const locus=cdsLocus(cds,c,iv);
+          const coding=visibleGenes.find(g=>g[7].some(([a,b])=>a<iv[1]&&b>iv[0]));
+          const geneRegion=geneRegions.find(g=>g[3]<iv[1]&&g[4]>iv[0]);
+          const regionNote=locus?locus.gene[1]+' CDS '+locus.first+'–'+locus.last:
+            coding?coding[1]+' coding exon overlaps this level':
+            geneRegion?geneRegion[1]+' gene region':'chromosome sequence';
+          return <li key={level}><button type="button" className={'cnode'+(complete?' done':amount?' started':'')+(level===next?' current':'')+(locus?' bonus-cds-node':coding?' bonus-cds-overlap':geneRegion?' bonus-gene-region':'')} disabled={busy||!available} onClick={()=>{void open({chrom:c,level});}} aria-label={c+' '+level+' of '+total+', '+regionNote+(complete?', complete':'')} title={c+':'+(iv[0]+1).toLocaleString()+'–'+iv[1].toLocaleString()+' · '+regionNote} data-testid={'bonus-node-'+c+'-'+level} data-digits={String(level).length}><span className="node-number">{level}</span>{complete&&<span className="node-check" aria-hidden="true">✓</span>}</button></li>;
         })}</ol>
         <div className="row-between bonus-pagination"><button type="button" disabled={page===firstPage||busy} onClick={()=>changePage(page-1)} aria-label={'Previous '+c+' levels'}>‹</button><span className="muted tiny">{start.toLocaleString()}–{end.toLocaleString()} / {total.toLocaleString()}</span><button type="button" disabled={page===lastPage||busy} onClick={()=>changePage(page+1)} aria-label={'Next '+c+' levels'}>›</button></div>
+        {available&&<div className="bonus-annotation" data-testid={'bonus-annotation-'+c}>
+          <span className="muted tiny">{c}:{(regionStart+1).toLocaleString()}–{regionEnd.toLocaleString()}</span>
+          <span className="muted tiny">{cds?'CDS = inside a coding exon · other tiles use chromosome coordinates':'Gene annotations load with the reference index'}</span>
+          {visibleGenes.length>0&&<div className="bonus-gene-landmarks" data-testid={'bonus-gene-landmarks-'+c}>
+            {visibleGenes.slice(0,5).map(g=>{
+              const complete=cdsComplete(g,progress,c),first=genomeLevelAt(g[3]);
+              return <div className="bonus-gene-landmark" key={g[0]}>
+                <button type="button" className={complete?'bonus-gene-done':''} onClick={()=>changePage(Math.floor((first-anchor)/PAGE))} title={'Jump to '+g[1]+' at '+c+':'+(g[3]+1).toLocaleString()}>
+                  {g[1]}{complete?' ✓':''}
+                </button>
+                {complete&&<button type="button" className="bonus-gene-view" onClick={()=>{setMilestones([g]);setViewMilestone(0);}} aria-label={'View '+g[1]+' gene card'}>Card</button>}
+              </div>;
+            })}
+          </div>}
+        </div>}
       </div>;
     })}</div>
+    {viewMilestone!==null&&milestones[viewMilestone]&&
+      <BonusGeneCard gene={milestones[viewMilestone]} chromosome={selected?.chrom??milestones[viewMilestone][0].split(':')[0]??''}
+        onMap={()=>{setViewMilestone(null);setMilestones([]);}}
+        hasNextGene={viewMilestone+1<milestones.length}
+        onContinue={()=>{if(viewMilestone+1<milestones.length)setViewMilestone(viewMilestone+1);else{setViewMilestone(null);setMilestones([]);}}}/>}
   </section>;
 }
