@@ -2,6 +2,7 @@ import { createContext, useContext, useLayoutEffect, useRef, type ReactNode } fr
 import type { LevelDefinition, Track } from '../engine/types.ts';
 import { symbolLabel, symbolSequence, type CustomTokens } from '../engine/tokens.ts';
 import { Barcode, SeqLetters, TokenFace, tierClass, tokenStyle } from './TokenFace.tsx';
+import { formatGeneClueRange } from './clueRange.ts';
 
 interface Props {
   def: LevelDefinition;
@@ -160,7 +161,10 @@ export function TargetPanel({ custom = {}, ...p }: Props) {
 }
 
 export function slidingClueRange(def: LevelDefinition): string {
-  return `CDS ${def.sourceIntervals[0]!.start + 1}–${def.sourceIntervals[0]!.end}${def.tokens ? ` · ${def.tier}-base tiles` : ''}`;
+  const start = def.sourceIntervals[0]!.start;
+  const end = def.sourceIntervals.at(-1)!.end;
+  if (def.lab) return `CDS ${start + 1}–${end}${def.tokens ? ` · ${def.tier}-base tiles` : ''}`;
+  return formatGeneClueRange(def.symbol, start, end, def.tokens ? def.tier : undefined);
 }
 
 function TargetPanelInner({ def, matches, committedMatches, solved, custom, measureOnly = false }: Props & { custom: CustomTokens }) {
@@ -170,7 +174,7 @@ function TargetPanelInner({ def, matches, committedMatches, solved, custom, meas
   const heading = (
     <div className="row-between small">
       <span className="target-title">{def.title}</span>
-      <span className="muted">{slidingClueRange(def)}</span>
+      <span className="muted clue-range">{slidingClueRange(def)}</span>
     </div>
   );
   const tier = toks ? def.tier : undefined;

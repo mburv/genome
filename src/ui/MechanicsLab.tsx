@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { applyLab, createLab, traceHintCell, connectionHint, findCrushSwap, LAB_IDS, LAB_META, DEFAULT_LAB_SPEC, mutationExpected as expectedMutation, mutationCount as countMutations, reverseComplement, adjacent, labDecode,labLabel,labReplacementOptions, type LabResult, type LabId, type LabState, type LabAction } from '../engine/mechanicsLab.ts';
 import { TargetShell } from './TargetPanel.tsx';
+import { formatGeneClueRange } from './clueRange.ts';
 import { PowerTray } from './PowerTray.tsx';
 import { WinCard } from './WinCard.tsx';
 import { SolvedBanner } from './SolvedBanner.tsx';
@@ -391,7 +392,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
 export function mechanicClueRange(stage?: MixedStage, bonus = false): string {
   if (!stage) return 'INS · practice';
   const count = stage.sequence.length + ' bp' + (stage.spec.blockSize ? ' · ' + stage.spec.blockSize + '-base blocks' : '');
-  return bonus ? count : stage.symbol + ' CDS ' + (stage.start + 1) + '–' + stage.end + ' · ' + count;
+  return bonus ? count : formatGeneClueRange(stage.symbol, stage.start, stage.end, stage.spec.blockSize);
 }
 
 export function MechanicClues({ state, defId, range, def, displayCollected = state.collected, mutationSelection = null, measureOnly = false }: {
@@ -409,7 +410,7 @@ export function MechanicClues({ state, defId, range, def, displayCollected = sta
     <TargetShell longClues={id==='mutation'||id==='assembly'||Object.values(spec.tokens??{}).some(t=>t.seq.length>6)} measureOnly={measureOnly} hideCompleted defId={defId} label={id==='crush'?'Target codons':'Target sequence'} solved={state.won} committedKey={id==='crush'?String(displayCollected):String(state.moves)}>
       <div className="row-between small">
         <span className="target-title">{LAB_META[id].title}</span>
-        <span className="muted" data-testid="mixed-range">{range}</span>
+        <span className="muted clue-range" data-testid="mixed-range">{range}</span>
       </div>
       {id==='trace' && <div className="clue-stack mode-sequence">
         <div className="clue-part"><b className="badge">1</b><div className="clue-tokens">
