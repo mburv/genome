@@ -381,7 +381,9 @@ test('RHO 9/12 replication has one shared vertical strand border and unobstructe
 });
 
 test('horizontally adjacent replication strands share a single horizontal frame edge', async ({ page }) => {
-  await openChapter(page, 'rho-c03');
+  // HBB c03 keeps the classic sliding Replication board; RHO c03 is
+  // reassigned to a different mixed mechanic in the playable campaign.
+  await openChapter(page, 'hbb-c03');
   const a = page.getByTestId('track-1'), b = page.getByTestId('track-2');
   await expect(a).toHaveCSS('border-bottom-width', '2px');
   await expect(b).toHaveClass(/shared-top/);
