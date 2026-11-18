@@ -442,8 +442,21 @@ export function Board({ def, board, matches, selected, hint, hintCell, repaired,
         const c0 = colOf(t.cells[0]!);
         const r1 = rowOf(t.cells[t.cells.length - 1]!);
         const c1 = colOf(t.cells[t.cells.length - 1]!);
+        // Adjacent target tracks draw one shared edge, not two thick strokes.
+        // Only collapse an edge when the full lengths align; partial overlaps
+        // retain their own borders so no part of a target disappears.
+        const sharedLeft = def.tracks.some(other =>
+          other !== t &&
+          colOf(other.cells[other.cells.length - 1]!) + 1 === c0 &&
+          rowOf(other.cells[0]!) === r0 &&
+          rowOf(other.cells[other.cells.length - 1]!) === r1);
+        const sharedTop = def.tracks.some(other =>
+          other !== t &&
+          rowOf(other.cells[other.cells.length - 1]!) + 1 === r0 &&
+          colOf(other.cells[0]!) === c0 &&
+          colOf(other.cells[other.cells.length - 1]!) === c1);
         return (
-          <div key={t.group} className={`track-outline ${t.orientation} strand-${t.strand} ${matches[t.group - 1]?.every(Boolean) ? 'all-ok' : ''}`} data-testid={`track-${t.group}`} style={{ gridRow: `${r0 + 1} / ${r1 + 2}`, gridColumn: `${c0 + 1} / ${c1 + 2}` }} aria-hidden="true">
+          <div key={t.group} className={`track-outline ${t.orientation} strand-${t.strand} ${sharedLeft ? 'shared-left' : ''} ${sharedTop ? 'shared-top' : ''} ${matches[t.group - 1]?.every(Boolean) ? 'all-ok' : ''}`} data-testid={`track-${t.group}`} style={{ gridRow: `${r0 + 1} / ${r1 + 2}`, gridColumn: `${c0 + 1} / ${c1 + 2}` }} aria-hidden="true">
             <span className="track-badge">{t.group}</span>
           </div>
         );

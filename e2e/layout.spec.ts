@@ -341,3 +341,51 @@ test('settings shares the gameplay header position and replaces the cog with a s
     await expect(page.getByTestId('open-settings')).toBeVisible();
   }
 });
+
+
+test('RHO 9/12 replication has one shared vertical strand border and unobstructed multi-base lettering', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 320, height: 700 });
+  await openChapter(page, 'rho-c07');
+  await expect(page.getByTestId('play-progress')).toHaveText('9/12');
+  await expect(page.locator('.target-title')).toContainText('replication');
+
+  for (const width of [320, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    const a = page.getByTestId('track-1'), b = page.getByTestId('track-2');
+    await expect(a).toHaveCSS('border-right-width', '2px');
+    await expect(b).toHaveClass(/shared-left/);
+    await expect(b).toHaveCSS('border-left-width', '0px');
+    await expect(a).toHaveCSS('box-shadow', 'none');
+    const rects = await page.evaluate(() => {
+      const left = document.querySelector<HTMLElement>('[data-testid="track-1"]')!;
+      const right = document.querySelector<HTMLElement>('[data-testid="track-2"]')!;
+      const bottom = document.querySelector<HTMLElement>('[data-cell="68"] .tok-row:last-child')!;
+      const a = left.getBoundingClientRect(), b = right.getBoundingClientRect();
+      return { gap: b.left - a.right, textBottom: bottom.getBoundingClientRect().bottom, frameBottom: a.bottom };
+    });
+    expect(rects.gap).toBeGreaterThanOrEqual(-0.5);
+    expect(rects.gap).toBeLessThanOrEqual(2);
+    expect(rects.textBottom).toBeLessThan(rects.frameBottom - 2);
+  }
+
+  await solveWithHints(page);
+  await expect(page.getByTestId('win')).toBeVisible();
+  const correct = page.locator('.board .tile.tok.goal.ok');
+  expect(await correct.count()).toBeGreaterThan(0);
+  await expect(correct.first()).toHaveCSS('box-shadow', 'none');
+  const clue = page.locator('.target .tok-chip.ok').first();
+  await expect(clue).toHaveCSS('outline-style', 'none');
+  await expect(clue).toHaveCSS('box-shadow', 'none');
+  await expect(clue).toHaveCSS('border-bottom-width', '2px');
+});
+
+test('horizontally adjacent replication strands share a single horizontal frame edge', async ({ page }) => {
+  // HBB c03 keeps the classic sliding Replication board; RHO c03 is
+  // reassigned to a different mixed mechanic in the playable campaign.
+  await openChapter(page, 'hbb-c03');
+  const a = page.getByTestId('track-1'), b = page.getByTestId('track-2');
+  await expect(a).toHaveCSS('border-bottom-width', '2px');
+  await expect(b).toHaveClass(/shared-top/);
+  await expect(b).toHaveCSS('border-top-width', '0px');
+});
