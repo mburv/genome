@@ -8,7 +8,7 @@ import {
  * CDS exons are ordered 5′ to 3′ in transcript orientation (reverse on −). */
 export type CdsGene = readonly [
   id: string, symbol: string, biotype: string, start: number, end: number,
-  strand: '+' | '-', transcript: string, exons: readonly (readonly [number, number])[],
+  strand: '+' | '-', transcript: string, exons: readonly (readonly [number, number])[], description?: string,
 ];
 export interface CdsIndex {
   format: 'GENOME-CDS-1';
@@ -32,11 +32,11 @@ export function validateCdsIndex(raw: unknown, source: GenomeHeader | string): C
   if (!length || index.format !== 'GENOME-CDS-1' || index.reference !== REFERENCE ||
       index.chromosome !== chromosome ||
       index.annotationSha256 !== annotationSha256 || !Array.isArray(index.genes)) return null;
-  if (!index.genes.every(g => Array.isArray(g) && g.length === 8 &&
+  if (!index.genes.every(g => Array.isArray(g) && (g.length === 8 || g.length === 9) &&
     g.slice(0, 3).every(v => typeof v === 'string') &&
     Number.isInteger(g[3]) && Number.isInteger(g[4]) && g[3] >= 0 &&
     g[4] <= length && g[3] < g[4] && (g[5] === '+' || g[5] === '-') &&
-    typeof g[6] === 'string' && Array.isArray(g[7]) && g[7].length > 0 &&
+    typeof g[6] === 'string' && (g.length === 8 || typeof g[8] === 'string') && Array.isArray(g[7]) && g[7].length > 0 &&
     g[7].every(ex => Array.isArray(ex) && ex.length === 2 &&
       ex.every(Number.isInteger) && ex[0] >= g[3] && ex[1] <= g[4] && ex[0] < ex[1]))) return null;
   return index;
