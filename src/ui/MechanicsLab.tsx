@@ -62,7 +62,7 @@ interface CampaignPlay {
   stage: MixedStage; seedTrace: boolean; initialActions: readonly LabAction[]; part: number; of: number; covered: number;
   assembled: boolean; onProgress: (actions: readonly LabAction[], state: LabState) => void; onNext: () => void;
 }
-interface BonusPlay { stage: MixedStage; label:string; part:number; of:number; hasNext:boolean; completed:boolean; newBases:number; covered:number; length:number; onComplete:(state:LabState)=>void; onNext:()=>void }
+interface BonusPlay { stage: MixedStage; label:string; part:number; of:number; hasNext:boolean; completed:boolean; newBases:number; covered:number; length:number; clueRange?:string; geneCardAvailable?:boolean; onCard?:()=>void; onComplete:(state:LabState)=>void; onNext:()=>void }
 export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, campaign, bonus, hintMode, onHintModeChange }: { id: LabId; onBack: () => void; onNext: (id: LabId) => void; reducedMotion: boolean; feedback: FeedbackOptions; campaign?: CampaignPlay; bonus?: BonusPlay; hintMode?: boolean | null; onHintModeChange?: (enabled: boolean) => void }) {
   const spec = campaign?.stage.spec ?? bonus?.stage.spec ?? DEFAULT_LAB_SPEC;
   const gene=campaign?GENES[campaign.def.symbol]!:INS;
@@ -359,16 +359,16 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const stage = bonus?.stage ?? campaign?.stage;
   const popup = state.won && winReady && session.celebration && extracted !== null &&
     <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign&&!bonus,nextLabel,...(stage?{range:{start:stage.start,end:stage.end}}:{})}}
-      {...(bonus?{bonus:{label:bonus.label,part:bonus.part,of:bonus.of}}:{})}
+      {...(bonus?{bonus:{label:bonus.label,part:bonus.part,of:bonus.of,geneCardAvailable:!!bonus.geneCardAvailable}}:{})}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
       replayed={session.celebration.replayed} assembled={!!campaign?.assembled && (session.celebration.assembled || campaign.part === campaign.of)}
       assembledBases={bonus?.covered ?? campaign?.covered ?? 0} cdsLength={bonus?.length ?? gene.cdsLength} reducedMotion={reducedMotion}
-      hasNext={hasNext} onNext={advance} onMap={onBack} onCard={campaign?.onCard ?? onBack} onClose={closeWin} />;
+      hasNext={hasNext} onNext={advance} onMap={onBack} onCard={() => { closeWin(); (campaign?.onCard ?? bonus?.onCard ?? onBack)(); }} onClose={closeWin} />;
   const solved = state.won && winReady && !session.celebration &&
     <SolvedBanner def={winDef} moves={state.moves} unranked pulse={false} hasNext={hasNext}
       nextLabel={nextLabel} mapLabel={bonus?'Bonus map':campaign?'Level map':'Lab menu'} onReplay={reset} onNext={advance} onMap={onBack} />;
   return <>
-    <MechanicClues state={state} defId={stage?.id ?? 'lab-'+id} range={mechanicClueRange(stage,!!bonus)}
+    <MechanicClues state={state} defId={stage?.id ?? 'lab-'+id} range={bonus?.clueRange ?? mechanicClueRange(stage,!!bonus)}
       def={campaign?.def} displayCollected={displayCollected} mutationSelection={mutationSelection}/>
 
     <div className="board-stage">

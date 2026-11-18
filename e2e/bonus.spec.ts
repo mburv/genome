@@ -211,3 +211,48 @@ test('Human Genome map button fills green according to shared reference coverage
   await expect(page.getByTestId('open-bonus-percent')).toHaveText('100%');
   expect(await fill.evaluate(el=>(el as HTMLElement).style.width)).toBe('100%');
 });
+
+
+test('bonus CDS completion shows the matching gene card and marks the chromosome map', async ({ page }) => {
+  test.setTimeout(90_000);
+  const chrom='chrM', length=CHROMOSOMES.chrM!;
+  const payload=Buffer.alloc(Math.ceil(length/4),0x1b);
+  const sha=createHash('sha256').update(payload).digest('hex');
+  const headerObj={format:'GENOME-T2T-1',reference:REFERENCE,chromosome:chrom,length,
+    annotation:'test fixture',annotationSha256:'test-annotation-sha',sourceMd5:'06caded0055ec647a69acb708e13beff',
+    chunkBases:CHUNK_BASES,genes:[['test-gene','TESTGENE','protein_coding',0,9,'+']],chunkSha256:[sha]};
+  const raw=Buffer.from(JSON.stringify(headerObj));
+  const prefix=Buffer.alloc(4);prefix.writeUInt32LE(raw.length);
+  await page.route('**/reference-data/chrM.genome',route=>route.fulfill({
+    status:200,contentType:'application/octet-stream',body:Buffer.concat([prefix,raw,payload]),
+  }));
+  await page.route('**/cds-annotations/chrM.json',route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({
+      format:'GENOME-CDS-1',reference:REFERENCE,chromosome:chrom,
+      annotationSha256:'test-annotation-sha',
+      genes:[['test-gene','TESTGENE','protein_coding',0,9,'+','NM_TEST.1',[[0,9]]]],
+    }),
+  }));
+  await openCompleted(page,serializeSave({...newSave(LEVEL_PACK),completed:CAMPAIGN_LEVELS.map(l=>l.id)}));
+  await page.getByTestId('open-bonus').click();
+  await page.getByTestId('chromosome-chrM').getByRole('button',{name:'Assemble',exact:true}).click();
+  await expect(page.locator('.target .clue-range')).toHaveText('TESTGENE CDS 1–9 · 9 bp');
+  for(const cell of genomeStage('chrM',[0,9],'ACGTACGTA').spec.TRACE_PATH.slice(2))
+    await page.getByTestId('lab-cell-'+cell).click();
+  await expect(page.getByTestId('bonus-win')).toBeVisible();
+  await page.getByTestId('bonus-win').getByRole('button',{name:'View gene card'}).click();
+  const card=page.getByTestId('bonus-gene-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('TESTGENE');
+  await expect(card).toContainText('9 coding bases covered');
+  await expect(card).toContainText('NM_TEST.1');
+  await card.getByRole('button',{name:'Genome map',exact:true}).click();
+  const row=page.getByTestId('chromosome-chrM');
+  await row.getByRole('button',{name:'Previous chrM levels'}).click();
+  await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/bonus-cds-node/);
+  await expect(row.getByTestId('bonus-gene-landmarks-chrM')).toContainText('TESTGENE ✓');
+  await row.getByRole('button',{name:'View TESTGENE gene card'}).click();
+  await expect(page.getByTestId('bonus-gene-card')).toBeVisible();
+  await page.getByTestId('bonus-gene-card').getByRole('button',{name:'Continue →'}).click();
+  await expect(page.getByTestId('bonus-gene-card')).toHaveCount(0);
+});
