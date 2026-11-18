@@ -246,7 +246,7 @@ test('bonus CDS completion shows the matching gene card and marks the chromosome
   await expect(card).toContainText('TESTGENE');
   await expect(card).toContainText('9 coding bases covered');
   await expect(card).toContainText('NM_TEST.1');
-  await card.getByRole('button',{name:'Genome map'}).click();
+  await card.getByRole('button',{name:'Genome map',exact:true}).click();
   const row=page.getByTestId('chromosome-chrM');
   await row.getByRole('button',{name:'Previous chrM levels'}).click();
   await expect(page.getByTestId('bonus-node-chrM-1')).toHaveClass(/bonus-cds-node/);
