@@ -18,6 +18,7 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
   const [annotations,setAnnotations]=useState<Record<string,CdsIndex>>({});
   const [milestones,setMilestones]=useState<CdsGene[]>([]);
   const [viewMilestone,setViewMilestone]=useState<number|null>(null);
+  const [cardChrom,setCardChrom]=useState('');
   const requestedAnnotations=useRef(new Set<string>());
   const [storageNote,setStorageNote]=useState('');
   useEffect(()=>{let active=true;void loadGenomePacks().then(p=>{if(active)setPacks(old=>({...p,...old}));}).catch(()=>{if(active)setStorageNote('Offline storage is unavailable; reference data will be loaded when needed.');});return()=>{active=false;};},[]);
@@ -158,7 +159,7 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
                 <button type="button" className={complete?'bonus-gene-done':''} onClick={()=>changePage(Math.floor((first-anchor)/PAGE))} title={'Jump to '+g[1]+' at '+c+':'+(g[3]+1).toLocaleString()}>
                   {g[1]}{complete?' ✓':''}
                 </button>
-                {complete&&<button type="button" className="bonus-gene-view" onClick={()=>{setMilestones([g]);setViewMilestone(0);}} aria-label={'View '+g[1]+' gene card'}>Card</button>}
+                {complete&&<button type="button" className="bonus-gene-view" onClick={()=>{setMilestones([g]);setCardChrom(c);setViewMilestone(0);}} aria-label={'View '+g[1]+' gene card'}>Card</button>}
               </div>;
             })}
           </div>}
@@ -166,7 +167,7 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
       </div>;
     })}</div>
     {viewMilestone!==null&&milestones[viewMilestone]&&
-      <BonusGeneCard gene={milestones[viewMilestone]} chromosome={selected?.chrom??milestones[viewMilestone][0].split(':')[0]??''}
+      <BonusGeneCard gene={milestones[viewMilestone]} chromosome={cardChrom}
         onMap={()=>{setViewMilestone(null);setMilestones([]);}}
         hasNextGene={viewMilestone+1<milestones.length}
         onContinue={()=>{if(viewMilestone+1<milestones.length)setViewMilestone(viewMilestone+1);else{setViewMilestone(null);setMilestones([]);}}}/>}
