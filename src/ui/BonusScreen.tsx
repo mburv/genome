@@ -12,6 +12,13 @@ import type { FeedbackOptions } from './feedback.ts';
 interface Props{feedback:FeedbackOptions;progress:BonusProgress;legacyGeometry:BonusProgress;legacyAssemblyGeometry:BonusProgress;onProgress:(next:BonusProgress)=>void;onBack:()=>void;onPlaying:(playing:boolean)=>void;onSettings:()=>void;reducedMotion:boolean}
 interface Scope{chrom:string;level:number}
 const PAGE=11*11;
+async function readAnnotations(chrom:string,pack:GenomePack):Promise<CdsIndex|null>{
+  try{
+    const response=await fetch(new URL('cds-annotations/'+chrom+'.json',document.baseURI));
+    if(!response.ok)return null;
+    return validateCdsIndex(await response.json(),pack.header);
+  }catch{return null;}
+}
 
 export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onProgress,onBack,onPlaying,onSettings,reducedMotion,feedback}:Props){
   const [packs,setPacks]=useState<Record<string,GenomePack>>({});
@@ -28,25 +35,16 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
   const [pages,setPages]=useState<Record<string,number>>({});
   const [selected,setSelected]=useState<Scope|null>(null);
   const done=genomeCovered(progress);
-  const readAnnotations=async(chrom:string,pack:GenomePack):Promise<CdsIndex|null>=>{
-    try{
-      const response=await fetch(new URL('cds-annotations/'+chrom+'.json',document.baseURI));
-      if(!response.ok)return null;
-      return validateCdsIndex(await response.json(),pack.header);
-    }catch{return null;}
-  };
   // Offline chromosome packs retain their original format. Annotations are
   // lightweight, optional sidecars, loaded for every available map chromosome.
   useEffect(()=>{
-    let active=true;
     for(const [chrom,pack] of Object.entries(packs)){
       if(requestedAnnotations.current.has(chrom))continue;
       requestedAnnotations.current.add(chrom);
       void readAnnotations(chrom,pack).then(index=>{
-        if(active&&index)setAnnotations(old=>({...old,[chrom]:index}));
+        if(index)setAnnotations(old=>({...old,[chrom]:index}));
       });
     }
-    return()=>{active=false;};
   },[packs]);
   const open=async(s:Scope)=>{
     if(busy)return;
