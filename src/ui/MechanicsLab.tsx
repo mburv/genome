@@ -359,7 +359,7 @@ export function MechanicsPlay({ id, onBack, onNext, reducedMotion, feedback, cam
   const stage = bonus?.stage ?? campaign?.stage;
   const popup = state.won && winReady && session.celebration && extracted !== null &&
     <WinCard def={winDef} mechanic={{title:winTitle[id],sequence:extracted,practice:!campaign&&!bonus,nextLabel,...(stage?{range:{start:stage.start,end:stage.end}}:{})}}
-      {...(bonus?{bonus:{label:bonus.label,part:bonus.part,of:bonus.of,geneCardAvailable:bonus.geneCardAvailable}}:{})}
+      {...(bonus?{bonus:{label:bonus.label,part:bonus.part,of:bonus.of,geneCardAvailable:!!bonus.geneCardAvailable}}:{})}
       moves={state.moves} powersUsed={0} newBases={session.celebration.newBases}
       replayed={session.celebration.replayed} assembled={!!campaign?.assembled && (session.celebration.assembled || campaign.part === campaign.of)}
       assembledBases={bonus?.covered ?? campaign?.covered ?? 0} cdsLength={bonus?.length ?? gene.cdsLength} reducedMotion={reducedMotion}
