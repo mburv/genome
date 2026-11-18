@@ -4,6 +4,7 @@ import { openGenomePack,readGenomeDownload,readGenomeSequence,type GenomePack } 
 import { loadGenomePacks,storeGenomePack } from '../genomics/genomeStorage.ts';
 import { bonusClueRange, cdsComplete, cdsLocus, newlyCompletedCds, validateCdsIndex, type CdsGene, type CdsIndex } from '../genomics/bonusAnnotations.ts';
 import { BonusGeneCard } from './BonusGeneCard.tsx';
+import { BonusCdsCatalogue } from './BonusCdsCatalogue.tsx';
 import { MechanicsPlay } from './MechanicsLab.tsx';
 import { labExtractedSequence,type LabState } from '../engine/mechanicsLab.ts';
 import type { MixedStage } from '../campaign/mixed.ts';
@@ -12,11 +13,11 @@ import type { FeedbackOptions } from './feedback.ts';
 interface Props{feedback:FeedbackOptions;progress:BonusProgress;legacyGeometry:BonusProgress;legacyAssemblyGeometry:BonusProgress;onProgress:(next:BonusProgress)=>void;onBack:()=>void;onPlaying:(playing:boolean)=>void;onSettings:()=>void;reducedMotion:boolean}
 interface Scope{chrom:string;level:number}
 const PAGE=11*11;
-async function readAnnotations(chrom:string,pack:GenomePack):Promise<CdsIndex|null>{
+async function readAnnotations(chrom:string,pack?:GenomePack):Promise<CdsIndex|null>{
   try{
     const response=await fetch(new URL('cds-annotations/'+chrom+'.json',document.baseURI));
     if(!response.ok)return null;
-    return validateCdsIndex(await response.json(),pack.header);
+    return validateCdsIndex(await response.json(),pack?.header ?? chrom);
   }catch{return null;}
 }
 
@@ -35,13 +36,14 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
   const [pages,setPages]=useState<Record<string,number>>({});
   const [selected,setSelected]=useState<Scope|null>(null);
   const done=genomeCovered(progress);
-  // Offline chromosome packs retain their original format. Annotations are
-  // lightweight, optional sidecars, loaded for every available map chromosome.
+  // Load the much smaller CDS catalogue without downloading any chromosome
+  // DNA. Users can see named genes before choosing a chromosome to install.
+  // When a DNA pack is available the sidecar must match its annotation hash.
   useEffect(()=>{
-    for(const [chrom,pack] of Object.entries(packs)){
+    for(const chrom of Object.keys(CHROMOSOMES)){
       if(requestedAnnotations.current.has(chrom))continue;
       requestedAnnotations.current.add(chrom);
-      void readAnnotations(chrom,pack).then(index=>{
+      void readAnnotations(chrom,packs[chrom]).then(index=>{
         if(index)setAnnotations(old=>({...old,[chrom]:index}));
       });
     }
@@ -119,7 +121,10 @@ export function BonusScreen({progress,legacyGeometry,legacyAssemblyGeometry,onPr
       {done===GENOME_BASES&&<p className="discovered assembled">Human reference genome assembled!</p>}
     </div>
     {busy&&<p role="status" data-testid="reference-loading">Reading reference data… {loadingPercent}%</p>}{error&&<p role="alert">{error}</p>}{storageNote&&<p className="muted small" role="status">{storageNote}</p>}
-    <div className="panel catalogue"><h3 className="gene">Chromosomes</h3>{Object.entries(CHROMOSOMES).map(([c,len])=>{
+    <BonusCdsCatalogue annotations={annotations} availableChromosomes={new Set(Object.keys(packs))} progress={progress} busy={busy}
+      onPlay={(chrom,level)=>{void open({chrom,level});}}
+      onCard={(chrom,gene)=>{setMilestones([gene]);setCardChrom(chrom);setViewMilestone(0);}} />
+    <div className="panel catalogue" data-testid="bonus-coordinate-map"><h3 className="gene">Chromosome coordinates</h3>{Object.entries(CHROMOSOMES).map(([c,len])=>{
       const n=covered(progress[c]??[],0,len),total=genomeLevelCount(len),next=nextGenomeLevel(progress,c),available=!!packs[c];
       const cds=annotations[c];
       // The default window starts exactly at the first unfinished puzzle. Relative
