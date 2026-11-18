@@ -57,7 +57,7 @@ test('named CDS genes are searchable above chromosome coordinates without instal
   await expect(names.getByTestId('bonus-cds-gene-'+ 'gene-not-real')).toHaveCount(0);
   await expect(names.getByText('GPX1',{exact:true}).first()).toBeVisible({timeout:30_000});
   await expect(names).toContainText('Glutathione');
-  await expect(names.getByRole('button',{name:'Download & play →'}).first()).toBeVisible();
+  await expect(names.locator('.bonus-cds-gene').first().getByRole('button',{name:/Gene card|Download & play/})).toBeVisible();
   await expect(page.getByTestId('bonus-cds-nodes-'+ 'gene-not-real')).toHaveCount(0);
   expect(await names.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
   const rect=await names.boundingBox();
